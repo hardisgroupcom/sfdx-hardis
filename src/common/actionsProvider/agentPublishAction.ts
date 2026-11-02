@@ -3,7 +3,7 @@ import { glob } from 'glob';
 import * as path from 'path';
 import { ActionResult, ActionWhen, PrePostCommand, buildActionOutput } from './actionsProvider.js';
 import { AgentActionBase } from './agentActionBase.js';
-import { createTempDir, execSfdxJson, getCurrentGitBranch, uxLog } from '../utils/index.js';
+import { createTempDir, execSfdxJson, git, uxLog } from '../utils/index.js';
 import { AGENT_AUTHORING_BUNDLE_TYPE, AGENT_DOC_URL, AgentVersionInfo, activateAgentVersion, listOrgAgentVersions } from '../utils/agentUtils.js';
 import { AGENT_FILES_IGNORE } from '../utils/agentBundleUtils.js';
 import { writePackageXmlFile } from '../utils/xmlUtils.js';
@@ -43,11 +43,11 @@ export class AgentPublishAction extends AgentActionBase {
     }
     const bundleName = path.basename(bundleFiles[0], '.agent');
 
-    // 2. A previous run published a version and failed to activate it: activate that one, as a new
-    // publication would create one more version at each run
+    // 2. A previous run published the bundle and failed to activate the version: activate that one, as a
+    // new publication would create one more version at each run
     const conn = await this.getConnection();
     const agentVersions = (await listOrgAgentVersions(conn)).filter((version) => version.agentName.toLowerCase() === agentName.toLowerCase());
-    const unfinished = findUnfinishedPublication(agentVersions);
+    const unfinished = findUnfinishedPublication(agentVersions, await readBundleLastChangeDate(path.dirname(bundleFiles[0])));
     if (unfinished) {
       uxLog('action', this, c.cyan(`[DeploymentActions] ${t('agentPublishResumesActivation', { agentName: unfinished.agentName, version: unfinished.version })}`));
       return this.activate(conn, unfinished, outputLines);
@@ -58,8 +58,8 @@ export class AgentPublishAction extends AgentActionBase {
     const tmpDir = await createTempDir();
     const packageXmlFile = path.join(tmpDir, 'package.xml');
     await writePackageXmlFile(packageXmlFile, { [AGENT_AUTHORING_BUNDLE_TYPE]: [bundleName] });
-    const targetBranch = cmd.pipelineContext?.targetBranch || process.env.FORCE_TARGET_BRANCH || (await getCurrentGitBranch()) || null;
-    const { runWithReplacementRules } = await import('../replacementRules/engine/ruleEngine.js');
+    const { resolveReplacementRulesTargetBranch, runWithReplacementRules } = await import('../replacementRules/engine/ruleEngine.js');
+    const targetBranch = await resolveReplacementRulesTargetBranch(cmd.pipelineContext?.targetBranch || null);
     uxLog('action', this, c.cyan(`[DeploymentActions] ${t('publishingAgent', { agentName: bundleName })}`));
     const publishCommand = `sf agent publish authoring-bundle --api-name ${bundleName} --skip-retrieve --target-org ${conn.getUsername()} --json`;
     const publishRes = await runWithReplacementRules(
@@ -101,15 +101,34 @@ export class AgentPublishAction extends AgentActionBase {
 }
 
 /**
- * The latest version of the agent when it is inactive while an older one is active: the activation
- * that followed its publication failed. null when the org does not tell the statuses, and when no
- * version is active (the agent was turned off in the org: a publication is what brings it back).
+ * The latest version of the agent when the org published it after the last change of the bundle and
+ * it is still inactive: the activation that followed its publication failed. null when the bundle
+ * changed since (a version rolled back in the org is older than the change, the new bundle must be
+ * published), and when the org or git do not tell the dates and statuses.
  */
-function findUnfinishedPublication(agentVersions: AgentVersionInfo[]): AgentVersionInfo | null {
-  if (agentVersions.length < 2 || agentVersions.some((version) => !version.status)) {
+export function findUnfinishedPublication(agentVersions: AgentVersionInfo[], bundleChangedAt: Date | null): AgentVersionInfo | null {
+  if (agentVersions.length === 0 || !bundleChangedAt) {
     return null;
   }
   const latest = agentVersions.reduce((highest, version) => (version.version > highest.version ? version : highest));
-  const olderActive = agentVersions.some((version) => version.version < latest.version && version.status.toLowerCase() === 'active');
-  return olderActive && latest.status.toLowerCase() !== 'active' ? latest : null;
+  const createdAt = latest.createdDate ? Date.parse(latest.createdDate) : NaN;
+  if (!latest.status || latest.status.toLowerCase() === 'active' || Number.isNaN(createdAt)) {
+    return null;
+  }
+  return createdAt > bundleChangedAt.getTime() ? latest : null;
+}
+
+// Date of the last commit that changed the bundle folder. null when it has changes not committed yet,
+// or when git does not tell
+async function readBundleLastChangeDate(bundleFolder: string): Promise<Date | null> {
+  try {
+    const gitClient = git({ output: false, displayCommand: false });
+    if ((await gitClient.raw(['status', '--porcelain', '--', bundleFolder])).trim() !== '') {
+      return null;
+    }
+    const committedAt = (await gitClient.raw(['log', '-1', '--format=%cI', '--', bundleFolder])).trim();
+    return committedAt ? new Date(committedAt) : null;
+  } catch {
+    return null;
+  }
 }

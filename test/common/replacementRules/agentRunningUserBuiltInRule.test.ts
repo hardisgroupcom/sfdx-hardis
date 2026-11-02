@@ -164,6 +164,6 @@ describe('AgentRunningUserBuiltInRule', () => {
   });
 
   it('reports not-found on a file without running user', () => {
-    expect(buildRule().applyToText('<AiAgentDefinition><type>EmployeeCopilot</type></AiAgentDefinition>').status).to.equal('not-found');
+    expect(buildRule().applyToText('<AiAgentDefinition><type>EmployeeCopilot</type></AiAgentDefinition>', null, DEFINITION_FILE).status).to.equal('not-found');
   });
 });

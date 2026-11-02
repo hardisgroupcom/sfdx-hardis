@@ -36,6 +36,8 @@ export interface AgentVersionInfo {
   version: number;
   // Active, Inactive... Empty when the org did not tell
   status: string;
+  // ISO date the org created the version (its publication). Absent when the org did not tell
+  createdDate?: string;
 }
 
 /** An entry of a package.xml that holds an agent in the format before API 68.0. */
@@ -80,7 +82,11 @@ export async function listOrgAgentVersions(conn: Connection): Promise<AgentVersi
   for (const item of listedItems) {
     const parsed = parseAgentVersionFullName(item?.fullName);
     if (parsed) {
-      versions.push({ ...parsed, status: statuses.get(formatAgentVersionFullName(parsed.agentName, parsed.version).toLowerCase()) || '' });
+      versions.push({
+        ...parsed,
+        status: statuses.get(formatAgentVersionFullName(parsed.agentName, parsed.version).toLowerCase()) || '',
+        ...(item?.createdDate ? { createdDate: String(item.createdDate) } : {}),
+      });
     }
   }
   return versions.sort((a, b) => a.agentName.localeCompare(b.agentName) || a.version - b.version);
@@ -307,15 +313,15 @@ export async function findMissingAgentReferences(agentFiles: string[], projectRo
 
 /** Agents with a file of their authoring bundle changed since the commit: committed, staged, unstaged or new. */
 export async function listAgentsChangedSince(fromCommit: string): Promise<string[]> {
-  const changedFiles = [
-    ...(await git({ output: false, displayCommand: false }).diff(['--name-only', fromCommit])).split('\n'),
-    ...(await git({ output: false, displayCommand: false }).status()).not_added,
-  ];
+  const gitClient = git({ output: false, displayCommand: false });
+  const changedFiles = [...(await gitClient.diff(['--name-only', fromCommit])).split('\n'), ...(await gitClient.status()).not_added];
+  // Git paths are relative to the root of the repository, which may hold the project in a subfolder
+  const repoRoot = (await gitClient.revparse(['--show-toplevel'])).trim();
   const bundleFolders = new Map<string, string>();
   for (const file of changedFiles) {
     const match = /^(.*aiAuthoringBundles\/([^/]+))\//.exec(file.replace(/\\/g, '/'));
     if (match) {
-      bundleFolders.set(match[2], match[1]);
+      bundleFolders.set(match[2], path.join(repoRoot, match[1]));
     }
   }
   const agentNames: string[] = [];

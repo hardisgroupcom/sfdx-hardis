@@ -174,6 +174,43 @@ describe('agentUtils sources of the deployment actions', () => {
       process.chdir(previousCwd);
     }
   });
+
+  it('lists the changed agents of a project in a subfolder of the repository', async () => {
+    const previousCwd = process.cwd();
+    const projectDir = path.join(tmpDir, 'salesforce');
+    try {
+      execSync('git init -q && git config user.email test@example.com && git config user.name test', { cwd: tmpDir });
+      await fs.ensureDir(projectDir);
+      await fs.writeFile(path.join(projectDir, 'sfdx-project.json'), '{}');
+      execSync('git add -A && git commit -q -m init', { cwd: tmpDir });
+      const folder = path.join(projectDir, 'force-app', 'main', 'default', 'aiAuthoringBundles', 'Sub_Agent');
+      await fs.ensureDir(folder);
+      await fs.writeFile(path.join(folder, 'Sub_Agent.agent'), 'config:\n    developer_name: "Sub_Agent"\n');
+      process.chdir(projectDir);
+      expect(await listAgentsChangedSince('HEAD')).to.deep.equal(['Sub_Agent']);
+    } finally {
+      process.chdir(previousCwd);
+    }
+  });
+
+  it('lists an agent whose own bundle names a version of itself as target', async () => {
+    const previousCwd = process.cwd();
+    process.chdir(tmpDir);
+    try {
+      execSync('git init -q && git config user.email test@example.com && git config user.name test', { cwd: tmpDir });
+      await writeBundle('Old_Agent');
+      execSync('git add -A && git commit -q -m init', { cwd: tmpDir });
+      await writeBundle('Targeted_Agent');
+      const folder = path.join(tmpDir, 'force-app', 'main', 'default', 'aiAuthoringBundles', 'Targeted_Agent');
+      await fs.writeFile(
+        path.join(folder, 'Targeted_Agent.bundle-meta.xml'),
+        '<?xml version="1.0" encoding="UTF-8"?>\n<AiAuthoringBundle xmlns="http://soap.sforce.com/2006/04/metadata">\n    <bundleType>AGENT</bundleType>\n    <target>Targeted_Agent.v2</target>\n</AiAuthoringBundle>\n'
+      );
+      expect(await listAgentsChangedSince('HEAD')).to.deep.equal(['Targeted_Agent']);
+    } finally {
+      process.chdir(previousCwd);
+    }
+  });
 });
 
 describe('agentUtils.convertRetrievedAgentToBundle', () => {
@@ -325,13 +362,20 @@ describe('agentUtils botUser', () => {
     expect(await hasBotUserReplacementRule()).to.equal(true);
   });
 
-  it('finds a text rule from a CI/CD variable that writes the running user', async () => {
+  it('finds a text rule from a CI/CD variable that writes the running user, only when the variable is set', async () => {
     await fs.ensureDir('config');
     await fs.writeFile(
       path.join('config', '.sfdx-hardis.yml'),
       "replacementRules:\n  - id: builtin-agent-running-user\n    enabled: false\n  - id: agent-user\n    type: text\n    files: '**/aiAgents/*.aiAgentDefinition-meta.xml'\n    find: '(?<=<botUser>)[^<]+(?=</botUser>)'\n    regex: true\n    secret: AGENT_RUNNING_USER\n"
     );
-    expect(await hasBotUserReplacementRule()).to.equal(true);
+    // The deployment drops a rule whose secret is not set
+    expect(await hasBotUserReplacementRule()).to.equal(false);
+    process.env.AGENT_RUNNING_USER = 'agent.user@example.com';
+    try {
+      expect(await hasBotUserReplacementRule()).to.equal(true);
+    } finally {
+      delete process.env.AGENT_RUNNING_USER;
+    }
   });
 });
 

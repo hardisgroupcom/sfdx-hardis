@@ -1,8 +1,7 @@
 import { Connection } from '@salesforce/core';
 import { ActionResult, ActionWhen, PrePostCommand } from './actionsProvider.js';
 import { AgentActionBase } from './agentActionBase.js';
-import { getCurrentGitBranch } from '../utils/index.js';
-import { soqlQuery } from '../utils/apiUtils.js';
+import { isProductionOrg } from '../utils/orgUtils.js';
 import { AGENT_DOC_URL, getRunningUserRuleUsage } from '../utils/agentUtils.js';
 import { t } from '../utils/i18n.js';
 import { listAgentsWithRunningUser, resolveAgentRunningUser } from '../replacementRules/agentRunningUserBuiltInRule.js';
@@ -39,13 +38,14 @@ export class AgentRunningUserAction extends AgentActionBase {
       return this.succeed(t('agentRunningUserNotNeeded', { agentName }));
     }
     // A user nothing writes in the deployed files would only take a license
-    const targetBranch = cmd.pipelineContext?.targetBranch || process.env.FORCE_TARGET_BRANCH || (await getCurrentGitBranch()) || null;
+    const { resolveReplacementRulesTargetBranch } = await import('../replacementRules/engine/ruleEngine.js');
+    const targetBranch = await resolveReplacementRulesTargetBranch(cmd.pipelineContext?.targetBranch || null);
     const ruleUsage = await getRunningUserRuleUsage(targetBranch);
     if (ruleUsage !== 'built-in') {
       return this.succeed(t(ruleUsage === 'project' ? 'agentRunningUserProjectRuleNoCreation' : 'agentRunningUserRulesOffNoCreation', { agentName }));
     }
     const conn = await this.getConnection();
-    const create = !(cmd.pipelineContext?.checkOnly === 'true' && (await isProductionOrg(conn, cmd)));
+    const create = !(cmd.pipelineContext?.checkOnly === 'true' && (await isProductionTarget(conn, cmd)));
     const resolved = await resolveAgentRunningUser(conn, agent, create, this);
     if (resolved.status === 'failed') {
       return this.fail(t('agentRunningUserCreationFailed', { agentName, message: resolved.message || '' }) + `\n${AGENT_DOC_URL}`);
@@ -60,15 +60,11 @@ export class AgentRunningUserAction extends AgentActionBase {
   }
 }
 
-async function isProductionOrg(conn: Connection, cmd: PrePostCommand): Promise<boolean> {
-  if (cmd.pipelineContext?.isProduction === 'true') {
-    return true;
-  }
+// The Organization record says it. The instance URL only decides when the org cannot be queried
+async function isProductionTarget(conn: Connection, cmd: PrePostCommand): Promise<boolean> {
   try {
-    const result = await soqlQuery('SELECT IsSandbox FROM Organization LIMIT 1', conn);
-    return result.records?.[0]?.IsSandbox === false;
+    return await isProductionOrg(conn.getUsername() || '', { conn });
   } catch {
-    // Unknown: a check never risks creating a user in production
-    return true;
+    return cmd.pipelineContext?.isProduction === 'true';
   }
 }

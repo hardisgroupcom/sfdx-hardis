@@ -712,9 +712,9 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     // Replacement rules use the values of the org the deployment goes to: an explicit --target-branch
     // (which also selects the org through CONFIG_BRANCH), else the target branch of the Pull Request in
     // a check job, else the current branch in a deployment job
-    const replacementPrInfo = process.env.FORCE_TARGET_BRANCH ? null : await GitProvider.getPullRequestInfo({ useCache: true });
+    const { resolveReplacementRulesTargetBranch } = await import('../../../../common/replacementRules/engine/ruleEngine.js');
     this.smartDeployOptions.replacementRules = {
-      targetBranch: process.env.FORCE_TARGET_BRANCH || replacementPrInfo?.targetBranch || currentGitBranch || null,
+      targetBranch: await resolveReplacementRulesTargetBranch(),
     };
 
     // Process deployment (or deployment check)

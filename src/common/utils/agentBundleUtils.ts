@@ -40,7 +40,8 @@ export async function readBundleIndex(projectRoot: string = process.cwd()): Prom
 
 /**
  * Agent of an authoring bundle folder, and whether it is the bundle of a version. The meta file of a
- * version bundle names its version (<target>My_Agent.v3</target>), the one of an agent does not. A
+ * version bundle (My_Agent_3) names the version of another bundle (<target>My_Agent.v3</target>); the
+ * bundle of an agent names none, or a version of itself. A
  * folder with no meta file is a version bundle when its name is <Agent>_<n> and the bundle of <Agent>
  * is there too: an agent may itself be named Support_Agent_2.
  */
@@ -52,10 +53,12 @@ export async function describeBundleFolder(
   const metaFile = path.join(bundleFolder, `${bundleName}.bundle-meta.xml`);
   if (fs.existsSync(metaFile)) {
     const target = /<target>\s*([^<]*?)\s*<\/target>/.exec(await fs.readFile(metaFile, 'utf8'))?.[1];
-    if (!target) {
+    const agentName = target?.replace(/\.v\d+$/i, '');
+    // The sf agent commands may write <target>My_Agent.v3</target> in the bundle of My_Agent itself
+    if (!agentName || agentName.toLowerCase() === bundleName.toLowerCase()) {
       return { agentName: bundleName, isVersion: false };
     }
-    return { agentName: target.replace(/\.v\d+$/i, '') || bundleName.replace(/_\d+$/, ''), isVersion: true };
+    return { agentName, isVersion: true };
   }
   const baseName = bundleName.replace(/_\d+$/, '');
   if (baseName !== bundleName && bundleExists(baseName)) {

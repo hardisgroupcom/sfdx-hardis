@@ -8,7 +8,7 @@ import picomatch from 'picomatch';
 import * as xmldom from '@xmldom/xmldom';
 import { ConfigAggregator, Connection, Org, OrgConfigProperties } from '@salesforce/core';
 import fs from '../../utils/fsUtils.js';
-import { uxLog } from '../../utils/index.js';
+import { getCurrentGitBranch, uxLog } from '../../utils/index.js';
 import { t } from '../../utils/i18n.js';
 import { listMajorOrgs } from '../../utils/orgConfigUtils.js';
 import { buildActionTargetBranchCandidates, evaluateActionBranchFilter, normalizeBranchName } from '../../utils/actionUtils.js';
@@ -247,6 +247,25 @@ export async function runWithReplacementRules<T>(options: Omit<ApplyReplacementR
 }
 
 /**
+ * Branch whose replacement rules a deployment to the current org uses: an explicit --target-branch
+ * (FORCE_TARGET_BRANCH, which also selects the org through CONFIG_BRANCH), else the branch the caller
+ * already knows, else the target branch of the Pull Request in a check job, else the current branch.
+ * deploy:smart and the deployment actions share it, so they always apply the rules of the same branch.
+ */
+export async function resolveReplacementRulesTargetBranch(knownTargetBranch: string | null = null): Promise<string | null> {
+  if (process.env.FORCE_TARGET_BRANCH) {
+    return process.env.FORCE_TARGET_BRANCH;
+  }
+  if (knownTargetBranch) {
+    return knownTargetBranch;
+  }
+  // Imported here: the git provider imports reach the replacement rules
+  const { GitProvider } = await import('../../gitProvider/index.js');
+  const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
+  return prInfo?.targetBranch || (await getCurrentGitBranch()) || null;
+}
+
+/**
  * Rules a deployment to the target branch would apply, without reading the org nor the secrets: the
  * built-in rules that are on, and the rules of the project that pass their branch filter and have a
  * value for the target (a secret counts as one). skippedBy: the env var or the config file that turns
@@ -264,18 +283,30 @@ export async function listRulesOfTarget(targetBranch: string | null): Promise<{ 
   const { rules } = await loadEffectiveRules(target.targetBranch, { readIssue: true });
   const majorBranchNames = (await listMajorOrgs()).map((majorOrg: any) => majorOrg.branchName);
   const candidates = buildActionTargetBranchCandidates(target.targetBranch || '', majorBranchNames);
-  const applied = rules.filter((rule) => {
+  const secretsProvider = rules.some((rule) => !rule.builtIn && rule.enabled && rule.secret) ? await getSecretsProvider() : null;
+  const applied: MergedReplacementRule[] = [];
+  for (const rule of rules) {
     if (!rule.enabled) {
-      return false;
+      continue;
     }
     if (rule.builtIn) {
-      return true;
+      applied.push(rule);
+      continue;
     }
     if (!evaluateActionBranchFilter(rule, candidates).run) {
-      return false;
+      continue;
     }
-    return !!rule.secret || !createReplacementRule(rule).needsValue() || resolveRuleValue(rule, target.targetBranch) != null;
-  });
+    // As at deployment time: a rule whose secret or value is missing for this target is dropped
+    if (!createReplacementRule(rule).needsValue()) {
+      applied.push(rule);
+    } else if (rule.secret && secretsProvider) {
+      if ((await secretsProvider.getSecret(rule.secret, target.targetBranch)).value != null) {
+        applied.push(rule);
+      }
+    } else if (resolveRuleValue(rule, target.targetBranch) != null) {
+      applied.push(rule);
+    }
+  }
   return { skippedBy: null, rules: applied };
 }
 

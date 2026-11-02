@@ -699,7 +699,8 @@ export async function getOrgAliasUsername(alias: string) {
 // Returns true if the org is a sandbox and not a scratch org
 export async function isProductionOrg(targetUsername: string, options: any) {
   // Use jsforce connection is applicable
-  if (options?.conn?.username && options.conn.username === targetUsername) {
+  const connUsername = options?.conn?.username || options?.conn?.getUsername?.();
+  if (connUsername && connUsername === targetUsername) {
     const orgRes = await soqlQuery('SELECT IsSandbox FROM Organization LIMIT 1', options.conn);
     return orgRes.records[0].IsSandbox === false;
   }

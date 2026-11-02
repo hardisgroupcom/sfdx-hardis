@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import * as os from 'os';
 import * as path from 'path';
 import fs from '../../../src/common/utils/fsUtils.js';
-import { AgentPublishAction } from '../../../src/common/actionsProvider/agentPublishAction.js';
+import { AgentPublishAction, findUnfinishedPublication } from '../../../src/common/actionsProvider/agentPublishAction.js';
 import { PrePostCommand } from '../../../src/common/actionsProvider/actionsProvider.js';
 import { DEPLOYMENT_ACTION_TYPES, DEPLOYMENT_ONLY_ACTION_TYPES, resolveRunOnlyOnceByOrg } from '../../../src/common/actionsProvider/actionTypes.js';
 import { validateActionParameters } from '../../../src/common/utils/actionUtils.js';
@@ -99,5 +99,32 @@ describe('AgentPublishAction.run', () => {
     globalThis.jsForceConn = { metadata: { list: async () => { throw new Error('must not be called'); } } };
     const result = await provider.run(action({ agentName: '' }));
     expect(result.statusCode).to.equal('failed');
+  });
+});
+
+describe('AgentPublishAction unfinished publication', () => {
+  const changedAt = new Date('2026-10-01T10:00:00Z');
+  const version = (number: number, status: string, createdDate?: string) => ({ agentName: 'My_Agent', version: number, status, createdDate });
+
+  it('resumes the activation of a version published after the last change of the bundle', () => {
+    const versions = [version(1, 'Active', '2026-09-01T10:00:00Z'), version(2, 'Inactive', '2026-10-01T10:05:00Z')];
+    expect(findUnfinishedPublication(versions, changedAt)?.version).to.equal(2);
+  });
+
+  it('resumes the first version of a new agent', () => {
+    expect(findUnfinishedPublication([version(1, 'Inactive', '2026-10-01T10:05:00Z')], changedAt)?.version).to.equal(1);
+  });
+
+  it('publishes when the latest version was rolled back before the bundle changed', () => {
+    const versions = [version(1, 'Active', '2026-08-01T10:00:00Z'), version(2, 'Inactive', '2026-09-01T10:00:00Z')];
+    expect(findUnfinishedPublication(versions, changedAt)).to.equal(null);
+  });
+
+  it('publishes when the latest version is active, or when the dates or statuses are unknown', () => {
+    expect(findUnfinishedPublication([version(1, 'Active', '2026-10-01T10:05:00Z')], changedAt)).to.equal(null);
+    expect(findUnfinishedPublication([version(1, 'Inactive')], changedAt)).to.equal(null);
+    expect(findUnfinishedPublication([version(1, '', '2026-10-01T10:05:00Z')], changedAt)).to.equal(null);
+    expect(findUnfinishedPublication([version(1, 'Inactive', '2026-10-01T10:05:00Z')], null)).to.equal(null);
+    expect(findUnfinishedPublication([], changedAt)).to.equal(null);
   });
 });
