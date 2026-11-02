@@ -134,20 +134,20 @@ Decided with the author on 2026-11-02 (it replaced the GitHub issue flow of
 Supabase database on its own. No account, no login, no backend of our own,
 and **nothing personal stored but the nickname**.
 
-| What                                                     | Where (in `../sfdx-hardis-training`)                                                         |
-|----------------------------------------------------------|----------------------------------------------------------------------------------------------|
-| The database: tables, checks, boards, ranks, forget      | `scripts/guinea-run/supabase.sql`                                                            |
-| Its URL and publishable key                              | `site-theme/javascripts/guinea-run/core/online-config.js`                                    |
-| Sends, reads, the sync loop, nickname rules, coat tints  | `core/online.js`                                                                             |
-| The database in memory (tests, `guinea-online=fake`)     | `core/online-fake.js`                                                                        |
-| Board ids, the TOP 5 target, the signed results to send  | `core/hof.js`                                                                                |
-| The profile in the save                                  | `core/progress.js` (`online`, `setOnline`, `addOnlineSent`)                                  |
-| Signing a result                                         | `core/tally.js`                                                                              |
-| The cards                                                | `hud.js` `hallOfFame()`, `profileForm()`, `joinOffer()`, `hofStatus()`; `game.js` `showHallOfFame()`, `afterWin()` |
-| The maintainer's commands, the live check                | `scripts/guinea-run/supabase.mjs`, `supabase-api.mjs`, `key-check.mjs`                       |
-| The workflow (tests, key check, daily keep-alive)        | `.github/workflows/hall-of-fame.yml`                                                         |
-| The site page                                            | `hallOfFamePage` in `scripts/lib/pages.mjs`, filled by `site-theme/javascripts/hall-of-fame-page.js` |
-| Tests                                                    | `scripts/guinea-run/online.test.mjs`, `progress.test.mjs`, `host-save.test.mjs`              |
+| What                                                    | Where (in `../sfdx-hardis-training`)                                                                               |
+|---------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
+| The database: tables, checks, boards, ranks, forget     | `scripts/guinea-run/supabase.sql`                                                                                  |
+| Its URL and publishable key                             | `site-theme/javascripts/guinea-run/core/online-config.js`                                                          |
+| Sends, reads, the sync loop, nickname rules, coat tints | `core/online.js`                                                                                                   |
+| The database in memory (tests, `guinea-online=fake`)    | `core/online-fake.js`                                                                                              |
+| Board ids, the TOP 5 target, the signed results to send | `core/hof.js`                                                                                                      |
+| The profile in the save                                 | `core/progress.js` (`online`, `setOnline`, `addOnlineSent`)                                                        |
+| Signing a result                                        | `core/tally.js`                                                                                                    |
+| The cards                                               | `hud.js` `hallOfFame()`, `profileForm()`, `joinOffer()`, `hofStatus()`; `game.js` `showHallOfFame()`, `afterWin()` |
+| The maintainer's commands, the live check               | `scripts/guinea-run/supabase.mjs`, `supabase-api.mjs`, `key-check.mjs`                                             |
+| The workflow (tests, key check, daily keep-alive)       | `.github/workflows/hall-of-fame.yml`                                                                               |
+| The site page                                           | `hallOfFamePage` in `scripts/lib/pages.mjs`, filled by `site-theme/javascripts/hall-of-fame-page.js`               |
+| Tests                                                   | `scripts/guinea-run/online.test.mjs`, `progress.test.mjs`, `host-save.test.mjs`                                    |
 
 - **The project** is the author's existing Supabase project **JardinPublic**,
   shared with another game: every public object is prefixed `guinea_`, the
