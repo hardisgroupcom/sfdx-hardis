@@ -52,17 +52,12 @@ for (const name of ["game.js", "core/models.js"]) {
   const file = path.join(out, "theme/javascripts/guinea-run", name);
   fs.writeFileSync(file, fs.readFileSync(file, "utf8").replaceAll(".glb", ".wasm"));
 }
-for (const name of ["cloudity-text-logo-white.svg", "guinea-pig.webp", "mariia.svg", "romain.svg"]) {
+for (const name of ["cloudity-text-logo-white.svg", "guinea-pig.webp", "guinea-pig-small.webp", "mariia.svg", "romain.svg"]) {
   copy(path.join(theme, "images", name), "theme/images/" + name);
 }
 copyTree(path.join(theme, "images", "bosses"), "theme/images/bosses");
 for (const level of [1, 2, 3]) {
   copy(path.join(TRAINING, "badges", "img", "banner-level-" + level + ".svg"), "badges/img/banner-level-" + level + ".svg");
-}
-// The Hall of Fame as committed: an Artifact may not reach raw.githubusercontent, the game then reads this copy
-const board = path.join(TRAINING, "hall-of-fame", "hall-of-fame.json");
-if (fs.existsSync(board)) {
-  copy(board, "hall-of-fame/hall-of-fame.json");
 }
 fs.copyFileSync(path.join(here, "preview", "index.html"), path.join(out, "index.html"));
 fs.writeFileSync(path.join(out, "files.json"), JSON.stringify(files, null, 2));

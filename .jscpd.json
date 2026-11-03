@@ -8,6 +8,7 @@
     "**/.venv/**",
     "**/*cache*/**",
     "**/.github/**",
+    "**/.claude/skills/e2e/**",
     "**/.idea/**",
     "**/docs/**",
     "**/mkdocs/**",

@@ -33,7 +33,7 @@ if [ -z "${E2E_ENV_LIB_LOADED:-}" ]; then
   }
 
   if [ -z "${E2E_ROOT:-}" ]; then
-    E2E_ROOT="$(git -C "$_E2E_ENV_DIR" rev-parse --show-toplevel 2>/dev/null || (cd "$_E2E_ENV_DIR/../../../../../.." && pwd))"
+    E2E_ROOT="$(git -C "$_E2E_ENV_DIR" rev-parse --show-toplevel 2>/dev/null || (cd "$_E2E_ENV_DIR/../../../../../.." && pwd) )"
   fi
   E2E_ROOT="$(e2e_native_path "$E2E_ROOT")"
   if [ -z "${E2E_MAIN_ROOT:-}" ]; then

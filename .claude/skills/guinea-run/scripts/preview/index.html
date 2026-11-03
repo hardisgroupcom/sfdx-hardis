@@ -196,10 +196,11 @@
     true
   );
 
-  document.getElementById("play").addEventListener("click", () => launch(""));
+  // The Hall of Fame of a preview is a database in memory: a preview never sends to the real one
+  document.getElementById("play").addEventListener("click", () => launch("?guinea-online=fake"));
   // A world still being built opens straight away, saving nothing
   tryButton.hidden = TRY_WORLD === null;
-  tryButton.addEventListener("click", () => launch("?guinea-unlock=all&guinea-world=" + TRY_WORLD));
+  tryButton.addEventListener("click", () => launch("?guinea-online=fake&guinea-unlock=all&guinea-world=" + TRY_WORLD));
 
   async function launch(query) {
     errorBox.hidden = true;
