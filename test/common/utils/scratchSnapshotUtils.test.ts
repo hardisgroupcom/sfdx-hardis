@@ -3,7 +3,8 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { execFileSync } from 'child_process';
-import { getExhaustedSnapshotLimit, getSnapshotDescription, getSnapshotScope, isSnapshotSignupRetryable, getSnapshotName, parsePositiveSetting, pickScratchSnapshot, pickSnapshotTargetBranch, extendSnapshotDeltaWithDependencies, scopeDeltaToDeployManifest, scratchDefChangedSince, selectSnapshotOrgInitStepIds } from '../../../src/common/utils/scratchSnapshotUtils.js';
+import { pathToFileURL } from 'url';
+import { getExhaustedSnapshotLimit, getSnapshotDescription, getSnapshotScope, isSnapshotSignupRetryable, getSnapshotName, parsePositiveSetting, pickScratchSnapshot, pickSnapshotTargetBranch, extendSnapshotDeltaWithDependencies, fetchFullHistoryIfShallow, scopeDeltaToDeployManifest, scratchDefChangedSince, selectSnapshotOrgInitStepIds } from '../../../src/common/utils/scratchSnapshotUtils.js';
 import { parsePackageXmlFile } from '../../../src/common/utils/xmlUtils.js';
 
 const shaNew = 'a'.repeat(40);
@@ -267,6 +268,42 @@ describe('scratchDefChangedSince', () => {
     write('config/settings/Security.settings-meta.xml', '<SecuritySettings><x/></SecuritySettings>');
     commit();
     expect(scratchDefChangedSince(sha, dir)).to.equal(true);
+  });
+});
+
+describe('fetchFullHistoryIfShallow', () => {
+  let origin: string;
+  let clone: string;
+  let first: string;
+  const git = (cwd: string, ...args: string[]) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd }).toString().trim();
+
+  beforeEach(() => {
+    origin = fs.mkdtempSync(path.join(os.tmpdir(), 'shallow-origin-'));
+    clone = fs.mkdtempSync(path.join(os.tmpdir(), 'shallow-clone-'));
+    git(origin, 'init', '-q');
+    for (const n of [1, 2, 3]) {
+      git(origin, 'commit', '-q', '--allow-empty', '-m', `commit ${n}`);
+      first = first || git(origin, 'rev-parse', 'HEAD');
+    }
+  });
+
+  afterEach(() => {
+    first = '';
+    fs.rmSync(origin, { recursive: true, force: true });
+    fs.rmSync(clone, { recursive: true, force: true });
+  });
+
+  it('fetches the full history of a shallow clone, so an older snapshot commit is in the history of HEAD', () => {
+    git(clone, 'clone', '-q', '--depth', '1', pathToFileURL(origin).href, '.');
+    expect(git(clone, 'rev-parse', '--is-shallow-repository')).to.equal('true');
+    expect(fetchFullHistoryIfShallow(clone)).to.equal(true);
+    expect(git(clone, 'rev-parse', '--is-shallow-repository')).to.equal('false');
+    expect(git(clone, 'merge-base', '--is-ancestor', first, 'HEAD')).to.equal('');
+  });
+
+  it('leaves a full clone alone, where --unshallow would fail', () => {
+    git(clone, 'clone', '-q', pathToFileURL(origin).href, '.');
+    expect(fetchFullHistoryIfShallow(clone)).to.equal(false);
   });
 });
 

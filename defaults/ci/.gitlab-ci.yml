@@ -134,8 +134,6 @@ create_scratch_org:
   # never get the same one. Remove this line if you do not use a scratch org pool.
   resource_group: scratch_org_pool
   variables:
-    # The full git history the deployment of the changes since the scratch org snapshot needs
-    GIT_DEPTH: 0
   script:
     - |
       if [ "${CI_COMMIT_REF_NAME#auto-fix/}" != "$CI_COMMIT_REF_NAME" ]; then

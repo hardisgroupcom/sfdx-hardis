@@ -38,6 +38,9 @@ export async function resolveScratchSnapshot(devHubConn: any): Promise<{ snapsho
   }
   const scope = await getSnapshotScope(targetBranch);
   const snapshotRecords = await listActiveSnapshots(devHubConn, scope);
+  if (snapshotRecords.length > 0) {
+    fetchFullHistoryIfShallow();
+  }
   const snapshot = pickScratchSnapshot(snapshotRecords, scope, (sha) => isAncestor(sha, 'HEAD'));
   if (!snapshot) {
     return { reason: t('scratchSnapshotNoneUsable', { branch: targetBranch, count: snapshotRecords.length }) };
@@ -84,6 +87,20 @@ export async function listActiveSnapshots(devHubConn: any, scope: string): Promi
     devHubConn
   );
   return (res.records || []).filter((record) => (record.Description || '').startsWith(prefix));
+}
+
+// A shallow clone lacks the snapshot commits. The full history is fetched only when a snapshot may be used, so the
+// jobs of projects without snapshots keep their shallow clone. A full clone is left alone (--unshallow fails on it)
+export function fetchFullHistoryIfShallow(cwd = process.cwd()): boolean {
+  const shallow = spawnSync('git', ['rev-parse', '--is-shallow-repository'], { cwd, encoding: 'utf8' });
+  if (shallow.stdout?.trim() !== 'true') {
+    return false;
+  }
+  const fetch = spawnSync('git', ['fetch', '--unshallow', '--quiet'], { cwd, encoding: 'utf8' });
+  if (fetch.status !== 0) {
+    throw new SfError(`git fetch --unshallow: ${(fetch.stderr || fetch.error?.message || '').trim()}`);
+  }
+  return true;
 }
 
 // Records must be sorted newest first
