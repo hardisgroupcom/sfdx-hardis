@@ -374,7 +374,6 @@ pipeline {
                     string(credentialsId: 'SFDX_CLIENT_ID_DEVHUB',  variable: 'SFDX_CLIENT_ID_DEVHUB',  optional: true),
                     string(credentialsId: 'SFDX_CLIENT_KEY_DEVHUB', variable: 'SFDX_CLIENT_KEY_DEVHUB', optional: true),
                 ]) {
-                    sh 'sf hardis:auth:login --devhub'
                     sh 'sf hardis:scratch:snapshot:refresh'
                 }
             }

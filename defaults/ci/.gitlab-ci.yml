@@ -192,7 +192,7 @@ refresh_scratch_org_snapshot:
     variables:
       - $CI_COMMIT_REF_NAME !~ $DEPLOY_BRANCHES
       - $SCRATCH_ORG_POOL == "true"
-      - $USE_SCRATCH_ORGS == "false"
+      - $USE_SCRATCH_ORGS != "true"
   # A snapshot in progress is never cancelled: a newer push waits for it
   interruptible: false
   resource_group: scratch_org_snapshot_$CI_COMMIT_REF_NAME
@@ -202,7 +202,6 @@ refresh_scratch_org_snapshot:
         echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch $CI_COMMIT_REF_NAME"
         exit 0
       fi
-    - sf hardis:auth:login --devhub
     - sf hardis:scratch:snapshot:refresh
   artifacts:
     when: always

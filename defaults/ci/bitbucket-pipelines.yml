@@ -187,7 +187,6 @@ pipelines:
               fi
             - export CI_COMMIT_REF_NAME=$BITBUCKET_BRANCH
             - export FORCE_COLOR=1
-            - sf hardis:auth:login --devhub
             - sf hardis:scratch:snapshot:refresh
           artifacts:
             - hardis-report/**

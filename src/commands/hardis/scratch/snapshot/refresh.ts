@@ -1,8 +1,9 @@
 import c from 'chalk';
-import { SfCommand, Flags, requiredHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages, SfError } from '@salesforce/core';
+import { SfCommand, Flags, optionalHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
+import { Messages, Org, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { execSfdxJson, getCurrentGitBranch, git, uxLog } from '../../../../common/utils/index.js';
+import { runAuthHook } from '../../../../common/utils/authUtils.js';
 import {
   getExhaustedSnapshotLimit,
   getScratchSnapshotBranchConfig,
@@ -29,7 +30,7 @@ export default class ScratchSnapshotRefresh extends SfCommand<any> {
 
 **Takes a Dev Hub org snapshot of a scratch org that holds the current commit of a major branch, so that Pull Request scratch orgs are created from it.**
 
-Run it in CI on every push to a major branch. It does nothing unless the branch config sets \`useScratchOrgSnapshot: true\`, so the same job can run on every major branch.
+Run it in CI on every push to a major branch. It does nothing unless the branch config sets \`useScratchOrgSnapshot: true\`, so the same job can run on every major branch: the branch config is read first, and the command logs in to the Dev Hub only when the branch uses snapshots.
 
 Key functionalities:
 
@@ -81,7 +82,7 @@ The command has no prompt.
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
-    'target-dev-hub': requiredHubFlagWithDeprecations,
+    'target-dev-hub': optionalHubFlagWithDeprecations,
   };
   /* jscpd:ignore-end */
 
@@ -92,14 +93,15 @@ The command has no prompt.
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(ScratchSnapshotRefresh);
     this.debugMode = flags.debug || false;
-    const devHubConn = flags['target-dev-hub'].getConnection();
-    const devHubUsername = flags['target-dev-hub'].getUsername();
     const branch = (await getCurrentGitBranch()) || '';
     const { enabled, keep } = await getScratchSnapshotBranchConfig(branch);
     if (!enabled) {
       uxLog("log", this, c.grey(t('scratchSnapshotNotEnabled', { branch })));
       return { outputString: `Snapshots are not enabled for branch ${branch}` };
     }
+    const devHub = await this.getDevHub(flags);
+    const devHubConn = devHub.getConnection();
+    const devHubUsername = devHub.getUsername() as string;
     const sha = (await git().revparse(['HEAD'])).trim();
     const scope = await getSnapshotScope(branch);
     const name = getSnapshotName(scope, sha);
@@ -141,6 +143,21 @@ The command has no prompt.
 
     const deleted = await pruneScratchSnapshots(devHubConn, devHubUsername, scope, keep, this);
     return { outputString: `Snapshot ${name} of branch ${branch} is Active`, snapshotName: name, sha, deleted };
+  }
+
+  // The CI jobs run the refresh on every push to a major branch: logging in only once the branch is known to use
+  // snapshots keeps the Dev Hub out of the projects that do not
+  protected async getDevHub(flags): Promise<Org> {
+    return flags['target-dev-hub'] || (await this.loginDevHub());
+  }
+
+  protected async loginDevHub(): Promise<Org> {
+    await runAuthHook(this, { Command: this, devHub: true, scratch: false });
+    const username = (globalThis as any).justConnectedOrg?.username;
+    if (!username) {
+      throw new SfError(t('pleaseSelectOrLoginIntoDevHub'));
+    }
+    return Org.create({ aliasOrUsername: username });
   }
 
   // Null when the limits cannot be read: the refresh goes on, and a LIMIT_EXCEEDED from the snapshot call still stops it

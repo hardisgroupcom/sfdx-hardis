@@ -120,7 +120,6 @@ jobs:
 
       - script: |
           set -e
-          sf hardis:auth:login --devhub
           sf hardis:scratch:snapshot:refresh
         env:
           # Dev Hub authentication: keep the variables matching the way your Dev Hub is authenticated,

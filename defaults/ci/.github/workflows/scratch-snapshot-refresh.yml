@@ -56,7 +56,6 @@ jobs:
           FORCE_COLOR: "1"
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          sf hardis:auth:login --devhub
           sf hardis:scratch:snapshot:refresh
 
       - name: Archive sfdx-hardis reports
