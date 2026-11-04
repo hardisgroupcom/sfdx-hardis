@@ -9446,10 +9446,10 @@ xmlcreate@^2.0.4:
   resolved "https://registry.yarnpkg.com/xmlcreate/-/xmlcreate-2.0.4.tgz#0c5ab0f99cdd02a81065fa9cd8f8ae87624889be"
   integrity sha512-nquOebG4sngPmGPICTS5EnxqhKbCmz5Ox5hsszI2T6U5qdrJizBc+0ilYSEjTSzU0yZcmvppztXe/5Al5fUwdg==
 
-xpath@0.0.35:
-  version "0.0.35"
-  resolved "https://registry.yarnpkg.com/xpath/-/xpath-0.0.35.tgz#300e6f37c2e5d48912ae8d20675df0606dd69d1d"
-  integrity sha512-8O+m2N04SwLpGw/1Grz2HD8ejnWDV7M1dMPgKKuOjhYh5W9H4pel/+06kInohIdpS2FeSbL4i8ID8c4tpxwq9Q==
+xpath@0.0.36:
+  version "0.0.36"
+  resolved "https://registry.yarnpkg.com/xpath/-/xpath-0.0.36.tgz#1dff2140de4a4a772f3c583b7f719f996aa3ed50"
+  integrity sha512-HuqAnJx5YJoDeLub7hhcNoiRvnqqrgoSsI4kLrOtv6XkaUI0zY9ylL4+ULozB35JT1SVMfdexsMqRbTp7bkFGQ==
 
 y18n@^5.0.5:
   version "5.0.8"
