@@ -23,13 +23,13 @@ export const SCRATCH_SNAPSHOT_DISABLED_ENV = 'SFDX_HARDIS_SCRATCH_SNAPSHOT_DISAB
 
 export type ScratchSnapshot = { name: string; sha: string };
 
-// The newest Active snapshot of the target branch whose commit is in the history of HEAD, or the reason why
-// the scratch org must be created empty. No reason when no branch uses snapshots: nothing to explain then
-export async function resolveScratchSnapshot(devHubConn: any): Promise<{ snapshot?: ScratchSnapshot; reason?: string }> {
+// The newest Active snapshot of the target branch (the given branch for a pool fill) whose commit is in the history
+// of HEAD, or the reason why the scratch org must be created empty. No reason when no branch uses snapshots
+export async function resolveScratchSnapshot(devHubConn: any, branch?: string): Promise<{ snapshot?: ScratchSnapshot; reason?: string }> {
   if (!(await listMajorOrgs()).some((majorOrg) => majorOrg.useScratchOrgSnapshot === true)) {
     return {};
   }
-  const targetBranch = pickSnapshotTargetBranch((await GitProvider.getPullRequestInfo({ useCache: true }))?.targetBranch);
+  const targetBranch = branch ?? pickSnapshotTargetBranch((await GitProvider.getPullRequestInfo({ useCache: true }))?.targetBranch);
   if (!targetBranch) {
     return { reason: t('scratchSnapshotNoTargetBranch') };
   }
@@ -139,17 +139,20 @@ export function scratchDefChangedSince(sha: string, cwd = process.cwd()): boolea
 
 // The org init steps of a snapshot route, as a pool: the source runs what a pool fill runs, always with the
 // packages and the deployment of the sources; a child installs the packages before its delta (only those it lacks
-// are installed), then runs the rest, plus the permission set assignments
-export function selectSnapshotOrgInitStepIds(config: any, role: 'source' | 'child-packages' | 'child'): string[] {
-  const steps = selectOrgInitSteps(getOrgInitSteps(config).steps, { orgType: 'scratch', phase: 'all' });
+// are installed), then runs the rest, plus the permission set assignments. A pool org filled from a snapshot gets
+// only the permission set assignments: the snapshot holds the rest of the fill, the fetch runs what is left
+export function selectSnapshotOrgInitStepIds(config: any, role: 'source' | 'child-packages' | 'child' | 'pool-fill'): string[] {
+  const steps = selectOrgInitSteps(getOrgInitSteps(config).steps, { orgType: 'scratch', phase: role === 'pool-fill' ? 'pool-fill' : 'all' });
   const selected =
-    role === 'source'
-      ? steps.filter((step) => step.runAtPoolFill !== false || ['deploy-sources', 'install-packages'].includes(step.type))
-      : role === 'child-packages'
-        ? steps.filter((step) => step.type === 'install-packages')
-        : steps.filter(
-          (step) => !['deploy-sources', 'install-packages'].includes(step.type) && (step.runAtPoolFill === false || step.type === 'assign-permission-sets')
-        );
+    role === 'pool-fill'
+      ? steps.filter((step) => step.type === 'assign-permission-sets')
+      : role === 'source'
+        ? steps.filter((step) => step.runAtPoolFill !== false || ['deploy-sources', 'install-packages'].includes(step.type))
+        : role === 'child-packages'
+          ? steps.filter((step) => step.type === 'install-packages')
+          : steps.filter(
+            (step) => !['deploy-sources', 'install-packages'].includes(step.type) && (step.runAtPoolFill === false || step.type === 'assign-permission-sets')
+          );
   return selected.map((step) => step.id);
 }
 

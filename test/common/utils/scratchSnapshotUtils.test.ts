@@ -400,6 +400,12 @@ describe('selectSnapshotOrgInitStepIds', () => {
     expect(selectSnapshotOrgInitStepIds(late, 'child')).to.not.include('packages');
   });
 
+  it('runs only the permission set assignments when filling a pool org from a snapshot', () => {
+    expect(selectSnapshotOrgInitStepIds(config, 'pool-fill')).to.deep.equal(['permsets']);
+    const late = { orgInitSteps: config.orgInitSteps.map((step) => (step.id === 'permsets' ? { ...step, runAtPoolFill: false } : step)) };
+    expect(selectSnapshotOrgInitStepIds(late, 'pool-fill')).to.deep.equal([]);
+  });
+
   it('installs the packages of a project without orgInitSteps in a child too', () => {
     expect(selectSnapshotOrgInitStepIds({ installedPackages: [] }, 'child-packages')).to.deep.equal(['legacy-install-packages']);
   });
