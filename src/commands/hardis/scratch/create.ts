@@ -83,7 +83,7 @@ The command configuration can be customized using:
 - Environment variable **SCRATCH_ORG_SHAPE** with shape org id, if you want to use org shapes
 - Branch config \`useScratchOrgSnapshot: true\` on a major branch: in CI, the scratch org of a Pull Request to that branch is created from the newest Active snapshot of the branch whose commit is in the history of the Pull Request (taken by [hardis:scratch:snapshot:refresh](https://sfdx-hardis.cloudity.com/hardis/scratch/snapshot/refresh/)), and only what changed since that commit is deployed. The target branch is the one of the Pull Request the git provider gives; without a Pull Request (no token, local run), it is read from **FORCE_TARGET_BRANCH**, then from the CI tool's own variable (\`GITHUB_BASE_REF\`, \`CI_MERGE_REQUEST_TARGET_BRANCH_NAME\`, \`SYSTEM_PULLREQUEST_TARGETBRANCH\`, \`BITBUCKET_PR_DESTINATION_BRANCH\`, \`CHANGE_TARGET\`). Without a usable snapshot, the scratch org is created empty and the log says why. More info in [Use scratch org snapshots for Pull Requests](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-scratch-org-pool/#use-scratch-org-snapshots-for-pull-requests).
 - Environment variable **SCRATCH_ORG_SNAPSHOT** with the name of a Dev Hub org snapshot, to create the scratch org from that snapshot. The commit of the snapshot is not known, so the sources are pushed in full.
-- With a snapshot, the definition file leaves out the keys a snapshot does not accept (\`features\`, \`edition\`, \`sourceOrg\`...) and the scratch org pool is not used. The org initialization steps run as for a pool: the snapshot holds the result of the steps run when filling the pool (\`runAtPoolFill\`), and the scratch org installs the packages it lacks, gets the delta, then the other steps and the permission set assignments. The pool refresh never uses a snapshot.
+- With a snapshot, the definition file leaves out the keys a snapshot does not accept (\`features\`, \`edition\`, \`sourceOrg\`...) and the scratch org pool comes first: a Pull Request scratch org is created from the snapshot only when the pool has no org left. The org initialization steps run as for a pool: the snapshot holds the result of the steps run when filling the pool (\`runAtPoolFill\`), and the scratch org installs the packages it lacks, gets the delta, then the other steps and the permission set assignments. The pool refresh never uses a snapshot.
 - Environment variables **SF_SCRATCH_SIGNUP_CONNECTED_APP** and **SF_SCRATCH_SIGNUP_CALLBACK_URL**: by default the new org is signed up with the Salesforce CLI built-in app (\`PlatformCLI\`), so a Dev Hub authenticated through an External Client App works (Salesforce CLI 2.147.7 or later). Not applied when you set **SF_SCRATCH_SIGNUP_CONNECTED_APP** or **SFDX_CLIENT_SECRET**.
 
 <details markdown="1">
@@ -414,51 +414,40 @@ In agent mode:
       uxLog("action", this, c.cyan(t('reusingOrgWithUser', { scratchOrgAlias: c.green(this.scratchOrgAlias), scratchOrgUsername: c.green(this.scratchOrgUsername) })));
       return;
     }
-    // Looked up after the reuse check: a reused scratch org was not created from a snapshot and gets the full
-    // initialization. The pool refresh never creates its scratch orgs from a snapshot
-    if (this.pool === false) {
-      this.snapshot = await this.resolveSnapshot(flags);
-    }
+    // After the reuse check: a reused scratch org was not created from a snapshot and gets the full initialization
+    await this.takeOrgSource(flags);
     if (this.snapshot) {
       const { scratchDef, droppedKeys } = buildSnapshotScratchDef(this.projectScratchDef, this.snapshot.name);
       uxLog("action", this, c.cyan(t('creatingScratchOrgFromSnapshot', { snapshot: c.green(this.snapshot.name), droppedKeys: droppedKeys.join(', ') || '-' })));
       await fs.writeFile(projectScratchDefLocal, JSON.stringify(scratchDef, null, 2));
     }
-    // Try to fetch a scratch org from the pool. Never for the source org of a snapshot, which must start empty
-    const buildingSnapshotSource = process.env[SCRATCH_SNAPSHOT_DISABLED_ENV] === 'true';
-    if (this.pool === false && this.configInfo.poolConfig && !this.snapshot && !buildingSnapshotSource) {
-      this.scratchOrgFromPool = await fetchScratchOrg({
-        devHubConn: flags['target-dev-hub'].getConnection(),
-        devHubUsername: flags['target-dev-hub'].getUsername(),
-      });
-      if (this.scratchOrgFromPool) {
-        this.scratchOrgAlias = this.scratchOrgFromPool.scratchOrgAlias;
-        this.scratchOrgInfo = this.scratchOrgFromPool.scratchOrgInfo;
-        this.scratchOrgUsername = this.scratchOrgFromPool.scratchOrgUsername;
-        this.scratchOrgPassword = this.scratchOrgFromPool.scratchOrgPassword;
-        await setConfig('user', { scratchOrgAlias: this.scratchOrgAlias });
+    if (this.scratchOrgFromPool) {
+      this.scratchOrgAlias = this.scratchOrgFromPool.scratchOrgAlias;
+      this.scratchOrgInfo = this.scratchOrgFromPool.scratchOrgInfo;
+      this.scratchOrgUsername = this.scratchOrgFromPool.scratchOrgUsername;
+      this.scratchOrgPassword = this.scratchOrgFromPool.scratchOrgPassword;
+      await setConfig('user', { scratchOrgAlias: this.scratchOrgAlias });
+      uxLog(
+        "log",
+        this,
+        '[pool] ' +
+        c.cyan(
+          `Fetched org ${c.green(this.scratchOrgAlias)} from pool with user ${c.green(this.scratchOrgUsername)}`
+        )
+      );
+      if (!isCI) {
         uxLog(
-          "log",
+          "action",
           this,
-          '[pool] ' +
-          c.cyan(
-            `Fetched org ${c.green(this.scratchOrgAlias)} from pool with user ${c.green(this.scratchOrgUsername)}`
-          )
+          c.cyan('Now opening org...') +
+          ' ' +
+          c.yellow('(The org is not ready to work in until this script is completed !)')
         );
-        if (!isCI) {
-          uxLog(
-            "action",
-            this,
-            c.cyan('Now opening org...') +
-            ' ' +
-            c.yellow('(The org is not ready to work in until this script is completed !)')
-          );
-          await openOrgInBrowser(this, { debug: this.debugMode });
-          // Trigger a status refresh on VS Code WebSocket Client
-          WebSocketClient.sendRefreshStatusMessage();
-        }
-        return;
+        await openOrgInBrowser(this, { debug: this.debugMode });
+        // Trigger a status refresh on VS Code WebSocket Client
+        WebSocketClient.sendRefreshStatusMessage();
       }
+      return;
     }
 
     // Checked only when a new org is requested: a reused org or one taken from the pool needs no
@@ -661,6 +650,28 @@ In agent mode:
     }
     const userUpdateCommand = `sf data update record --sobject User --record-id ${userQueryRes.result.Id} --values "${updatedUserValues}" --target-org ${this.scratchOrgAlias}`;
     await execSfdxJson(userUpdateCommand, this, { fail: false, output: true, debug: this.debugMode });
+  }
+
+  // The pool first, then a snapshot when the pool has no org left. The pool refresh and the source org of a snapshot,
+  // which must start empty, take neither
+  protected async takeOrgSource(flags): Promise<void> {
+    if (this.pool !== false) {
+      return;
+    }
+    if (this.configInfo.poolConfig && process.env[SCRATCH_SNAPSHOT_DISABLED_ENV] !== 'true') {
+      this.scratchOrgFromPool = await this.fetchFromPool(flags);
+      if (this.scratchOrgFromPool) {
+        return;
+      }
+    }
+    this.snapshot = await this.resolveSnapshot(flags);
+  }
+
+  protected async fetchFromPool(flags): Promise<any> {
+    return fetchScratchOrg({
+      devHubConn: flags['target-dev-hub'].getConnection(),
+      devHubUsername: flags['target-dev-hub'].getUsername(),
+    });
   }
 
   // SCRATCH_ORG_SNAPSHOT names a snapshot (no known commit, so a full push). Otherwise, in CI, the newest usable
