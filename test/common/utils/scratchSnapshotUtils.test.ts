@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { execFileSync } from 'child_process';
-import { getExhaustedSnapshotLimit, getSnapshotDescription, getSnapshotScope, isSnapshotSignupRetryable, getSnapshotName, parsePositiveSetting, pickScratchSnapshot, extendSnapshotDeltaWithDependencies, scopeDeltaToDeployManifest, scratchDefChangedSince, selectSnapshotOrgInitStepIds } from '../../../src/common/utils/scratchSnapshotUtils.js';
+import { getExhaustedSnapshotLimit, getSnapshotDescription, getSnapshotScope, isSnapshotSignupRetryable, getSnapshotName, parsePositiveSetting, pickScratchSnapshot, pickSnapshotTargetBranch, extendSnapshotDeltaWithDependencies, scopeDeltaToDeployManifest, scratchDefChangedSince, selectSnapshotOrgInitStepIds } from '../../../src/common/utils/scratchSnapshotUtils.js';
 import { parsePackageXmlFile } from '../../../src/common/utils/xmlUtils.js';
 
 const shaNew = 'a'.repeat(40);
@@ -48,6 +48,46 @@ describe('pickScratchSnapshot', () => {
   it('ignores the snapshots of another project on the same Dev Hub, whatever their branch', () => {
     const otherProject = [record('SH0000000000005', `sfdx-hardis project=other branch=main sha=${shaNew}`)];
     expect(pickScratchSnapshot(otherProject, main, () => true)).to.equal(null);
+  });
+});
+
+describe('pickSnapshotTargetBranch', () => {
+  const names = ['FORCE_TARGET_BRANCH', 'GITHUB_BASE_REF', 'CI_MERGE_REQUEST_TARGET_BRANCH_NAME', 'SYSTEM_PULLREQUEST_TARGETBRANCH', 'BITBUCKET_PR_DESTINATION_BRANCH', 'CHANGE_TARGET'];
+  const saved: Record<string, string | undefined> = {};
+  beforeEach(() => names.forEach((name) => { saved[name] = process.env[name]; delete process.env[name]; }));
+  afterEach(() => names.forEach((name) => (saved[name] === undefined ? delete process.env[name] : (process.env[name] = saved[name]))));
+
+  it('takes the Pull Request of the git provider over FORCE_TARGET_BRANCH', () => {
+    process.env.FORCE_TARGET_BRANCH = 'other';
+    expect(pickSnapshotTargetBranch('main')).to.equal('main');
+  });
+
+  it('falls back to FORCE_TARGET_BRANCH when the provider gives no Pull Request, before the CI variables', () => {
+    process.env.FORCE_TARGET_BRANCH = 'uat';
+    process.env.GITHUB_BASE_REF = 'main';
+    expect(pickSnapshotTargetBranch(null)).to.equal('uat');
+  });
+
+  for (const name of names.slice(1)) {
+    it(`reads ${name} when the provider and FORCE_TARGET_BRANCH give nothing`, () => {
+      process.env[name] = 'integration';
+      expect(pickSnapshotTargetBranch(undefined)).to.equal('integration');
+    });
+  }
+
+  it('strips refs/heads/ from the Azure Repos target branch', () => {
+    process.env.SYSTEM_PULLREQUEST_TARGETBRANCH = 'refs/heads/integration';
+    expect(pickSnapshotTargetBranch(null)).to.equal('integration');
+  });
+
+  it('ignores an Azure variable left unresolved as $(NAME)', () => {
+    process.env.FORCE_TARGET_BRANCH = '$(BRANCH_NAME)';
+    process.env.CHANGE_TARGET = 'main';
+    expect(pickSnapshotTargetBranch(null)).to.equal('main');
+  });
+
+  it('gives nothing when no source knows the target branch, as in a local run', () => {
+    expect(pickSnapshotTargetBranch(null)).to.equal(undefined);
   });
 });
 

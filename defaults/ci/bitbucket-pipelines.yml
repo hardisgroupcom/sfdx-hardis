@@ -96,8 +96,6 @@ pipelines:
                   fi
                 - export
                   CURRENT_BRANCH_NAME=${BITBUCKET_BRANCH:-$BITBUCKET_PR_SOURCE_BRANCH}
-                # Target branch, to find its scratch org snapshot (useScratchOrgSnapshot)
-                - export FORCE_TARGET_BRANCH=$BITBUCKET_PR_DESTINATION_BRANCH
                 - export FORCE_COLOR=1
                 - |
                   if [ "${CURRENT_BRANCH_NAME#auto-fix/}" != "$CURRENT_BRANCH_NAME" ]; then

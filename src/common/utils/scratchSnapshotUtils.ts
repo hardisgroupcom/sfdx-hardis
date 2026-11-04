@@ -29,7 +29,7 @@ export async function resolveScratchSnapshot(devHubConn: any): Promise<{ snapsho
   if (!(await listMajorOrgs()).some((majorOrg) => majorOrg.useScratchOrgSnapshot === true)) {
     return {};
   }
-  const targetBranch = getEnvVar('FORCE_TARGET_BRANCH') || (await GitProvider.getPullRequestInfo({ useCache: true }))?.targetBranch;
+  const targetBranch = pickSnapshotTargetBranch((await GitProvider.getPullRequestInfo({ useCache: true }))?.targetBranch);
   if (!targetBranch) {
     return { reason: t('scratchSnapshotNoTargetBranch') };
   }
@@ -46,6 +46,17 @@ export async function resolveScratchSnapshot(devHubConn: any): Promise<{ snapsho
     return { reason: t('scratchSnapshotScratchDefChanged', { sha: snapshot.sha.slice(0, 8) }) };
   }
   return { snapshot };
+}
+
+// The Pull Request of the git provider first, as deploy:smart and the PR comments use it. FORCE_TARGET_BRANCH, then
+// the CI tool's own variable, when the provider gives none (no token, local run). Azure Repos gives refs/heads/<name>
+export function pickSnapshotTargetBranch(prTargetBranch?: string | null): string | undefined {
+  const targetBranch =
+    prTargetBranch ||
+    ['FORCE_TARGET_BRANCH', 'GITHUB_BASE_REF', 'CI_MERGE_REQUEST_TARGET_BRANCH_NAME', 'SYSTEM_PULLREQUEST_TARGETBRANCH', 'BITBUCKET_PR_DESTINATION_BRANCH', 'CHANGE_TARGET']
+      .map((name) => getEnvVar(name))
+      .find(Boolean);
+  return targetBranch ? targetBranch.replace(/^refs\/heads\//, '') : undefined;
 }
 
 // useScratchOrgSnapshot and scratchOrgSnapshotKeep are read from the branch's own config file:

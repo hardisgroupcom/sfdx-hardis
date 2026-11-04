@@ -190,10 +190,6 @@ pipeline {
                 ///////////////////////////////////////////////////////////////////////////////
                 stage('Scratch Org Tests') {
                     when { environment name: 'USE_SCRATCH_ORGS', value: 'true' }
-                    environment {
-                        // Target branch, to find its scratch org snapshot (useScratchOrgSnapshot)
-                        FORCE_TARGET_BRANCH = "${env.CHANGE_TARGET ?: ''}"
-                    }
                     steps {
                         script {
                             def currentBranch = env.GIT_BRANCH?.replaceAll('^(refs/heads/|origin/)', '') ?: ''

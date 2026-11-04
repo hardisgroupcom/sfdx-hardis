@@ -134,9 +134,7 @@ create_scratch_org:
   # never get the same one. Remove this line if you do not use a scratch org pool.
   resource_group: scratch_org_pool
   variables:
-    # Target branch, to find its scratch org snapshot (useScratchOrgSnapshot), and the full git history the
-    # deployment of the changes since the snapshot needs
-    FORCE_TARGET_BRANCH: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME
+    # The full git history the deployment of the changes since the scratch org snapshot needs
     GIT_DEPTH: 0
   script:
     - |
