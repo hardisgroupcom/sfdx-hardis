@@ -10,6 +10,9 @@ class CreateProbe extends ScratchCreate {
   public async take() {
     await this.takeOrgSource({});
   }
+  public async branchFor(branch: string | undefined, ci: boolean) {
+    return this.snapshotBranch(branch, ci);
+  }
   protected async fetchFromPool(): Promise<any> {
     this.calls.push('pool');
     return this.poolOrg;
@@ -73,5 +76,19 @@ describe('hardis:scratch:create pool or snapshot', () => {
     const command = probe(null);
     await command.take();
     expect(command.branches).to.deep.equal([undefined]);
+  });
+
+  it('looks up, outside CI, the snapshot of the branch the User Story started from (hardis:work:new)', async () => {
+    const current = await getCurrentGitBranch();
+    const command = probe(null);
+    (command as any).configInfo = { developmentBranch: 'integration', localStorageBranchTargets: current ? { [current]: 'release' } : {} };
+    expect(await command.branchFor(undefined, false)).to.equal(current ? 'release' : 'integration');
+  });
+
+  it('leaves the Pull Request target to the lookup in CI, and keeps the branch of a pool fill', async () => {
+    const command = probe(null);
+    (command as any).configInfo = { developmentBranch: 'integration' };
+    expect(await command.branchFor(undefined, true)).to.equal(undefined);
+    expect(await command.branchFor('main', false)).to.equal('main');
   });
 });

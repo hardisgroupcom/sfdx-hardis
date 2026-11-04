@@ -30,6 +30,7 @@ import {
   buildPoolOrgInit,
   PROJECT_SCRATCH_DEF_FILE,
   getHeadCommit,
+  getScratchOrgMajorBranch,
   getScratchOrgShape,
   PoolOrgInitInfo,
   resetSourceTracking,
@@ -82,7 +83,7 @@ The command configuration can be customized using:
 
 - \`config/.sfdx-hardis.yml\` file with properties like \`orgInitSteps\`, \`installedPackages\`, \`scratchOrgDuration\` and \`poolConfig\`.
 - Environment variable **SCRATCH_ORG_SHAPE** with shape org id, if you want to use org shapes
-- Branch config \`useScratchOrgSnapshot: true\` on a major branch: in CI, the scratch org of a Pull Request to that branch is created from the newest Active snapshot of the branch whose commit is in the history of the Pull Request (taken by [hardis:scratch:snapshot:refresh](https://sfdx-hardis.cloudity.com/hardis/scratch/snapshot/refresh/)), and only what changed since that commit is deployed. The target branch is the one of the Pull Request the git provider gives; without a Pull Request (no token, local run), it is read from **FORCE_TARGET_BRANCH**, then from the CI tool's own variable (\`GITHUB_BASE_REF\`, \`CI_MERGE_REQUEST_TARGET_BRANCH_NAME\`, \`SYSTEM_PULLREQUEST_TARGETBRANCH\`, \`BITBUCKET_PR_DESTINATION_BRANCH\`, \`CHANGE_TARGET\`). Without a usable snapshot, or when the Pull Request changed the scratch org definition or a step run at pool fill (its definition, its Apex script or its data workspace), the scratch org is created empty and the log says why. More info in [Use scratch org snapshots for Pull Requests](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-scratch-org-pool/#use-scratch-org-snapshots-for-pull-requests).
+- Branch config \`useScratchOrgSnapshot: true\` on a major branch: in CI, the scratch org of a Pull Request to that branch is created from the newest Active snapshot of the branch whose commit is in the history of the Pull Request (taken by [hardis:scratch:snapshot:refresh](https://sfdx-hardis.cloudity.com/hardis/scratch/snapshot/refresh/)), and only what changed since that commit is deployed. The target branch is the one of the Pull Request the git provider gives; without a Pull Request (no token, local run), it is read from **FORCE_TARGET_BRANCH**, then from the CI tool's own variable (\`GITHUB_BASE_REF\`, \`CI_MERGE_REQUEST_TARGET_BRANCH_NAME\`, \`SYSTEM_PULLREQUEST_TARGETBRANCH\`, \`BITBUCKET_PR_DESTINATION_BRANCH\`, \`CHANGE_TARGET\`). Without a usable snapshot, or when the Pull Request changed the scratch org definition or a step run at pool fill (its definition, its Apex script or its data workspace), the scratch org is created empty and the log says why. Outside CI, as in [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/) when the pool has no org left, the scratch org starts from the snapshot of the major branch the User Story started from. More info in [Use scratch org snapshots for Pull Requests](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-scratch-org-pool/#use-scratch-org-snapshots-for-pull-requests).
 - Environment variable **SCRATCH_ORG_SNAPSHOT** with the name of a Dev Hub org snapshot, to create the scratch org from that snapshot. The commit of the snapshot is not known, so the sources are pushed in full.
 - With a snapshot, the definition file leaves out the keys a snapshot does not accept (\`features\`, \`edition\`, \`sourceOrg\`...) and the scratch org pool comes first: a Pull Request scratch org is created from the snapshot only when the pool has no org left. A pool fill (\`--pool\`) creates its org from the newest usable snapshot of its own branch: it installs the packages the snapshot lacks, deploys the changes since the snapshot commit and assigns the permission sets, and the steps with \`runAtPoolFill: false\` still run when a job takes the org. The org initialization steps run as for a pool: the snapshot holds the result of the steps run when filling the pool (\`runAtPoolFill\`), and the scratch org installs the packages it lacks, gets the delta, then the other steps and the permission set assignments. The pool refresh never uses a snapshot.
 - Environment variables **SF_SCRATCH_SIGNUP_CONNECTED_APP** and **SF_SCRATCH_SIGNUP_CALLBACK_URL**: by default the new org is signed up with the Salesforce CLI built-in app (\`PlatformCLI\`), so a Dev Hub authenticated through an External Client App works (Salesforce CLI 2.147.7 or later). Not applied when you set **SF_SCRATCH_SIGNUP_CONNECTED_APP** or **SFDX_CLIENT_SECRET**.
@@ -673,8 +674,8 @@ In agent mode:
     });
   }
 
-  // SCRATCH_ORG_SNAPSHOT names a snapshot (no known commit, so a full push). Otherwise, in CI, the newest usable
-  // snapshot of the Pull Request's target branch. Any failure falls back to an empty scratch org.
+  // SCRATCH_ORG_SNAPSHOT names a snapshot (no known commit, so a full push). Otherwise the newest usable snapshot of
+  // the branch snapshotBranch gives. Any failure falls back to an empty scratch org.
   protected async resolveSnapshot(flags, branch?: string): Promise<ScratchSnapshot | null> {
     if (process.env[SCRATCH_SNAPSHOT_DISABLED_ENV] === 'true') {
       return null;
@@ -683,11 +684,8 @@ In agent mode:
     if (snapshotName) {
       return { name: snapshotName, sha: '' };
     }
-    if (!isCI) {
-      return null;
-    }
     try {
-      const { snapshot, reason } = await resolveScratchSnapshot(flags['target-dev-hub'].getConnection(), branch);
+      const { snapshot, reason } = await resolveScratchSnapshot(flags['target-dev-hub'].getConnection(), await this.snapshotBranch(branch));
       if (!snapshot && reason) {
         uxLog("log", this, c.grey(t('scratchSnapshotNotUsed', { reason })));
       }
@@ -696,5 +694,11 @@ In agent mode:
       uxLog("warning", this, c.yellow(t('scratchSnapshotNotUsed', { reason: (e as Error).message })));
       return null;
     }
+  }
+
+  // The branch whose snapshot is looked up: the given one (pool fill); in CI, the Pull Request target (undefined);
+  // outside CI (hardis:work:new), the major branch the User Story started from
+  protected async snapshotBranch(branch?: string, ci = isCI): Promise<string | undefined> {
+    return branch ?? (ci ? undefined : (await getScratchOrgMajorBranch(this.configInfo)) || '');
   }
 }
