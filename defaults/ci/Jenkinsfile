@@ -190,6 +190,11 @@ pipeline {
                 ///////////////////////////////////////////////////////////////////////////////
                 stage('Scratch Org Tests') {
                     when { environment name: 'USE_SCRATCH_ORGS', value: 'true' }
+                    environment {
+                        // Jenkins does not set CI: without it, sfdx-hardis runs as on a workstation and
+                        // skips the lookup of the scratch org snapshot of the target branch
+                        CI = 'true'
+                    }
                     steps {
                         script {
                             def currentBranch = env.GIT_BRANCH?.replaceAll('^(refs/heads/|origin/)', '') ?: ''
@@ -216,7 +221,8 @@ pipeline {
                                     sh 'sf hardis:scratch:create'
                                     // A scratch org that was just created can be not ready yet
                                     sh 'sleep 120'
-                                    sh 'sf hardis:org:test:apex'
+                                    // ORG_ALIAS (set for the whole pipeline) is PR-<number> here: without it, the tests run in the scratch org
+                                    sh 'ORG_ALIAS= sf hardis:org:test:apex'
                                     // Not reached when a command above failed, so the scratch org can be investigated until it expires.
                                     // Set CI_DELETE_SCRATCH_ORG to "false" only to investigate issues
                                     sh '''
