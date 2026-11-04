@@ -3850,6 +3850,7 @@
   "scratchSnapshotNoneUsable": "ブランチ {{branch}} のアクティブなスナップショット {{count}} 件のうち、このプルリクエストの履歴にあるコミットから作成されたものはありません",
   "scratchSnapshotNotEnabled": "ブランチ {{branch}} で useScratchOrgSnapshot が有効になっていません",
   "scratchSnapshotNotUsed": "スナップショットを使用せずにスクラッチ組織を作成します: {{reason}}",
+  "scratchSnapshotOrgInitStepChanged": "組織初期化ステップ {{step}}、またはそれが使用する Apex スクリプトやデータがスナップショットのコミット {{sha}} 以降に変更されています。スナップショットには以前の結果が含まれています",
   "scratchSnapshotScratchDefChanged": "スクラッチ組織の定義またはその設定がスナップショットのコミット {{sha}} 以降に変更されています。スナップショットから作成したスクラッチ組織には新しい機能や設定を適用できません",
   "scratchSnapshotSourceOrgFailed": "スナップショットの作成元となるスクラッチ組織を作成できませんでした",
   "scratchSnapshotTaking": "コミット {{sha}} 時点のブランチ {{branch}} のスナップショット {{name}} を作成しています...",

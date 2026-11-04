@@ -4,7 +4,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { execFileSync } from 'child_process';
 import { pathToFileURL } from 'url';
-import { getExhaustedSnapshotLimit, getSnapshotDescription, getSnapshotScope, isSnapshotSignupRetryable, getSnapshotName, parsePositiveSetting, pickScratchSnapshot, pickSnapshotTargetBranch, extendSnapshotDeltaWithDependencies, fetchFullHistoryIfShallow, scopeDeltaToDeployManifest, scratchDefChangedSince, selectSnapshotOrgInitStepIds } from '../../../src/common/utils/scratchSnapshotUtils.js';
+import { getExhaustedSnapshotLimit, getSnapshotDescription, getSnapshotScope, isSnapshotSignupRetryable, getSnapshotName, parsePositiveSetting, pickScratchSnapshot, pickSnapshotTargetBranch, extendSnapshotDeltaWithDependencies, fetchFullHistoryIfShallow, orgInitStepChangedSince, scopeDeltaToDeployManifest, scratchDefChangedSince, selectSnapshotOrgInitStepIds } from '../../../src/common/utils/scratchSnapshotUtils.js';
 import { parsePackageXmlFile } from '../../../src/common/utils/xmlUtils.js';
 
 const shaNew = 'a'.repeat(40);
@@ -268,6 +268,105 @@ describe('scratchDefChangedSince', () => {
     write('config/settings/Security.settings-meta.xml', '<SecuritySettings><x/></SecuritySettings>');
     commit();
     expect(scratchDefChangedSince(sha, dir)).to.equal(true);
+  });
+});
+
+describe('orgInitStepChangedSince', () => {
+  const originalCwd = process.cwd();
+  let dir: string;
+  let sha: string;
+  const git = (...args: string[]) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: dir }).toString().trim();
+  const write = (file: string, text: string) => {
+    fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
+    fs.writeFileSync(path.join(dir, file), text);
+  };
+  const commit = () => {
+    git('add', '-A');
+    git('commit', '-q', '-m', 'change');
+  };
+  const config = (extra = '', command = 'echo fill') => `projectName: acme${extra}
+orgInitSteps:
+  - id: script
+    type: apex
+    parameters:
+      apexScript: scripts/apex/init.apex
+  - id: users
+    type: data
+    parameters:
+      sfdmuProject: scripts/data/Users
+  - id: cmd
+    type: command
+    command: ${command}
+  - id: per-org
+    type: apex
+    runAtPoolFill: false
+    parameters:
+      apexScript: scripts/apex/per-org.apex
+`;
+
+  beforeEach(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'org-init-changed-'));
+    git('init', '-q');
+    write('config/.sfdx-hardis.yml', config());
+    write('scripts/apex/init.apex', 'System.debug(1);');
+    write('scripts/apex/per-org.apex', 'System.debug(2);');
+    write('scripts/data/Users/export.json', '{"objects":[]}');
+    commit();
+    sha = git('rev-parse', 'HEAD');
+    // The data workspace is resolved from the current folder, as in a CI job
+    process.chdir(dir);
+  });
+
+  afterEach(() => {
+    process.chdir(originalCwd);
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('keeps the snapshot when another config key changed', async () => {
+    write('config/.sfdx-hardis.yml', config('\nscratchOrgDuration: 3'));
+    commit();
+    expect(await orgInitStepChangedSince(sha, 'main', dir)).to.equal(null);
+  });
+
+  it('names the step whose Apex script changed', async () => {
+    write('scripts/apex/init.apex', 'System.debug(3);');
+    commit();
+    expect(await orgInitStepChangedSince(sha, 'main', dir)).to.equal('script');
+  });
+
+  it('names the step whose data workspace changed', async () => {
+    write('scripts/data/Users/export.json', '{"objects":[{"query":"SELECT Id FROM User"}]}');
+    commit();
+    expect(await orgInitStepChangedSince(sha, 'main', dir)).to.equal('users');
+  });
+
+  it('names a step whose definition changed', async () => {
+    write('config/.sfdx-hardis.yml', config('', 'echo other'));
+    commit();
+    expect(await orgInitStepChangedSince(sha, 'main', dir)).to.equal('cmd');
+  });
+
+  it('names a step removed since the snapshot, whose result the snapshot still holds', async () => {
+    write('config/.sfdx-hardis.yml', config().replace('  - id: cmd\n    type: command\n    command: echo fill\n', ''));
+    commit();
+    expect(await orgInitStepChangedSince(sha, 'main', dir)).to.equal('cmd');
+  });
+
+  it('keeps the snapshot when only a step run after the pool fetch changed, as a child runs it anyway', async () => {
+    write('scripts/apex/per-org.apex', 'System.debug(4);');
+    commit();
+    expect(await orgInitStepChangedSince(sha, 'main', dir)).to.equal(null);
+  });
+
+  it('reads the steps of the branch config of the target branch', async () => {
+    const branchConfig = (command: string) => `orgInitSteps:\n  - id: branch-step\n    type: command\n    command: ${command}\n`;
+    write('config/branches/.sfdx-hardis.release__1.yml', branchConfig('echo one'));
+    commit();
+    const branchSha = git('rev-parse', 'HEAD');
+    write('config/branches/.sfdx-hardis.release__1.yml', branchConfig('echo two'));
+    commit();
+    expect(await orgInitStepChangedSince(branchSha, 'release/1', dir)).to.equal('branch-step');
+    expect(await orgInitStepChangedSince(branchSha, 'main', dir)).to.equal(null);
   });
 });
 

@@ -13,7 +13,9 @@ import { getScratchDeployManifest } from './orgUtils.js';
 import { getOrgInitSteps, selectOrgInitSteps } from './orgInitUtils.js';
 import fs from './fsUtils.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
-import { getConfig, getEnvVar } from '../../config/index.js';
+import { getConfig, getEnvVar, projectConfigFiles } from '../../config/index.js';
+import { resolveDataWorkspacePath } from './dataUtils.js';
+import * as yaml from 'js-yaml';
 import { isAncestor } from './backpromoteGitUtils.js';
 import { GitProvider } from '../gitProvider/index.js';
 import { t } from './i18n.js';
@@ -47,6 +49,10 @@ export async function resolveScratchSnapshot(devHubConn: any, branch?: string): 
   }
   if (scratchDefChangedSince(snapshot.sha)) {
     return { reason: t('scratchSnapshotScratchDefChanged', { sha: snapshot.sha.slice(0, 8) }) };
+  }
+  const changedStep = await orgInitStepChangedSince(snapshot.sha, targetBranch);
+  if (changedStep) {
+    return { reason: t('scratchSnapshotOrgInitStepChanged', { step: changedStep, sha: snapshot.sha.slice(0, 8) }) };
   }
   return { snapshot };
 }
@@ -135,6 +141,29 @@ export function scratchDefChangedSince(sha: string, cwd = process.cwd()): boolea
   }
   // Exit code 0: no change. 1: changed. Anything else is treated as changed, as an empty org is always correct
   return spawnSync('git', ['diff', '--quiet', sha, 'HEAD', '--', ...paths], { cwd }).status !== 0;
+}
+
+// A snapshot holds the result of the steps run at pool fill, which a child does not run again: a step added, removed
+// or changed since the snapshot commit, or a change to the Apex script or data workspace it names, needs an empty org.
+// Read from git at both commits, project and branch config files, so a step coming from extends is not compared
+export async function orgInitStepChangedSince(sha: string, branch: string, cwd = process.cwd()): Promise<string | null> {
+  const before = snapshotHeldSteps(readConfigAtCommit(sha, branch, cwd));
+  const after = snapshotHeldSteps(readConfigAtCommit('HEAD', branch, cwd));
+  for (const step of before) {
+    if (!after.some((afterStep) => afterStep.id === step.id)) {
+      return step.id;
+    }
+  }
+  for (const step of after) {
+    if (JSON.stringify(step) !== JSON.stringify(before.find((beforeStep) => beforeStep.id === step.id))) {
+      return step.id;
+    }
+    const files = [step.parameters?.apexScript, step.type === 'data' ? await resolveDataWorkspacePath(step.parameters?.sfdmuProject) : null].filter(Boolean);
+    if (files.length > 0 && spawnSync('git', ['diff', '--quiet', sha, 'HEAD', '--', ...files], { cwd }).status !== 0) {
+      return step.id;
+    }
+  }
+  return null;
 }
 
 // The org init steps of a snapshot route, as a pool: the source runs what a pool fill runs, always with the
@@ -295,6 +324,31 @@ export function parsePositiveSetting(value: unknown, defaultValue: number): numb
     return defaultValue;
   }
   return Math.max(1, parsed);
+}
+
+// The steps whose result is in the snapshot and that a child does not run again
+function snapshotHeldSteps(config: any): any[] {
+  return selectOrgInitSteps(getOrgInitSteps(config).steps, { orgType: 'scratch', phase: 'pool-fill' }).filter(
+    (step) => !['deploy-sources', 'install-packages', 'assign-permission-sets'].includes(step.type)
+  );
+}
+
+// The project config, then the branch config, as git holds them at a commit (no user config, no extends)
+function readConfigAtCommit(ref: string, branch: string, cwd: string): any {
+  const read = (files: string[]) => {
+    for (const file of files) {
+      const res = spawnSync('git', ['show', `${ref}:${file}`], { cwd, encoding: 'utf8' });
+      if (res.status === 0) {
+        return (yaml.load(res.stdout) || {}) as any;
+      }
+    }
+    return {};
+  };
+  const branchName = branch.replace('/', '__');
+  return Object.assign(
+    read(projectConfigFiles.filter((file) => !file.endsWith('.json'))),
+    read([`config/branches/.sfdx-hardis.${branchName}.yaml`, `config/branches/.sfdx-hardis.${branchName}.yml`])
+  );
 }
 
 export function getSnapshotDescriptionPrefix(scope: string): string {

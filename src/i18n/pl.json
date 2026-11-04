@@ -3853,6 +3853,7 @@
   "scratchSnapshotNoneUsable": "żaden z {{count}} aktywnych snapshotów brancha {{branch}} nie został utworzony z commita w historii tego Pull Requesta",
   "scratchSnapshotNotEnabled": "useScratchOrgSnapshot nie jest włączone dla brancha {{branch}}",
   "scratchSnapshotNotUsed": "Scratch org utworzony bez snapshotu: {{reason}}",
+  "scratchSnapshotOrgInitStepChanged": "krok inicjalizacji org {{step}} albo używany przez niego skrypt Apex lub dane zmieniły się od commita snapshotu {{sha}}: snapshot zawiera jego poprzedni wynik",
   "scratchSnapshotScratchDefChanged": "definicja Scratch Org lub jej ustawienia zmieniły się od commita snapshotu {{sha}}: Scratch Org utworzona ze snapshotu nie może otrzymać nowych funkcji ani ustawień",
   "scratchSnapshotSourceOrgFailed": "Nie można utworzyć scratch org, z którego ma zostać utworzony snapshot",
   "scratchSnapshotTaking": "Tworzenie snapshotu {{name}} brancha {{branch}} z commita {{sha}}...",
