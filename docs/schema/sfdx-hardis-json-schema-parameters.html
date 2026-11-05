@@ -19135,6 +19135,40 @@ Deprecated: use orgInitSteps, edited from the Org Initialization panel of the VS
         </div>
     </div>
 </div>
+<div class="accordion" id="accordionscratchOrgSnapshotKeep">
+    <div class="card">
+        <div class="card-header" id="headingscratchOrgSnapshotKeep">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#scratchOrgSnapshotKeep"
+                        aria-expanded="" aria-controls="scratchOrgSnapshotKeep" onclick="setAnchor('#scratchOrgSnapshotKeep')"><span class="property-name">scratchOrgSnapshotKeep</span></button>
+            </h2>
+        </div>
+
+        <div id="scratchOrgSnapshotKeep"
+             class="collapse property-definition-div" aria-labelledby="headingscratchOrgSnapshotKeep"
+             data-parent="#accordionscratchOrgSnapshotKeep">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#scratchOrgSnapshotKeep" onclick="anchorLink('scratchOrgSnapshotKeep')">scratchOrgSnapshotKeep</a></div><h4>Scratch org snapshots to keep</h4><span class="badge badge-dark value-type">Type: number</span> <span class="badge badge-success default-value">Default: 2</span><br/>
+<span class="description"><p>Only in branch scoped config, with useScratchOrgSnapshot. Number of Active scratch org snapshots of the branch to keep. Pull Requests whose branch is behind the target branch can use an older snapshot, but every snapshot counts in the active snapshots allocation of the Dev Hub.</p>
+</span>
+        
+
+        
+        <p><span class="badge badge-light restriction numeric-restriction" id="scratchOrgSnapshotKeep_number">Value must be greater or equal to <code>1</code></span></p>
+
+        
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordionsfdmuCanModify">
     <div class="card">
         <div class="card-header" id="headingsfdmuCanModify">
@@ -21514,6 +21548,40 @@ Note: Even if activated, Delta Deployments will be applied only for Pull Request
         </svg>
     <a href="#useRestDeploy" onclick="anchorLink('useRestDeploy')">useRestDeploy</a></div><h4>Deploy with Metadata REST API</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: true</span><br/>
 <span class="description"><p>Deploy with the Metadata REST API (default) instead of the SOAP Metadata API used by default by the Salesforce CLI. Set to false to deploy with SOAP. Equivalent of "sf config set org-metadata-rest-deploy=true|false", but applied only to the deployments started by sfdx-hardis, without modifying your sf configuration. Can also be set with env variable SFDX<em>HARDIS</em>USE<em>REST</em>DEPLOY=false.</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionuseScratchOrgSnapshot">
+    <div class="card">
+        <div class="card-header" id="headinguseScratchOrgSnapshot">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#useScratchOrgSnapshot"
+                        aria-expanded="" aria-controls="useScratchOrgSnapshot" onclick="setAnchor('#useScratchOrgSnapshot')"><span class="property-name">useScratchOrgSnapshot</span></button>
+            </h2>
+        </div>
+
+        <div id="useScratchOrgSnapshot"
+             class="collapse property-definition-div" aria-labelledby="headinguseScratchOrgSnapshot"
+             data-parent="#accordionuseScratchOrgSnapshot">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#useScratchOrgSnapshot" onclick="anchorLink('useScratchOrgSnapshot')">useScratchOrgSnapshot</a></div><h4>Use scratch org snapshots for Pull Requests</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<span class="description"><p>Only in branch scoped config. Keep a scratch org snapshot of this branch, refreshed on every push by sf hardis:scratch:snapshot:refresh, and create the scratch orgs of Pull Requests to this branch from it: only what changed since the commit of the snapshot is deployed, instead of the full project. Requires Scratch Org Snapshots on the Dev Hub and USE<em>SCRATCH</em>ORGS=true in CI.</p>
 </span>
         
 
