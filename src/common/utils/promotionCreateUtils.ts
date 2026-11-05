@@ -1145,6 +1145,17 @@ export const PROMOTION_CONFLICT_CHOICES: PromotionConflictChoice[] = ['skip', 'c
 // nothing can do that unattended, so it has no flag value either.
 export type PromotionConflictAnswer = PromotionConflictChoice | 'commit-with-markers-all' | 'take-source-all' | 'solve-now';
 
+/**
+ * Answers the conflict questions of cherryPickCandidates in tests: prompts() refuses to run on CI,
+ * and the interactive answers (solve now, "and all the following") are the ones to prove. The
+ * answerer receives the question and returns the value of the chosen answer. Null restores
+ * prompts().
+ */
+let conflictQuestionAnswererForTests: ((question: any) => Promise<any>) | null = null;
+export function setConflictQuestionAnswererForTests(answerer: ((question: any) => Promise<any>) | null): void {
+  conflictQuestionAnswererForTests = answerer;
+}
+
 export interface CherryPickOutcome {
   picked: PromotionCandidate[];
   skipped: PromotionCandidate[];
@@ -1358,7 +1369,7 @@ async function noteSourceVersionInCommitMessage(files: string[], commandThis: an
 }
 
 async function promptConflictChoice(candidate: PromotionCandidate, commandThis: any, offerTakeSource = true): Promise<PromotionConflictAnswer> {
-  const res = await prompts({
+  const res = await askConflictQuestion({
     type: 'select',
     name: 'value',
     message: c.cyanBright(t('promotionCreateConflictPrompt', { label: candidate.label })),
@@ -1383,6 +1394,14 @@ async function promptConflictChoice(candidate: PromotionCandidate, commandThis: 
   });
   uxLog('action', commandThis, c.cyan(t('promotionCreateConflictChoice', { choice: res.value })));
   return res.value as PromotionConflictAnswer;
+}
+
+// The conflict questions go through prompts(), or through the answerer a test set
+async function askConflictQuestion(question: any): Promise<{ value: any }> {
+  if (conflictQuestionAnswererForTests) {
+    return { value: await conflictQuestionAnswererForTests(question) };
+  }
+  return (await prompts(question)) as { value: any };
 }
 
 /**
@@ -1414,7 +1433,7 @@ async function solveConflictsNow(
     }
   }
   for (;;) {
-    const res = await prompts({
+    const res = await askConflictQuestion({
       type: 'select',
       name: 'value',
       message: c.cyanBright(t('promotionCreateConflictSolvePrompt', { label: candidate.label })),

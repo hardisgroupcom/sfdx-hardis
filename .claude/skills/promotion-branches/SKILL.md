@@ -164,6 +164,11 @@ Break one of these and the feature is wrong, whatever the tests say.
     option). What `-X theirs` cannot settle (delete/modify) is asked again without the risky
     answers, or aborts in agent mode, and the files it did settle are still reported
     (`keptSourceFiles`) whatever answer ends that conflict.
+    Every answer is proven in `test/common/utils/promotionConflictAnswers.test.ts`, on a
+    repository built for each test (a hotfix on the same lines, a file deleted on the target, a
+    pre-commit hook refusing every commit). The interactive answers are given through
+    `setConflictQuestionAnswererForTests`, since `prompts()` refuses to run on CI. A change to the
+    conflict handling adds its case there.
 32. **Committing markers is never stopped by the project's git hooks, and nothing else skips them.**
     `commitWithConflictMarkers` runs `cherry-pick --continue` (and its `commit` fallback) through
     `withoutGitHooks`: `-c core.hooksPath=<private empty folder>`, created with `mkdtemp` for that
