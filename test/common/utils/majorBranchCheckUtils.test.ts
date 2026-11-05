@@ -9,6 +9,7 @@ import {
 } from '../../../src/common/utils/majorBranchCheckUtils.js';
 import { GitProvider } from '../../../src/common/gitProvider/index.js';
 import { executePrePostCommands } from '../../../src/common/utils/prePostCommandUtils.js';
+import { listAllPullRequestsForCurrentScope } from '../../../src/common/utils/pullRequestUtils.js';
 import SmartDeploy from '../../../src/commands/hardis/project/deploy/smart.js';
 
 const MAJOR_ORGS = [{ branchName: 'integration' }, { branchName: 'uat' }, { branchName: 'main' }];
@@ -16,6 +17,10 @@ const MAJOR_ORGS = [{ branchName: 'integration' }, { branchName: 'uat' }, { bran
 describe('assertMajorBranchCheckAllowed()', () => {
   it('accepts a major branch', () => {
     expect(() => assertMajorBranchCheckAllowed('uat', MAJOR_ORGS)).not.to.throw();
+  });
+
+  it('accepts a major branch with a slash, whose config file name writes it with __', () => {
+    expect(() => assertMajorBranchCheckAllowed('release/uat', [{ branchName: 'release__uat' }])).not.to.throw();
   });
 
   it('refuses a branch without a branch config file', () => {
@@ -63,6 +68,17 @@ describe('Major branch deployment check mode', () => {
     }) as typeof GitProvider.getInstance;
     enableMajorBranchCheckMode();
     await GitProvider.managePostPullRequestComment(true);
+    expect(providerAsked).to.equal(false);
+  });
+
+  it('lists no Pull Request in scope, so no Pull Request test classes replace the full run', async () => {
+    let providerAsked = false;
+    GitProvider.getInstance = (async () => {
+      providerAsked = true;
+      return null;
+    }) as typeof GitProvider.getInstance;
+    enableMajorBranchCheckMode();
+    expect(await listAllPullRequestsForCurrentScope(true)).to.deep.equal([]);
     expect(providerAsked).to.equal(false);
   });
 

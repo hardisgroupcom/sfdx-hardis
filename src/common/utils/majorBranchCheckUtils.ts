@@ -18,10 +18,13 @@ export function isMajorBranchCheckMode(): boolean {
 /**
  * The check compares a major branch with its org: on any other branch there is no org to compare
  * with, and the job would deploy the branch to the default org of the CLI.
+ * The branchName of a major org comes from its config file name, where every `/` is written `__`
+ * (release/uat -> .sfdx-hardis.release__uat.yml).
  */
 export function assertMajorBranchCheckAllowed(currentBranch: string | null | undefined, majorOrgs: { branchName?: string }[]): void {
   const branch = currentBranch || '';
-  if (!branch || !(majorOrgs || []).some((majorOrg) => majorOrg.branchName === branch)) {
+  const configBranch = branch.replace(/\//g, '__');
+  if (!branch || !(majorOrgs || []).some((majorOrg) => majorOrg.branchName === branch || majorOrg.branchName === configBranch)) {
     throw new SfError(t('majorBranchCheckNotMajorBranch', { branch: branch || '?' }));
   }
 }

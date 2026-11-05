@@ -281,9 +281,13 @@ pipeline {
         // Nothing is deployed, no Pull Request is commented. Runs only when            //
         // MAJOR_BRANCH_DEPLOYMENT_CHECK is "true": create a dedicated Jenkins job on    //
         // this Jenkinsfile, scheduled every night on each major branch, that sets this //
-        // environment variable. Name that job with "major branch check" (ex:           //
-        // check-major-branch-deployment): the VS Code DevOps Pipeline finds the check  //
-        // by its commit status name. More info at                                      //
+        // environment variable. The VS Code DevOps Pipeline finds the check by the     //
+        // name of the commit status it posts, which must contain "major branch check"  //
+        // (ex: major-branch-check). A multibranch job posts a generic status name      //
+        // (continuous-integration/jenkins/branch) whatever the job is called: set a    //
+        // custom status name in the job (ex: GitHub Branch Source, trait "Custom       //
+        // GitHub Notification Context"), or the check result replaces the deployment   //
+        // status of the commit. More info at                                           //
         // https://sfdx-hardis.cloudity.com/salesforce-devops-setup-major-branch-check/  //
         ///////////////////////////////////////////////////////////////////////////////////
         stage('Check Major Branch Deployment') {
