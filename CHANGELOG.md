@@ -2,6 +2,12 @@
 
 ## [beta] (main)
 
+- [Major branch deployment check](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-major-branch-check/):
+  - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): new mode to check every night that a major branch can still be deployed to its org, without commenting the last merged Pull Request nor replaying its deployment actions.
+  - The default CI/CD templates hold the job, ready to schedule. On GitLab, add `--major-branch-check` to your existing `check_deploy_to_current_branch_org` job.
+  - The VS Code DevOps Pipeline can color each major branch with the result of its last check.
+- Default CI/CD files now start with the URL of the template they come from, to upgrade them by hand or with a coding agent.
+
 ## [8.22.0] 2026-11-02
 
 - [hardis:ticket:list](https://sfdx-hardis.cloudity.com/hardis/ticket/list/), [hardis:ticket:whoami](https://sfdx-hardis.cloudity.com/hardis/ticket/whoami/), [hardis:ticket:meta](https://sfdx-hardis.cloudity.com/hardis/ticket/meta/) and [hardis:ticket:set-label](https://sfdx-hardis.cloudity.com/hardis/ticket/set-label/): **new commands** to search tickets with the same criteria on every ticketing system, show the authenticated account, list the types and statuses of a project, and label a ticket.

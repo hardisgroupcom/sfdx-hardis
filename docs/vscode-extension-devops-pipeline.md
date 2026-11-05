@@ -23,11 +23,13 @@ For the concepts behind it (major branches, merges, delta deployments), read [Sa
 
 - **(1)** is a feature branch, with the number of its Pull Request. When too many target the same branch, they are grouped in a **+N more** box.
 - **(2)** is a major branch. The badge on its corner counts the Pull Requests open against it. Click it to see its Pull Requests, tickets and deployment actions.
-- **(3)** is the org a major branch deploys to. The dotted line carries the result of the last deployment: a check mark when it passed.
+- **(3)** is the org a major branch deploys to. The dotted line carries the result of the last deployment triggered by a merge: a check mark when it passed. Pipelines started by a schedule or through the API do not change it.
 - **(4)** shows or hides the feature branches. They are shown by default.
 - **(5)** opens the pipeline settings menu, **(6)** the package files menu, **(7)** the [Pull Requests explorer](#find-and-open-any-pull-request), and **(8)** reloads branches, Pull Requests and deployments. The last button of the row opens this guide.
 - **(9)** is the legend of the lines and statuses.
 - **(10)** switches between the contribution cards and the list of open Pull Requests.
+
+With the [major branch deployment check](salesforce-devops-setup-major-branch-check.md) enabled (`enableMajorBranchDeploymentCheck: true`), each major branch is also colored with the result of its last nightly check against its org: green when the org can receive its branch, red when it has drifted, blinking while a check runs, dimmed when the check is stale. Click the branch to see the check and open its job.
 
 ## Start and publish a User Story
 

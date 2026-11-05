@@ -1,3 +1,9 @@
+// Source of this file: the sfdx-hardis default template
+//   https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/Jenkinsfile
+//   raw: https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/defaults/ci/Jenkinsfile
+// To upgrade it, compare it with the latest version of that template and bring in its changes,
+// keeping what is specific to this project (branch names, secrets, runner tags, image, custom jobs).
+// What changed between versions: https://github.com/hardisgroupcom/sfdx-hardis/blob/main/CHANGELOG.md
 // Pipeline for Salesforce CI/CD using sfdx-hardis
 //
 // SETUP (do a CTRL+F on "MANUAL"):
@@ -269,6 +275,47 @@ pipeline {
             }
         }
 
+        ///////////////////////////////////////////////////////////////////////////////////
+        // Major branch deployment check: simulates the full deployment of a major      //
+        // branch to its own org, to know whether the org drifted from its branch.      //
+        // Nothing is deployed, no Pull Request is commented. Runs only when            //
+        // MAJOR_BRANCH_DEPLOYMENT_CHECK is "true": create a dedicated Jenkins job on    //
+        // this Jenkinsfile, scheduled every night on each major branch, that sets this //
+        // environment variable. Name that job with "major branch check" (ex:           //
+        // check-major-branch-deployment): the VS Code DevOps Pipeline finds the check  //
+        // by its commit status name. More info at                                      //
+        // https://sfdx-hardis.cloudity.com/salesforce-devops-setup-major-branch-check/  //
+        ///////////////////////////////////////////////////////////////////////////////////
+        stage('Check Major Branch Deployment') {
+            when {
+                allOf {
+                    environment name: 'MAJOR_BRANCH_DEPLOYMENT_CHECK', value: 'true'
+                    expression { DEPLOYMENT_BRANCHES.contains(env.BRANCH_NAME_CLEAN) }
+                    not { changeRequest() }
+                }
+            }
+            steps {
+                withCredentials([
+                    // ----------------------------------------------------------------
+                    // MANUAL: Add one pair of credentials per deployment org.
+                    // Same credential pairs as in the Deployment stage below.
+                    //
+                    // string(credentialsId: 'SFDX_CLIENT_ID_INTEGRATION',  variable: 'SFDX_CLIENT_ID_INTEGRATION'),
+                    // string(credentialsId: 'SFDX_CLIENT_KEY_INTEGRATION', variable: 'SFDX_CLIENT_KEY_INTEGRATION'),
+                    // ----------------------------------------------------------------
+                    string(credentialsId: 'SFDX_AUTH_URL_TECHNICAL_ORG',    variable: 'SFDX_AUTH_URL_TECHNICAL_ORG',    optional: true),
+                ]) {
+                    sh 'sf hardis:auth:login'
+                    sh 'sf hardis:project:deploy:smart --check --major-branch-check'
+                }
+            }
+            post {
+                always {
+                    archiveArtifacts allowEmptyArchive: true, artifacts: 'hardis-report/**', defaultExcludes: false, followSymlinks: false
+                }
+            }
+        }
+
         /////////////////////////////////////////////////////////////////////////////////
         // Deploy to the target org when a commit lands on a deployment branch        //
         /////////////////////////////////////////////////////////////////////////////////
@@ -279,6 +326,8 @@ pipeline {
                     not { changeRequest() }
                     // The job that refreshes the scratch org pool does not deploy
                     not { environment name: 'SCRATCH_ORG_POOL', value: 'true' }
+                    // The job that checks a major branch against its org does not deploy
+                    not { environment name: 'MAJOR_BRANCH_DEPLOYMENT_CHECK', value: 'true' }
                 }
             }
             steps {

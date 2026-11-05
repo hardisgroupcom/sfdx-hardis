@@ -18,6 +18,22 @@
 #   ci_pr_comments <number> <label>        the comment bodies into $LOGS/<label>.log
 #   ci_merge_sha <number>                  the merge commit of a merged Pull Request
 #   ci_pr_head_sha <number>                the head commit the provider knows
+#   ci_pr_comments_ids <number> <label>    the comments as a JSON array of {id, body}, sorted by
+#                                          id, into $LOGS/<label>.json (two reads compare with cmp)
+#
+# The major branch deployment check (sf hardis:project:deploy:smart --check --major-branch-check,
+# scenario major-branch-check):
+#   ci_prepare_major_branch_check <auth url>   checks the check job is in the repository, and
+#                                          creates what the provider needs to run it (Azure: the
+#                                          pipeline definition); after ci_create_remote
+#   start_major_branch_check <branch> [<label>]   starts the check of a major branch the way its
+#                                          schedule would (label default mbc-<branch>); writes
+#                                          $LOGS/<label>.start (ISO time) and <label>.trigger (how)
+#   ci_major_branch_check_state <branch> [<label>]   prints pending, running or done
+#   ci_wait_major_branch_check <branch> [<label>]    waits for the check job of that branch: same
+#                                          .log, .code, .mode and ci-jobs.tsv line as the waits above
+#   CI_MAJOR_BRANCH_CHECK_ALL              yes when one start checks every major branch (GitHub:
+#                                          the matrix of the workflow), empty when it checks one
 #
 # and these variables:
 #   CI_DRAFT_DESC                 what W3 proves on this provider
@@ -39,6 +55,10 @@ CI_DRAFT_DESC="a GitHub draft (draft flag, no \"draft\" in the title) is not sto
 CI_SAFE_DIRECTORY_FILES=".github/workflows/check-deploy.yml .github/workflows/process-deploy.yml"
 CI_SAFE_DIRECTORY_HINT='git config --global --add safe.directory "[$]GITHUB_WORKSPACE"'
 CI_SAFE_DIRECTORY_SKIP=""
+# The workflow_dispatch run of check-major-branch-deploy.yml lists the major branches of the
+# default branch and checks each of them in a matrix job
+CI_MAJOR_BRANCH_CHECK_ALL=yes
+GH_MAJOR_CHECK_WORKFLOW=check-major-branch-deploy.yml
 
 ci_provider_init() {
   if [ -z "${REPO:-}" ]; then
@@ -111,6 +131,113 @@ ci_pr_comments() { gh api "repos/$REPO/issues/$1/comments" --paginate --jq '.[].
 ci_merge_sha() { gh pr view "$1" -R "$REPO" --json mergeCommit --jq .mergeCommit.oid; }
 ci_pr_head_sha() { gh pr view "$1" -R "$REPO" --json headRefOid --jq .headRefOid; }
 
+# One line per page (an array as a JSON string), merged and sorted by id
+ci_pr_comments_ids() {
+  gh api "repos/$REPO/issues/$1/comments" --paginate --jq '[.[] | {id, body}] | @json' 2>>"$LOGS/$2.err" |
+    node -e "let s='';process.stdin.setEncoding('utf8').on('data',c=>s+=c).on('end',()=>{const a=s.split('\n').filter(Boolean).flatMap(l=>JSON.parse(l));a.sort((x,y)=>String(x.id).localeCompare(String(y.id),undefined,{numeric:true}));process.stdout.write(JSON.stringify(a,null,1))})" >"$LOGS/$2.json"
+}
+
+ci_prepare_major_branch_check() {
+  if [ ! -f "$WORK/.github/workflows/$GH_MAJOR_CHECK_WORKFLOW" ]; then
+    echo "no .github/workflows/$GH_MAJOR_CHECK_WORKFLOW in $WORK: the template was not written"
+    return 1
+  fi
+}
+
+# A workflow_dispatch of the check workflow on the default branch: its matrix checks every major
+# branch, so a call within MBC_GH_REUSE_SECONDS (default 600) of the previous dispatch reuses that
+# run instead of starting another one. The schedule of the workflow is not used: GitHub only runs
+# it on the default branch, at its own time
+start_major_branch_check() {
+  local branch="$1" label="${2:-mbc-$1}" now last_epoch="" last_run="" id="" since default_branch
+  now=$(date +%s)
+  date -u +%Y-%m-%dT%H:%M:%SZ >"$LOGS/$label.start"
+  [ -f "$LOGS/.gh-mbc-dispatch" ] && read -r last_epoch last_run <"$LOGS/.gh-mbc-dispatch"
+  if [ -n "$last_run" ] && [ $((now - ${last_epoch:-0})) -lt "${MBC_GH_REUSE_SECONDS:-600}" ]; then
+    echo "$last_run" >"$LOGS/$label.run"
+    echo "workflow_dispatch run $last_run, started for an earlier branch: one run checks every major branch" >"$LOGS/$label.trigger"
+    echo "[$(date +%T)] $label: run $last_run of the previous dispatch checks $branch too"
+    return 0
+  fi
+  default_branch=$(gh repo view "$REPO" --json defaultBranchRef --jq .defaultBranchRef.name 2>/dev/null)
+  since=$(date -u -d '-60 seconds' +%Y-%m-%dT%H:%M:%SZ)
+  # A workflow pushed a moment ago can be unknown to the API for a while
+  for _ in $(seq 1 10); do
+    gh workflow run "$GH_MAJOR_CHECK_WORKFLOW" -R "$REPO" --ref "${default_branch:-main}" >>"$LOGS/$label.dispatch" 2>&1 && break
+    sleep 6
+  done
+  for _ in $(seq 1 30); do
+    id=$(gh run list -R "$REPO" --workflow "$GH_MAJOR_CHECK_WORKFLOW" --event workflow_dispatch -L 5 --json databaseId,createdAt \
+      --jq "[.[] | select(.createdAt >= \"$since\")][0].databaseId // empty" 2>/dev/null)
+    [ -n "$id" ] && break
+    sleep 10
+  done
+  if [ -z "$id" ]; then
+    echo "no workflow_dispatch run of $GH_MAJOR_CHECK_WORKFLOW appeared (see $label.dispatch)" >"$LOGS/$label.log"
+    echo 9 >"$LOGS/$label.code"
+    return 1
+  fi
+  echo "$id" >"$LOGS/$label.run"
+  echo "$now $id" >"$LOGS/.gh-mbc-dispatch"
+  echo "workflow_dispatch run $id on ${default_branch:-main} (its matrix checks every major branch)" >"$LOGS/$label.trigger"
+  echo "[$(date +%T)] $label: workflow_dispatch run $id"
+}
+
+ci_major_branch_check_state() {
+  local branch="$1" label="${2:-mbc-$1}" run status=""
+  run=$(cat "$LOGS/$label.run" 2>/dev/null)
+  [ -n "$run" ] || return 0
+  read -r _ status _ <<<"$(_gh_mbc_job "$run" "$branch")"
+  # no matrix job yet: the job that lists the branches runs, the run is what a user sees
+  [ -n "$status" ] || status=$(gh run view "$run" -R "$REPO" --json status --jq .status 2>/dev/null)
+  case "$status" in
+  completed) echo done ;;
+  in_progress) echo running ;;
+  queued | waiting | requested | pending) echo pending ;;
+  esac
+}
+
+ci_wait_major_branch_check() {
+  local branch="$1" label="${2:-mbc-$1}" run job="" status="" conclusion="" waited=0 queue run_s
+  run=$(cat "$LOGS/$label.run" 2>/dev/null)
+  if [ -z "$run" ]; then
+    echo "no run started for the check of $branch" >"$LOGS/$label.log"
+    echo 9 >"$LOGS/$label.code"
+    return 1
+  fi
+  while [ "$waited" -lt "${CI_WAIT_JOB_SECONDS:-3600}" ]; do
+    read -r job status conclusion <<<"$(_gh_mbc_job "$run" "$branch")"
+    [ "$status" = "completed" ] && break
+    # the run ended with no job for this branch: no config file of it on the default branch
+    if [ -z "$job" ] && [ "$(gh run view "$run" -R "$REPO" --json status --jq .status 2>/dev/null)" = "completed" ]; then
+      break
+    fi
+    sleep 20
+    waited=$((waited + 20))
+  done
+  if [ -z "$job" ]; then
+    echo "run $run has no \"Check Major Branch Deployment ($branch)\" job" >"$LOGS/$label.log"
+    echo 9 >"$LOGS/$label.code"
+    echo "[$(date +%T)] $label: no job for $branch in run $run"
+    return 1
+  fi
+  echo "$job" >"$LOGS/$label.job"
+  gh run view -R "$REPO" --job "$job" --log 2>&1 | sed -E 's/\x1b\[[0-9;]*[A-Za-z]//g; s/\r//g' >"$LOGS/$label.log"
+  if [ "$status" != "completed" ]; then
+    printf '\nE2E: job %s still %s after %ss (CI_WAIT_JOB_SECONDS)\n' "$job" "${status:-unknown}" "${CI_WAIT_JOB_SECONDS:-3600}" >>"$LOGS/$label.log"
+    echo 9 >"$LOGS/$label.code"
+  elif [ "$conclusion" = "success" ]; then
+    echo 0 >"$LOGS/$label.code"
+  else
+    echo 1 >"$LOGS/$label.code"
+  fi
+  echo "real CI" >"$LOGS/$label.mode"
+  read -r queue run_s <<<"$(gh api "repos/$REPO/actions/jobs/$job" \
+    --jq '[((.started_at|fromdate)-(.created_at|fromdate)),((.completed_at|fromdate)-(.started_at|fromdate))]|map(tostring)|join(" ")' 2>/dev/null)"
+  printf '%s\tgithub\treal CI\t%s\t%s\t%s\t%s\t\n' "$label" "$job" "${conclusion:-$status}" "${queue:-}" "${run_s:-}" >>"$LOGS/ci-jobs.tsv"
+  echo "[$(date +%T)] $label: job $job ${conclusion:-$status} (queued ${queue:-?}s, ran ${run_s:-?}s)"
+}
+
 # The latest run of a workflow for a commit, waited for until it completes. A pull_request run is
 # listed under the head commit of the Pull Request, a push run under the merge commit
 _gh_wait_workflow() {
@@ -147,4 +274,11 @@ _gh_wait_run_id() {
     --jq '[((.startedAt|fromdate)-(.createdAt|fromdate)),((.updatedAt|fromdate)-(.startedAt|fromdate))]|map(tostring)|join(" ")' 2>/dev/null)"
   printf '%s\tgithub\treal CI\t%s\t%s\t%s\t%s\t\n' "$label" "$id" "$conclusion" "${queue:-}" "${run:-}" >>"$LOGS/ci-jobs.tsv"
   echo "[$(date +%T)] $label: run $id $conclusion (queued ${queue:-?}s, ran ${run:-?}s)"
+}
+
+# "id status conclusion" of the matrix job of a branch in a check run: the job is named
+# "Check Major Branch Deployment (<branch>)", the name the extension looks for
+_gh_mbc_job() {
+  gh api "repos/$REPO/actions/runs/$1/jobs?per_page=100" \
+    --jq ".jobs[] | select(.name | endswith(\"($2)\")) | \"\(.id) \(.status) \(.conclusion // \"\")\"" 2>/dev/null | head -1
 }

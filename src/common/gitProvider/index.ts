@@ -31,6 +31,7 @@ import {
 import { encodeRunSummaryMarker, markdownFirstLineAsText } from "./utils/prRunSummary.js";
 import { classifyBackpromoteCurrentBranch } from "../utils/backpromoteRules.js";
 import { listMajorOrgs } from "../utils/orgConfigUtils.js";
+import { isMajorBranchCheckMode } from "../utils/majorBranchCheckUtils.js";
 import type { PrePostCommand } from "../actionsProvider/actionsProvider.js";
 import type { Ticket } from "../ticketProvider/index.js";
 // Enable with NODE_DEBUG=sfdxhardis
@@ -232,6 +233,12 @@ export abstract class GitProvider {
   }
 
   static async managePostPullRequestComment(checkOnly: boolean): Promise<void> {
+    // The provider post methods look the Pull Request up by themselves: without this return, a major
+    // branch check would comment the Pull Request merged last on the branch
+    if (isMajorBranchCheckMode()) {
+      uxLog("log", this, c.grey('[Git Provider] ' + t('majorBranchCheckSkippingPrComment')));
+      return;
+    }
     const gitProvider = await GitProvider.getInstance();
     if (gitProvider == null) {
       uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderNotConfigured')));
@@ -607,6 +614,12 @@ export abstract class GitProvider {
   static inheritedCustomBehaviorsPrId: number | null = null;
 
   static async getPullRequestInfo(options: { useCache: boolean } = { useCache: false }): Promise<CommonPullRequestInfo | null> {
+    // A major branch check compares the branch with its org: no Pull Request is in scope, not even
+    // the one whose merge commit is the head of the branch
+    if (isMajorBranchCheckMode()) {
+      debug("[PR Info] Major branch deployment check: no Pull Request");
+      return null;
+    }
     // Return cached result if available and caching is enabled
     if (options.useCache && GitProvider.prInfoCache !== null) {
       debug("[PR Info] Returning cached pull request info");

@@ -29,6 +29,9 @@ CI_SAFE_DIRECTORY_HINT=""
 CI_SAFE_DIRECTORY_SKIP="GitHub only: the GitLab template has no safe.directory line, the runner owns its clone"
 CI_CHECK_JOB=check_deploy_to_target_branch_org
 CI_DEPLOY_JOB=deploy_to_org
+# The major branch deployment check: a job of the scheduled pipeline of each major branch
+CI_MAJOR_CHECK_JOB=check_deploy_to_current_branch_org
+CI_MAJOR_BRANCH_CHECK_ALL=""
 
 # The REST API before e2e-lib-gitlab.sh is sourced (it needs PROJECT_ID, which does not exist yet)
 _glci_api() {
@@ -225,6 +228,80 @@ ci_merge_sha() {
 }
 
 ci_pr_head_sha() { gl_mr_sha "$1"; }
+
+ci_pr_comments_ids() {
+  _glci_api GET "projects/$PROJECT_ID/merge_requests/$1/notes?per_page=100&sort=asc" |
+    _glci_json "Array.isArray(d)?JSON.stringify(d.filter(n=>!n.system).map(n=>({id:n.id,body:n.body})).sort((x,y)=>x.id-y.id),null,1):''" >"$LOGS/$2.json"
+}
+
+ci_prepare_major_branch_check() {
+  if ! grep -q -- "--major-branch-check" "$WORK/.gitlab-ci.yml" 2>/dev/null; then
+    echo "the $CI_MAJOR_CHECK_JOB job of $WORK/.gitlab-ci.yml does not run --major-branch-check"
+    return 1
+  fi
+}
+
+# A pipeline schedule on the branch, then played: only a played schedule gives a pipeline whose
+# source is "schedule" ("Run pipeline" gives "web", which also runs deploy_to_org). The cron (once a
+# year) never fires during a run. Waits for the pipeline and its check job to exist.
+start_major_branch_check() {
+  local branch="$1" label="${2:-mbc-$1}" before schedule code pipeline="" job="" waited=0
+  date -u +%Y-%m-%dT%H:%M:%SZ >"$LOGS/$label.start"
+  before=$(_glci_api GET "projects/$PROJECT_ID/pipelines?ref=$branch&source=schedule&per_page=20" | _glci_json "Array.isArray(d)?Math.max(0,...d.map(p=>p.id)):0")
+  schedule=$(_glci_api POST "projects/$PROJECT_ID/pipeline_schedules" --data-urlencode "description=sfdx-hardis e2e major branch check of $branch" \
+    --data-urlencode "ref=$branch" --data-urlencode "cron=0 3 1 1 *" --data-urlencode "cron_timezone=UTC" --data-urlencode "active=true" | _glci_json 'd.id')
+  if ! [[ "$schedule" =~ ^[0-9]+$ ]]; then
+    echo "pipeline schedule on $branch not created" >"$LOGS/$label.log"
+    echo 9 >"$LOGS/$label.code"
+    return 1
+  fi
+  code=$(curl -sS -o /dev/null -w '%{http_code}' -X POST -H "PRIVATE-TOKEN: $GL_TOKEN" "$GL_HOST/api/v4/projects/$PROJECT_ID/pipeline_schedules/$schedule/play")
+  if [ "$code" != "201" ] && [ "$code" != "200" ]; then
+    echo "play of pipeline schedule $schedule answered HTTP $code" >"$LOGS/$label.log"
+    echo 9 >"$LOGS/$label.code"
+    return 1
+  fi
+  echo "pipeline schedule $schedule played on $branch (pipeline source: schedule)" >"$LOGS/$label.trigger"
+  while [ "$waited" -lt "${CI_WAIT_APPEAR_SECONDS:-600}" ]; do
+    pipeline=$(_glci_api GET "projects/$PROJECT_ID/pipelines?ref=$branch&source=schedule&per_page=20" | _glci_json "Array.isArray(d)?(d.filter(p=>p.id>$before).sort((a,b)=>b.id-a.id)[0]||{}).id:''")
+    if [[ "$pipeline" =~ ^[0-9]+$ ]]; then
+      job=$(_glci_api GET "projects/$PROJECT_ID/pipelines/$pipeline/jobs?per_page=100" | _glci_json "Array.isArray(d)?(d.find(j=>j.name==='$CI_MAJOR_CHECK_JOB')||{}).id:''")
+      [[ "$job" =~ ^[0-9]+$ ]] && break
+    fi
+    sleep 10
+    waited=$((waited + 10))
+  done
+  if ! [[ "$job" =~ ^[0-9]+$ ]]; then
+    echo "no $CI_MAJOR_CHECK_JOB job in a schedule pipeline of $branch after ${CI_WAIT_APPEAR_SECONDS:-600}s (pipeline: ${pipeline:-none})" >"$LOGS/$label.log"
+    echo 9 >"$LOGS/$label.code"
+    return 1
+  fi
+  echo "$pipeline" >"$LOGS/$label.pipeline"
+  echo "$job" >"$LOGS/$label.job"
+  echo "[$(date +%T)] $label: schedule $schedule played, pipeline $pipeline, job $job"
+}
+
+ci_major_branch_check_state() {
+  local label="${2:-mbc-$1}" job
+  job=$(cat "$LOGS/$label.job" 2>/dev/null)
+  [ -n "$job" ] || return 0
+  case "$(_glci_api GET "projects/$PROJECT_ID/jobs/$job" | _glci_json 'd.status')" in
+  created | pending | waiting_for_resource | preparing | scheduled) echo pending ;;
+  running) echo running ;;
+  success | failed | canceled | skipped | manual) echo done ;;
+  esac
+}
+
+ci_wait_major_branch_check() {
+  local branch="$1" label="${2:-mbc-$1}" job
+  job=$(cat "$LOGS/$label.job" 2>/dev/null)
+  if [ -z "$job" ]; then
+    echo "no check job started for $branch" >"$LOGS/$label.log"
+    echo 9 >"$LOGS/$label.code"
+    return 1
+  fi
+  _glci_wait_job "$job" "$label"
+}
 
 # Wait for the newest pipeline of a commit to appear, then for one of its jobs.
 # Usage: _glci_wait_pipeline <pipelines API path> <sha> <job name> <label>
