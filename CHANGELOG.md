@@ -2,10 +2,15 @@
 
 ## [beta] (main)
 
+- [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/#3-answer-the-conflicts-if-any) (Beta), [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/):
+  - New "solve the conflicts now" answer, which opens the conflicting files in VS Code and continues once they are solved.
+  - New risky `take-source` answer (also `--on-conflict take-source`), which keeps the source branch version of the conflicting lines and lists those files in the Pull Request for review.
+  - Committing a story with its conflict markers no longer fails on the git hooks of the project (Husky, pre-commit...).
 - [Major branch deployment check](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-major-branch-check/):
   - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): new mode to check every night that a major branch can still be deployed to its org, without commenting the last merged Pull Request nor replaying its deployment actions.
   - The default CI/CD templates hold the job, ready to schedule. On GitLab, add `--major-branch-check` to your existing `check_deploy_to_current_branch_org` job.
   - The VS Code DevOps Pipeline can color each major branch with the result of its last check.
+- [Replacement rules](https://sfdx-hardis.cloudity.com/salesforce-devops-config-replacement-rules/) (Beta): the logs and the Pull Request comment name the elements each rule removed or changed in each file, like the user permissions removed from a Profile, never their values.
 - Default CI/CD files now start with the URL of the template they come from, to upgrade them by hand or with a coding agent.
 
 ## [8.22.0] 2026-11-02

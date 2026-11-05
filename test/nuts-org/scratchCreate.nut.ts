@@ -10,7 +10,7 @@
 import { expect } from 'chai';
 import {
     countAccounts,
-    getSharedNutOrgSession,
+    getSharedNutOrgSessionOrSkip,
   NutOrgContext,
   queryRecords,
   queryTooling,
@@ -22,7 +22,7 @@ describe('hardis:scratch:create against a real Dev Hub', () => {
 
   before(async function () {
     this.timeout(1800000); // scratch org creation + full initialization is slow
-    ctx = await getSharedNutOrgSession();
+    ctx = await getSharedNutOrgSessionOrSkip(this);
     if (ctx.reused) {
       // Nothing was created by this run, so there is no initialization to assert on
       this.skip();
