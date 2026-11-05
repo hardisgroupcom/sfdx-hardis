@@ -191,7 +191,7 @@ ci_major_branch_check_state() {
   # no matrix job yet: the job that lists the branches runs, the run is what a user sees
   [ -n "$status" ] || status=$(gh run view "$run" -R "$REPO" --json status --jq .status 2>/dev/null)
   case "$status" in
-  completed) echo done ;;
+  completed) echo "done" ;;
   in_progress) echo running ;;
   queued | waiting | requested | pending) echo pending ;;
   esac

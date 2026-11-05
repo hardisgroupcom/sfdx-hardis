@@ -85,7 +85,7 @@ bitbucket)
 esac
 
 # ci-provider-bitbucket.sh sources its library from SCRIPTS_DIR
-SCRIPTS_DIR="$PROMO_SCRIPTS"
+export SCRIPTS_DIR="$PROMO_SCRIPTS"
 # shellcheck source=/dev/null
 source "$PROMO_SCRIPTS/ci-provider-$PROVIDER.sh"
 ci_provider_init || exit 1

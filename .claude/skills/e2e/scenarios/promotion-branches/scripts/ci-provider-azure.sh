@@ -426,7 +426,7 @@ ci_major_branch_check_state() {
   case "$(_azci_api GET "$AZ_PROJECT_URL/_apis/build/builds/$id?api-version=7.1" | _azci_json 'd.status')" in
   notStarted | postponed) echo pending ;;
   inProgress) echo running ;;
-  completed | cancelling) echo done ;;
+  completed | cancelling) echo "done" ;;
   esac
 }
 

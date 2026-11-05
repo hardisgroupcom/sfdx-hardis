@@ -317,7 +317,7 @@ ci_major_branch_check_state() {
   PENDING:*) echo pending ;;
   IN_PROGRESS:PAUSED | IN_PROGRESS:HALTED) echo pending ;;
   IN_PROGRESS:*) echo running ;;
-  COMPLETED:*) echo done ;;
+  COMPLETED:*) echo "done" ;;
   esac
 }
 

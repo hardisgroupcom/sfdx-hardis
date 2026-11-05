@@ -288,7 +288,7 @@ ci_major_branch_check_state() {
   case "$(_glci_api GET "projects/$PROJECT_ID/jobs/$job" | _glci_json 'd.status')" in
   created | pending | waiting_for_resource | preparing | scheduled) echo pending ;;
   running) echo running ;;
-  success | failed | canceled | skipped | manual) echo done ;;
+  success | failed | canceled | skipped | manual) echo "done" ;;
   esac
 }
 
