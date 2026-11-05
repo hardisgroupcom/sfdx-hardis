@@ -3283,7 +3283,7 @@
   "promotionCreateConflictSkipped": "{{label}} をプロモーションから外しました",
   "promotionCreateConflictSolveDone": "解決したので続行する",
   "promotionCreateConflictSolveNow": "このユーザーストーリーの競合を今すぐ解決してから続行する",
-  "promotionCreateConflictSolveNowHelp": "競合しているファイルが VS Code で開きます。そこで解決して保存してから、このプロンプトに戻ってください。コマンドはマーカーが残っていないことを確認し、プロモーションを続行します。",
+  "promotionCreateConflictSolveNowHelp": "コマンドは競合しているファイルを一覧表示し、VS Code で実行している場合はそれらを開きます。解決して保存してから、このプロンプトに戻ってください。コマンドはマーカーが残っていないことを確認し、プロモーションを続行します。",
   "promotionCreateConflictSolveNowInstructions": "次のファイルで {{label}} の競合を解決して保存してから、次の質問に答えてください:\n{{files}}",
   "promotionCreateConflictSolvePrompt": "{{label}} の競合: 解決しましたか？",
   "promotionCreateConflictSolvePromptHelp": "commit の前に、コマンドはファイルに競合マーカーが残っていないことを確認します。マーカーごと commit する、ユーザーストーリーを外す、中止する、を選ぶこともできます。",

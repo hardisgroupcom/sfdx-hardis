@@ -3285,7 +3285,7 @@
   "promotionCreateConflictSkipped": "{{label}} lasciata fuori dalla promozione",
   "promotionCreateConflictSolveDone": "Li ho risolti, continua",
   "promotionCreateConflictSolveNow": "Risolvere ora i conflitti di questa User Story, poi continuare",
-  "promotionCreateConflictSolveNowHelp": "I file in conflitto si aprono in VS Code. Risolvili lì, salva, poi torna a questa domanda: il comando verifica che non resti alcun marcatore e continua la promozione.",
+  "promotionCreateConflictSolveNowHelp": "Il comando elenca i file in conflitto e li apre quando viene eseguito in VS Code. Risolvili, salva, poi torna a questa domanda: il comando verifica che non resti alcun marcatore e continua la promozione.",
   "promotionCreateConflictSolveNowInstructions": "Risolvi i conflitti di {{label}} in questi file, salvali, poi rispondi alla domanda successiva:\n{{files}}",
   "promotionCreateConflictSolvePrompt": "Conflitti di {{label}}: sono risolti?",
   "promotionCreateConflictSolvePromptHelp": "Prima del commit, il comando verifica che nei file non resti alcun marcatore di conflitto. Puoi ancora committare con i marcatori, lasciare fuori la User Story o fermarti.",

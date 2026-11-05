@@ -957,6 +957,33 @@ describe('cherryPickCandidates() keeping the source version (take-source)', () =
     expect(message).to.contain('- Status__c.field-meta.xml');
   });
 
+  it('stops in agent mode on what git cannot settle that way, naming the file', async () => {
+    // The story changes Extra.cls, which preprod deleted: -X theirs cannot settle that
+    git(['checkout', '-q', 'uat']);
+    fs.writeFileSync(path.join(path.dirname(file()), 'Extra.cls'), 'v1\n');
+    git(['add', '-A']);
+    git(['commit', '-qm', 'extra class']);
+    git(['checkout', '-q', 'preprod']);
+    git(['cherry-pick', 'uat']);
+    git(['rm', '-q', 'Extra.cls']);
+    git(['commit', '-qm', 'preprod deletes the class']);
+    git(['checkout', '-q', 'uat']);
+    fs.writeFileSync(path.join(path.dirname(file()), 'Extra.cls'), 'v2\n');
+    git(['commit', '-qam', 'the story changes the class']);
+    git(['checkout', '-q', '-b', 'promotion/uat/preprod/test', 'preprod']);
+    const hash = git(['rev-parse', 'uat']).stdout.trim();
+    const candidate = { label: '#483 class story', group: { commit: { hash } } } as unknown as PromotionCandidate;
+    let error: Error | null = null;
+    try {
+      await cherryPickCandidates([candidate], 'promotion/uat/preprod/test', 'preprod', 'take-source', true, {});
+    } catch (e) {
+      error = e as Error;
+    }
+    expect(error?.message).to.contain('Extra.cls');
+    // Undone: back on preprod, the promotion branch deleted
+    expect(git(['branch', '--show-current']).stdout.trim()).to.equal('preprod');
+  });
+
   it('warns the reviewer in the Pull Request description', () => {
     const body = buildPromotionPullRequestBody({
       sourceBranch: 'uat',
@@ -989,6 +1016,12 @@ describe('filesStillHoldingConflictMarkers()', () => {
     fs.writeFileSync(solved, '<a>ours and theirs</a>\n');
     fs.writeFileSync(markdown, 'A title\n=======\n');
     expect(filesStillHoldingConflictMarkers([left, solved, markdown, path.join(dir, 'deleted.xml')])).to.deep.equal([left]);
+  });
+
+  it('reads the paths git gives from the repository root, and counts an unreadable file as not clean', () => {
+    fs.mkdirSync(path.join(dir, 'a-folder'));
+    // git status names files from the root, whatever folder the command runs in
+    expect(filesStillHoldingConflictMarkers(['left.xml', 'solved.xml', 'a-folder'], dir)).to.deep.equal(['left.xml', 'a-folder']);
   });
 });
 

@@ -3289,7 +3289,7 @@
   "promotionCreateConflictSkipped": "{{label}} left out of the promotion",
   "promotionCreateConflictSolveDone": "I solved them, continue",
   "promotionCreateConflictSolveNow": "Solve the conflicts of this User Story now, then continue",
-  "promotionCreateConflictSolveNowHelp": "The conflicting files open in VS Code. Solve them there, save, then come back to this prompt: the command checks that no marker is left and continues the promotion.",
+  "promotionCreateConflictSolveNowHelp": "The command lists the conflicting files, and opens them when it runs in VS Code. Solve them, save, then come back to this prompt: the command checks that no marker is left and continues the promotion.",
   "promotionCreateConflictSolveNowInstructions": "Solve the conflicts of {{label}} in these files, save them, then answer the next question:\n{{files}}",
   "promotionCreateConflictSolvePrompt": "Conflicts of {{label}}: are they solved?",
   "promotionCreateConflictSolvePromptHelp": "Before committing, the command checks that no conflict marker is left in the files. You can still commit with the markers, leave the User Story out, or stop.",

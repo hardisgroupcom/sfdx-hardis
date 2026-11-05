@@ -3284,7 +3284,7 @@
   "promotionCreateConflictSkipped": "{{label}} aus der Promotion herausgenommen",
   "promotionCreateConflictSolveDone": "Gelöst, fortfahren",
   "promotionCreateConflictSolveNow": "Die Konflikte dieser User Story jetzt lösen und dann fortfahren",
-  "promotionCreateConflictSolveNowHelp": "Die Dateien mit Konflikten werden in VS Code geöffnet. Lösen Sie sie dort, speichern Sie und kehren Sie zu dieser Abfrage zurück: Der Befehl prüft, dass keine Markierung übrig ist, und setzt die Promotion fort.",
+  "promotionCreateConflictSolveNowHelp": "Der Befehl listet die Dateien mit Konflikten auf und öffnet sie, wenn er in VS Code läuft. Lösen Sie sie, speichern Sie und kehren Sie zu dieser Abfrage zurück: Der Befehl prüft, dass keine Markierung übrig ist, und setzt die Promotion fort.",
   "promotionCreateConflictSolveNowInstructions": "Lösen Sie die Konflikte von {{label}} in diesen Dateien, speichern Sie sie und beantworten Sie dann die nächste Frage:\n{{files}}",
   "promotionCreateConflictSolvePrompt": "Konflikte von {{label}}: Sind sie gelöst?",
   "promotionCreateConflictSolvePromptHelp": "Vor dem Commit prüft der Befehl, dass keine Konfliktmarkierung in den Dateien übrig ist. Sie können trotzdem mit den Markierungen committen, die User Story herausnehmen oder abbrechen.",

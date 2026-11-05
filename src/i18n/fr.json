@@ -3285,7 +3285,7 @@
   "promotionCreateConflictSkipped": "{{label}} laissée hors de la promotion",
   "promotionCreateConflictSolveDone": "Je les ai résolus, continuer",
   "promotionCreateConflictSolveNow": "Résoudre maintenant les conflits de cette User Story, puis continuer",
-  "promotionCreateConflictSolveNowHelp": "Les fichiers en conflit s'ouvrent dans VS Code. Résolvez-les là, enregistrez, puis revenez à cette question : la commande vérifie qu'il ne reste aucun marqueur et continue la promotion.",
+  "promotionCreateConflictSolveNowHelp": "La commande liste les fichiers en conflit, et les ouvre quand elle tourne dans VS Code. Résolvez-les, enregistrez, puis revenez à cette question : la commande vérifie qu'il ne reste aucun marqueur et continue la promotion.",
   "promotionCreateConflictSolveNowInstructions": "Résolvez les conflits de {{label}} dans ces fichiers, enregistrez-les, puis répondez à la question suivante :\n{{files}}",
   "promotionCreateConflictSolvePrompt": "Conflits de {{label}} : sont-ils résolus ?",
   "promotionCreateConflictSolvePromptHelp": "Avant de commiter, la commande vérifie qu'il ne reste aucun marqueur de conflit dans les fichiers. Vous pouvez encore commiter avec les marqueurs, laisser la User Story de côté ou arrêter.",

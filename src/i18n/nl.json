@@ -3285,7 +3285,7 @@
   "promotionCreateConflictSkipped": "{{label}} buiten de promotion gelaten",
   "promotionCreateConflictSolveDone": "Opgelost, doorgaan",
   "promotionCreateConflictSolveNow": "De conflicten van deze User Story nu oplossen en dan doorgaan",
-  "promotionCreateConflictSolveNowHelp": "De bestanden met conflicten openen in VS Code. Los ze daar op, sla op en kom terug naar deze vraag: het commando controleert dat er geen markering meer staat en zet de promotion voort.",
+  "promotionCreateConflictSolveNowHelp": "Het commando toont de bestanden met conflicten en opent ze wanneer het in VS Code draait. Los ze op, sla op en kom terug naar deze vraag: het commando controleert dat er geen markering meer staat en zet de promotion voort.",
   "promotionCreateConflictSolveNowInstructions": "Los de conflicten van {{label}} op in deze bestanden, sla ze op en beantwoord dan de volgende vraag:\n{{files}}",
   "promotionCreateConflictSolvePrompt": "Conflicten van {{label}}: zijn ze opgelost?",
   "promotionCreateConflictSolvePromptHelp": "Voor de commit controleert het commando dat er geen conflictmarkering meer in de bestanden staat. Je kunt nog steeds met de markeringen committen, de User Story weglaten of stoppen.",

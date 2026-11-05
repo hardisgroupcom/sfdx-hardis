@@ -1181,11 +1181,11 @@ export async function cherryPickCandidates(
       outcome.picked.push(candidate);
       continue;
     }
-    const conflictFiles = await listConflictFiles();
+    const failure = await classifyCherryPickFailure(commandThis);
     // git cherry-pick also exits non-zero when the change is already in the target branch. That is
     // not a conflict: asking the user (or aborting the whole promotion in agent mode) over a
     // change that is already delivered would be wrong.
-    if (conflictFiles.length === 0 && (await isEmptyCherryPick(commandThis))) {
+    if (failure.kind === 'empty') {
       await runCommandSafe('git cherry-pick --skip', commandThis, { output: false });
       uxLog('warning', commandThis, c.yellow(t('promotionCreateCherryPickEmpty', { label: candidate.label })));
       outcome.alreadyThere.push(candidate);
@@ -1195,11 +1195,11 @@ export async function cherryPickCandidates(
     // no CHERRY_PICK_HEAD, no conflicted path, and offering the conflict choices would be
     // meaningless. The commonest cause is untracked files in the way, the sfdx-hardis reports
     // first among them, so the reason git gave is what the user needs to read.
-    if (conflictFiles.length === 0 && !(await isCherryPickInProgress())) {
-      const reason = [res.stderr, res.stdout].map((part) => (part || '').trim()).filter((part) => part).join('\n');
+    if (failure.kind === 'refused') {
       await abortPromotion(branchName, previousBranch, commandThis);
-      throw new SfError(t('promotionCreateCherryPickRefused', { label: candidate.label, reason: reason || '-' }));
+      throw new SfError(t('promotionCreateCherryPickRefused', { label: candidate.label, reason: commandFailureReason(res) }));
     }
+    const conflictFiles = failure.files;
     uxLog('warning', commandThis, c.yellow(t('promotionCreateConflict', { label: candidate.label, files: conflictFiles.join('\n') || '-' })));
     // One conflict can take several answers: "solve now" may end in another choice, and keeping the
     // source version may leave conflicts git cannot settle that way (a file deleted on one side and
@@ -1207,6 +1207,15 @@ export async function cherryPickCandidates(
     let files = conflictFiles;
     let offerTakeSource = true;
     let nextChoice: PromotionConflictChoice | null = null;
+    // Files a partial take-source did settle with the source version: whatever ends the conflict,
+    // a story that is carried says so, in the Pull Request and in its commit message
+    let keptSourceFiles: string[] = [];
+    const reportKeptSourceFiles = async () => {
+      if (keptSourceFiles.length > 0) {
+        outcome.resolvedWithSource.push({ candidate, files: keptSourceFiles });
+        await noteSourceVersionInCommitMessage(keptSourceFiles, commandThis);
+      }
+    };
     for (;;) {
       let choice: PromotionConflictChoice | 'solve-now';
       if (nextChoice) {
@@ -1232,6 +1241,7 @@ export async function cherryPickCandidates(
         if (solved === 'solved') {
           uxLog('success', commandThis, c.green(t('promotionCreateConflictSolved', { label: candidate.label })));
           outcome.picked.push(candidate);
+          await reportKeptSourceFiles();
           break;
         }
         if (solved === 'already-there') {
@@ -1255,7 +1265,9 @@ export async function cherryPickCandidates(
           outcome.alreadyThere.push(candidate);
           break;
         }
-        files = await listConflictFiles();
+        const remaining = await listConflictFiles();
+        keptSourceFiles = files.filter((file) => !remaining.includes(file));
+        files = remaining;
         uxLog('warning', commandThis, c.yellow(t('promotionCreateConflictTakeSourceIncomplete', { label: candidate.label, files: files.join('\n') || '-' })));
         offerTakeSource = false;
         continue;
@@ -1279,6 +1291,7 @@ export async function cherryPickCandidates(
         uxLog('warning', commandThis, c.yellow(t('promotionCreateConflictCommitted', { label: candidate.label, files: files.join(', ') || '-' })));
         outcome.picked.push(candidate);
         outcome.conflicted.push({ candidate, files });
+        await reportKeptSourceFiles();
         break;
       }
       await abortPromotion(branchName, previousBranch, commandThis);
@@ -1312,14 +1325,13 @@ async function cherryPickKeepingSource(
     await noteSourceVersionInCommitMessage(conflictFiles, commandThis);
     return 'picked';
   }
-  const remaining = await listConflictFiles();
-  if (remaining.length === 0 && (await isEmptyCherryPick(commandThis))) {
+  const failure = await classifyCherryPickFailure(commandThis);
+  if (failure.kind === 'empty') {
     await runCommandSafe('git cherry-pick --skip', commandThis, { output: false });
     return 'already-there';
   }
-  if (remaining.length === 0 && !(await isCherryPickInProgress())) {
-    const reason = [res.stderr, res.stdout].map((part) => (part || '').trim()).filter((part) => part).join('\n');
-    throw new SfError(t('promotionCreateCherryPickRefused', { label: candidate.label, reason: reason || '-' }));
+  if (failure.kind === 'refused') {
+    throw new SfError(t('promotionCreateCherryPickRefused', { label: candidate.label, reason: commandFailureReason(res) }));
   }
   return 'conflicting';
 }
@@ -1329,15 +1341,13 @@ async function cherryPickKeepingSource(
 async function noteSourceVersionInCommitMessage(files: string[], commandThis: any): Promise<void> {
   const message = (await git().raw(['log', '-1', '--format=%B'])).trimEnd();
   const note = ['Conflicts resolved by keeping the version of the cherry-picked commit (take-source), to review:', ...files.map((file) => `- ${file}`)].join('\n');
-  // From a file: the message holds several lines, and the shell must not read it. simple-git refuses
-  // a core.hooksPath option, hence execCommand.
-  const messageFile = path.join(await emptyGitHooksDir(), '..', `sfdx-hardis-commit-message-${process.pid}.txt`);
-  await fs.writeFile(messageFile, `${message}\n\n${note}\n`, 'utf8');
-  try {
-    await execCommand(`git ${await gitOptionsWithoutHooks()} commit --amend --no-verify -F "${messageFile.replace(/\\/g, '/')}"`, commandThis, { fail: true, output: false });
-  } finally {
-    await fs.remove(messageFile);
-  }
+  await withoutGitHooks(async (noHooks, privateDir) => {
+    // From a file: the message holds several lines, and the shell must not read it. simple-git
+    // refuses a core.hooksPath option, hence execCommand.
+    const messageFile = path.join(privateDir, 'commit-message.txt');
+    await fs.writeFile(messageFile, `${message}\n\n${note}\n`, 'utf8');
+    await execCommand(`git ${noHooks} commit --amend --no-verify -F "${messageFile.replace(/\\/g, '/')}"`, commandThis, { fail: true, output: false });
+  });
 }
 
 async function promptConflictChoice(candidate: PromotionCandidate, commandThis: any, offerTakeSource = true): Promise<PromotionConflictAnswer> {
@@ -1380,12 +1390,19 @@ async function solveConflictsNow(
   conflictFiles: string[],
   commandThis: any,
 ): Promise<'solved' | 'already-there' | PromotionConflictChoice> {
+  // git status names the files from the root of the repository, whatever folder the command runs in
+  const repositoryRoot = (await git().revparse(['--show-toplevel'])).trim();
+  // To tell a cherry-pick the user finished themselves (a commit from VS Code) from one they undid
+  const headBefore = (await git().revparse(['HEAD'])).trim();
   uxLog('action', commandThis, c.cyan(t('promotionCreateConflictSolveNowInstructions', {
     label: candidate.label,
     files: conflictFiles.map((file) => `- ${file}`).join('\n'),
   })));
-  for (const file of conflictFiles) {
-    WebSocketClient.requestOpenFile(file);
+  // Opened only when VS Code runs the command; from a terminal, the list above is what the user has
+  if (WebSocketClient.isAlive()) {
+    for (const file of conflictFiles) {
+      WebSocketClient.requestOpenFile(file);
+    }
   }
   for (;;) {
     const res = await prompts({
@@ -1404,27 +1421,31 @@ async function solveConflictsNow(
     if (res.value !== 'solved') {
       return res.value as PromotionConflictChoice;
     }
-    const markersLeft = filesStillHoldingConflictMarkers(conflictFiles);
+    const markersLeft = filesStillHoldingConflictMarkers(conflictFiles, repositoryRoot);
     if (markersLeft.length > 0) {
       uxLog('warning', commandThis, c.yellow(t('promotionCreateConflictMarkersLeft', { files: markersLeft.join('\n') })));
       continue;
     }
-    const committed = await commitSolvedCherryPick(commandThis);
+    const committed = await commitSolvedCherryPick(headBefore, commandThis);
     if (committed !== 'failed') {
       return committed;
     }
   }
 }
 
-/** The files of a list that still hold a conflict marker. A file the resolution deleted holds none. */
-export function filesStillHoldingConflictMarkers(files: string[]): string[] {
+/**
+ * The files of a list that still hold a conflict marker, the paths read from `root` (the repository
+ * root, where git status starts them). A file the resolution deleted holds none; a file that cannot
+ * be read is not proven clean, so it counts as still holding markers.
+ */
+export function filesStillHoldingConflictMarkers(files: string[], root = ''): string[] {
   // Same markers as listFilesWithConflictMarkers: a line of "=======" is legitimate in markdown
   const marker = /^(<<<<<<< |>>>>>>> )/m;
   return files.filter((file) => {
     try {
-      return marker.test(fs.readFileSync(file, 'utf8'));
-    } catch {
-      return false;
+      return marker.test(fs.readFileSync(path.resolve(root || process.cwd(), file), 'utf8'));
+    } catch (e: any) {
+      return e?.code !== 'ENOENT';
     }
   });
 }
@@ -1432,21 +1453,24 @@ export function filesStillHoldingConflictMarkers(files: string[]): string[] {
 /**
  * Finish a cherry-pick whose conflicts the user solved. The hooks run: the files are clean, and a
  * hook that refuses them (a linter) is reported so the user can fix and confirm again. A resolution
- * that left nothing over HEAD means the change is already in the target branch.
+ * that left nothing over HEAD means the change is already in the target branch. Only tracked files
+ * are staged: a backup or scratch file a merge tool left behind must not ride along.
+ * The user may also have ended the cherry-pick themselves: committed from VS Code (HEAD moved, the
+ * story is in) or undone it (HEAD did not move, the story is out).
  */
-async function commitSolvedCherryPick(commandThis: any): Promise<'solved' | 'already-there' | 'failed'> {
-  await execCommand('git add -A', commandThis, { fail: true, output: false });
-  const res = await runCommandSafe('git -c core.editor=true cherry-pick --continue', commandThis, { output: false });
-  if (res.status === 0) {
+async function commitSolvedCherryPick(headBefore: string, commandThis: any): Promise<'solved' | 'already-there' | 'failed' | 'skip'> {
+  if (!(await isCherryPickInProgress())) {
+    const head = (await git().revparse(['HEAD'])).trim();
+    return head !== headBefore ? 'solved' : 'skip';
+  }
+  const finished = await finishCherryPick(commandThis, { stage: '-u' });
+  if (finished.result === 'committed') {
     return 'solved';
   }
-  const staged = await runCommandSafe('git diff --cached --quiet HEAD', commandThis, { output: false });
-  if (staged.status === 0) {
-    await runCommandSafe('git cherry-pick --skip', commandThis, { output: false });
+  if (finished.result === 'empty') {
     return 'already-there';
   }
-  const reason = [res.stderr, res.stdout].map((part) => (part || '').trim()).filter((part) => part).join('\n');
-  uxLog('warning', commandThis, c.yellow(t('promotionCreateConflictSolvedCommitFailed', { reason: reason || '-' })));
+  uxLog('warning', commandThis, c.yellow(t('promotionCreateConflictSolvedCommitFailed', { reason: finished.reason })));
   return 'failed';
 }
 
@@ -1461,54 +1485,79 @@ async function commitSolvedCherryPick(commandThis: any): Promise<'solved' | 'alr
  * promotion that still holds markers (assertNoPromotionConflictMarkers).
  */
 async function commitWithConflictMarkers(commandThis: any): Promise<boolean> {
-  await execCommand('git add -A', commandThis, { fail: true, output: false });
-  const noHooks = await gitOptionsWithoutHooks();
   uxLog('log', commandThis, c.grey(t('promotionCreateConflictHooksSkipped')));
-  return withoutHusky(async () => {
-    const res = await runCommandSafe(`git ${noHooks} -c core.editor=true cherry-pick --continue`, commandThis, { output: false });
-    if (res.status === 0) {
-      return true;
+  return withoutGitHooks(async (noHooks) => {
+    const finished = await finishCherryPick(commandThis, { stage: '-A', gitOptions: noHooks });
+    if (finished.result !== 'failed') {
+      return finished.result === 'committed';
     }
-    // --continue refused. Either the staged content matches HEAD (nothing to carry), or something
-    // else went wrong: the index is what tells the two apart.
-    const staged = await runCommandSafe('git diff --cached --quiet HEAD', commandThis, { output: false });
-    if (staged.status === 0) {
-      await runCommandSafe('git cherry-pick --skip', commandThis, { output: false });
-      return false;
-    }
-    await execCommand(`git ${noHooks} -c core.editor=true commit --no-edit --no-verify`, commandThis, { fail: true, output: false });
+    // --continue refused while the index holds the story: commit it directly
+    await execCommand(`git ${noHooks} -c core.editor=true commit --no-edit`, commandThis, { fail: true, output: false });
     return true;
   });
 }
 
 /**
- * git options that run no hook at all: core.hooksPath pointed at an empty folder. git cherry-pick
- * has no --no-verify, and this covers every hook manager (Husky sets core.hooksPath=.husky in the
- * repository config, which a -c option overrides; pre-commit and lefthook write .git/hooks).
+ * Finish the cherry-pick in progress with what `git add <stage>` puts in the index. 'empty': the
+ * index holds nothing over HEAD, the cherry-pick is skipped (the change is already in the target
+ * branch). 'failed': git refused, `reason` says why.
  */
-async function gitOptionsWithoutHooks(): Promise<string> {
-  return `-c core.hooksPath="${await emptyGitHooksDir()}"`;
-}
-
-async function emptyGitHooksDir(): Promise<string> {
-  const dir = path.join(os.tmpdir(), 'sfdx-hardis-no-git-hooks');
-  await fs.ensureDir(dir);
-  return dir.replace(/\\/g, '/');
-}
-
-// HUSKY=0 too, for a hook started some other way: Husky reads it and does nothing
-async function withoutHusky<T>(run: () => Promise<T>): Promise<T> {
-  const previous = process.env.HUSKY;
-  process.env.HUSKY = '0';
-  try {
-    return await run();
-  } finally {
-    if (previous === undefined) {
-      delete process.env.HUSKY;
-    } else {
-      process.env.HUSKY = previous;
-    }
+async function finishCherryPick(
+  commandThis: any,
+  options: { stage: '-A' | '-u'; gitOptions?: string },
+): Promise<{ result: 'committed' | 'empty' | 'failed'; reason: string }> {
+  await execCommand(`git add ${options.stage}`, commandThis, { fail: true, output: false });
+  const res = await runCommandSafe(`git ${options.gitOptions ? options.gitOptions + ' ' : ''}-c core.editor=true cherry-pick --continue`, commandThis, { output: false });
+  if (res.status === 0) {
+    return { result: 'committed', reason: '' };
   }
+  // The index tells "nothing to carry" from "something else went wrong"
+  const staged = await runCommandSafe('git diff --cached --quiet HEAD', commandThis, { output: false });
+  if (staged.status === 0) {
+    await runCommandSafe('git cherry-pick --skip', commandThis, { output: false });
+    return { result: 'empty', reason: '' };
+  }
+  return { result: 'failed', reason: commandFailureReason(res) };
+}
+
+/**
+ * Runs git with no hook at all: core.hooksPath pointed at an empty folder created for this call,
+ * private to the user (a fixed folder in the shared temp directory would let anyone plant a hook in
+ * it), and removed afterwards. git cherry-pick has no --no-verify, and this covers every hook
+ * manager (Husky sets core.hooksPath=.husky in the repository config, which a -c option overrides;
+ * pre-commit and lefthook write .git/hooks). `privateDir` holds the hooks folder and may hold other
+ * files of the call.
+ */
+async function withoutGitHooks<T>(run: (noHooksOptions: string, privateDir: string) => Promise<T>): Promise<T> {
+  const privateDir = await fs.mkdtemp(path.join(os.tmpdir(), 'sfdx-hardis-'));
+  const hooksDir = path.join(privateDir, 'hooks');
+  try {
+    await fs.ensureDir(hooksDir);
+    return await run(`-c core.hooksPath="${hooksDir.replace(/\\/g, '/')}"`, privateDir);
+  } finally {
+    await fs.remove(privateDir);
+  }
+}
+
+// Why a git command failed, as git said it
+function commandFailureReason(res: { stdout: string; stderr: string }): string {
+  return [res.stderr, res.stdout].map((part) => (part || '').trim()).filter((part) => part).join('\n') || '-';
+}
+
+/**
+ * What a cherry-pick that exited non-zero left behind: nothing to apply ('empty', the change is
+ * already in the target branch), a refusal before it started ('refused', no CHERRY_PICK_HEAD and no
+ * conflicted path), or conflicts to answer.
+ */
+async function classifyCherryPickFailure(commandThis: any): Promise<{ kind: 'empty' | 'refused' | 'conflict'; files: string[] }> {
+  const files = await listConflictFiles();
+  if (files.length === 0 && (await isEmptyCherryPick(commandThis))) {
+    return { kind: 'empty', files };
+  }
+  if (files.length === 0 && !(await isCherryPickInProgress())) {
+    return { kind: 'refused', files };
+  }
+  return { kind: 'conflict', files };
 }
 
 /**

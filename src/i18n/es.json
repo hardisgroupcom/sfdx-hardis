@@ -3285,7 +3285,7 @@
   "promotionCreateConflictSkipped": "{{label}} excluida de la promoción",
   "promotionCreateConflictSolveDone": "Ya los resolví, continuar",
   "promotionCreateConflictSolveNow": "Resolver ahora los conflictos de esta User Story y luego continuar",
-  "promotionCreateConflictSolveNowHelp": "Los archivos en conflicto se abren en VS Code. Resuélvelos allí, guarda y vuelve a esta pregunta: el comando comprueba que no queda ningún marcador y continúa la promoción.",
+  "promotionCreateConflictSolveNowHelp": "El comando lista los archivos en conflicto y los abre cuando se ejecuta en VS Code. Resuélvelos, guarda y vuelve a esta pregunta: el comando comprueba que no queda ningún marcador y continúa la promoción.",
   "promotionCreateConflictSolveNowInstructions": "Resuelve los conflictos de {{label}} en estos archivos, guárdalos y responde a la siguiente pregunta:\n{{files}}",
   "promotionCreateConflictSolvePrompt": "Conflictos de {{label}}: ¿están resueltos?",
   "promotionCreateConflictSolvePromptHelp": "Antes del commit, el comando comprueba que no queda ningún marcador de conflicto en los archivos. Aún puedes hacer commit con los marcadores, dejar fuera la User Story o detenerte.",

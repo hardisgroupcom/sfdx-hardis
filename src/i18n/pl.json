@@ -3285,7 +3285,7 @@
   "promotionCreateConflictSkipped": "{{label}} pominięto w promocji",
   "promotionCreateConflictSolveDone": "Rozwiązane, kontynuuj",
   "promotionCreateConflictSolveNow": "Rozwiązać teraz konflikty tej User Story, a następnie kontynuować",
-  "promotionCreateConflictSolveNowHelp": "Pliki z konfliktami otwierają się w VS Code. Należy je tam rozwiązać, zapisać i wrócić do tego pytania: polecenie sprawdzi, czy nie został żaden znacznik, i będzie kontynuować promocję.",
+  "promotionCreateConflictSolveNowHelp": "Polecenie wyświetla pliki z konfliktami i otwiera je, gdy działa w VS Code. Należy je rozwiązać, zapisać i wrócić do tego pytania: polecenie sprawdzi, czy nie został żaden znacznik, i będzie kontynuować promocję.",
   "promotionCreateConflictSolveNowInstructions": "Należy rozwiązać konflikty {{label}} w tych plikach, zapisać je, a następnie odpowiedzieć na kolejne pytanie:\n{{files}}",
   "promotionCreateConflictSolvePrompt": "Konflikty {{label}}: czy zostały rozwiązane?",
   "promotionCreateConflictSolvePromptHelp": "Przed commitem polecenie sprawdza, czy w plikach nie został żaden znacznik konfliktu. Nadal można zacommitować ze znacznikami, pominąć User Story lub zatrzymać.",

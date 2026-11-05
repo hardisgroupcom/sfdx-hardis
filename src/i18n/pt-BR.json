@@ -3158,7 +3158,7 @@
   "promotionCreateConflictSolvedCommitFailed": "O commit foi recusado (um git hook do projeto pode ter falhado):\n{{reason}}\nCorrija os arquivos e confirme novamente.",
   "promotionCreateConflictSolveDone": "Já resolvi, continuar",
   "promotionCreateConflictSolveNow": "Resolver agora os conflitos desta User Story e depois continuar",
-  "promotionCreateConflictSolveNowHelp": "Os arquivos em conflito abrem no VS Code. Resolva-os lá, salve e volte para esta pergunta: o comando verifica que não sobrou nenhum marcador e continua a promoção.",
+  "promotionCreateConflictSolveNowHelp": "O comando lista os arquivos em conflito e os abre quando é executado no VS Code. Resolva-os, salve e volte para esta pergunta: o comando verifica que não sobrou nenhum marcador e continua a promoção.",
   "promotionCreateConflictSolveNowInstructions": "Resolva os conflitos de {{label}} nestes arquivos, salve-os e responda à próxima pergunta:\n{{files}}",
   "promotionCreateConflictSolvePrompt": "Conflitos de {{label}}: estão resolvidos?",
   "promotionCreateConflictSolvePromptHelp": "Antes do commit, o comando verifica que não sobrou nenhum marcador de conflito nos arquivos. Ainda é possível fazer commit com os marcadores, deixar a User Story de fora ou parar.",
