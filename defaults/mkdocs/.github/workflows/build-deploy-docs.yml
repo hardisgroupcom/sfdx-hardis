@@ -1,3 +1,9 @@
+# Source of this file: the sfdx-hardis default template
+#   https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/mkdocs/.github/workflows/build-deploy-docs.yml
+#   raw: https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/defaults/mkdocs/.github/workflows/build-deploy-docs.yml
+# To upgrade it, compare it with the latest version of that template and bring in its changes,
+# keeping what is specific to this project (branch names, secrets, runner tags, image, custom jobs).
+# What changed between versions: https://github.com/hardisgroupcom/sfdx-hardis/blob/main/CHANGELOG.md
 name: "DOC - Build and deploy with sfdx-hardis"
 on:
   push:

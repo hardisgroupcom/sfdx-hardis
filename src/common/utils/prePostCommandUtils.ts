@@ -15,6 +15,7 @@ import { getPromotionScopeDetails, getPullRequestScopedSfdxHardisConfig, getPull
 import { buildAlreadyPromotedMarkdown, buildInheritedBehaviorsMarkdown, getCarriedBy, getPromotionBranchConfig, isPromotionPullRequest } from './promotionBranchUtils.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
 import { t } from './i18n.js';
+import { isMajorBranchCheckMode } from './majorBranchCheckUtils.js';
 import { ActionWhen, DEV_SANDBOXES_BRANCH_NAME, buildActionTargetBranchCandidates, evaluateActionBranchFilter, getEffectiveActionContext, getPrIdFromUserConfig, normalizeMovedFrom } from './actionUtils.js';
 // Re-exported: its callers import it from here
 export { getEffectiveActionContext } from './actionUtils.js';
@@ -122,6 +123,11 @@ async function executeDeploymentActionsOfPhase(property: 'commandsPreDeploy' | '
   const branchConfig = await getConfig('branch');
   const deployWhen: ActionWhen = property === 'commandsPreDeploy' ? 'pre-deploy' : 'post-deploy';
   const extraCommands = (options.extraCommands || []).filter(cmd => cmd.preOrPost === property);
+  // The branch is already deployed in its org: its actions ran then, a nightly check must not replay them
+  if (isMajorBranchCheckMode()) {
+    uxLog("action", this, c.cyan(`[DeploymentActions] ${t('majorBranchCheckSkippingDeploymentActions', { actionLabel })}`));
+    return;
+  }
   if (isDeploymentActionsDisabled(branchConfig)) {
     uxLog("action", this, c.cyan(`[DeploymentActions] ${t('deploymentActionsDisabledSkipping', { actionLabel })}`));
     // Internal actions added from Pull Request custom behaviors are skipped too: say it, so a

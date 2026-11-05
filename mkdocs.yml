@@ -179,6 +179,7 @@ nav:
           - 6. Scratch org pool (optional): salesforce-devops-setup-scratch-org-pool.md
           - 7. First Pull Request: salesforce-devops-setup-merge-request.md
           - Initialize scratch orgs and sandboxes (optional, Beta): salesforce-devops-org-initialization.md
+          - Major branch deployment check (optional): salesforce-devops-setup-major-branch-check.md
           - Publish job artifacts: salesforce-devops-setup-publish-artifacts.md
           - Setup checklist: salesforce-devops-setup-checklist.md
   - Org Monitoring:
