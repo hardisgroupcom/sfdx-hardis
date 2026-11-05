@@ -911,6 +911,11 @@ function useConflictingRepository(prefix: string, withFailingHooks: boolean) {
     repo.previousCwd = process.cwd();
     process.chdir(repo.dir);
   });
+  // Again before each test: the code under test runs git in the current folder, and on the full
+  // Windows CI run something else moved it between two tests of this suite
+  beforeEach(() => {
+    process.chdir(repo.dir);
+  });
   after(() => {
     process.chdir(repo.previousCwd);
     fs.rmSync(repo.dir, { recursive: true, force: true });
