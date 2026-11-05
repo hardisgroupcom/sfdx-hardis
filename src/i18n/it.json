@@ -3296,6 +3296,7 @@
   "promotionCreateConflictTakeSourceHelp": "Rischioso: nessuno rivede ciò che decide questa risposta. Una modifica fatta nel branch di destinazione sulle stesse righe (un hotfix, un retrofit) può andare persa, e possono arrivare righe di User Story che non fanno parte di questa promozione. Nessun job di validazione se ne accorge: i file sono elencati con un avviso nella descrizione della Pull Request, controllali prima del merge.",
   "promotionCreateConflictTakeSourceIncomplete": "{{label}}: git non è riuscito a mantenere la versione del branch di origine per tutti i conflitti (un file eliminato da un lato e modificato dall'altro):\n{{files}}",
   "promotionCreateConflictTakenFromSource": "{{label}}: conflitti in {{files}} risolti mantenendo la versione del branch di origine. Controlla questi file prima del merge",
+  "promotionCreateConflictTreeUndecided": "Eliminati da un lato e modificati dall'altro, questi file non hanno marcatori da togliere, quindi il comando non può sapere se hai deciso:\n{{files}}\nIn Controllo del codice sorgente, esegui lo stage del file per tenerlo, oppure eliminalo ed esegui lo stage dell'eliminazione, poi conferma di nuovo.",
   "promotionCreateCreatingBranch": "Creazione del promotion branch {{branch}} da origin/{{target}}...",
   "promotionCreateCreatingPullRequest": "Creazione della Pull Request da {{branch}} a {{target}}...",
   "promotionCreateDirtyTreeCancel": "Annullare: gestisco io queste modifiche",

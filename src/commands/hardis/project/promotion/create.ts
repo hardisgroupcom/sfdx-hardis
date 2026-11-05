@@ -242,7 +242,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
     let picked: PromotionCandidate[] = [];
     let skipped: PromotionCandidate[] = [];
     let alreadyThere: PromotionCandidate[] = [];
-    let conflicted: Array<{ candidate: PromotionCandidate; files: string[] }> = [];
+    let conflicted: Array<{ candidate: PromotionCandidate; files: string[]; noMarkerFiles: string[] }> = [];
     let resolvedWithSource: Array<{ candidate: PromotionCandidate; files: string[] }> = [];
     try {
       ({ picked, skipped, alreadyThere, conflicted, resolvedWithSource } = await cherryPickCandidates(selected, branchName, previousBranch, onConflict, agentMode, this));
@@ -347,6 +347,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
       conflictedPullRequests: conflicted.map((entry) => ({
         pullRequests: entry.candidate.pullRequestNumbers,
         files: entry.files,
+        noMarkerFiles: entry.noMarkerFiles,
       })),
       resolvedWithSourcePullRequests: resolvedWithSource.map((entry) => ({
         pullRequests: entry.candidate.pullRequestNumbers,

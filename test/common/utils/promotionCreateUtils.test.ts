@@ -20,7 +20,6 @@ import {
   dropVehiclePullRequests,
   excludeAlreadyPromotedCandidates,
   expandPromotionsInGroups,
-  filesStillHoldingConflictMarkers,
   filterOpenPromotionPullRequests,
   gitPathSpec,
   listFilesWithConflictMarkers,
@@ -1004,29 +1003,27 @@ describe('cherryPickCandidates() keeping the source version (take-source)', () =
   });
 });
 
-describe('filesStillHoldingConflictMarkers()', () => {
-  let dir = '';
-  before(() => {
-    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'promo-solved-'));
-  });
-  after(() => {
-    fs.rmSync(dir, { recursive: true, force: true });
-  });
-
-  it('names the files a resolution left markers in, not the solved, deleted or markdown ones', () => {
-    const left = path.join(dir, 'left.xml');
-    const solved = path.join(dir, 'solved.xml');
-    const markdown = path.join(dir, 'notes.md');
-    fs.writeFileSync(left, '<a>\n<<<<<<< HEAD\nours\n=======\ntheirs\n>>>>>>> abc123 (story)\n</a>\n');
-    fs.writeFileSync(solved, '<a>ours and theirs</a>\n');
-    fs.writeFileSync(markdown, 'A title\n=======\n');
-    expect(filesStillHoldingConflictMarkers([left, solved, markdown, path.join(dir, 'deleted.xml')])).to.deep.equal([left]);
-  });
-
-  it('reads the paths git gives from the repository root, and counts an unreadable file as not clean', () => {
-    fs.mkdirSync(path.join(dir, 'a-folder'));
-    // git status names files from the root, whatever folder the command runs in
-    expect(filesStillHoldingConflictMarkers(['left.xml', 'solved.xml', 'a-folder'], dir)).to.deep.equal(['left.xml', 'a-folder']);
+describe('buildPromotionPullRequestBody() with a file deleted on one side', () => {
+  it('says the validation job cannot catch a conflict git could not mark', () => {
+    const body = buildPromotionPullRequestBody({
+      sourceBranch: 'uat',
+      targetBranch: 'preprod',
+      branchName: 'promotion/uat/preprod/2026-11-05-1600',
+      stories: [{
+        number: 483,
+        title: 'class story',
+        author: 'a',
+        webUrl: '',
+        sourceBranch: 'feature/b',
+        commitHash: 'abcdef1',
+        conflictFiles: ['Layout.layout-meta.xml', 'Extra.cls'],
+        conflictNoMarkerFiles: ['Extra.cls'],
+      }],
+      skipped: [],
+      ticketIds: [],
+    });
+    expect(body).to.contain('  - `Layout.layout-meta.xml`\n');
+    expect(body).to.match(/ {2}- `Extra\.cls` \(deleted on one side and changed on the other: .*validation job cannot catch it/);
   });
 });
 

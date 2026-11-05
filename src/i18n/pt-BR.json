@@ -3167,6 +3167,7 @@
   "promotionCreateConflictTakeSourceAll": "Manter a versão da branch de origem neste conflito e em todos os seguintes, sem perguntar de novo (arriscado)",
   "promotionCreateConflictTakeSourceHelp": "Arriscado: ninguém revisa o que esta resposta decide. Uma alteração feita na branch de destino nas mesmas linhas (um hotfix, um retrofit) pode ser perdida, e linhas de User Stories que não fazem parte desta promoção podem vir junto. Nenhum job de validação percebe: os arquivos são listados com um aviso na descrição da Pull Request, verifique-os antes do merge.",
   "promotionCreateConflictTakeSourceIncomplete": "{{label}}: o git não conseguiu manter a versão da branch de origem em todos os conflitos (um arquivo excluído de um lado e alterado do outro):\n{{files}}",
+  "promotionCreateConflictTreeUndecided": "Excluídos de um lado e alterados do outro, estes arquivos não têm marcador para remover, então o comando não consegue saber se você já decidiu:\n{{files}}\nNo Controle do Código-Fonte, faça o stage do arquivo para mantê-lo, ou exclua-o e faça o stage da exclusão, e confirme novamente.",
   "promotionCreateDoneWithSourceVersion": "{{count}} User Story(s) tiveram conflitos resolvidos mantendo a versão de {{source}}, sem revisão: {{files}}. Verifique esses arquivos na Pull Request antes do merge",
   "prResolutionFailed": "Falha ao resolver pull request: {{message}}",
   "prResolvedFromBranch": "ID do pull request {{prId}} resolvido a partir da branch atual",

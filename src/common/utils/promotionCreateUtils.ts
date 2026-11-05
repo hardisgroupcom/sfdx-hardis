@@ -3,7 +3,8 @@ import c from 'chalk';
 import * as os from 'os';
 import * as path from 'path';
 import fs from './fsUtils.js';
-import { createWorkBranchFromTarget, execCommand, git, gitFetch, uxLog } from './index.js';
+import { createWorkBranchFromTarget, execCommand, getGitRepoRoot, git, gitFetch, removeTempDir, uxLog } from './index.js';
+import { countConflictMarkerBlocks } from './backpromoteRules.js';
 import { prompts } from './prompts.js';
 import { t } from './i18n.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
@@ -209,6 +210,9 @@ export interface PromotionStory {
   commitHash: string;
   // Files committed with conflict markers for this story, when the user chose to keep it anyway
   conflictFiles?: string[];
+  // Among them, the ones deleted on one side and changed on the other: committed as the story has
+  // them, with no marker, so the validation job cannot catch them
+  conflictNoMarkerFiles?: string[];
   // Files whose conflicts were resolved by keeping the version of the source branch (take-source):
   // the reviewer must check them, nothing else will
   sourceVersionFiles?: string[];
@@ -1148,7 +1152,8 @@ export interface CherryPickOutcome {
   // earlier promotion). Not a conflict, and not something to leave in the branch either.
   alreadyThere: PromotionCandidate[];
   // Committed with their conflict markers, to be solved on the branch before the merge
-  conflicted: Array<{ candidate: PromotionCandidate; files: string[] }>;
+  // `noMarkerFiles`: deleted on one side and changed on the other, committed with no marker
+  conflicted: Array<{ candidate: PromotionCandidate; files: string[]; noMarkerFiles: string[] }>;
   // Conflicts resolved by keeping the source version (take-source), to be reviewed
   resolvedWithSource: Array<{ candidate: PromotionCandidate; files: string[] }>;
 }
@@ -1279,6 +1284,8 @@ export async function cherryPickCandidates(
         break;
       }
       if (choice === 'commit-with-markers') {
+        // Read before staging: once committed, nothing tells these files had a conflict
+        const noMarkerFiles = await undecidedTreeConflicts(files);
         const committed = await commitWithConflictMarkers(commandThis);
         if (!committed) {
           // Staging the conflict left nothing over HEAD: there is no story to carry and no marker to
@@ -1290,7 +1297,7 @@ export async function cherryPickCandidates(
         }
         uxLog('warning', commandThis, c.yellow(t('promotionCreateConflictCommitted', { label: candidate.label, files: files.join(', ') || '-' })));
         outcome.picked.push(candidate);
-        outcome.conflicted.push({ candidate, files });
+        outcome.conflicted.push({ candidate, files, noMarkerFiles });
         await reportKeptSourceFiles();
         break;
       }
@@ -1391,17 +1398,19 @@ async function solveConflictsNow(
   commandThis: any,
 ): Promise<'solved' | 'already-there' | PromotionConflictChoice> {
   // git status names the files from the root of the repository, whatever folder the command runs in
-  const repositoryRoot = (await git().revparse(['--show-toplevel'])).trim();
+  const repositoryRoot = path.resolve((await getGitRepoRoot()).trim());
   // To tell a cherry-pick the user finished themselves (a commit from VS Code) from one they undid
   const headBefore = (await git().revparse(['HEAD'])).trim();
   uxLog('action', commandThis, c.cyan(t('promotionCreateConflictSolveNowInstructions', {
     label: candidate.label,
     files: conflictFiles.map((file) => `- ${file}`).join('\n'),
   })));
-  // Opened only when VS Code runs the command; from a terminal, the list above is what the user has
+  // Opened only when VS Code runs the command; from a terminal, the list above is what the user has.
+  // VS Code opens a path from its workspace folder, which is where the command runs, not
+  // necessarily the repository root (a project in a sub-folder of a monorepo)
   if (WebSocketClient.isAlive()) {
     for (const file of conflictFiles) {
-      WebSocketClient.requestOpenFile(file);
+      WebSocketClient.requestOpenFile(path.relative(process.cwd(), path.join(repositoryRoot, file)));
     }
   }
   for (;;) {
@@ -1421,9 +1430,15 @@ async function solveConflictsNow(
     if (res.value !== 'solved') {
       return res.value as PromotionConflictChoice;
     }
-    const markersLeft = filesStillHoldingConflictMarkers(conflictFiles, repositoryRoot);
+    const markersLeft = await conflictFilesWithMarkers(conflictFiles, repositoryRoot);
     if (markersLeft.length > 0) {
       uxLog('warning', commandThis, c.yellow(t('promotionCreateConflictMarkersLeft', { files: markersLeft.join('\n') })));
+      continue;
+    }
+    // Deleted on one side and changed on the other: no marker says whether it was decided
+    const undecided = await undecidedTreeConflicts(conflictFiles);
+    if (undecided.length > 0) {
+      uxLog('warning', commandThis, c.yellow(t('promotionCreateConflictTreeUndecided', { files: undecided.join('\n') })));
       continue;
     }
     const committed = await commitSolvedCherryPick(headBefore, commandThis);
@@ -1434,19 +1449,40 @@ async function solveConflictsNow(
 }
 
 /**
- * The files of a list that still hold a conflict marker, the paths read from `root` (the repository
- * root, where git status starts them). A file the resolution deleted holds none; a file that cannot
- * be read is not proven clean, so it counts as still holding markers.
+ * The files of a list that still hold a conflict marker, read from the repository root (where git
+ * status starts the paths), counted like the backpromote counts them. A file the resolution
+ * deleted holds none; a file that cannot be read is not proven clean, so it counts as holding some.
  */
-export function filesStillHoldingConflictMarkers(files: string[], root = ''): string[] {
-  // Same markers as listFilesWithConflictMarkers: a line of "=======" is legitimate in markdown
-  const marker = /^(<<<<<<< |>>>>>>> )/m;
-  return files.filter((file) => {
+async function conflictFilesWithMarkers(files: string[], repositoryRoot: string): Promise<string[]> {
+  const withMarkers: string[] = [];
+  for (const file of files) {
     try {
-      return marker.test(fs.readFileSync(path.resolve(root || process.cwd(), file), 'utf8'));
+      if (countConflictMarkerBlocks(await fs.readFile(path.join(repositoryRoot, file), 'utf8')) > 0) {
+        withMarkers.push(file);
+      }
     } catch (e: any) {
-      return e?.code !== 'ENOENT';
+      if (e?.code !== 'ENOENT') {
+        withMarkers.push(file);
+      }
     }
+  }
+  return withMarkers;
+}
+
+// git status codes of the conflicts git cannot mark in the file: deleted by one side, changed or
+// added by the other
+const TREE_CONFLICT_CODES = ['DU', 'UD', 'AU', 'UA', 'DD'];
+
+/**
+ * The files of a list still in a tree conflict (deleted on one side, changed on the other): they
+ * hold no marker, so only the index says whether the user decided to keep or delete them. Staging
+ * the file, or its deletion, is that decision.
+ */
+async function undecidedTreeConflicts(files: string[]): Promise<string[]> {
+  const status = await git().status();
+  return files.filter((file) => {
+    const entry = status.files.find((candidate) => candidate.path === file);
+    return !!entry && TREE_CONFLICT_CODES.includes(`${entry.index}${entry.working_dir}`);
   });
 }
 
@@ -1535,7 +1571,8 @@ async function withoutGitHooks<T>(run: (noHooksOptions: string, privateDir: stri
     await fs.ensureDir(hooksDir);
     return await run(`-c core.hooksPath="${hooksDir.replace(/\\/g, '/')}"`, privateDir);
   } finally {
-    await fs.remove(privateDir);
+    // A folder an antivirus still holds must not undo a commit that worked: warned, never thrown
+    await removeTempDir(privateDir);
   }
 }
 
@@ -1751,17 +1788,25 @@ export async function abortPromotion(branchName: string, previousBranch: string,
 
 // ---- Pull Request ----
 
+// After a file of the conflict list that git could not mark: deleted on one side, changed on the
+// other. Committed as the story has it, so no marker makes the validation job fail on it.
+const NO_MARKER_FILE_NOTE =
+  ' (deleted on one side and changed on the other: committed as the story has it, with no conflict marker, so the validation job cannot catch it. Decide whether it stays)';
+
 export function toStories(
   candidates: PromotionCandidate[],
-  conflicted: Array<{ candidate: PromotionCandidate; files: string[] }> = [],
+  conflicted: Array<{ candidate: PromotionCandidate; files: string[]; noMarkerFiles?: string[] }> = [],
   resolvedWithSource: Array<{ candidate: PromotionCandidate; files: string[] }> = [],
 ): PromotionStory[] {
   const stories: PromotionStory[] = [];
   for (const candidate of candidates) {
-    const conflictFiles = conflicted.find((entry) => entry.candidate === candidate)?.files;
+    const conflict = conflicted.find((entry) => entry.candidate === candidate);
+    const conflictFiles = conflict?.files;
+    const conflictNoMarkerFiles = conflict?.noMarkerFiles?.length ? conflict.noMarkerFiles : undefined;
     const sourceVersionFiles = resolvedWithSource.find((entry) => entry.candidate === candidate)?.files;
     const conflictInfo = {
       ...(conflictFiles ? { conflictFiles } : {}),
+      ...(conflictNoMarkerFiles ? { conflictNoMarkerFiles } : {}),
       ...(sourceVersionFiles ? { sourceVersionFiles } : {}),
     };
     if (candidate.group.associatedPrs.length === 0) {
@@ -1908,7 +1953,7 @@ function renderPromotionPullRequestBody(
     for (const story of conflicted) {
       lines.push(`- ${sanitizeCell(story.title)}${story.number > 0 ? ` (#${story.number})` : ''}`);
       for (const file of story.conflictFiles || []) {
-        lines.push(`  - \`${file}\``);
+        lines.push(`  - \`${file}\`${(story.conflictNoMarkerFiles || []).includes(file) ? NO_MARKER_FILE_NOTE : ''}`);
       }
     }
     lines.push('');
@@ -1978,7 +2023,7 @@ export function buildConflictResolutionPrompt(options: {
     const ref = story.number > 0 ? `Pull Request #${story.number}` : 'Commit';
     lines.push(`- ${ref}: ${story.title}${story.webUrl ? ` (${story.webUrl})` : ''}. Origin commit in \`${options.sourceBranch}\`: \`${story.commitHash}\` (run \`git show ${story.commitHash.substring(0, 7)}\` to read the intended change).`);
     for (const file of story.conflictFiles || []) {
-      lines.push(`  - \`${file}\``);
+      lines.push(`  - \`${file}\`${(story.conflictNoMarkerFiles || []).includes(file) ? NO_MARKER_FILE_NOTE : ''}`);
     }
   }
   lines.push('');

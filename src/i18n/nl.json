@@ -3296,6 +3296,7 @@
   "promotionCreateConflictTakeSourceHelp": "Riskant: niemand controleert wat dit antwoord beslist. Een wijziging in de doel-branch op dezelfde regels (een hotfix, een retrofit) kan verloren gaan, en regels van User Stories die geen deel uitmaken van deze promotion kunnen meekomen. Geen enkele validatiejob merkt het: de bestanden staan onder een waarschuwing in de beschrijving van de Pull Request, controleer ze voor de merge.",
   "promotionCreateConflictTakeSourceIncomplete": "{{label}}: git kon niet voor elk conflict de versie van de bron-branch houden (een bestand dat aan de ene kant verwijderd en aan de andere kant gewijzigd is):\n{{files}}",
   "promotionCreateConflictTakenFromSource": "{{label}}: conflicten in {{files}} opgelost door de versie van de bron-branch te houden. Controleer deze bestanden voor de merge",
+  "promotionCreateConflictTreeUndecided": "Aan de ene kant verwijderd en aan de andere kant gewijzigd, deze bestanden hebben geen markering om te verwijderen, dus het commando kan niet zien of je hebt beslist:\n{{files}}\nStage in Broncodebeheer het bestand om het te houden, of verwijder het en stage de verwijdering, en bevestig dan opnieuw.",
   "promotionCreateCreatingBranch": "Promotion branch {{branch}} aanmaken vanuit origin/{{target}}...",
   "promotionCreateCreatingPullRequest": "Pull Request van {{branch}} naar {{target}} aanmaken...",
   "promotionCreateDirtyTreeCancel": "Annuleren: ik handel deze wijzigingen zelf af",

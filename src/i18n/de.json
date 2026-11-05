@@ -3295,6 +3295,7 @@
   "promotionCreateConflictTakeSourceHelp": "Riskant: Niemand prüft, was diese Antwort entscheidet. Eine Änderung im Ziel-Branch auf denselben Zeilen (ein Hotfix, ein Retrofit) kann verloren gehen, und Zeilen von User Stories, die nicht Teil dieser Promotion sind, können mitkommen. Kein Validierungsjob bemerkt es: Die Dateien werden mit einer Warnung in der Pull-Request-Beschreibung aufgeführt, prüfen Sie sie vor dem Merge.",
   "promotionCreateConflictTakeSourceIncomplete": "{{label}}: Git konnte nicht für jeden Konflikt die Version des Quell-Branches behalten (eine Datei, die auf einer Seite gelöscht und auf der anderen geändert wurde):\n{{files}}",
   "promotionCreateConflictTakenFromSource": "{{label}}: Konflikte in {{files}} durch Beibehalten der Version des Quell-Branches gelöst. Prüfen Sie diese Dateien vor dem Merge",
+  "promotionCreateConflictTreeUndecided": "Diese Dateien wurden auf einer Seite gelöscht und auf der anderen geändert und enthalten keine Markierung, daher kann der Befehl nicht erkennen, ob Sie entschieden haben:\n{{files}}\nStagen Sie in der Quellcodeverwaltung die Datei, um sie zu behalten, oder löschen Sie sie und stagen Sie das Löschen, und bestätigen Sie dann erneut.",
   "promotionCreateCreatingBranch": "Promotion-Branch {{branch}} wird aus origin/{{target}} erstellt...",
   "promotionCreateCreatingPullRequest": "Pull Request von {{branch}} nach {{target}} wird erstellt...",
   "promotionCreateDirtyTreeCancel": "Abbrechen: Ich kuemmere mich selbst um diese Aenderungen",
