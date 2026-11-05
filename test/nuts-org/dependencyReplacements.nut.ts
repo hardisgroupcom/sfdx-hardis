@@ -17,7 +17,7 @@ import { expect } from 'chai';
 import fs from '../../src/common/utils/fsUtils.js';
 import * as path from 'path';
 import {
-  getSharedNutOrgSession,
+  getSharedNutOrgSessionOrSkip,
   NutOrgContext,
   queryRecords,
   runSf,
@@ -34,7 +34,7 @@ describe('dependency replacements against a real scratch org', () => {
 
   before(async function () {
     this.timeout(1800000); // may create the scratch org when running this file alone
-    ctx = await getSharedNutOrgSession();
+    ctx = await getSharedNutOrgSessionOrSkip(this);
     const display = runSf<any>(`org display --target-org ${ctx.orgAlias} --json`, { cwd: ctx.projectDir });
     // org display redacts the access token: the CLI reveals it only through this command
     const tokenResult = runSf<any>(`org auth show-access-token --target-org ${ctx.orgAlias} --json`, { cwd: ctx.projectDir });

@@ -10,7 +10,7 @@ import fs from '../../src/common/utils/fsUtils.js';
 import * as path from 'path';
 import {
     countAccounts,
-    getSharedNutOrgSession,
+    getSharedNutOrgSessionOrSkip,
   NutOrgContext,
   runHardis,
 } from './helpers/nutOrgProject.js';
@@ -22,7 +22,7 @@ describe('hardis:org:data export and import against a real org', () => {
 
   before(async function () {
     this.timeout(1800000);
-    ctx = await getSharedNutOrgSession();
+    ctx = await getSharedNutOrgSessionOrSkip(this);
     workspaceDir = path.join(ctx.projectDir, 'scripts', 'data', workspaceName);
   });
 
