@@ -63,7 +63,7 @@ The [DevOps Pipeline](vscode-extension-devops-pipeline.md) then colors each majo
 | Dimmed, dashed | The last check is stale: older than `majorBranchDeploymentCheckValidityHours`, or a deployment ran after it |
 | Usual color    | No check found for this branch                                                                              |
 
-Click the branch to see the check in its window: status, date, duration, and a link to the job.
+Click the branch, then the last tab of its window, to see the check: status, date, duration, and a link to the job.
 
 ![The last deployment check in the window of a major branch](assets/images/major-branch-check-modal.png)
 
