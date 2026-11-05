@@ -2977,7 +2977,7 @@
   "orgInitPoolSourcesNoMetadataChange": "プールがデプロイした commit 以降、変更されたメタデータはありません。",
   "orgInitPoolSourcesUpToDate": "スクラッチ組織には現在の commit ({{commit}}) のソースが含まれています。",
   "orgInitRefuseProduction": "{{orgUsername}} は本番環境の組織です。組織の初期化はスクラッチ組織とサンドボックスでのみ実行されます。",
-  "orgInitResettingSourceTracking": "プールから取得した {{orgUsername}} のソース追跡をリセットしています。今後の pull には、これ以降に行った変更だけが表示されます...",
+  "orgInitResettingSourceTracking": "{{orgUsername}} のソース追跡をリセットしています。今後の pull には、これ以降に行った変更だけが表示されます...",
   "orgInitRunningStep": "ステップ {{index}}/{{count}}: {{label}}",
   "orgInitSelectSteps": "実行する初期化ステップを選択してください。",
   "orgInitSelectStepsDescription": "この組織に適用されるすべてのステップが選択されています。",

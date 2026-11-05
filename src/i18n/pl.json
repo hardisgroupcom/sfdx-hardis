@@ -2979,7 +2979,7 @@
   "orgInitPoolSourcesNoMetadataChange": "Od commit wdrożonego przez pulę nie zmieniły się żadne metadane.",
   "orgInitPoolSourcesUpToDate": "Scratch Org zawiera źródła bieżącego commit ({{commit}}).",
   "orgInitRefuseProduction": "{{orgUsername}} jest org produkcyjnym. Inicjalizacja org jest wykonywana tylko w Scratch Orgach i sandboxach.",
-  "orgInitResettingSourceTracking": "Resetowanie śledzenia źródeł org {{orgUsername}} pobranej z puli: pull pokaże tylko zmiany wprowadzone od teraz...",
+  "orgInitResettingSourceTracking": "Resetowanie śledzenia źródeł org {{orgUsername}}: pull pokaże tylko zmiany wprowadzone od teraz...",
   "orgInitRunningStep": "Krok {{index}}/{{count}}: {{label}}",
   "orgInitSelectSteps": "Które kroki inicjalizacji mają zostać wykonane?",
   "orgInitSelectStepsDescription": "Wszystkie kroki odpowiednie dla tego org są zaznaczone.",

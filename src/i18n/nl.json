@@ -2979,7 +2979,7 @@
   "orgInitPoolSourcesNoMetadataChange": "Er zijn geen metadata gewijzigd sinds de commit die de pool implementeerde.",
   "orgInitPoolSourcesUpToDate": "De scratch org bevat de bronnen van de huidige commit ({{commit}}).",
   "orgInitRefuseProduction": "{{orgUsername}} is een productie-org. Org-initialisatie wordt alleen uitgevoerd op scratch orgs en sandboxes.",
-  "orgInitResettingSourceTracking": "Bronregistratie van {{orgUsername}} uit de pool wordt gereset: een pull toont alleen nog de wijzigingen vanaf nu...",
+  "orgInitResettingSourceTracking": "Bronregistratie van {{orgUsername}} wordt gereset: een pull toont alleen nog de wijzigingen vanaf nu...",
   "orgInitRunningStep": "Stap {{index}}/{{count}}: {{label}}",
   "orgInitSelectSteps": "Welke initialisatiestappen wil je uitvoeren?",
   "orgInitSelectStepsDescription": "Alle stappen die van toepassing zijn op deze org zijn geselecteerd.",

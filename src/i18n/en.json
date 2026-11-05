@@ -2983,7 +2983,7 @@
   "orgInitPoolSourcesNoMetadataChange": "No metadata changed since the commit the pool deployed.",
   "orgInitPoolSourcesUpToDate": "The scratch org holds the sources of the current commit ({{commit}}).",
   "orgInitRefuseProduction": "{{orgUsername}} is a production org. Org initialization only runs on scratch orgs and sandboxes.",
-  "orgInitResettingSourceTracking": "Resetting the source tracking of {{orgUsername}}, taken from the pool: a pull now only lists the changes made from now on...",
+  "orgInitResettingSourceTracking": "Resetting the source tracking of {{orgUsername}}: a pull now only lists the changes made from now on...",
   "orgInitRunningStep": "Step {{index}}/{{count}}: {{label}}",
   "orgInitSelectSteps": "Which initialization steps do you want to run?",
   "orgInitSelectStepsDescription": "All the steps that apply to this org are selected.",
