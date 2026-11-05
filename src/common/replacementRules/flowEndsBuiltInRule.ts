@@ -9,12 +9,15 @@ import { childElementText, removeXmlNode, selectXmlPath } from './utils/xmlPath.
 
 export class FlowEndsBuiltInRule extends BuiltInRemovalRule {
   protected removeElements(doc: any): number {
-    return removeFlowEnds(doc);
+    return removeFlowEnds(doc, (end) => this.recordRemoved(end));
   }
 }
 
-/** Remove the End elements of a flow document and their connectors. Returns the number of End elements removed. */
-export function removeFlowEnds(doc: any): number {
+/**
+ * Remove the End elements of a flow document and their connectors. Returns the number of End
+ * elements removed. `beforeRemovingEnd` sees each End element while it is still in the document.
+ */
+export function removeFlowEnds(doc: any, beforeRemovingEnd?: (end: any) => void): number {
   const ends = selectXmlPath('Flow/ends', doc);
   if (ends.length === 0) {
     return 0;
@@ -27,6 +30,7 @@ export function removeFlowEnds(doc: any): number {
     }
   }
   for (const end of ends) {
+    beforeRemovingEnd?.(end);
     removeXmlNode(end);
   }
   if (endNames.size > 0) {

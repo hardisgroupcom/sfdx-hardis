@@ -1,10 +1,59 @@
 import { expect } from 'chai';
 import * as xmldom from '@xmldom/xmldom';
-import { compileXmlPath, removeXmlNode, selectXmlPath, validateXmlPath } from '../../../src/common/replacementRules/utils/xmlPath.js';
+import { compileXmlPath, describeXmlNode, removeXmlNode, selectXmlPath, validateXmlPath } from '../../../src/common/replacementRules/utils/xmlPath.js';
 import { removeFlowEnds } from '../../../src/common/replacementRules/flowEndsBuiltInRule.js';
+import { detailWithNames, formatChangedNames } from '../../../src/common/replacementRules/utils/changeNames.js';
 
 const parse = (xml: string) => new xmldom.DOMParser().parseFromString(xml, 'text/xml');
 const serialize = (doc: any) => new xmldom.XMLSerializer().serializeToString(doc);
+
+describe('replacement rules - naming what a rule changed', () => {
+  const doc = parse(`<?xml version="1.0" encoding="UTF-8"?>
+<Profile xmlns="http://soap.sforce.com/2006/04/metadata">
+    <objectPermissions>
+        <allowRead>true</allowRead>
+        <object>Account</object>
+        <viewAllFields>false</viewAllFields>
+    </objectPermissions>
+    <userPermissions>
+        <enabled>true</enabled>
+        <name>ManageSandboxes</name>
+    </userPermissions>
+    <loginIpRanges>
+        <description>secret office range</description>
+        <endAddress>10.0.0.255</endAddress>
+    </loginIpRanges>
+    <custom>true</custom>
+</Profile>`);
+
+  it('names an element by its identifier, or by the identifier of the element holding it', () => {
+    expect(describeXmlNode(selectXmlPath('Profile/userPermissions', doc)[0])).to.equal('userPermissions ManageSandboxes');
+    expect(describeXmlNode(selectXmlPath('Profile/objectPermissions', doc)[0])).to.equal('objectPermissions Account');
+    expect(describeXmlNode(selectXmlPath('Profile/objectPermissions/viewAllFields', doc)[0])).to.equal('objectPermissions Account: viewAllFields');
+  });
+
+  it('never shows the text of an element, only its path when nothing identifies it', () => {
+    expect(describeXmlNode(selectXmlPath('Profile/custom', doc)[0])).to.equal('custom');
+    expect(describeXmlNode(selectXmlPath('Profile/loginIpRanges/endAddress', doc)[0])).to.equal('loginIpRanges/endAddress');
+    const named = describeXmlNode(selectXmlPath('Profile/loginIpRanges', doc)[0]);
+    expect(named).to.equal('loginIpRanges');
+    expect(named).to.not.include('secret');
+  });
+
+  it('never throws, whatever it is given', () => {
+    expect(describeXmlNode(null)).to.equal('?');
+    expect(describeXmlNode(undefined)).to.equal('?');
+    expect(describeXmlNode({})).to.equal('?');
+  });
+
+  it('lists the names, capped with how many more', () => {
+    expect(formatChangedNames(['a', 'b'])).to.equal('a, b');
+    expect(formatChangedNames(['a', 'b', 'c', 'd'], 2)).to.equal('a, b, ... and 2 more');
+    expect(formatChangedNames(Array.from({ length: 25 }, (_, index) => `p${index}`))).to.match(/^p0, .*p19, \.\.\. and 5 more$/);
+    expect(detailWithNames('2 elements removed', [])).to.equal('2 elements removed');
+    expect(detailWithNames('2 elements removed', ['x', 'y'])).to.equal('2 elements removed: x, y');
+  });
+});
 
 describe('replacement rules - element paths', () => {
   it('compiles child, descendant, wildcard and predicate steps', () => {

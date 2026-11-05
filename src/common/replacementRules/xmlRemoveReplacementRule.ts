@@ -3,7 +3,8 @@
 
 import { t } from '../utils/i18n.js';
 import { ReplacementOutcome, ReplacementRuleRoot } from './replacementRuleRoot.js';
-import { removeXmlNode, selectXmlPath } from './utils/xmlPath.js';
+import { detailWithNames } from './utils/changeNames.js';
+import { describeXmlNode, removeXmlNode, selectXmlPath } from './utils/xmlPath.js';
 
 export class XmlRemoveReplacementRule extends ReplacementRuleRoot {
   public readonly scope = 'xml' as const;
@@ -13,9 +14,16 @@ export class XmlRemoveReplacementRule extends ReplacementRuleRoot {
     if (nodes.length === 0) {
       return { found: 0, changed: 0, status: 'not-found' };
     }
+    // Named before they go: a removed element has no parent left to name it by
+    const names = nodes.map((node) => describeXmlNode(node));
     for (const node of nodes) {
       removeXmlNode(node);
     }
-    return { found: nodes.length, changed: nodes.length, status: 'changed', detail: t('replacementRulesRemovedElements', { count: nodes.length }) };
+    return {
+      found: nodes.length,
+      changed: nodes.length,
+      status: 'changed',
+      detail: detailWithNames(t('replacementRulesRemovedElements', { count: nodes.length }), names),
+    };
   }
 }

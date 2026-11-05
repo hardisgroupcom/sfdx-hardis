@@ -64,6 +64,68 @@ export function validateXmlPath(xmlPath: string): string | null {
   }
 }
 
+// Children that tell one element of a list from another (a user permission, an object, a flow
+// element...): the only text a log ever shows of a changed element
+const IDENTIFIER_CHILDREN = [
+  'name',
+  'fullName',
+  'field',
+  'object',
+  'apexClass',
+  'apexPage',
+  'application',
+  'layout',
+  'recordType',
+  'tab',
+  'flow',
+  'customPermission',
+];
+
+/**
+ * How logs and Pull Request comments name an element a rule removed or found: its tag and its
+ * identifier (userPermissions ManageSandboxes, ends The_End), or, for an element without one, the
+ * identifier of the nearest parent that has one (objectPermissions Account: viewAllFields), else its
+ * path from the root (start/schedule/dayOfMonthToRun). Never the text of the element itself, which
+ * may be a value. Never throws: naming is only reporting.
+ */
+export function describeXmlNode(node: any): string {
+  try {
+    const tag = elementName(node);
+    const own = identifierOf(node);
+    if (own) {
+      return `${tag} ${own}`;
+    }
+    const below: string[] = [tag];
+    let parent = node?.parentNode;
+    // Up to the root element, left out: every element of the file is under it
+    while (parent && parent.nodeType === 1 && parent.parentNode && parent.parentNode.nodeType === 1) {
+      const id = identifierOf(parent);
+      if (id) {
+        return `${elementName(parent)} ${id}: ${below.reverse().join('/')}`;
+      }
+      below.push(elementName(parent));
+      parent = parent.parentNode;
+    }
+    return below.reverse().join('/');
+  } catch {
+    return '?';
+  }
+}
+
+function elementName(node: any): string {
+  return String(node?.localName || node?.nodeName || '?');
+}
+
+function identifierOf(node: any): string {
+  for (const childName of IDENTIFIER_CHILDREN) {
+    const text = childElementText(node, childName);
+    if (text) {
+      return text;
+    }
+  }
+  return '';
+}
+
 /** Trimmed text of the first child element named childName, empty when there is none */
 export function childElementText(node: any, childName: string): string {
   let child = node?.firstChild;

@@ -10,6 +10,7 @@
   - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): new mode to check every night that a major branch can still be deployed to its org, without commenting the last merged Pull Request nor replaying its deployment actions.
   - The default CI/CD templates hold the job, ready to schedule. On GitLab, add `--major-branch-check` to your existing `check_deploy_to_current_branch_org` job.
   - The VS Code DevOps Pipeline can color each major branch with the result of its last check.
+- [Replacement rules](https://sfdx-hardis.cloudity.com/salesforce-devops-config-replacement-rules/) (Beta): the logs and the Pull Request comment name the elements each rule removed or changed in each file, like the user permissions removed from a Profile, never their values.
 - Default CI/CD files now start with the URL of the template they come from, to upgrade them by hand or with a coding agent.
 
 ## [8.22.0] 2026-11-02

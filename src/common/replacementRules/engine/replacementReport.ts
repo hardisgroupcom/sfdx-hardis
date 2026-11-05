@@ -4,6 +4,8 @@
 import { ReplacementRuleOrigin, ReplacementRulesReport } from '../utils/types.js';
 
 const MAX_LISTED_RULES = 30;
+// Rows of "What the rules changed": one per file and rule, each already capped in names
+const MAX_LISTED_CHANGES = 50;
 
 /** Markdown section of the validation and deployment comments. Empty when there is nothing to say. */
 export function buildReplacementRulesMarkdown(report: ReplacementRulesReport | null | undefined): string {
@@ -40,6 +42,19 @@ export function buildReplacementRulesMarkdown(report: ReplacementRulesReport | n
       lines.push(`| _... and ${applied.length - MAX_LISTED_RULES} more_ | | |`);
     }
     lines.push('');
+    // What each rule changed in each file: element names and counts, never a value (the details
+    // are built that way by the rules)
+    const changes = report.results.filter((result) => result.status === 'changed');
+    if (changes.length > 0) {
+      lines.push('**What the rules changed**', '', '| Rule | File | What changed |', '|------|------|--------------|');
+      for (const change of changes.slice(0, MAX_LISTED_CHANGES)) {
+        lines.push(`| \`${change.ruleId}\` | \`${escapeMarkdown(change.file)}\` | ${escapeMarkdown(change.detail || String(change.count))} |`);
+      }
+      if (changes.length > MAX_LISTED_CHANGES) {
+        lines.push(`| _... and ${changes.length - MAX_LISTED_CHANGES} more_ | | |`);
+      }
+      lines.push('');
+    }
   }
   if (report.target.apiVersion != null && applied.some((rule) => rule.origins.includes('builtin'))) {
     lines.push(`_Built-in rules compared the elements with the deployment API version ${report.target.apiVersion.toFixed(1)}._`, '');
