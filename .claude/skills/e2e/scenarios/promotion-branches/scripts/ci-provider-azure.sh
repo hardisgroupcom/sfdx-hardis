@@ -50,6 +50,11 @@ AZ_BUILD_POLICY_TYPE=0609b952-1397-4640-95ec-e00a01b2c241
 AZ_GIT_SECURITY_NAMESPACE=2e9eb7ed-3c0a-47d4-87c1-0ffdd275fd87
 AZ_CHECK_PIPELINE_FILE=azure-pipelines-checks.yml
 AZ_DEPLOY_PIPELINE_FILE=azure-pipelines-deployment.yml
+# The major branch deployment check: the extension finds the pipeline by this name. Names are unique
+# per folder, so each repository gets a folder of its own
+AZ_MAJOR_CHECK_PIPELINE_FILE=azure-pipelines-major-branch-check.yml
+AZ_MAJOR_CHECK_PIPELINE_NAME="Check Major Branch Deployment"
+CI_MAJOR_BRANCH_CHECK_ALL=""
 
 # A field of a JSON document read on stdin, as UTF-8. Usage: ... | _azci_json '<js expression of d>'
 _azci_json() {
@@ -178,10 +183,11 @@ _azci_grant_build_service() {
   fi
 }
 
-# Usage: _azci_create_pipeline <name> <yaml path>   (prints the definition id)
+# Usage: _azci_create_pipeline <name> <yaml path> [<folder under the root, no backslash>]
+# (prints the definition id)
 _azci_create_pipeline() {
-  local answer id
-  answer=$(_azci_api POST "$AZ_PROJECT_URL/_apis/pipelines?api-version=7.1" -d "{\"name\":\"$1\",\"folder\":\"\\\\\",\"configuration\":{\"type\":\"yaml\",\"path\":\"/$2\",\"repository\":{\"id\":\"$AZ_REPO_ID\",\"name\":\"$AZ_REPO_NAME\",\"type\":\"azureReposGit\"}}}")
+  local answer id folder="${3:-}"
+  answer=$(_azci_api POST "$AZ_PROJECT_URL/_apis/pipelines?api-version=7.1" -d "{\"name\":\"$1\",\"folder\":\"\\\\$folder\",\"configuration\":{\"type\":\"yaml\",\"path\":\"/$2\",\"repository\":{\"id\":\"$AZ_REPO_ID\",\"name\":\"$AZ_REPO_NAME\",\"type\":\"azureReposGit\"}}}")
   id=$(printf '%s' "$answer" | _azci_json 'd.id')
   if ! [[ "$id" =~ ^[0-9]+$ ]]; then
     echo "pipeline $1 not created: $(printf '%s' "$answer" | head -c 300)" >&2
@@ -356,6 +362,91 @@ ci_merge_sha() {
 }
 
 ci_pr_head_sha() { _azci_api GET "$AZ_REPO_API/pullrequests/$1?api-version=7.1" | _azci_json 'd.lastMergeSourceCommit&&d.lastMergeSourceCommit.commitId'; }
+
+# Text comments only: Azure adds and updates system comments (policy, votes) on its own
+ci_pr_comments_ids() {
+  _azci_api GET "$AZ_REPO_API/pullRequests/$1/threads?api-version=7.1" |
+    _azci_json "JSON.stringify((d.value||[]).filter(t=>!t.isDeleted).flatMap(t=>(t.comments||[]).filter(c=>!c.isDeleted&&c.commentType!=='system').map(c=>({id:t.id+':'+c.id,body:c.content||''}))).sort((x,y)=>x.id.localeCompare(y.id,undefined,{numeric:true})),null,1)" >"$LOGS/$2.json"
+}
+
+# The pipeline definition of the check, in a folder named after the repository, its logins, and a
+# preview of its YAML. Usage: ci_prepare_major_branch_check <auth url>
+ci_prepare_major_branch_check() {
+  local auth_url="$1"
+  if [ ! -f "$WORK/$AZ_MAJOR_CHECK_PIPELINE_FILE" ]; then
+    echo "no $AZ_MAJOR_CHECK_PIPELINE_FILE in $WORK: the template was not written"
+    return 1
+  fi
+  AZ_MBC_DEF_ID=$(_azci_create_pipeline "$AZ_MAJOR_CHECK_PIPELINE_NAME" "$AZ_MAJOR_CHECK_PIPELINE_FILE" "$AZ_REPO_NAME") || return 1
+  export AZ_MBC_DEF_ID
+  AUTH_URL="$auth_url" _azci_set_variables "$AZ_MBC_DEF_ID" || return 1
+  _azci_preview "$AZ_MBC_DEF_ID" || return 1
+  printf 'export AZ_MBC_DEF_ID="%s"\n' "$AZ_MBC_DEF_ID" >>"$LOGS/ci-vars.sh"
+  echo "[$(date +%T)] pipeline \"$AZ_MAJOR_CHECK_PIPELINE_NAME\" created in folder \\$AZ_REPO_NAME: $AZ_MBC_DEF_ID"
+}
+
+# A build of the check definition on the branch, queued with reason schedule, which is what its
+# schedule would give. When the API refuses that reason, or queues it with another one, the build
+# is queued as a manual one and $LOGS/<label>.trigger says so
+start_major_branch_check() {
+  local branch="$1" label="${2:-mbc-$1}" file code id reason refused
+  : "${AZ_MBC_DEF_ID:?run ci_prepare_major_branch_check first (AZ_MBC_DEF_ID)}"
+  date -u +%Y-%m-%dT%H:%M:%SZ >"$LOGS/$label.start"
+  file="$(_azci_path "$LOGS")/.az-queue-$label.json"
+  code=$(_azci_call POST "$AZ_PROJECT_URL/_apis/build/builds?api-version=7.1" "$file" \
+    -d "{\"definition\":{\"id\":$AZ_MBC_DEF_ID},\"sourceBranch\":\"refs/heads/$branch\",\"reason\":\"schedule\"}")
+  id=$(_azci_json 'd.id' <"$file")
+  reason=$(_azci_json 'd.reason' <"$file")
+  if [ "$code" != "200" ] || ! [[ "$id" =~ ^[0-9]+$ ]]; then
+    refused="HTTP $code: $(_azci_json 'd.message||""' <"$file" | head -c 200)"
+    code=$(_azci_call POST "$AZ_PROJECT_URL/_apis/build/builds?api-version=7.1" "$file" \
+      -d "{\"definition\":{\"id\":$AZ_MBC_DEF_ID},\"sourceBranch\":\"refs/heads/$branch\"}")
+    id=$(_azci_json 'd.id' <"$file")
+    reason=$(_azci_json 'd.reason' <"$file")
+    echo "Manual: build $id queued through the REST API, which refused reason schedule ($refused)" >"$LOGS/$label.trigger"
+  elif [ "$reason" != "schedule" ]; then
+    echo "${reason:-unknown}: build $id queued through the REST API, which kept reason ${reason:-unknown} instead of schedule" >"$LOGS/$label.trigger"
+  else
+    echo "Schedule: build $id queued through the REST API with reason schedule" >"$LOGS/$label.trigger"
+  fi
+  rm -f "$file"
+  if ! [[ "$id" =~ ^[0-9]+$ ]]; then
+    echo "build of $AZ_MAJOR_CHECK_PIPELINE_NAME on $branch not queued (HTTP $code)" >"$LOGS/$label.log"
+    echo 9 >"$LOGS/$label.code"
+    return 1
+  fi
+  echo "$id" >"$LOGS/$label.build"
+  echo "[$(date +%T)] $label: build $id queued on $branch (reason ${reason:-unknown})"
+}
+
+ci_major_branch_check_state() {
+  local label="${2:-mbc-$1}" id
+  id=$(cat "$LOGS/$label.build" 2>/dev/null)
+  [ -n "$id" ] || return 0
+  case "$(_azci_api GET "$AZ_PROJECT_URL/_apis/build/builds/$id?api-version=7.1" | _azci_json 'd.status')" in
+  notStarted | postponed) echo pending ;;
+  inProgress) echo running ;;
+  completed | cancelling) echo "done" ;;
+  esac
+}
+
+ci_wait_major_branch_check() {
+  local branch="$1" label="${2:-mbc-$1}" id status="" waited=0
+  id=$(cat "$LOGS/$label.build" 2>/dev/null)
+  if [ -z "$id" ]; then
+    echo "no check build queued for $branch" >"$LOGS/$label.log"
+    echo 9 >"$LOGS/$label.code"
+    return 1
+  fi
+  while [ "$waited" -lt $((CI_WAIT_QUEUE_SECONDS + CI_WAIT_JOB_SECONDS)) ]; do
+    status=$(_azci_api GET "$AZ_PROJECT_URL/_apis/build/builds/$id?api-version=7.1" | _azci_json 'd.status')
+    [ "$status" = "completed" ] && break
+    sleep 20
+    waited=$((waited + 20))
+  done
+  echo "real CI" >"$LOGS/$label.mode"
+  _azci_finish_build "$id" "$label" "$status"
+}
 
 # The newest build matching a kind, a key and a commit, newer than a build id. Prints "id status".
 # check: the policy build of Pull Request <key> for head <sha>; deploy: the CI build of branch <key>

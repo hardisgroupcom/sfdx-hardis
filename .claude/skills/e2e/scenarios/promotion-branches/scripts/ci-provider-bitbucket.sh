@@ -50,6 +50,10 @@ CI_SAFE_DIRECTORY_SKIP="GitHub only: the Bitbucket template has no safe.director
 # The jobs only real CI proves (gate, checkbox, deployment after a merge) come first, while minutes last
 CI_DRAFT_LATE=yes
 BB_SIMULATED="simulated (build minutes used up)"
+# The major branch deployment check: a custom pipeline, run on one branch at a time. It has no
+# simulator: once the minutes are used up it is not run (code 9), never simulated
+BB_MAJOR_CHECK_PIPELINE=check-major-branch-deployment
+CI_MAJOR_BRANCH_CHECK_ALL=""
 
 _bbci_json() {
   node -e "let s='';process.stdin.setEncoding('utf8').on('data',c=>s+=c).on('end',()=>{let d;try{d=JSON.parse(s)}catch(e){console.log('');return}const v=($1);console.log(v===undefined||v===null?'':v)})"
@@ -262,6 +266,71 @@ ci_merge_sha() {
 
 ci_pr_head_sha() { _bbci_full_sha "$(bb_api GET "$BB_API/pullrequests/$1" | _bbci_json 'd.source&&d.source.commit&&d.source.commit.hash')"; }
 
+ci_pr_comments_ids() {
+  bb_api GET "$BB_API/pullrequests/$1/comments?pagelen=100" |
+    _bbci_json "JSON.stringify((d.values||[]).filter(c=>!c.deleted).map(c=>({id:c.id,body:(c.content||{}).raw||''})).sort((x,y)=>x.id-y.id),null,1)" >"$LOGS/$2.json"
+}
+
+ci_prepare_major_branch_check() {
+  if ! grep -qE "^ {4}$BB_MAJOR_CHECK_PIPELINE:" "$WORK/bitbucket-pipelines.yml" 2>/dev/null; then
+    echo "no custom pipeline $BB_MAJOR_CHECK_PIPELINE in $WORK/bitbucket-pipelines.yml: the template has none"
+    return 1
+  fi
+}
+
+# The custom pipeline run on the branch through the API, what its schedule does
+start_major_branch_check() {
+  local branch="$1" label="${2:-mbc-$1}" file code uuid
+  date -u +%Y-%m-%dT%H:%M:%SZ >"$LOGS/$label.start"
+  if [ -f "$LOGS/bb-minutes-gone" ]; then
+    echo "not started: build minutes used up ($(cat "$LOGS/bb-minutes-gone"))" >"$LOGS/$label.trigger"
+    echo "not started: build minutes used up, the check has no simulator" >"$LOGS/$label.log"
+    echo 9 >"$LOGS/$label.code"
+    return 1
+  fi
+  file="$(_bbci_path "$LOGS")/.bb-custom-$label.json"
+  code=$(_bbci_call POST "$BB_API/pipelines/" "$file" -d "{\"target\":{\"type\":\"pipeline_ref_target\",\"ref_type\":\"branch\",\"ref_name\":\"$branch\",
+    \"selector\":{\"type\":\"custom\",\"pattern\":\"$BB_MAJOR_CHECK_PIPELINE\"}}}")
+  if [ "$code" = "201" ] || [ "$code" = "200" ]; then
+    uuid=$(_bbci_json 'd.uuid' <"$file")
+  elif grep -qiE "minute|quota" "$file"; then
+    _bbci_minutes_gone "" "starting the custom pipeline answered HTTP $code: $(_bbci_json '(d.error&&d.error.message)||""' <"$file")"
+  fi
+  if [ -z "${uuid:-}" ]; then
+    echo "custom pipeline $BB_MAJOR_CHECK_PIPELINE not started on $branch: HTTP $code $(head -c 300 "$file")" >"$LOGS/$label.log"
+    echo 9 >"$LOGS/$label.code"
+    rm -f "$file"
+    return 1
+  fi
+  rm -f "$file"
+  echo "$uuid" >"$LOGS/$label.pipeline"
+  echo "custom pipeline $BB_MAJOR_CHECK_PIPELINE run on $branch through the API (what its schedule runs)" >"$LOGS/$label.trigger"
+  echo "[$(date +%T)] $label: pipeline $uuid"
+}
+
+ci_major_branch_check_state() {
+  local label="${2:-mbc-$1}" uuid state stage
+  uuid=$(cat "$LOGS/$label.pipeline" 2>/dev/null)
+  [ -n "$uuid" ] || return 0
+  IFS='|' read -r state stage _ _ <<<"$(_bbci_state "$uuid")"
+  case "$state:$stage" in
+  PENDING:*) echo pending ;;
+  IN_PROGRESS:PAUSED | IN_PROGRESS:HALTED) echo pending ;;
+  IN_PROGRESS:*) echo running ;;
+  COMPLETED:*) echo "done" ;;
+  esac
+}
+
+ci_wait_major_branch_check() {
+  local branch="$1" label="${2:-mbc-$1}" uuid
+  uuid=$(cat "$LOGS/$label.pipeline" 2>/dev/null)
+  if [ -z "$uuid" ]; then
+    [ -f "$LOGS/$label.code" ] || echo 9 >"$LOGS/$label.code"
+    return 1
+  fi
+  BBCI_NO_SIMULATE=1 _bbci_wait_pipeline deploy "$branch" "-" "$label" "$uuid"
+}
+
 # Start the pull request pipeline of a Pull Request through the API. Prints its uuid; a refusal for
 # minutes marks them as gone.
 _bbci_trigger_pr_pipeline() {
@@ -407,6 +476,15 @@ _bbci_minutes_gone() {
 # Usage: _bbci_simulate <check|deploy> <pr id|branch> <label>
 _bbci_simulate() {
   local kind="$1" key="$2" label="$3" target code
+  # BBCI_NO_SIMULATE=1: a job the simulators cannot stand for (the major branch check) is not run
+  if [ -n "${BBCI_NO_SIMULATE:-}" ]; then
+    echo "not run: build minutes used up ($(cat "$LOGS/bb-minutes-gone" 2>/dev/null)), and this job has no simulator" >"$LOGS/$label.log"
+    echo 9 >"$LOGS/$label.code"
+    echo "not run (build minutes used up)" >"$LOGS/$label.mode"
+    printf '%s\tbitbucket\tnot run (build minutes used up)\t-\t-\t\t\t\n' "$label" >>"$LOGS/ci-jobs.tsv"
+    echo "[$(date +%T)] $label: not run, build minutes used up"
+    return
+  fi
   if [ "$kind" = "check" ]; then
     target=$(bb_pr_field "$key" "d['destination']['branch']['name']")
     bb_check "$key" "$target" "$label" >"$LOGS/$label.sim" 2>&1

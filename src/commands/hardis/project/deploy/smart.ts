@@ -42,6 +42,7 @@ import { assertNoPromotionConflictMarkers, assertPromotionBranchIsNotDeployed } 
 import { FlowDeletionHandler } from '../../../../common/utils/flowDeletionHandler.js';
 import { t } from '../../../../common/utils/i18n.js';
 import { getTargetOrg, isFlagTyped, resolveTargetUsername } from '../../../../common/utils/targetOrgUtils.js';
+import { assertMajorBranchCheckAllowed, enableMajorBranchCheckMode, isMajorBranchCheckMode } from '../../../../common/utils/majorBranchCheckUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -443,6 +444,21 @@ If you need notifications to be sent using the current Pull Request and not the 
 
 If you want to disable the calculation and display of Flow Visual Git Diff in Pull Request comments, define variable **SFDX_DISABLE_FLOW_DIFF=true**
 
+### Major branch deployment check
+
+\`--major-branch-check\` checks that a major branch can still be deployed to its own org, for a job scheduled every night on each major branch: an org can drift from its branch (manual changes, refresh, failed deployment), and the next Pull Request is then the one that pays for it.
+
+\`\`\`sh
+sf hardis:project:deploy:smart --check --major-branch-check
+\`\`\`
+
+- \`--check\` is implied: nothing is deployed.
+- The current branch must be a major branch (a \`config/branches/.sfdx-hardis.BRANCHNAME.yml\` file exists), and the org is the one of its branch config.
+- The deployment is always simulated in full: no delta, even with \`useDeltaDeployment\` or \`enableDeltaDeploymentBetweenMajorBranches\`.
+- No Pull Request is read: the last merged one is not commented, and its deployment actions are not run. Pre and post deployment actions are skipped, since they already ran when the branch was deployed.
+
+The default CI/CD templates hold this job, ready to be scheduled. With \`enableMajorBranchDeploymentCheck: true\` in \`config/.sfdx-hardis.yml\`, the DevOps Pipeline of the VS Code extension colors each major branch with the result of its last check. [More info](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-major-branch-check/)
+
 ### Agent Mode
 
 Supports non-interactive execution with \`--agent\`:
@@ -489,6 +505,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
     '$ sf hardis:project:deploy:smart --check --testlevel RunRepositoryTests',
     "$ sf hardis:project:deploy:smart --check --testlevel RunRepositoryTests --runtests '^(?!FLI|MyPrefix).*'",
     '$ sf hardis:project:deploy:smart --check --testlevel RunRepositoryTestsExceptSeeAllData',
+    '$ sf hardis:project:deploy:smart --check --major-branch-check',
     '$ sf hardis:project:deploy:smart',
     '$ FORCE_TARGET_BRANCH=preprod NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org nicolas.vuillamy@myclient.com.preprod',
     '$ SYSTEM_ACCESSTOKEN=xxxxxx SYSTEM_COLLECTIONURI=https://dev.azure.com/xxxxxxx/ SYSTEM_TEAMPROJECT="xxxxxxx" BUILD_REPOSITORY_ID=xxxxx SYSTEM_PULLREQUEST_PULLREQUESTID=1418 FORCE_TARGET_BRANCH=uat NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org my.salesforce@org.com',
@@ -530,6 +547,10 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     delta: Flags.boolean({
       default: false,
       description: 'Applies sfdx-git-delta to package.xml before other deployment processes',
+    }),
+    'major-branch-check': Flags.boolean({
+      default: false,
+      description: 'Checks that the current major branch can be deployed to its own org: full simulation (implies --check), without reading any Pull Request nor running deployment actions. Meant for a scheduled job',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -617,6 +638,14 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     const packageXml = flags.packagexml || null;
     this.debugMode = flags.debug || false;
     const currentGitBranch = await getCurrentGitBranch();
+    // Set before anything reads a Pull Request: on a major branch, the commit fallback of the git
+    // providers would find the last merged one, then comment it and run its deployment actions
+    if (flags['major-branch-check'] === true) {
+      assertMajorBranchCheckAllowed(currentGitBranch, await listMajorOrgs());
+      enableMajorBranchCheckMode();
+      this.checkOnly = true;
+      uxLog("action", this, c.cyan(t('majorBranchCheckModeEnabled', { branch: currentGitBranch })));
+    }
     // Get target org: --target-org typed on the command line, then targetUsername from branch config,
     // then the default org
     const resolvedTarget = resolveTargetUsername({
@@ -665,7 +694,8 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     await this.handlePackages(targetUsername);
 
     // Compute commitsSummary and store it in globalThis.pullRequestData.commitsSummary
-    if (this.checkOnly) {
+    // (a major branch check has no Pull Request, so no commits to summarize)
+    if (this.checkOnly && !isMajorBranchCheckMode()) {
       await buildCheckDeployCommitSummary()
     }
 
@@ -1061,6 +1091,12 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
   }
 
   async isDeltaAllowed() {
+    // Checked first: it wins over enableDeltaDeploymentBetweenMajorBranches, since the check is
+    // about the whole branch against its org
+    if (isMajorBranchCheckMode()) {
+      uxLog("warning", this, c.yellow('[DeltaDeployment] ' + t('majorBranchCheckFullDeployment')));
+      return false;
+    }
     const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
     if (prInfo?.customBehaviors?.noDeltaDeployment === true) {
       uxLog(

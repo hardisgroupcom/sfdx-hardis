@@ -50,6 +50,7 @@ import { UtilsAi } from '../../../common/aiProvider/utils/utils.js';
 import ExcelJS from 'exceljs';
 import { t } from '../../../common/utils/i18n.js';
 import { writeReportFile } from '../../../common/utils/reportFileWriteUtils.js';
+import { getMonitoringFetchDepthLinksMarkdown } from '../../../common/monitoring/monitoringTemplateLinks.js';
 
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -138,10 +139,7 @@ _The alpine-based sfdx-hardis docker image does not succeed to run mermaid/puppe
 
 If Flow history doc always display a single state, you probably need to update your workflow configuration:
 
-- on Gitlab: Env variable [\`GIT_FETCH_EXTRA_FLAGS: --depth 10000\`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/.gitlab-ci.yml#L11)
-- on GitHub: [\`fetch-depth: 0\`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/.github/workflows/org-monitoring.yml#L62)
-- on Azure: [\`fetchDepth: "0"\`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/azure-pipelines.yml#L46)
-- on Bitbucket: [\`step: clone: depth: full\`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/bitbucket-pipelines.yml#L23)
+${getMonitoringFetchDepthLinksMarkdown()}
 
 ![Screenshot flow doc](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-flow-doc.jpg)
 
