@@ -3298,7 +3298,7 @@
   "promotionCreateConflictTakeSource": "Keep the source branch version of the conflicting lines (risky)",
   "promotionCreateConflictTakeSourceAll": "Keep the source branch version for this conflict and every following one, without asking again (risky)",
   "promotionCreateConflictTakeSourceHelp": "Risky: nobody reviews what this answer decides. A change made in the target branch on the same lines (a hotfix, a retrofit) can be lost, and lines of User Stories that are not part of this promotion can come along. No validation job notices: the files are listed under a warning in the Pull Request description, check them before merging.",
-  "promotionCreateConflictTakeSourceIncomplete": "{{label}}: git could not keep the source branch version for every conflict (a file deleted on one side and changed on the other):\n{{files}}",
+  "promotionCreateConflictTakeSourceIncomplete": "{{label}}: these files could not be settled with the source branch version, so the command asks what to do with them:\n{{files}}",
   "promotionCreateConflictTakenFromSource": "{{label}}: conflicts in {{files}} resolved by keeping the source branch version. Review these files before merging",
   "promotionCreateConflictTreeUndecided": "Deleted on one side and changed on the other, these files hold no marker to remove, so the command cannot tell whether you decided:\n{{files}}\nIn Source Control, stage the file to keep it, or delete it and stage the deletion, then confirm again.",
   "promotionCreateCreatingBranch": "Creating promotion branch {{branch}} from origin/{{target}}...",

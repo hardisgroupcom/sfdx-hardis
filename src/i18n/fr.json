@@ -3294,7 +3294,7 @@
   "promotionCreateConflictTakeSource": "Garder la version de la branche source pour les lignes en conflit (risqué)",
   "promotionCreateConflictTakeSourceAll": "Garder la version de la branche source pour ce conflit et tous les suivants, sans redemander (risqué)",
   "promotionCreateConflictTakeSourceHelp": "Risqué : personne ne relit ce que décide cette réponse. Une modification faite dans la branche cible sur les mêmes lignes (un hotfix, un retrofit) peut être perdue, et des lignes de User Stories qui ne font pas partie de cette promotion peuvent venir avec. Aucun job de validation ne le voit : les fichiers sont listés sous un avertissement dans la description de la Pull Request, vérifiez-les avant de merger.",
-  "promotionCreateConflictTakeSourceIncomplete": "{{label}} : git n'a pas pu garder la version de la branche source pour tous les conflits (un fichier supprimé d'un côté et modifié de l'autre) :\n{{files}}",
+  "promotionCreateConflictTakeSourceIncomplete": "{{label}} : ces fichiers n'ont pas pu être résolus avec la version de la branche source, la commande demande donc quoi en faire :\n{{files}}",
   "promotionCreateConflictTakenFromSource": "{{label}} : conflits dans {{files}} résolus en gardant la version de la branche source. Vérifiez ces fichiers avant de merger",
   "promotionCreateConflictTreeUndecided": "Supprimés d'un côté et modifiés de l'autre, ces fichiers n'ont aucun marqueur à retirer, donc la commande ne peut pas savoir si vous avez décidé :\n{{files}}\nDans le contrôle de code source, indexez (stage) le fichier pour le garder, ou supprimez-le et indexez la suppression, puis confirmez à nouveau.",
   "promotionCreateCreatingBranch": "Création de la branche de promotion {{branch}} depuis origin/{{target}}...",

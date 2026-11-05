@@ -961,8 +961,8 @@ describe('cherryPickCandidates() keeping the source version (take-source)', () =
     expect(message).to.contain('- Status__c.field-meta.xml');
   });
 
-  it('stops in agent mode on what git cannot settle that way, naming the file', async () => {
-    // The story changes Extra.cls, which preprod deleted: -X theirs cannot settle that
+  it('keeps the story version of a file the target branch deleted, which -X theirs leaves open', async () => {
+    // The story changes Extra.cls, which preprod deleted: -X theirs leaves it as a conflict
     git(['checkout', '-q', 'uat']);
     fs.writeFileSync(path.join(path.dirname(file()), 'Extra.cls'), 'v1\n');
     git(['add', '-A']);
@@ -977,15 +977,12 @@ describe('cherryPickCandidates() keeping the source version (take-source)', () =
     git(['checkout', '-q', '-b', 'promotion/uat/preprod/test', 'preprod']);
     const hash = git(['rev-parse', 'uat']).stdout.trim();
     const candidate = { label: '#483 class story', group: { commit: { hash } } } as unknown as PromotionCandidate;
-    let error: Error | null = null;
-    try {
-      await cherryPickCandidates([candidate], 'promotion/uat/preprod/test', 'preprod', 'take-source', true, {});
-    } catch (e) {
-      error = e as Error;
-    }
-    expect(error?.message).to.contain('Extra.cls');
-    // Undone: back on preprod, the promotion branch deleted
-    expect(git(['branch', '--show-current']).stdout.trim()).to.equal('preprod');
+    // Agent mode: nothing may be asked, and keeping the source version needs nothing more
+    const outcome = await cherryPickCandidates([candidate], 'promotion/uat/preprod/test', 'preprod', 'take-source', true, {});
+    expect(outcome.picked).to.have.length(1);
+    expect(outcome.resolvedWithSource.map((entry) => entry.files)).to.deep.equal([['Extra.cls']]);
+    expect(git(['show', 'HEAD:Extra.cls']).stdout.replace(/\r\n/g, '\n')).to.equal('v2\n');
+    expect(git(['log', '-1', '--format=%B']).stdout).to.contain('- Extra.cls');
   });
 
   it('warns the reviewer in the Pull Request description', () => {

@@ -1328,7 +1328,13 @@ export async function cherryPickCandidates(
  * (git cherry-pick -X theirs: "theirs" is the commit being picked, "ours" the promotion branch, which
  * starts from the target branch). Only the conflicting lines change side: the rest of each file
  * still merges both. The commit message says which files were settled that way, for whoever reads
- * the history. 'conflicting' leaves the cherry-pick in progress with what git could not settle.
+ * the history.
+ *
+ * -X theirs only settles conflicts inside a file. A file deleted on one side and changed on the
+ * other stays a conflict, and keeping the source version means the same for it: the file as the
+ * story has it, deleted when the story deleted it (settleConflictsWithSource). The answer promises
+ * not to ask again, so nothing is left to ask. 'conflicting' is only what even that could not
+ * settle, with the cherry-pick still in progress.
  */
 async function cherryPickKeepingSource(
   candidate: PromotionCandidate,
@@ -1351,7 +1357,53 @@ async function cherryPickKeepingSource(
   if (failure.kind === 'refused') {
     throw new SfError(t('promotionCreateCherryPickRefused', { label: candidate.label, reason: commandFailureReason(res) }));
   }
-  return 'conflicting';
+  await settleConflictsWithSource(failure.files, commandThis);
+  if ((await listConflictFiles()).length > 0) {
+    return 'conflicting';
+  }
+  // Committed like a cherry-pick git settles by itself, which runs no hook: the content is the
+  // story's, decided by the answer, and a hook refusing it would stop a promotion that promised
+  // not to ask
+  const finished = await withoutGitHooks((noHooks) => finishCherryPick(commandThis, { stage: '-u', gitOptions: noHooks }));
+  if (finished.result === 'empty') {
+    return 'already-there';
+  }
+  if (finished.result === 'failed') {
+    uxLog('warning', commandThis, c.yellow(t('promotionCreateConflictSolvedCommitFailed', { reason: finished.reason })));
+    return 'conflicting';
+  }
+  await noteSourceVersionInCommitMessage(conflictFiles, commandThis);
+  return 'picked';
+}
+
+/**
+ * The conflicts -X theirs left, settled with the source side: a file the story deleted is deleted
+ * (UD, DD), a file the target deleted and the story changed is kept as the story has it (DU), and
+ * anything else git could not merge (a binary file, a file added on both sides) takes the story's
+ * version. A file with no story version is kept as it is.
+ */
+async function settleConflictsWithSource(files: string[], commandThis: any): Promise<void> {
+  const repositoryRoot = path.resolve((await getGitRepoRoot()).trim());
+  const status = await git().status();
+  for (const file of files) {
+    const entry = status.files.find((candidate) => candidate.path === file);
+    const code = entry ? `${entry.index}${entry.working_dir}` : '';
+    // git status names the file from the repository root: so does a :(top) path, whatever folder
+    // the command runs in
+    const pathspec = `":(top)${file.replace(/"/g, '\\"')}"`;
+    if (code === 'UD' || code === 'DD') {
+      await runCommandSafe(`git rm -q -- ${pathspec}`, commandThis, { output: false });
+      continue;
+    }
+    if (code !== 'DU') {
+      const theirs = await runCommandSafe(`git checkout --theirs -- ${pathspec}`, commandThis, { output: false });
+      if (theirs.status !== 0 && !fs.existsSync(path.join(repositoryRoot, file))) {
+        await runCommandSafe(`git rm -q -- ${pathspec}`, commandThis, { output: false });
+        continue;
+      }
+    }
+    await runCommandSafe(`git add -- ${pathspec}`, commandThis, { output: false });
+  }
 }
 
 // Adds the files settled with the source version to the message of the commit just made. Only the

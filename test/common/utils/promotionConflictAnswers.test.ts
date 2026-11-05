@@ -32,9 +32,10 @@ interface ConflictRepository {
 /**
  * - A.xml and B.xml: story 1 changes A, story 2 changes B, the preprod hotfix changes both
  * - C.cls (`deletedOnTarget`): story 3 changes it, preprod deleted it
+ * - D.xml (`deletedBySource`): story 4 deletes it, preprod changed it
  * - `failingHooks`: a pre-commit hook refusing every commit, installed the way Husky does it
  */
-function buildRepository(options: { deletedOnTarget?: boolean; failingHooks?: boolean } = {}): ConflictRepository {
+function buildRepository(options: { deletedOnTarget?: boolean; deletedBySource?: boolean; failingHooks?: boolean } = {}): ConflictRepository {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'promo-answers-'));
   // Outside the working tree, so no git add can commit the hooks themselves
   const hooksDir = `${dir}-hooks`;
@@ -50,6 +51,9 @@ function buildRepository(options: { deletedOnTarget?: boolean; failingHooks?: bo
   if (options.deletedOnTarget) {
     write('C.cls', 'base\n');
   }
+  if (options.deletedBySource) {
+    write('D.xml', '<d>base</d>\n');
+  }
   run(['add', '-A']);
   run(['commit', '-qm', 'base']);
   const hashes: string[] = [];
@@ -60,16 +64,25 @@ function buildRepository(options: { deletedOnTarget?: boolean; failingHooks?: bo
   write('B.xml', '<b>\n<v>story 2</v>\n</b>\n');
   run(['commit', '-qam', 'story 2']);
   hashes.push(run(['rev-parse', 'HEAD']).stdout.trim());
+  // Story 3 and story 4 keep their numbers whichever of them the repository holds
   if (options.deletedOnTarget) {
     write('C.cls', 'story 3\n');
     run(['commit', '-qam', 'story 3']);
-    hashes.push(run(['rev-parse', 'HEAD']).stdout.trim());
   }
+  hashes.push(options.deletedOnTarget ? run(['rev-parse', 'HEAD']).stdout.trim() : '');
+  if (options.deletedBySource) {
+    run(['rm', '-q', 'D.xml']);
+    run(['commit', '-qm', 'story 4']);
+  }
+  hashes.push(options.deletedBySource ? run(['rev-parse', 'HEAD']).stdout.trim() : '');
   run(['checkout', '-q', 'preprod']);
   write('A.xml', '<a>\n<label>hotfix</label>\n</a>\n');
   write('B.xml', '<b>\n<v>hotfix</v>\n</b>\n');
   if (options.deletedOnTarget) {
     run(['rm', '-q', 'C.cls']);
+  }
+  if (options.deletedBySource) {
+    write('D.xml', '<d>hotfix</d>\n');
   }
   run(['commit', '-qam', 'hotfix']);
   if (options.failingHooks) {
@@ -203,6 +216,37 @@ describe('Promotion conflict answers, in a real repository', () => {
       expect(repo.read('A.xml')).to.equal('<a>\n<label>story 1</label>\n</a>\n');
       expect(repo.read('B.xml')).to.equal('<b>\n<v>story 2</v>\n</b>\n');
       expect(repo.git(['log', '-1', '--format=%B']).stdout).to.contain('take-source');
+    });
+
+    it('take-source-all: never asks again, a file deleted on one side included', async () => {
+      repo = buildRepository({ deletedOnTarget: true, deletedBySource: true });
+      const asked = answerWith(['take-source-all']);
+      const outcome = await cherryPickCandidates(
+        [repo.story(1), repo.story(3), repo.story(4)],
+        PROMOTION_BRANCH,
+        PREVIOUS_BRANCH,
+        null,
+        false,
+        commandThis,
+      );
+      // One question for the three conflicts: the answer said "without asking again"
+      expect(asked).to.have.length(1);
+      expect(outcome.picked).to.have.length(3);
+      expect(outcome.resolvedWithSource.map((entry) => entry.files)).to.deep.equal([['A.xml'], ['C.cls'], ['D.xml']]);
+      // The source side, whatever it was: changed lines, a file the target deleted, a file the story deleted
+      expect(repo.read('A.xml')).to.equal('<a>\n<label>story 1</label>\n</a>\n');
+      expect(repo.git(['show', 'HEAD:C.cls']).stdout.replace(/\r\n/g, '\n')).to.equal('story 3\n');
+      expect(fs.existsSync(path.join(repo.dir, 'D.xml'))).to.equal(false);
+      expect(repo.git(['ls-files', 'D.xml']).stdout.trim()).to.equal('');
+      expect(cherryPickInProgress()).to.equal(false);
+      expect(repo.git(['status', '--porcelain']).stdout.trim()).to.equal('');
+    });
+
+    it('take-source: keeps the story version past a pre-commit hook refusing every commit', async () => {
+      repo = buildRepository({ deletedOnTarget: true, failingHooks: true });
+      const outcome = await cherryPickCandidates([repo.story(3)], PROMOTION_BRANCH, PREVIOUS_BRANCH, 'take-source', true, commandThis);
+      expect(outcome.picked).to.have.length(1);
+      expect(repo.git(['show', 'HEAD:C.cls']).stdout.replace(/\r\n/g, '\n')).to.equal('story 3\n');
     });
 
     it('solve-now: commits the resolution of the user, and nothing else', async () => {

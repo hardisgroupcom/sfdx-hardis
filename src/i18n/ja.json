@@ -3292,7 +3292,7 @@
   "promotionCreateConflictTakeSource": "競合している行はソースブランチの内容を採用する（リスクあり）",
   "promotionCreateConflictTakeSourceAll": "この競合と以降のすべての競合でソースブランチの内容を採用し、再度確認しない（リスクあり）",
   "promotionCreateConflictTakeSourceHelp": "リスクあり: この回答が決めた内容は誰もレビューしません。ターゲットブランチで同じ行に加えられた変更（ホットフィックス、レトロフィット）が失われたり、このプロモーションに含まれないユーザーストーリーの行が混入したりする可能性があります。検証ジョブでは検出されません。対象ファイルは Pull Request の説明に警告付きで一覧表示されるので、merge する前に確認してください。",
-  "promotionCreateConflictTakeSourceIncomplete": "{{label}}: すべての競合でソースブランチの内容を採用することはできませんでした（一方で削除され、もう一方で変更されたファイル）:\n{{files}}",
+  "promotionCreateConflictTakeSourceIncomplete": "{{label}}: これらのファイルはソースブランチの内容で解決できなかったため、どう扱うかをコマンドが確認します:\n{{files}}",
   "promotionCreateConflictTakenFromSource": "{{label}}: {{files}} の競合をソースブランチの内容を採用して解決しました。merge する前にこれらのファイルを確認してください",
   "promotionCreateConflictTreeUndecided": "一方で削除され、もう一方で変更されたこれらのファイルには削除すべきマーカーがないため、判断済みかどうかをコマンドは判別できません:\n{{files}}\nソース管理で、残す場合はファイルをステージし、削除する場合は削除してからその削除をステージして、もう一度確認してください。",
   "promotionCreateCreatingBranch": "origin/{{target}} からプロモーションブランチ {{branch}} を作成しています...",

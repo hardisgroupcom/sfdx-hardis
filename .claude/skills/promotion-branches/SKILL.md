@@ -161,9 +161,13 @@ Break one of these and the feature is wrong, whatever the tests say.
     behind, and no job notices, so it is never a default and always leaves a trace: the files go to
     `resolvedWithSource`, the Pull Request description gets a warning and a section, the commit
     message names them (amended through `execCommand`: simple-git refuses a `core.hooksPath`
-    option). What `-X theirs` cannot settle (delete/modify) is asked again without the risky
-    answers, or aborts in agent mode, and the files it did settle are still reported
-    (`keptSourceFiles`) whatever answer ends that conflict.
+    option). `-X theirs` only settles conflicts inside a file: a file deleted on one side and
+    changed on the other (`DU`, `UD`) gets the source side in `settleConflictsWithSource` (kept as
+    the story has it, deleted when the story deleted it, `git checkout --theirs` for anything else),
+    then the commit runs without hooks, like a pick git settles by itself (which runs none). The
+    "and every following one" answer promises not to ask again: it must never re-ask. Only what even
+    that cannot settle is asked again without the risky answers, and the files already settled are
+    still reported (`keptSourceFiles`).
     Every answer is proven in `test/common/utils/promotionConflictAnswers.test.ts`, on a
     repository built for each test (a hotfix on the same lines, a file deleted on the target, a
     pre-commit hook refusing every commit). The interactive answers are given through
