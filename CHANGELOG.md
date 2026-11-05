@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+## [8.23.0] 2026-11-06
+
 - [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/#3-answer-the-conflicts-if-any) (Beta), [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/):
   - New "solve the conflicts now" answer, which opens the conflicting files in VS Code and continues once they are solved.
   - New risky `take-source` answer (also `--on-conflict take-source`), which keeps the source branch version of the conflicting lines and lists those files in the Pull Request for review.
