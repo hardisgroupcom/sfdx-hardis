@@ -2,6 +2,11 @@
 
 ## [beta] (main)
 
+- [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/#3-answer-the-conflicts-if-any) (Beta), [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/):
+  - New "solve the conflicts now" answer, which opens the conflicting files in VS Code and continues once they are solved.
+  - New risky `take-source` answer (also `--on-conflict take-source`), which keeps the source branch version of the conflicting lines and lists those files in the Pull Request for review.
+  - Committing a story with its conflict markers no longer fails on the git hooks of the project (Husky, pre-commit...).
+
 ## [8.22.0] 2026-11-02
 
 - [hardis:ticket:list](https://sfdx-hardis.cloudity.com/hardis/ticket/list/), [hardis:ticket:whoami](https://sfdx-hardis.cloudity.com/hardis/ticket/whoami/), [hardis:ticket:meta](https://sfdx-hardis.cloudity.com/hardis/ticket/meta/) and [hardis:ticket:set-label](https://sfdx-hardis.cloudity.com/hardis/ticket/set-label/): **new commands** to search tickets with the same criteria on every ticketing system, show the authenticated account, list the types and statuses of a project, and label a ticket.

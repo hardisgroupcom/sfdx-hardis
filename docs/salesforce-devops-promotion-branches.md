@@ -275,10 +275,12 @@ promotionConflictMarkersIgnoredFiles:
   - labs/**/*.md
 ```
 
-The four answers in full:
+The answers in full:
 
 - **commit the story and every following conflict with their conflict markers, without asking again** (recommended): the promotion is assembled whole, conflicts and all, for the coding agent to solve;
-- **commit-with-markers**: the same for this story only, so you are asked again on the next conflict;
+- **solve the conflicts of this User Story now, then continue**: the conflicting files open in VS Code. Solve them there, save, and answer "I solved them, continue". The command checks that no conflict marker is left in those files, commits the story with your resolution and goes on with the next one. If markers are left, it names the files and asks again. Until then you can still commit with the markers, skip the story or stop. You are asked again at the next conflict;
+- **commit-with-markers**: the same as the first answer, for this story only, so you are asked again on the next conflict;
+- **keep the source branch version of the conflicting lines** (⚠️ **risky**), for this conflict or for every following one: the story is cherry-picked again with git taking the source side of each conflicting block, the rest of each file still merging both sides. Nobody looks at what it decides: a change made in the target branch on the same lines (a hotfix, a retrofit) can be lost, and lines of User Stories that are not part of the promotion can come along, half a story without its deployment actions. No validation job notices, since no marker is left. The files are listed under a warning in the Pull Request description and in the commit message: review them before merging. A conflict git cannot settle that way (a file deleted on one side and changed on the other) is asked about again, without this answer;
 - **skip**: leave that story out, it is listed as such in the Pull Request description;
 - **abort**: stop, the branch is deleted and nothing is pushed.
 
@@ -291,7 +293,9 @@ A story whose change is already in the target branch (brought by a hotfix, a ret
 
 With **commit-with-markers**, the Pull Request description warns about the conflicts, lists the files to fix and embeds a ready-to-paste prompt for a coding agent, also saved in `hardis-report/promotion-conflicts-prompt-*.md`. The validation job stops with an error naming the files while a marker is still in the sources; on a provider that caps the description length (Azure DevOps stops at 4000 characters), the prompt is left out of the description and only the saved file carries it.
 
-`--on-conflict commit-with-markers` is the equivalent of the "and all the following conflicts" answer for a non-interactive run.
+`--on-conflict commit-with-markers` is the equivalent of the "and all the following conflicts" answer for a non-interactive run. "Solve now" has no flag value: nothing can solve a conflict unattended. `--on-conflict take-source` applies the risky "keep the source branch version" answer to every conflict; it uses `git cherry-pick -X theirs`, where "theirs" is the story being picked.
+
+The commit that carries conflict markers skips the git hooks of your project (Husky, pre-commit, lefthook...): a pre-commit hook running a linter or a formatter fails on a file full of `<<<<<<<`, which used to stop the command halfway. The commit that solves the markers later, and the "solve now" commit, run the hooks as usual.
 
 The coding agent prompt asks for a commit message that explains, file by file, what was on the target side, what the story added, and what was kept: the reviewer of the promotion Pull Request reads the resolutions without opening the diff.
 

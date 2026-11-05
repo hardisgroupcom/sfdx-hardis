@@ -147,6 +147,27 @@ Break one of these and the feature is wrong, whatever the tests say.
     value**: `PROMOTION_CONFLICT_CHOICES` stays `skip` / `commit-with-markers` / `abort`, because
     `--on-conflict` already applies to every conflict. A promotion window usually conflicts on the
     same files story after story, so answering ten times in a row is answering once.
+    `solve-now` is the other prompt-only answer (`solveConflictsNow`): the conflicting files are
+    opened in VS Code (`WebSocketClient.requestOpenFile`), the user confirms, and the cherry-pick is
+    only finished when `filesStillHoldingConflictMarkers` finds none left in those files. It is
+    never remembered (each conflict needs its own resolution) and never a flag value (nothing solves
+    a conflict unattended); agent mode keeps `abort`.
+    `take-source` (flag value too) and its prompt-only `take-source-all` are the **risky** answers,
+    offered last and labelled so: `cherryPickKeepingSource` aborts the conflicted cherry-pick and
+    redoes it with `git cherry-pick -x -X theirs` ("theirs" = the story, "ours" = the promotion
+    branch). It can drop a target-side change on the same lines and bring lines of stories left
+    behind, and no job notices, so it is never a default and always leaves a trace: the files go to
+    `resolvedWithSource`, the Pull Request description gets a warning and a section, the commit
+    message names them (amended through `execCommand`: simple-git refuses a `core.hooksPath`
+    option). What `-X theirs` cannot settle (delete/modify) is asked again without the risky
+    answers, or aborts in agent mode.
+32. **Committing markers is never stopped by the project's git hooks, and nothing else skips them.**
+    `commitWithConflictMarkers` runs `cherry-pick --continue` (and its `commit` fallback, with
+    `--no-verify`) under `-c core.hooksPath=<empty temp folder>` and `HUSKY=0`: a pre-commit hook
+    running lint-staged or Prettier fails on `<<<<<<<` and used to stop the command with a branch
+    half assembled. `cherry-pick` has no `--no-verify`, and the `-c` override covers every hook
+    manager without touching the repository config. A clean cherry-pick, the `solve-now` commit and
+    the later commit that solves the markers all run the hooks as usual.
 20. **A resolution nobody can read is not a resolution.** `buildConflictResolutionPrompt` asks the
     coding agent for a commit message whose body carries one line per conflicting file, naming the
     story, what the target side had, what the story added and what was kept, and forbids
