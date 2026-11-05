@@ -1426,15 +1426,18 @@ async function promptConflictChoice(candidate: PromotionCandidate, commandThis: 
     name: 'value',
     message: c.cyanBright(t('promotionCreateConflictPrompt', { label: candidate.label })),
     description: t('promotionCreateConflictPrompt', { label: candidate.label }),
+    // In the order a release manager should consider them: the recommended answer, then the same
+    // for this story only, solving it now, leaving it out, the two risky answers (the narrower
+    // first), and undoing everything last
     choices: [
       // commit-with-markers-all is the recommended answer, so it comes first and carries the
       // description: a promotion window conflicts on the same files story after story, and the
       // coding agent prompt solves them all in one pass once the branch is assembled
       { title: t('promotionCreateConflictCommitAll'), value: 'commit-with-markers-all', description: t('promotionCreateConflictCommitAllHelp') },
+      { title: t('promotionCreateConflictCommit'), value: 'commit-with-markers' },
       { title: t('promotionCreateConflictSolveNow'), value: 'solve-now', description: t('promotionCreateConflictSolveNowHelp') },
       { title: t('promotionCreateConflictSkip'), value: 'skip' },
-      { title: t('promotionCreateConflictCommit'), value: 'commit-with-markers' },
-      // The risky answers come last and say so: nobody looks at what they decide
+      // The risky answers come late and say so: nobody looks at what they decide
       ...(offerTakeSource
         ? [
           { title: t('promotionCreateConflictTakeSource'), value: 'take-source', description: t('promotionCreateConflictTakeSourceHelp') },

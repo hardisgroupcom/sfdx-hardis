@@ -200,6 +200,16 @@ describe('Promotion conflict answers, in a real repository', () => {
       const asked = answerWith(['commit-with-markers-all']);
       const outcome = await cherryPickCandidates([repo.story(1), repo.story(2)], PROMOTION_BRANCH, PREVIOUS_BRANCH, null, false, commandThis);
       expect(asked).to.have.length(1);
+      // The answers in the order to consider them: the recommended one first, undoing everything last
+      expect(asked[0].choices.map((choice: any) => choice.value).filter((value: string) => value !== 'exitNow')).to.deep.equal([
+        'commit-with-markers-all',
+        'commit-with-markers',
+        'solve-now',
+        'skip',
+        'take-source',
+        'take-source-all',
+        'abort',
+      ]);
       expect(outcome.conflicted.map((entry) => entry.files)).to.deep.equal([['A.xml'], ['B.xml']]);
       expect(repo.read('A.xml')).to.match(/^<<<<<<< /m);
       expect(repo.read('B.xml')).to.match(/^<<<<<<< /m);
