@@ -167,6 +167,11 @@ describe('isSnapshotSignupRetryable', () => {
     expect(isSnapshotSignupRetryable(settingsFailure)).to.equal(false);
   });
 
+  it('does not retry when the org was created and only its login failed, or the Dev Hub has no login', () => {
+    expect(isSnapshotSignupRetryable(failure('AuthCodeExchangeError', 'Error authenticating with auth code due to: ERROR_HTTP_420'))).to.equal(false);
+    expect(isSnapshotSignupRetryable(failure('NamedOrgNotFoundError', 'No authorization information found for DevHub2.'))).to.equal(false);
+  });
+
   it('does not retry when no scratch org is left', () => {
     expect(isSnapshotSignupRetryable(failure('LIMIT_EXCEEDED', 'The signup request failed because this organization has reached its daily scratch org signup limit'))).to.equal(false);
   });

@@ -262,7 +262,8 @@ export function isSnapshotSignupRetryable(createResult: any): boolean {
     return false;
   }
   const message = String(createResult?.errorMessage || createResult?.message || '');
-  return !/ScratchOrgInfoTimeoutError|MyDomainResolverTimeoutError|Socket timeout occurred|LIMIT_EXCEEDED/.test(message);
+  // AuthCodeExchangeError: the org was created and only its login failed. NamedOrgNotFoundError: no Dev Hub login
+  return !/ScratchOrgInfoTimeoutError|MyDomainResolverTimeoutError|Socket timeout occurred|LIMIT_EXCEEDED|AuthCodeExchangeError|NamedOrgNotFoundError/.test(message);
 }
 
 // The snapshot limit that has nothing left, read before the refresh builds its source org. Null when both have room
