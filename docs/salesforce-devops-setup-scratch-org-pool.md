@@ -117,6 +117,8 @@ To enable it on a major branch:
 
 The job reads the branch config before it logs in to the Dev Hub: on a branch without `useScratchOrgSnapshot: true`, it ends at once. On GitLab, `gitlab-ci-config.yml` sets `USE_SCRATCH_ORGS: "true"` by default, so the job starts on every push to a major branch and ends there.
 
+On Bitbucket Pipelines, the step **Refresh scratch org snapshot** runs after the deployment step, as the steps of a Bitbucket pipeline run one after the other: a commit that fails to deploy to the org of the branch gets no snapshot. On the other CI servers, the snapshot job runs beside the deployment.
+
 #### Snapshots and the pool
 
 Snapshots and the [pool](#how-it-works) work together: the snapshot feeds the pool, and the pool feeds the Pull Requests.
