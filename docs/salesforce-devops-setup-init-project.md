@@ -37,6 +37,7 @@ description: Learn how to initialize a Salesforce DX project for CI/CD with sfdx
     - `azure-pipelines-checks.yml`
     - `azure-pipelines-deployment.yml`
     - `azure-pipelines-scratch-pool.yml` (only if you use a scratch org pool)
+    - `azure-pipelines-major-branch-check.yml` (only if you use the [major branch deployment check](salesforce-devops-setup-major-branch-check.md))
   - GitHub
     - Folder `.github/workflows`
   - Bitbucket
@@ -45,5 +46,16 @@ description: Learn how to initialize a Salesforce DX project for CI/CD with sfdx
 - During the CI/CD setup, find the variable **SFDX_DISABLE_FLOW_DIFF** in the pipeline of your Git provider and set its value to **true**, to avoid generating too many Pull Request comments during the setup. At the end of the setup, set the variable back to false.
 
 > Some workflow files contain additional configuration instructions: read the comments at the beginning of the files.
+
+### Upgrade the CI/CD files
+
+The CI/CD files are copied once, when the project is created: a new version of sfdx-hardis does not update them. Each one starts with the URL of the sfdx-hardis template it comes from, for example:
+
+```yaml
+# Source of this file: the sfdx-hardis default template
+#   https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.gitlab-ci.yml
+```
+
+To upgrade a file, by hand or with a coding agent, compare it with the latest version of its template and bring in the changes, keeping what is specific to your project: branch names, secrets, runner tags, image, custom jobs. `.gitlab-ci-config.yml` holds the values of your project: only add its new keys. The [changelog](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/CHANGELOG.md) says what changed between versions.
 
 You can now go to step [4. Configure CI authentication](salesforce-devops-setup-auth.md).

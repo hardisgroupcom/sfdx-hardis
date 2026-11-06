@@ -1,3 +1,9 @@
+# Source of this file: the sfdx-hardis default template
+#   https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/bitbucket-pipelines.yml
+#   raw: https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/defaults/ci/bitbucket-pipelines.yml
+# To upgrade it, compare it with the latest version of that template and bring in its changes,
+# keeping what is specific to this project (branch names, secrets, runner tags, image, custom jobs).
+# What changed between versions: https://github.com/hardisgroupcom/sfdx-hardis/blob/main/CHANGELOG.md
 # You might add new branch names in pipeline "branches"
 
 # Steps run in sfdx-hardis docker image, that includes Salesforce CLI and all required plugins & dependencies.
@@ -129,6 +135,31 @@ pipelines:
             - export FORCE_COLOR=1
             - sf hardis:auth:login --devhub
             - sf hardis:scratch:pool:refresh
+          artifacts:
+            - hardis-report/**
+
+    # Major branch deployment check: simulates the full deployment of a major branch to its own org,
+    # to know whether the org drifted from its branch. Nothing is deployed, no Pull Request is commented.
+    # Schedule it every night on each major branch (Pipelines -> Schedules -> New schedule ->
+    # check-major-branch-deployment), and define enableMajorBranchDeploymentCheck: true in
+    # config/.sfdx-hardis.yml to see the result in the VS Code DevOps Pipeline.
+    # The DevOps Pipeline finds the check by the name of this custom pipeline: keep it.
+    # More info at https://sfdx-hardis.cloudity.com/salesforce-devops-setup-major-branch-check/
+    check-major-branch-deployment:
+      - step:
+          name: Check Major Branch Deployment
+          max-time: 120
+          clone:
+            depth: full
+          script:
+            - export BRANCH_NAME=$(echo "$BITBUCKET_BRANCH" | sed
+              's/refs\/heads\///')
+            - export CI_COMMIT_REF_NAME=$BRANCH_NAME
+            - export CONFIG_BRANCH=$BRANCH_NAME
+            - export ORG_ALIAS=$BRANCH_NAME
+            - export FORCE_COLOR=1
+            - sf hardis:auth:login
+            - sf hardis:project:deploy:smart --check --major-branch-check
           artifacts:
             - hardis-report/**
 

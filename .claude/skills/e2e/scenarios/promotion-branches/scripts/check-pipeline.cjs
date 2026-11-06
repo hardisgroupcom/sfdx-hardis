@@ -3,7 +3,11 @@
 // promotion drawn on the arrow between two major branches.
 //
 //   EXT=<vscode-sfdx-hardis clone, default ../vscode-sfdx-hardis> WORK=<local clone> \
-//     node check-pipeline.cjs <expectations.json> [--dump observed.json]
+//     node check-pipeline.cjs <expectations.json> [--dump observed.json] [--now <ISO date>]
+//
+// --now <ISO date> makes Date.now() and new Date() (no argument) answer that time, before any
+// module of the extension is loaded: the staleness of a major branch deployment check is computed
+// with the current time, so a check can be made "25 hours old" without waiting 25 hours.
 //
 // Unlike check-diagram*.cjs, this one fetches nothing of its own: it drives the extension's own
 // PipelineDataProvider, so listPullRequestsInBranchSinceLastMerge, the promotion expansion, the
@@ -27,9 +31,53 @@
 //   }
 // "windows" lists the User Story numbers the branch node must show, order free. "arrows" gives the
 // number of the open Pull Request drawn on a merge edge, or null for "no Pull Request chip there".
+//
+// Major branch deployment check (enableMajorBranchDeploymentCheck), optional keys too:
+//   {
+//     "majorBranchDeploymentCheckEnabled": true,
+//     "deployArrows": { "integration": "success" },
+//     "branchChecks": {
+//       "integration": { "status": "failed", "stale": false, "staleReason": null },
+//       "uat": { "status": ["running", "pending"] },
+//       "main": null
+//     },
+//     "nodeClasses": { "integration": "gitBranchCheckFailed", "main": "gitMain" },
+//     "checkLinks": true
+//   }
+// "deployArrows" is the status of the deployment arrow of a branch to its org: the jobsStatus of
+// the sfDeploy link the mermaid builder made for it (success, failed, running, pending, unknown).
+// "branchChecks" compares the listed keys of orgs[].majorBranchCheck (an array accepts any of its
+// values, an absent key reads null); null means the branch has no check at all.
+// "nodeClasses" reads the classes of the branch node out of the generated mermaid text, in the full
+// diagram and in the major branches one: the node must carry that class and no other
+// gitBranchCheck* class (gitMajor / gitMain therefore means "no check class at all").
+// "checkLinks": every majorBranchCheck.webUrl is an http(s) URL on the host of the origin remote.
 
 const path = require("path");
 const fs = require("fs");
+
+// ------------------------------------------------------------------ --now: a fixed current time
+// Set before anything of the extension is loaded, so every Date.now() and new Date() it runs
+// answers the fixed time. Date(...) called without new keeps its string answer, of the fixed time.
+const nowArgIndex = process.argv.indexOf("--now");
+if (nowArgIndex > 1) {
+  const fixedNow = Date.parse(process.argv[nowArgIndex + 1] || "");
+  if (Number.isNaN(fixedNow)) {
+    console.error(`--now needs an ISO date, got "${process.argv[nowArgIndex + 1] || ""}"`);
+    process.exit(2);
+  }
+  const RealDate = Date;
+  const FixedDate = function (...dateArgs) {
+    if (!new.target) {
+      return new RealDate(fixedNow).toString();
+    }
+    return dateArgs.length === 0 ? new RealDate(fixedNow) : new RealDate(...dateArgs);
+  };
+  Object.setPrototypeOf(FixedDate, RealDate);
+  FixedDate.prototype = RealDate.prototype;
+  FixedDate.now = () => fixedNow;
+  global.Date = FixedDate;
+}
 
 const EXT = require('./env-lib.cjs').extDir();
 const WORK = process.env.WORK;
@@ -109,12 +157,17 @@ req("utils/cache-manager.js").CacheManager.init(
   path.join(require("os").tmpdir(), "sfdx-hardis-pipeline-check"),
 );
 
-// Put the token where the extension looks for it, under the host-derived secret name
-if (process.env.PROVIDER_TOKEN) {
+// The origin remote of the clone and its host (no user, no port)
+function readRemote() {
   const remote = require("child_process")
     .execSync("git remote get-url origin", { cwd: WORK, encoding: "utf8" })
     .trim();
-  const host = (remote.match(/^(?:https?:\/\/(?:[^@]+@)?|git@)([^/:]+)/) || [])[1];
+  return { remote, host: (remote.match(/^(?:https?:\/\/(?:[^@]+@)?|git@)([^/:]+)/) || [])[1] };
+}
+
+// Put the token where the extension looks for it, under the host-derived secret name
+if (process.env.PROVIDER_TOKEN) {
+  const { remote, host } = readRemote();
   if (!host) {
     console.error(`Cannot read the host out of the origin remote: ${remote}`);
     process.exit(2);
@@ -134,6 +187,25 @@ if (process.env.PROVIDER_TOKEN) {
 const { GitProvider } = req("utils/gitProviders/gitProvider.js");
 const { PipelineDataProvider } = req("pipeline-data-provider.js");
 
+// The deployment arrows: the sfDeploy links of each build of the mermaid builder, kept as the
+// builder made them (the rendered edge only carries a style, not the status it came from)
+const builds = [];
+const { BranchStrategyMermaidBuilder } = req("utils/pipeline/branchStrategyMermaidBuilder.js");
+const originalBuild = BranchStrategyMermaidBuilder.prototype.build;
+BranchStrategyMermaidBuilder.prototype.build = function (options) {
+  const result = originalBuild.apply(this, arguments);
+  builds.push({
+    onlyMajorBranches: !!(options && options.onlyMajorBranches),
+    deployLinks: (this.deployLinks || []).map((link) => ({
+      source: link.source,
+      target: link.target,
+      type: link.type,
+      jobsStatus: link.jobsStatus,
+    })),
+  });
+  return result;
+};
+
 // ------------------------------------------------------------------ arguments
 const args = process.argv.slice(2);
 let expectFile = null;
@@ -141,6 +213,8 @@ let dumpFile = null;
 for (let i = 0; i < args.length; i++) {
   if (args[i] === "--dump") {
     dumpFile = args[++i];
+  } else if (args[i] === "--now") {
+    i++; // read at the top of the script
   } else if (!expectFile) {
     expectFile = args[i];
   }
@@ -180,6 +254,27 @@ function readDiagram(mermaid) {
     }
   }
   return { counters, nodes, edges };
+}
+
+// The classes of every node of a mermaid text: `name("label"):::class` and `class a,b class` lines
+function readNodeClasses(mermaid) {
+  const classes = {};
+  const add = (node, cls) => {
+    classes[node] = [...(classes[node] || []), cls];
+  };
+  for (const line of String(mermaid).split("\n")) {
+    const inline = line.match(/^\s*([A-Za-z0-9_-]+)\s*(?:\(\[|\(|\[|@\{).*:::([A-Za-z0-9_-]+)\s*$/);
+    if (inline) {
+      add(inline[1], inline[2]);
+    }
+    const assigned = line.match(/^\s*class\s+([A-Za-z0-9_,-]+)\s+([A-Za-z0-9_-]+)\s*;?\s*$/);
+    if (assigned) {
+      for (const node of assigned[1].split(",")) {
+        add(node, assigned[2]);
+      }
+    }
+  }
+  return classes;
 }
 
 const sanitize = (branch) =>
@@ -267,6 +362,37 @@ const same = (a, b) => a.length === b.length && a.every((n, i) => n === b[i]);
     observed.arrows[`${link.source}>${link.target}`] = edge ? edge.prNumber : null;
   }
 
+  // Major branch deployment check: the check of each org, its deployment arrow, its node classes
+  observed.majorBranchDeploymentCheckEnabled =
+    data.majorBranchDeploymentCheckEnabled === undefined ? null : data.majorBranchDeploymentCheckEnabled;
+  observed.majorBranchDeploymentCheckValidityHours =
+    data.majorBranchDeploymentCheckValidityHours === undefined ? null : data.majorBranchDeploymentCheckValidityHours;
+  observed.branchChecks = {};
+  observed.deployArrows = {};
+  observed.nodeClasses = {};
+  const fullBuild = builds.find((b) => !b.onlyMajorBranches) || builds[0] || { deployLinks: [] };
+  const diagrams = { full: data.mermaidDiagram, major: data.mermaidDiagramMajor };
+  const classesByDiagram = {};
+  for (const [kind, text] of Object.entries(diagrams)) {
+    if (typeof text === "string" && text.includes("Branch")) {
+      classesByDiagram[kind] = readNodeClasses(text);
+      observed.nodeClasses[kind] = {};
+    }
+  }
+  for (const org of data.orgs) {
+    observed.branchChecks[org.name] = org.majorBranchCheck === undefined ? null : org.majorBranchCheck;
+    const node = sanitize(org.name) + "Branch";
+    const deploy = fullBuild.deployLinks.find((l) => l.type === "sfDeploy" && l.source === node);
+    observed.deployArrows[org.name] = deploy
+      ? deploy.jobsStatus || "unknown"
+      : org.jobsStatus === undefined
+        ? null
+        : org.jobsStatus;
+    for (const kind of Object.keys(classesByDiagram)) {
+      observed.nodeClasses[kind][org.name] = classesByDiagram[kind][node] || null;
+    }
+  }
+
   // ------------------------------------------------------------------ report
   console.log(`Pipeline check${expected.label ? ": " + expected.label : ""}`);
   console.log("");
@@ -288,6 +414,23 @@ const same = (a, b) => a.length === b.length && a.every((n, i) => n === b[i]);
   console.log("---------------------------|------------------------------");
   for (const [arrow, pr] of Object.entries(observed.arrows)) {
     console.log(`${arrow.padEnd(26)} | ${pr === null ? "-" : "#" + pr}`);
+  }
+  console.log("");
+  console.log(
+    `Major branch deployment check: ${observed.majorBranchDeploymentCheckEnabled === null ? "not reported" : observed.majorBranchDeploymentCheckEnabled ? "on" : "off"}` +
+      (observed.majorBranchDeploymentCheckValidityHours !== null ? `, valid ${observed.majorBranchDeploymentCheckValidityHours}h` : ""),
+  );
+  console.log("Branch       | check                     | deploy arrow | node classes (full diagram)");
+  console.log("-------------|---------------------------|--------------|----------------------------");
+  for (const name of Object.keys(observed.branchChecks)) {
+    const check = observed.branchChecks[name];
+    const checkText = check
+      ? `${check.status}${check.stale ? ` stale (${check.staleReason})` : ""}`
+      : "-";
+    const classes = (observed.nodeClasses.full || {})[name];
+    console.log(
+      `${name.padEnd(12)} | ${checkText.padEnd(25)} | ${String(observed.deployArrows[name]).padEnd(12)} | ${classes ? classes.join(" ") : "-"}`,
+    );
   }
 
   // ------------------------------------------------------------- assertions
@@ -358,6 +501,87 @@ const same = (a, b) => a.length === b.length && a.every((n, i) => n === b[i]);
     const node = sanitize(branch) + "Branch";
     if (diagram.nodes.includes(node)) {
       failures.push(`${branch} has a feature branch node of its own: it belongs on the merge arrow`);
+    }
+  }
+
+  // ------------------------------------------------- major branch deployment check
+  if (
+    "majorBranchDeploymentCheckEnabled" in expected &&
+    observed.majorBranchDeploymentCheckEnabled !== expected.majorBranchDeploymentCheckEnabled
+  ) {
+    failures.push(
+      `majorBranchDeploymentCheckEnabled is ${observed.majorBranchDeploymentCheckEnabled}, expected ${expected.majorBranchDeploymentCheckEnabled}`,
+    );
+  }
+  for (const [branch, want] of Object.entries(expected.deployArrows || {})) {
+    const got = observed.deployArrows[branch];
+    if (got === undefined || got === null) {
+      failures.push(`${branch} has no deployment arrow in the pipeline`);
+    } else if (got !== want) {
+      failures.push(`the deployment arrow of ${branch} shows ${got}, expected ${want}`);
+    }
+  }
+  for (const [branch, want] of Object.entries(expected.branchChecks || {})) {
+    if (!(branch in observed.branchChecks)) {
+      failures.push(`branch ${branch} is not in the pipeline`);
+      continue;
+    }
+    const got = observed.branchChecks[branch];
+    if (want === null) {
+      if (got !== null) {
+        failures.push(`${branch} has a major branch deployment check (${got.status}), expected none`);
+      }
+      continue;
+    }
+    if (got === null) {
+      failures.push(`${branch} has no major branch deployment check, expected ${JSON.stringify(want)}`);
+      continue;
+    }
+    for (const [key, value] of Object.entries(want)) {
+      const actual = got[key] === undefined ? null : got[key];
+      const accepted = Array.isArray(value) ? value : [value];
+      if (!accepted.some((v) => v === actual)) {
+        failures.push(
+          `the check of ${branch} has ${key} ${JSON.stringify(actual)}, expected ${accepted.map((v) => JSON.stringify(v)).join(" or ")}`,
+        );
+      }
+    }
+  }
+  for (const [branch, want] of Object.entries(expected.nodeClasses || {})) {
+    const kinds = Object.keys(classesByDiagram);
+    if (kinds.length === 0) {
+      failures.push(`nodeClasses: no mermaid diagram was generated`);
+    }
+    for (const kind of kinds) {
+      const classes = (observed.nodeClasses[kind] || {})[branch];
+      if (!classes) {
+        failures.push(`the ${kind} diagram has no node for ${branch}`);
+        continue;
+      }
+      const checkClasses = classes.filter((cls) => cls.startsWith("gitBranchCheck"));
+      if (!classes.includes(want) || checkClasses.some((cls) => cls !== want)) {
+        failures.push(`the ${branch} node of the ${kind} diagram has classes ${classes.join(" ")}, expected ${want}`);
+      }
+    }
+  }
+  if (expected.checkLinks === true) {
+    const { host } = readRemote();
+    const withCheck = Object.entries(observed.branchChecks).filter(([, check]) => check);
+    if (withCheck.length === 0) {
+      failures.push("checkLinks: no branch has a major branch deployment check to link to");
+    }
+    for (const [branch, check] of withCheck) {
+      let url = null;
+      try {
+        url = new URL(check.webUrl);
+      } catch {
+        url = null;
+      }
+      if (!url || !/^https?:$/.test(url.protocol)) {
+        failures.push(`the check link of ${branch} is not an http(s) URL: ${check.webUrl}`);
+      } else if (host && url.hostname.toLowerCase() !== host.toLowerCase()) {
+        failures.push(`the check link of ${branch} (${check.webUrl}) is not on the repository host ${host}`);
+      }
     }
   }
 

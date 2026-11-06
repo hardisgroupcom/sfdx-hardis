@@ -20,7 +20,15 @@
  * before a build minute is spent. --provider bitbucket also validates the file against the public
  * JSON schema of bitbucket-pipelines.yml (one GET; when it cannot be read, a warning, not a stop).
  *
- * --provider github (default): .github/workflows/check-deploy.yml and process-deploy.yml.
+ * The major branch deployment check (sf hardis:project:deploy:smart --check --major-branch-check) is
+ * written too, with the same link step and logins, when defaults/ci holds its template (a missing
+ * template is a warning, not a stop, so the scenarios that do not use it run as before):
+ * GitHub check-major-branch-deploy.yml, Azure azure-pipelines-major-branch-check.yml, Bitbucket the
+ * custom pipeline check-major-branch-deployment; on GitLab it is the job
+ * check_deploy_to_current_branch_org, linked like the other sfdx-hardis jobs.
+ *
+ * --provider github (default): .github/workflows/check-deploy.yml and process-deploy.yml (and
+ *   check-major-branch-deploy.yml).
  * --provider gitlab: .gitlab-ci.yml, where the sfdx-hardis jobs (check_deploy_to_target_branch_org,
  *   check_deploy_to_current_branch_org, deploy_to_org) get a before_script with the link step, and
  *   .gitlab-ci-config.yml, where DEPLOY_BRANCHES names the four major branches and USE_SCRATCH_ORGS
@@ -34,13 +42,15 @@
  *   the branch; the logins come from secret pipeline variables mapped in the env block; the checks
  *   pipeline gets `trigger: none` (the build validation policy of each major branch runs it on Pull
  *   Requests, which the template comment asks to set by hand), the deployment pipeline a CI trigger
- *   on the four major branches and `pr: none`. The MegaLinter job of the checks template is left
+ *   on the four major branches and `pr: none`; azure-pipelines-major-branch-check.yml keeps the
+ *   `trigger: none` and `pr: none` of its template (a run queues it on a branch through the API).
+ *   The MegaLinter job of the checks template is left
  *   out (the free tier has one parallel job and 1800 minutes a month), and so is its scratch org
  *   tests job (no Dev Hub in this test). AZURE_E2E_CI_TOKEN=pat maps
  *   CI_SFDX_HARDIS_AZURE_TOKEN to a secret variable holding the PAT instead of $(System.AccessToken)
  *   (see ci-provider-azure.sh).
  * --provider bitbucket: bitbucket-pipelines.yml, the link commands before `sf hardis:auth:login` in
- *   both steps, with a cache of the clone (`sfdxhardislink`, /tmp/sfdx-hardis: a later step fetches
+ *   each step running it (pull request, branches, and the custom major branch check), with a cache of the clone (`sfdxhardislink`, /tmp/sfdx-hardis: a later step fetches
  *   the branch into it and reuses node_modules). The MegaLinter step of the pull request pipeline is
  *   left out (build minutes), and so is its scratch org tests step (no Dev Hub in this test). The
  *   logins and the token are repository variables, set by ci-provider-bitbucket.sh.
@@ -61,6 +71,10 @@ const MAJOR_BRANCHES = ['INTEGRATION', 'UAT', 'PREPROD', 'MAIN'];
 const SFDX_HARDIS_REPO = 'https://github.com/hardisgroupcom/sfdx-hardis.git';
 const BITBUCKET_SCHEMA_URL = 'https://api.bitbucket.org/schemas/pipelines-configuration';
 const LINK_MARKER = 'sf plugins link /tmp/sfdx-hardis';
+// The major branch deployment check of each provider (GitLab: a job of .gitlab-ci.yml)
+const GITHUB_MAJOR_CHECK = 'check-major-branch-deploy.yml';
+const AZURE_MAJOR_CHECK = 'azure-pipelines-major-branch-check.yml';
+const BITBUCKET_MAJOR_CHECK = 'check-major-branch-deployment';
 // An Azure Pipelines container job runs its steps as a user the agent creates, not as root, and the
 // image keeps the plugins in a folder of root (SF_DATA_DIR=/usr/local/lib): the link needs sudo,
 // which the image ships for that agent. HOME is root's for that command: with the HOME of the step
@@ -116,34 +130,79 @@ function writeGitHub(sfdxHardisRoot, repositoryRoot, sfdxHardisBranch) {
         ];
   const authLines = MAJOR_BRANCHES.map((b) => `          SFDX_AUTH_URL_${b}: \${{ secrets.SFDX_AUTH_URL_${b} }}`);
 
+  const templateDir = path.join(sfdxHardisRoot, 'defaults', 'ci', '.github', 'workflows');
   const outDir = path.join(repositoryRoot, '.github', 'workflows');
   fs.mkdirSync(outDir, { recursive: true });
+  const authCheck = 'SFDX_AUTH_URL_MAIN: ${{ secrets.SFDX_AUTH_URL_MAIN }}';
   const files = [];
   for (const name of ['check-deploy.yml', 'process-deploy.yml']) {
-    const lines = readTemplate(path.join(sfdxHardisRoot, 'defaults', 'ci', '.github', 'workflows', name));
-    const loginIndex = lines.findIndex((l) => /^ {6}- name: Login & /.test(l));
-    if (loginIndex < 0) {
-      fail(`${name}: no "Login & ..." step`);
-    }
-    const envIndex = lines.findIndex((l, i) => i > loginIndex && /^ {8}env:\s*$/.test(l));
-    if (envIndex < 0) {
-      fail(`${name}: no env block in the sfdx-hardis step`);
-    }
-    if (image) {
-      const containerIndex = lines.findIndex((l) => /^ {4}container: /.test(l));
-      if (containerIndex < 0) {
-        fail(`${name}: no container line`);
-      }
-      lines[containerIndex] = `    container: ${image}`;
-    }
-    lines.splice(envIndex + 1, 0, ...authLines);
-    lines.splice(loginIndex, 0, ...linkStep);
-    const file = path.join(outDir, name);
-    fs.writeFileSync(file, lines.join('\n'));
-    console.log(`written ${file}`);
-    files.push({ file, check: (doc, text) => checkText(name, text, sfdxHardisBranch, ['SFDX_AUTH_URL_MAIN: ${{ secrets.SFDX_AUTH_URL_MAIN }}']) });
+    const file = writeGitHubWorkflow(path.join(templateDir, name), path.join(outDir, name), linkStep, authLines, false);
+    files.push({ file, check: (doc, text) => checkText(name, text, sfdxHardisBranch, [authCheck]) });
+  }
+  // The major branch deployment check: workflow_dispatch is how a run starts it (a schedule only
+  // runs on the default branch, at its own time); its matrix job runs sf hardis:auth:login
+  const majorTemplate = path.join(templateDir, GITHUB_MAJOR_CHECK);
+  if (fs.existsSync(majorTemplate)) {
+    const file = writeGitHubWorkflow(majorTemplate, path.join(outDir, GITHUB_MAJOR_CHECK), linkStep, authLines, true);
+    files.push({
+      file,
+      check: (doc, text) => {
+        checkText(GITHUB_MAJOR_CHECK, text, sfdxHardisBranch, [authCheck, '--major-branch-check']);
+        if (!doc.on || typeof doc.on !== 'object' || !('workflow_dispatch' in doc.on)) {
+          throw new Error(`${GITHUB_MAJOR_CHECK}: no workflow_dispatch trigger, a run cannot start it`);
+        }
+      },
+    });
+  } else {
+    console.warn(`WARN ${GITHUB_MAJOR_CHECK}: no template in defaults/ci/.github/workflows, not written`);
   }
   return files;
+}
+
+// One GitHub workflow: the link step before the sfdx-hardis step, the logins in its env block, the
+// image of SFDX_HARDIS_IMAGE (every container line when allContainers, else the first one). The
+// sfdx-hardis step is the "Login & ..." one, else the step whose script runs sf hardis:auth:login
+function writeGitHubWorkflow(template, file, linkStep, authLines, allContainers) {
+  const name = path.basename(file);
+  const lines = readTemplate(template);
+  let loginIndex = lines.findIndex((l) => /^ {6}- name: Login & /.test(l));
+  if (loginIndex < 0) {
+    const runIndex = lines.findIndex((l) => /sf hardis:auth:login(\s|$)/.test(l));
+    loginIndex = runIndex;
+    while (loginIndex > 0 && !/^ {6}- /.test(lines[loginIndex])) {
+      loginIndex--;
+    }
+    if (runIndex < 0 || loginIndex <= 0) {
+      fail(`${name}: no "Login & ..." step and no step running sf hardis:auth:login`);
+    }
+  }
+  let stepEnd = lines.findIndex((l, i) => i > loginIndex && /^ {0,6}\S/.test(l));
+  if (stepEnd < 0) {
+    stepEnd = lines.length;
+  }
+  let envIndex = lines.findIndex((l, i) => i > loginIndex && i < stepEnd && /^ {8}env:\s*$/.test(l));
+  if (envIndex < 0) {
+    if (!allContainers) {
+      fail(`${name}: no env block in the sfdx-hardis step`);
+    }
+    // the logins need one: right under the first line of the step
+    lines.splice(loginIndex + 1, 0, '        env: # E2E ONLY: the logins of the test');
+    envIndex = loginIndex + 1;
+  }
+  if (image) {
+    const containers = lines.map((l, i) => (/^ {4}container: /.test(l) ? i : -1)).filter((i) => i >= 0);
+    if (containers.length === 0) {
+      fail(`${name}: no container line`);
+    }
+    for (const index of allContainers ? containers : containers.slice(0, 1)) {
+      lines[index] = `    container: ${image}`;
+    }
+  }
+  lines.splice(envIndex + 1, 0, ...authLines);
+  lines.splice(loginIndex, 0, ...linkStep);
+  fs.writeFileSync(file, lines.join('\n'));
+  console.log(`written ${file}`);
+  return file;
 }
 
 // ------------------------------------------------------------------ GitLab CI
@@ -286,10 +345,24 @@ function writeAzure(sfdxHardisRoot, repositoryRoot, sfdxHardisBranch) {
       'pr: none',
     ],
   };
+  // The major branch deployment check: queued on a branch by the run (REST API), never by a push
+  const majorTemplate = path.join(sfdxHardisRoot, 'defaults', 'ci', AZURE_MAJOR_CHECK);
+  if (fs.existsSync(majorTemplate)) {
+    const template = readTemplate(majorTemplate);
+    triggers[AZURE_MAJOR_CHECK] = [
+      '',
+      '# E2E ONLY: queued on a major branch by the run through the REST API',
+      ...(template.some((l) => /^trigger:/.test(l)) ? [] : ['trigger: none']),
+      ...(template.some((l) => /^pr:/.test(l)) ? [] : ['pr: none']),
+    ];
+  } else {
+    console.warn(`WARN ${AZURE_MAJOR_CHECK}: no template in defaults/ci, not written`);
+  }
 
   const files = [];
   for (const name of Object.keys(triggers)) {
     const lines = readTemplate(path.join(sfdxHardisRoot, 'defaults', 'ci', name));
+    const isMajorCheck = name === AZURE_MAJOR_CHECK;
     if (name === 'azure-pipelines-checks.yml') {
       removeAzureJob(lines, name, 'ScratchOrgTests', 'the scratch org tests job of the template is left out (no Dev Hub in this test)');
       removeAzureJob(lines, name, 'MegaLinter', 'the MegaLinter job of the template is left out (one free parallel job, 1800 minutes a month)');
@@ -303,23 +376,26 @@ function writeAzure(sfdxHardisRoot, repositoryRoot, sfdxHardisBranch) {
     }
     if (patToken) {
       const tokenIndex = lines.findIndex((l) => /^ {10}CI_SFDX_HARDIS_AZURE_TOKEN: \$\(System\.AccessToken\)/.test(l));
-      if (tokenIndex < 0) {
+      if (tokenIndex < 0 && !isMajorCheck) {
         fail(`${name}: no CI_SFDX_HARDIS_AZURE_TOKEN line to map to the PAT`);
       }
-      lines[tokenIndex] = '          CI_SFDX_HARDIS_AZURE_TOKEN: $(CI_SFDX_HARDIS_AZURE_TOKEN) # E2E ONLY: AZURE_E2E_CI_TOKEN=pat';
+      if (tokenIndex >= 0) {
+        lines[tokenIndex] = '          CI_SFDX_HARDIS_AZURE_TOKEN: $(CI_SFDX_HARDIS_AZURE_TOKEN) # E2E ONLY: AZURE_E2E_CI_TOKEN=pat';
+      }
     }
-    const loginIndex = lines.findIndex((l) => /^ {6}# Login & /.test(l));
-    if (loginIndex < 0) {
-      fail(`${name}: no "# Login & ..." step`);
-    }
+    const loginIndex = findAzureSfdxStep(lines, name);
     const envIndex = lines.findIndex((l, i) => i > loginIndex && /^ {8}env:\s*$/.test(l));
     if (envIndex < 0) {
       fail(`${name}: no env block in the sfdx-hardis step`);
     }
     lines.splice(envIndex + 1, 0, ...authLines);
     lines.splice(loginIndex, 0, ...linkStep);
-    const nameIndex = lines.findIndex((l) => /^name: /.test(l));
-    if (nameIndex < 0) {
+    let nameIndex = lines.findIndex((l) => /^name: /.test(l));
+    if (nameIndex < 0 && isMajorCheck) {
+      // no run name in that template: the lines go just before the first top-level key
+      nameIndex = lines.findIndex((l) => /^[A-Za-z]/.test(l)) - 1;
+    }
+    if (nameIndex < -1 || (nameIndex < 0 && !isMajorCheck)) {
       fail(`${name}: no top-level name line`);
     }
     lines.splice(nameIndex + 1, 0, ...triggers[name]);
@@ -352,10 +428,37 @@ function writeAzure(sfdxHardisRoot, repositoryRoot, sfdxHardisBranch) {
         if (name === 'azure-pipelines-deployment.yml' && (!doc.trigger || !doc.trigger.branches || doc.trigger.branches.include.length !== 4)) {
           throw new Error(`${name}: the CI trigger does not name the four major branches`);
         }
+        if (isMajorCheck && (doc.trigger !== 'none' || doc.pr !== 'none')) {
+          throw new Error(`${name}: expected trigger: none and pr: none, a push or a Pull Request must not run the check`);
+        }
+        if (isMajorCheck && !text.includes('--major-branch-check')) {
+          throw new Error(`${name}: the job does not run --major-branch-check`);
+        }
       },
     });
   }
   return files;
+}
+
+// The line before which the link step goes: the "# Login & ..." comment of the sfdx-hardis step,
+// else the comments and the "- script:" line of the step whose script runs sf hardis:auth:login
+function findAzureSfdxStep(lines, name) {
+  const commentIndex = lines.findIndex((l) => /^ {6}# Login & /.test(l));
+  if (commentIndex >= 0) {
+    return commentIndex;
+  }
+  const runIndex = lines.findIndex((l) => /sf hardis:auth:login(\s|$)/.test(l));
+  let index = runIndex;
+  while (index > 0 && !/^ {6}- script:/.test(lines[index])) {
+    index--;
+  }
+  if (runIndex < 0 || index <= 0) {
+    fail(`${name}: no "# Login & ..." step and no script running sf hardis:auth:login`);
+  }
+  while (index > 0 && /^ {6}#/.test(lines[index - 1])) {
+    index--;
+  }
+  return index;
 }
 
 // A job of the checks template, with the comment lines just above it, replaced by one comment.
@@ -455,8 +558,14 @@ function writeBitbucket(sfdxHardisRoot, repositoryRoot, sfdxHardisBranch) {
       i += 2;
     }
   }
-  if (steps !== 2) {
-    fail(`${name}: expected 2 steps running sf hardis:auth:login, found ${steps}`);
+  // The pull request step, the branches step, and the custom major branch check when the template has it
+  const hasMajorCheck = lines.some((l) => new RegExp(`^ {4}${BITBUCKET_MAJOR_CHECK}:\\s*$`).test(l));
+  if (!hasMajorCheck) {
+    console.warn(`WARN ${name}: no custom pipeline ${BITBUCKET_MAJOR_CHECK} in the template`);
+  }
+  const expectedSteps = hasMajorCheck ? 3 : 2;
+  if (steps !== expectedSteps) {
+    fail(`${name}: expected ${expectedSteps} steps running sf hardis:auth:login, found ${steps}`);
   }
   const file = path.join(repositoryRoot, name);
   fs.writeFileSync(file, lines.join('\n'));
@@ -476,7 +585,15 @@ function writeBitbucket(sfdxHardisRoot, repositoryRoot, sfdxHardisBranch) {
         if (!branchKey) {
           throw new Error(`${name}: no branches pipeline naming the four major branches`);
         }
-        for (const step of [pr[0].step, doc.pipelines.branches[branchKey][0].step]) {
+        const linkedSteps = [pr[0].step, doc.pipelines.branches[branchKey][0].step];
+        if (hasMajorCheck) {
+          const custom = ((doc.pipelines.custom || {})[BITBUCKET_MAJOR_CHECK] || [])[0];
+          if (!custom || !custom.step) {
+            throw new Error(`${name}: the custom pipeline ${BITBUCKET_MAJOR_CHECK} has no step`);
+          }
+          linkedSteps.push(custom.step);
+        }
+        for (const step of linkedSteps) {
           const script = step.script.map((c) => (typeof c === 'string' ? c : '')).join('\n');
           if (sfdxHardisBranch !== '-' && (!script.includes(LINK_MARKER) || !(step.caches || []).includes('sfdxhardislink'))) {
             throw new Error(`${name}: step "${step.name}" has no link command or no cache`);

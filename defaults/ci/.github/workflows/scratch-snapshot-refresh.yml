@@ -1,4 +1,10 @@
 ---
+# Source of this file: the sfdx-hardis default template
+#   https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.github/workflows/scratch-snapshot-refresh.yml
+#   raw: https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/defaults/ci/.github/workflows/scratch-snapshot-refresh.yml
+# To upgrade it, compare it with the latest version of that template and bring in its changes,
+# keeping what is specific to this project (branch names, secrets, runner tags, image, custom jobs).
+# What changed between versions: https://github.com/hardisgroupcom/sfdx-hardis/blob/main/CHANGELOG.md
 # Scratch org snapshot refresh: on every push to a major branch that sets useScratchOrgSnapshot: true in its
 # branch config, deploys the branch into an empty scratch org and takes a Dev Hub org snapshot of it.
 # The scratch org job of check-deploy.yml then creates the scratch orgs of Pull Requests to that branch from

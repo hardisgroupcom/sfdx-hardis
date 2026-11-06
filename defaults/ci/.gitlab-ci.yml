@@ -1,4 +1,10 @@
 ---
+# Source of this file: the sfdx-hardis default template
+#   https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.gitlab-ci.yml
+#   raw: https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/defaults/ci/.gitlab-ci.yml
+# To upgrade it, compare it with the latest version of that template and bring in its changes,
+# keeping what is specific to this project (branch names, secrets, runner tags, image, custom jobs).
+# What changed between versions: https://github.com/hardisgroupcom/sfdx-hardis/blob/main/CHANGELOG.md
 ##################################################################
 # Test and deployment pipeline for a Salesforce CI/CD Project    #
 #         Update it only if you know what you are doing :)       #
@@ -286,8 +292,12 @@ clean:
     - sf hardis:auth:login --scratchorg || true
     - sf org delete scratch --no-prompt || true
 
-# Simulate deployment to related org
-# Is triggered only when scheduled, or via manual launch
+# Major branch deployment check: simulates the full deployment of a major branch to its own org,
+# to know whether the org drifted from its branch. Nothing is deployed, no Merge Request is commented.
+# Is triggered only when scheduled, or via manual launch:
+# create one schedule per major branch in CI/CD > Schedules (ex: every night at 1am)
+# Define enableMajorBranchDeploymentCheck: true in config/.sfdx-hardis.yml to see the result in VS Code DevOps Pipeline
+# More info at https://sfdx-hardis.cloudity.com/salesforce-devops-setup-major-branch-check/
 check_deploy_to_current_branch_org:
   stage: check_deploy
   timeout: 150 minutes # Raise it if the job is killed before the deployment ends
@@ -319,7 +329,7 @@ check_deploy_to_current_branch_org:
     #     echo "[sfdx-hardis] GitLab push/MR auth enabled for coding agents"
     #   fi
     - sf hardis:auth:login
-    - sf hardis:project:deploy:smart --check
+    - sf hardis:project:deploy:smart --check --major-branch-check
   artifacts:
     when: always
     paths:

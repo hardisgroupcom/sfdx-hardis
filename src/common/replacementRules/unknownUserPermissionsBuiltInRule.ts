@@ -10,7 +10,7 @@ import { t } from '../utils/i18n.js';
 import { BuiltInRemovalRule } from './builtInRemovalRule.js';
 import { ReplacementRulePrepareOptions } from './replacementRuleRoot.js';
 import { formatApiVersion } from './utils/apiVersionUtils.js';
-import { childElementText, removeXmlNode, selectXmlPath } from './utils/xmlPath.js';
+import { childElementText, selectXmlPath } from './utils/xmlPath.js';
 
 interface UserPermissionsCheck {
   // org: the user permissions the org has. version: the ones its API version does not know
@@ -53,7 +53,7 @@ export class UnknownUserPermissionsBuiltInRule extends BuiltInRemovalRule {
         }
         const unknown = this.check.mode === 'org' ? !this.check.names.has(name) : this.check.names.has(name);
         if (unknown) {
-          removeXmlNode(node);
+          this.removeNode(node);
           removed++;
         }
       }
