@@ -43,6 +43,7 @@ import { FlowDeletionHandler } from '../../../../common/utils/flowDeletionHandle
 import { t } from '../../../../common/utils/i18n.js';
 import { getTargetOrg, isFlagTyped, resolveTargetUsername } from '../../../../common/utils/targetOrgUtils.js';
 import { assertMajorBranchCheckAllowed, enableMajorBranchCheckMode, isMajorBranchCheckMode } from '../../../../common/utils/majorBranchCheckUtils.js';
+import { updateDevOrgsAfterMerge } from '../../../../common/utils/devOrgsRegistry.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -459,6 +460,10 @@ sf hardis:project:deploy:smart --check --major-branch-check
 
 The default CI/CD templates hold this job, ready to be scheduled. With \`enableMajorBranchDeploymentCheck: true\` in \`config/.sfdx-hardis.yml\`, the DevOps Pipeline of the VS Code extension colors each major branch with the result of its last check. [More info](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-major-branch-check/)
 
+### Development orgs list
+
+After a deployment that follows a merge, the Pull Requests merged into the branch are listed again for the [development orgs](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-dev-orgs/) that target it, so their owners know when to run a backpromote. When no development org was ever registered, this costs one call to the git provider and nothing else. An error there never fails the deployment.
+
 ### Agent Mode
 
 Supports non-interactive execution with \`--agent\`:
@@ -771,6 +776,8 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       await handlePostDeploymentNotifications(this.targetOrg, targetUsername, quickDeploy, this.delta, this.debugMode, "", deploymentMetrics, {
         flowsNotDeleted: this.flowDeletion.flowsNotDeleted,
       });
+      // The development orgs that target this branch now miss what was just merged
+      await updateDevOrgsAfterMerge(currentGitBranch || '', this);
     }
     // Return result
     return { orgId: this.targetOrg.getOrgId(), outputString: messages.join('\n') };

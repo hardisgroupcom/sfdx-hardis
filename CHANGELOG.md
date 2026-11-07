@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- New [Development orgs list](https://sfdx-hardis.cloudity.com/salesforce-devops-dev-orgs/): see which dev sandboxes and scratch orgs miss Pull Requests merged into their target branch, so their owners know when to backpromote.
+
 ## [8.23.0] 2026-11-06
 
 - [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/#3-answer-the-conflicts-if-any) (Beta), [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/):

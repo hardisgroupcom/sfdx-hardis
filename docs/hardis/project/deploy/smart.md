@@ -408,6 +408,10 @@ sf hardis:project:deploy:smart --check --major-branch-check
 
 The default CI/CD templates hold this job, ready to be scheduled. With `enableMajorBranchDeploymentCheck: true` in `config/.sfdx-hardis.yml`, the DevOps Pipeline of the VS Code extension colors each major branch with the result of its last check. [More info](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-major-branch-check/)
 
+### Development orgs list
+
+After a deployment that follows a merge, the Pull Requests merged into the branch are listed again for the [development orgs](https://sfdx-hardis.cloudity.com/salesforce-devops-dev-orgs/) that target it, so their owners know when to run a backpromote. When no development org was ever registered, this costs one call to the git provider and nothing else. An error there never fails the deployment.
+
 ### Agent Mode
 
 Supports non-interactive execution with `--agent`:

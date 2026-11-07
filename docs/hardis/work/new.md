@@ -24,6 +24,7 @@ Key features include:
 - **Shared Development Sandboxes:** Accounts for scenarios with shared development sandboxes, adjusting prompts to prevent accidental overwrites.
 - **Sandbox initialization:** The command never initializes a selected sandbox. Run [hardis:org:init](https://sfdx-hardis.cloudity.com/hardis/org/init/) to run the org initialization steps on it. A new scratch org, or one taken from the pool, gets them when it is created.
 
+- **Development orgs list:** The selected or created org is registered in the [development orgs](https://sfdx-hardis.cloudity.com/salesforce-devops-dev-orgs/) list of the project: you become one of its users (its owner when it is new), with the User Story branch and its target branch. When the org is already registered for another target branch, a warning says so and the registered one stays. Without a git provider token, the command only says it could not register the org.
 - **Developer sandbox metadata:** The metadata of an existing sandbox is not updated by this command. To bring into it what the team merged in the target branch, use [hardis:work:backpromote](https://sfdx-hardis.cloudity.com/salesforce-devops-backpromote/) (the Backpromote panel in VS Code).
 
 - **Agent Mode (`--agent`):** Enables a fully non-interactive execution path for AI agents and automation. In this mode, all required decisions must be provided as flags and are validated at command start with explicit error messages listing missing inputs and available options.

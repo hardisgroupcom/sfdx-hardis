@@ -123,6 +123,7 @@ import { reportCommandProgress } from '../../../common/utils/progressFileUtils.j
 import { gitProviderBatchSizes, mapInAdaptiveBatches, mapInAdaptiveBatchesSettled } from '../../../common/utils/adaptiveBatch.js';
 import { GitProvider } from '../../../common/gitProvider/index.js';
 import fs from '../../../common/utils/fsUtils.js';
+import { registerDevOrgUsage } from '../../../common/utils/devOrgsRegistry.js';
 import { computeActionIdentityKey, resetIdenticalActionRuns } from '../../../common/utils/deploymentActionIdentityUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -134,6 +135,8 @@ const EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
 
 /** Everything the modes share once the checks passed */
 interface BackpromoteContext {
+  // When the merged Pull Requests were listed: a Pull Request merged after it is still missing
+  listedAt?: string;
   mode: BackpromoteMode;
   agentMode: boolean;
   interactive: boolean;
@@ -205,6 +208,7 @@ What the command does, in order:
 4. **Comparison with the sandbox:** the ticked items are retrieved from the sandbox into a cache and compared with the parent branch version. For every file that differs, one decision: **Overwrite** (\`git\`, the parent branch version is deployed), **Keep org version** (\`org\`, the item is not deployed and listed as kept) or **Merge** (\`merge\`, the file is written with conflict markers in the backpromote branch and solved with the VS Code merge editor, by hand or with the coding agent prompt saved in \`hardis-report/\`). An item listed in \`manifest/package-no-overwrite.xml\` of the parent branch is deployed when it is absent from the sandbox; when the sandbox already has it, it is not deployed unless you tick it (\`--include-no-overwrite Type:Name\`).
 5. **Deployment from the backpromote branch:** the checkout is switched to \`backpromote/<parent branch>/<sandbox name>\` (a child of the parent branch that only holds the manual merges; the working tree is committed or stashed first when it is not clean), the merged files are committed, then the pre-deployment actions run, the metadata is deployed (\`NoTestRun\`), the deletions are applied, the post-deployment actions run.
 6. **History:** every Pull Request of the window gets a row for the sandbox in its "Backpromotes" comment (complete, or partial with the items left out), and the backpromote branch is pushed when it holds manual merges. The checkout **stays on the backpromote branch**: the last line of the output says how to get back to your own branch.
+7. **Development orgs list:** the sandbox is recorded in the [development orgs](https://sfdx-hardis.cloudity.com/salesforce-devops-dev-orgs/) list of the project with the date of this backpromote, also when it was already up to date: the Pull Requests merged into the parent branch after it are what the sandbox misses next.
 
 ### Decisions from the flags
 
@@ -524,6 +528,10 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
       const plan = this.buildPlan(ctx, status, message);
       if (mode === 'plan' || status === 'nothingToDo') {
         uxLog('action', this, c.green(message));
+        if (status === 'nothingToDo' && ctx.scan.found) {
+          // The sandbox already has everything the parent branch holds
+          await this.recordInDevOrgsList(ctx);
+        }
         return plan as unknown as AnyJson;
       }
       throw this.refusal(message, plan);
@@ -574,10 +582,27 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
     return (await this.deployAndRecord(ctx)) as unknown as AnyJson;
   }
 
+  // The development orgs list counts what the sandbox misses from this backpromote on
+  private async recordInDevOrgsList(ctx: BackpromoteContext): Promise<void> {
+    const windowNumbers = ctx.windowGroups.flatMap((group) => group.associatedPrs.map((pr) => pr.id)).filter((id) => id > 0);
+    await registerDevOrgUsage({
+      username: ctx.targetOrg.username,
+      alias: ctx.targetOrg.alias,
+      targetBranch: ctx.parentBranch,
+      lastBackpromote: {
+        date: ctx.listedAt || new Date().toISOString(),
+        parentBranch: ctx.parentBranch,
+        pullRequest: windowNumbers.length > 0 ? Math.max(...windowNumbers) : null,
+      },
+      commandThis: this,
+    });
+  }
+
   // ---- Pull Requests, history, window ----
 
   private async listPullRequestsAndHistory(ctx: BackpromoteContext): Promise<void> {
     reportCommandProgress({ step: 'listing', message: t('backpromoteProgressListing', { parentBranch: ctx.parentBranch }) });
+    ctx.listedAt = new Date().toISOString();
     ctx.groups = await listMergedPrsWithCommits(ctx.parentRef, '', null, this, { maxCount: ctx.scanLimit });
     ctx.filesByCommit = changedFilesByFirstParentCommit(['-n', String(ctx.scanLimit), ctx.parentRef]);
     // A merge that brought several Pull Requests (a retrofit of main, a sync between major branches)
@@ -1379,6 +1404,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
         pr.backpromote = { date: new Date().toISOString(), user: ctx.user, status: (leftOutByPr.get(pr.number) || []).length > 0 ? 'partial' : 'complete', leftOut: leftOutByPr.get(pr.number) || [] };
       }
     }
+    await this.recordInDevOrgsList(ctx);
 
     // Manual actions confirmed now
     const confirmIds = new Set(ctx.confirmActionIds);
