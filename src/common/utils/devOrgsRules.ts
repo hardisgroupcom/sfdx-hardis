@@ -518,10 +518,6 @@ export function parseDevOrgPerson(value: string): DevOrgPerson | null {
   return null;
 }
 
-function nameOfEmail(email: string): string {
-  return email.split('@')[0] || email;
-}
-
 export function formatDevOrgPerson(person: DevOrgPerson | null | undefined): string {
   if (!person) {
     return '';
@@ -619,9 +615,15 @@ function dedupePersons(persons: DevOrgPerson[]): DevOrgPerson[] {
   return [...byEmail.values()];
 }
 
+function nameOfEmail(email: string): string {
+  return email.split('@')[0] || email;
+}
+
 // Only the date of the last activity changed, less than a day after the one written: not worth a write
 function hasMeaningfulChange(previous: DevOrgData, next: DevOrgData): boolean {
-  const strip = (data: DevOrgData) => JSON.stringify({ ...data, lastActivityAt: '', updatedAt: '', updatedBy: null, featureBranches: data.featureBranches.map((branch) => branch.name) });
+  // The feature branches are kept most recent first: working on two of them in turn reorders
+  // them, which is no change
+  const strip = (data: DevOrgData) => JSON.stringify({ ...data, lastActivityAt: '', updatedAt: '', updatedBy: null, featureBranches: data.featureBranches.map((branch) => branch.name).sort() });
   if (strip(previous) !== strip(next)) {
     return true;
   }

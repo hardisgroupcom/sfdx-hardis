@@ -2212,7 +2212,7 @@
   "githubFetchingMergedPrs": "Pobieranie scalonych PR dla branch {{branchName}}",
   "githubFindingLastMergedPr": "Szukanie ostatniego scalonego PR z {{sourceBranch}} do {{targetBranch}}",
   "githubIntegrationWarning": "{{message}}",
-  "githubIssuesDisabled": "Issues są wyłączone w repozytorium {{repo}} (jak w każdym nowym forku): włącz je w GitHub, Settings > General > Features > Issues, aby korzystać z listy org deweloperskich",
+  "githubIssuesDisabled": "Issues są wyłączone w repozytorium {{repo}} (jak w każdym nowym forku), a sfdx-hardis przechowuje swoje dashboardy (lista org deweloperskich, pula scratch org) w issues: włącz je w GitHub, Settings > General > Features > Issues",
   "githubListingClosedPullRequests": "Wylistowywanie wcześniej zamkniętych Pull Requests",
   "githubListingPrComments": "Wylistowywanie komentarzy dla PR {{prId}}",
   "githubListingPrCommentsAll": "Wylistowywanie komentarzy Pull Request...",

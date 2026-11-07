@@ -259,8 +259,10 @@ export class DevOrgsRegistry {
       uxLog("log", this, c.grey(t('devOrgRefreshedSandboxReplaced', { name: result.data.name })));
     }
     await this.deleteComments(loaded.dashboard, replaced);
-    await this.afterWrite(options.fullCleanup === true);
-    await this.completeBranchWindow(loaded, result.data, options.fullCleanup === true);
+    // A branch listed again does the cleanup and the body itself: they are done once
+    if (!(await this.completeBranchWindow(loaded, result.data, options.fullCleanup === true))) {
+      await this.afterWrite(options.fullCleanup === true);
+    }
     return result;
   }
 
@@ -365,20 +367,33 @@ export class DevOrgsRegistry {
   /**
    * An org registered on a branch whose merged Pull Requests are not listed back to its start date
    * (a new target branch, the first org of a branch) would stay "not computed" until the next
-   * merge: its branch is listed again now. Never fails the registration.
+   * merge: its branch is listed again now. True when it was (the listing did the cleanup and the
+   * body). Never fails the registration.
    */
-  private async completeBranchWindow(loaded: LoadedDevOrgs, org: DevOrgData, fullCleanup: boolean): Promise<void> {
+  private async completeBranchWindow(loaded: LoadedDevOrgs, org: DevOrgData, fullCleanup: boolean): Promise<boolean> {
     if (computeDevOrgBehind(org, loaded.state.branches.get(org.targetBranch)?.data) !== null) {
-      return;
+      return false;
     }
     try {
       await this.refreshBranches({ branches: [org.targetBranch], jobUrl: null, fullCleanup });
+      return true;
+    } catch (e) {
+      uxLog("log", this, c.grey(t('devOrgsDashboardNotUpdated', { message: (e as Error).message })));
+      return false;
+    }
+  }
+
+  // Cleanup, rollover and body after a write. Never fails the caller: the comment that matters is
+  // written already, and a command failing now would be run again and write it twice.
+  private async afterWrite(fullCleanup: boolean): Promise<void> {
+    try {
+      await this.afterWriteSteps(fullCleanup);
     } catch (e) {
       uxLog("log", this, c.grey(t('devOrgsDashboardNotUpdated', { message: (e as Error).message })));
     }
   }
 
-  private async afterWrite(fullCleanup: boolean): Promise<void> {
+  private async afterWriteSteps(fullCleanup: boolean): Promise<void> {
     if (fullCleanup) {
       await this.cleanup();
     }
@@ -389,6 +404,9 @@ export class DevOrgsRegistry {
         provider: this.gitProvider,
         oldDashboard,
         createEmpty: () => this.createEmptyDashboard(),
+        onCreated: (dashboard) => {
+          this.dashboard = dashboard;
+        },
         // Only what is still true is copied
         listComments: async (dashboard) => {
           const comments = (await this.gitProvider.listDashboardComments(dashboard))

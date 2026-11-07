@@ -79,6 +79,10 @@ export async function replaceDashboard<T extends { id: number }>(options: {
   listComments: (dashboard: DashboardRef) => Promise<T[]>;
   copyBody: (comment: T, newIds: Map<number, number>) => string;
   copyOrder?: (comments: T[]) => T[];
+  // Called as soon as the new dashboard exists, before the copy: on a provider with one open
+  // dashboard, the old one is closed by then, and a copy that fails must leave the caller on the
+  // new one
+  onCreated?: (dashboard: DashboardRef) => void;
 }): Promise<DashboardRef> {
   const { provider, oldDashboard } = options;
   const order = options.copyOrder || ((comments: T[]) => comments);
@@ -94,6 +98,7 @@ export async function replaceDashboard<T extends { id: number }>(options: {
     const comments = await options.listComments(oldDashboard);
     await provider.closeDashboard(oldDashboard);
     const newDashboard = await options.createEmpty();
+    options.onCreated?.(newDashboard);
     await copyComments(comments, newDashboard);
     return newDashboard;
   }

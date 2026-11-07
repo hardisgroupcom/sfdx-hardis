@@ -2210,7 +2210,7 @@
   "githubFetchingMergedPrs": "Fetching merged PRs for branch {{branchName}}",
   "githubFindingLastMergedPr": "Finding last merged PR from {{sourceBranch}} to {{targetBranch}}",
   "githubIntegrationWarning": "{{message}}",
-  "githubIssuesDisabled": "Issues are switched off in the repository {{repo}} (as in every new fork): switch them on in GitHub, Settings > General > Features > Issues, to use the development orgs list",
+  "githubIssuesDisabled": "Issues are switched off in the repository {{repo}} (as in every new fork), and sfdx-hardis keeps its dashboards (development orgs list, scratch org pool) in issues: switch them on in GitHub, Settings > General > Features > Issues",
   "githubListingClosedPullRequests": "Listing previously closed Pull Requests",
   "githubListingPrComments": "Listing comments for PR {{prId}}",
   "githubListingPrCommentsAll": "Listing comments of Pull Request...",

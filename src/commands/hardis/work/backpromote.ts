@@ -528,8 +528,9 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
       const plan = this.buildPlan(ctx, status, message);
       if (mode === 'plan' || status === 'nothingToDo') {
         uxLog('action', this, c.green(message));
-        if (status === 'nothingToDo' && ctx.scan.found) {
-          // The sandbox already has everything the parent branch holds
+        if (status === 'nothingToDo' && ctx.scan.found && mode !== 'plan') {
+          // The sandbox already has everything the parent branch holds. Not on --plan, which
+          // the Backpromote panel runs at every opening and must write nothing
           await this.recordInDevOrgsList(ctx);
         }
         return plan as unknown as AnyJson;

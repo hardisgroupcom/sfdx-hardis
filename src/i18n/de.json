@@ -2211,7 +2211,7 @@
   "githubFetchingMergedPrs": "Zusammengeführte PRs für branch {{branchName}} werden abgerufen",
   "githubFindingLastMergedPr": "Letzten zusammengeführten PR von {{sourceBranch}} nach {{targetBranch}} wird gesucht",
   "githubIntegrationWarning": "{{message}}",
-  "githubIssuesDisabled": "Die Issues sind im Repository {{repo}} deaktiviert (wie bei jedem neuen Fork): aktivieren Sie sie in GitHub unter Settings > General > Features > Issues, um die Liste der Entwicklungs-Orgs zu verwenden",
+  "githubIssuesDisabled": "Die Issues sind im Repository {{repo}} deaktiviert (wie bei jedem neuen Fork), und sfdx-hardis führt seine Dashboards (Liste der Entwicklungs-Orgs, Scratch-Org-Pool) in Issues: aktivieren Sie sie in GitHub unter Settings > General > Features > Issues",
   "githubListingClosedPullRequests": "Zuvor geschlossene Pull Requests werden aufgelistet",
   "githubListingPrComments": "Kommentare für PR {{prId}} werden aufgelistet",
   "githubListingPrCommentsAll": "Kommentare des Pull Requests werden aufgelistet...",

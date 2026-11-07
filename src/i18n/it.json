@@ -2212,7 +2212,7 @@
   "githubFetchingMergedPrs": "Recupero delle PR unite per il branch {{branchName}}",
   "githubFindingLastMergedPr": "Ricerca dell'ultima PR unita da {{sourceBranch}} a {{targetBranch}}",
   "githubIntegrationWarning": "{{message}}",
-  "githubIssuesDisabled": "Le issue sono disattivate nel repository {{repo}} (come in ogni nuovo fork): attivale in GitHub, Settings > General > Features > Issues, per usare la lista delle org di sviluppo",
+  "githubIssuesDisabled": "Le issue sono disattivate nel repository {{repo}} (come in ogni nuovo fork), e sfdx-hardis tiene i suoi dashboard (lista delle org di sviluppo, pool di scratch org) nelle issue: attivale in GitHub, Settings > General > Features > Issues",
   "githubListingClosedPullRequests": "Elenco delle pull request precedentemente chiuse",
   "githubListingPrComments": "Elenco commenti per la PR {{prId}}",
   "githubListingPrCommentsAll": "Elenco commenti della pull request...",

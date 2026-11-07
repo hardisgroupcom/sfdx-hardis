@@ -175,6 +175,49 @@ describe('DevOrgsRegistry', function () {
     expect(moved.orgs[0].behind?.count).to.equal(0);
   });
 
+  it('a failure after the write (cleanup, rollover, body) never fails the registration', async () => {
+    const provider = new FakeDashboardProvider(false);
+    await newRegistry(provider).register({ org: identity(), targetBranch: 'integration', currentUser: jane });
+    provider.isDashboardWornOut = async () => {
+      throw new Error('HTTP 502');
+    };
+    const result = await newRegistry(provider).register({ org: identity(), targetBranch: 'integration', currentUser: jane, users: [john] }, { fullCleanup: true });
+    expect(result.changed).to.equal(true);
+    expect(orgComments(provider).map((comment) => comment!.data.kind === 'org' && (comment!.data as any).users.length)).to.include(1);
+  });
+
+  it('a rollover on a provider with one open dashboard hands the new one over before copying', async () => {
+    const provider = new FakeDashboardProvider(false);
+    await newRegistry(provider).register({ org: identity(), targetBranch: 'integration', currentUser: jane });
+    provider.twoOpenDashboards = false;
+    const old = provider.current().ref;
+    let created: any = null;
+    const { replaceDashboard } = await import('../../../src/common/utils/dashboardDataUtils.js');
+    const createComment = provider.createDashboardComment.bind(provider);
+    provider.createDashboardComment = async () => {
+      throw new Error('HTTP 429');
+    };
+    let failed = false;
+    try {
+      await replaceDashboard({
+        provider: provider as any,
+        oldDashboard: old,
+        createEmpty: () => provider.createDashboard('Development Orgs Dashboard', ''),
+        onCreated: (dashboard) => {
+          created = dashboard;
+        },
+        listComments: (dashboard) => provider.listDashboardComments(dashboard),
+        copyBody: (comment: any) => comment.body,
+      });
+    } catch {
+      failed = true;
+    }
+    provider.createDashboardComment = createComment;
+    expect(failed).to.equal(true);
+    expect(created).to.not.equal(null);
+    expect(created.id).to.not.equal(old.id);
+  });
+
   it('finds an org by the 15-character form of its id', async () => {
     const provider = new FakeDashboardProvider(false);
     await newRegistry(provider).register({ org: identity(), targetBranch: 'integration', currentUser: jane });

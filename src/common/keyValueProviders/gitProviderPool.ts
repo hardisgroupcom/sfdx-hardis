@@ -348,6 +348,9 @@ export class GitProviderPoolStorage implements PoolStorageInterface {
       provider: this.provider(),
       oldDashboard: this.dashboard!,
       createEmpty: () => this.createEmptyDashboard(),
+      onCreated: (dashboard) => {
+        this.dashboard = dashboard;
+      },
       listComments: (dashboard) => this.listPoolComments(dashboard),
       copyOrder: (comments) => [...comments.filter((candidate) => candidate.data.kind === 'entry'), ...comments.filter((candidate) => candidate.data.kind !== 'entry')],
       copyBody: (comment, newIds) => {

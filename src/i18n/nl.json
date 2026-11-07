@@ -2212,7 +2212,7 @@
   "githubFetchingMergedPrs": "Samengevoegde PR's ophalen voor branch {{branchName}}",
   "githubFindingLastMergedPr": "Laatste samengevoegde PR zoeken van {{sourceBranch}} naar {{targetBranch}}",
   "githubIntegrationWarning": "{{message}}",
-  "githubIssuesDisabled": "Issues staan uit in de repository {{repo}} (zoals in elke nieuwe fork): zet ze aan in GitHub, Settings > General > Features > Issues, om de lijst met ontwikkel-orgs te gebruiken",
+  "githubIssuesDisabled": "Issues staan uit in de repository {{repo}} (zoals in elke nieuwe fork), en sfdx-hardis bewaart zijn dashboards (lijst met ontwikkel-orgs, scratch org pool) in issues: zet ze aan in GitHub, Settings > General > Features > Issues",
   "githubListingClosedPullRequests": "Eerder gesloten Pull Requests vermelden",
   "githubListingPrComments": "Opmerkingen vermelden voor PR {{prId}}",
   "githubListingPrCommentsAll": "Opmerkingen van Pull Request vermelden...",

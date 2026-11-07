@@ -177,25 +177,6 @@ In agent mode:
     };
   }
 
-  // Owner and target branch of the sandbox in the development orgs list
-  protected async collectDevOrgRegistration(flags: any) {
-    if (!(await isDevOrgsRegistryEnabled())) {
-      return;
-    }
-    const interactive = !this.agentMode && !isCI;
-    this.devOrgOwner = parseDevOrgPersonFlag(flags.owner);
-    if (!this.devOrgOwner) {
-      const currentUser = await getCurrentGitUser();
-      this.devOrgOwner = interactive ? await promptDevOrgOwner(this, currentUser) : currentUser;
-    }
-    this.devOrgTargetBranch = flags['target-branch'] || null;
-    if (!this.devOrgTargetBranch) {
-      this.devOrgTargetBranch = interactive
-        ? await selectTargetBranch({ message: t('devOrgTargetBranchPrompt', { name: this.sandboxOrgAlias }) })
-        : this.configInfo.developmentBranch || null;
-    }
-  }
-
   // Initialize configuration from .sfdx-hardis.yml + .gitbranch.sfdx-hardis.yml + .username.sfdx-hardis.yml
   public async initConfig() {
     this.configInfo = await getConfig('user');
@@ -330,5 +311,24 @@ In agent mode:
     const userUpdateCommand = `sf data update record --sobject User --record-id ${userQueryRes.result.Id} --values "${updatedUserValues}" --target-org ${this.sandboxOrgAlias}`;
     await execSfdxJson(userUpdateCommand, this, { fail: false, output: true, debug: this.debugMode });
     /* jscpd:ignore-end */
+  }
+
+  // Owner and target branch of the sandbox in the development orgs list
+  protected async collectDevOrgRegistration(flags: any) {
+    if (!(await isDevOrgsRegistryEnabled())) {
+      return;
+    }
+    const interactive = !this.agentMode && !isCI;
+    this.devOrgOwner = parseDevOrgPersonFlag(flags.owner);
+    if (!this.devOrgOwner) {
+      const currentUser = await getCurrentGitUser();
+      this.devOrgOwner = interactive ? await promptDevOrgOwner(this, currentUser) : currentUser;
+    }
+    this.devOrgTargetBranch = flags['target-branch'] || null;
+    if (!this.devOrgTargetBranch) {
+      this.devOrgTargetBranch = interactive
+        ? await selectTargetBranch({ message: t('devOrgTargetBranchPrompt', { name: this.sandboxOrgAlias }) })
+        : this.configInfo.developmentBranch || null;
+    }
   }
 }

@@ -71,6 +71,17 @@ function comment<T extends DevOrgData | DevOrgBranchData>(data: T): DevOrgCommen
 }
 
 describe('devOrgsRules', () => {
+  describe('feature branches of a registration', () => {
+    it('working on two feature branches in turn writes nothing new', () => {
+      const first = applyDevOrgRegistration(null, { org: identity(), targetBranch: 'integration', currentUser: jane, addCurrentUser: true, featureBranch: 'feature/a' }, NOW);
+      const second = applyDevOrgRegistration(first.data, { org: identity(), targetBranch: 'integration', currentUser: jane, addCurrentUser: true, featureBranch: 'feature/b' }, NOW);
+      expect(second.changed).to.equal(true);
+      // Back on feature/a: the list is reordered, nothing else changed
+      const third = applyDevOrgRegistration(second.data, { org: identity(), targetBranch: 'integration', currentUser: jane, addCurrentUser: true, featureBranch: 'feature/a' }, NOW);
+      expect(third.changed).to.equal(false);
+    });
+  });
+
   describe('org ids and person lists', () => {
     it('matches an 18-character org id with its 15-character form, never two other orgs', () => {
       expect(isSameDevOrgId('00D000000000001AAA', '00D000000000001')).to.equal(true);
