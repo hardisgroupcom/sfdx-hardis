@@ -90,11 +90,15 @@ describe('hardis:scratch:create pool or snapshot', () => {
     const previous = process.env.SCRATCH_ORG_SNAPSHOT;
     process.env.SCRATCH_ORG_SNAPSHOT = 'BaseMain';
     try {
-      const command = Object.create(ScratchCreate.prototype) as any;
-      command.configInfo = {};
       const flags = { 'target-dev-hub': { getConnection: () => { throw new Error('no Dev Hub'); } } };
-      expect(await command.resolveSnapshot(flags)).to.deep.equal({ name: 'BaseMain', sha: '' });
-      expect(await command.resolveSnapshot(flags, 'main')).to.equal(null);
+      const take = async (pool: boolean) => {
+        const command = Object.create(ScratchCreate.prototype) as any;
+        Object.assign(command, { pool, configInfo: {} });
+        await command.takeOrgSource(flags);
+        return command.snapshot;
+      };
+      expect(await take(false)).to.deep.equal({ name: 'BaseMain', sha: '' });
+      expect(await take(true)).to.equal(null);
     } finally {
       if (previous === undefined) {
         delete process.env.SCRATCH_ORG_SNAPSHOT;
