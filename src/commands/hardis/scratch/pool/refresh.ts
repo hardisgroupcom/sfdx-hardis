@@ -8,7 +8,8 @@ import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { addScratchOrgToPool, finalizePoolRefresh, listPoolOrgs, preparePoolRefresh, recordPoolFailure, removePoolOrgs } from '../../../../common/utils/poolUtils.js';
 import { getConfig } from '../../../../config/index.js';
-import { applySfPerformanceEnv, execCommand, stripAnsi, uxLog } from '../../../../common/utils/index.js';
+import { applySfPerformanceEnv, execCommand, getCurrentGitBranch, stripAnsi, uxLog } from '../../../../common/utils/index.js';
+import { fetchFullHistoryIfShallow, getScratchSnapshotBranchConfig } from '../../../../common/utils/scratchSnapshotUtils.js';
 import { dateHelper } from '../../../../common/utils/dateHelper.js';
 import { authenticateWithSfdxUrlStore } from '../../../../common/utils/orgUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
@@ -172,6 +173,14 @@ In agent mode, all interactive prompts are skipped and default values are used.
     let numberCreated = 0;
     let numberfailed = 0;
     const subProcesses: any[] = [];
+    // The orgs below look up the snapshot of this branch in parallel: a shallow clone gets its full history once, here
+    if (numberOfOrgsToCreate > 0 && (await getScratchSnapshotBranchConfig((await getCurrentGitBranch()) || '')).enabled) {
+      try {
+        fetchFullHistoryIfShallow();
+      } catch (e) {
+        uxLog("warning", this, c.yellow(t('scratchSnapshotHistoryFetchFailed', { message: (e as Error).message })));
+      }
+    }
     for (let i = 0; i < numberOfOrgsToCreate; i++) {
       // eslint-disable-next-line no-async-promise-executor
       const spawnPromise = new Promise(async (resolve) => {

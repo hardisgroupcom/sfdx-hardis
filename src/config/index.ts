@@ -24,7 +24,7 @@ import { prompts } from '../common/utils/prompts.js';
 import { t } from '../common/utils/i18n.js';
 
 const moduleName = 'sfdx-hardis';
-const projectConfigFiles = [
+export const projectConfigFiles = [
   'package.json',
   `.${moduleName}.yaml`,
   `.${moduleName}.yml`,

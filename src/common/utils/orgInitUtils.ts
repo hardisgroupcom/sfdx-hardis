@@ -64,6 +64,24 @@ export interface PoolOrgInitInfo {
   // Branch the pool job ran on: developmentBranch or one of allowedTargetBranches, the branches a
   // User Story starts from, so fetching it brings sourcesCommit into the local history
   sourcesBranch?: string | null;
+  // Snapshot the org was created from, its delta bringing it to sourcesCommit
+  snapshotName?: string | null;
+}
+
+// What a pool org holds. The sources are at HEAD when the deploy-sources step succeeded, or when the org came from a
+// snapshot and got its delta (a snapshot fill runs no deploy-sources step), so the fetch deploys only what changed since
+export function buildPoolOrgInit(
+  stepResults: OrgInitStepResult[],
+  snapshotName: string | null,
+  head: { commit: string | null; branch: string | null }
+): PoolOrgInitInfo {
+  const sourcesDeployed = snapshotName !== null || stepResults.some((result) => result.type === 'deploy-sources' && result.status === 'success');
+  return {
+    filledAt: new Date().toISOString(),
+    sourcesCommit: sourcesDeployed ? head.commit : null,
+    sourcesBranch: sourcesDeployed ? head.branch : null,
+    snapshotName,
+  };
 }
 
 export const ORG_INIT_STEPS_CONFIG_KEY = 'orgInitSteps';
