@@ -41,6 +41,8 @@ jobs:
     # Job runs in sfdx-hardis docker image, that includes Salesforce CLI and all required plugins & dependencies.
     container: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
     name: Refresh scratch org snapshot
+    outputs:
+      snapshot: ${{ steps.refresh.outputs.snapshot }} # Set only when a snapshot of the branch is Active
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -51,6 +53,7 @@ jobs:
       - name: Set env.BRANCH
         run: echo "BRANCH=${GITHUB_REF#refs/heads/}" >> "$GITHUB_ENV"
       - name: Login & refresh scratch org snapshot
+        id: refresh
         env:
           # Dev Hub authentication: keep the variables matching the way your Dev Hub is authenticated,
           # and replace DEVHUB by the alias of your Dev Hub
@@ -70,3 +73,14 @@ jobs:
         with:
           name: sfdx-hardis reports
           path: hardis-report
+
+  # After a snapshot of the default branch went Active, so new pool orgs start from it. A project or branch
+  # without snapshots never starts it. Runs only when the repository variable SCRATCH_ORG_POOL is "true"
+  refresh_scratch_org_pool:
+    needs: refresh_scratch_org_snapshot
+    if: ${{ needs.refresh_scratch_org_snapshot.outputs.snapshot != '' && github.ref_name == github.event.repository.default_branch }}
+    permissions:
+      issues: write # Allows sfdx-hardis to update the "Scratch Orgs Pool Dashboard" issue
+      contents: read
+    uses: ./.github/workflows/scratch-pool-refresh.yml
+    secrets: inherit

@@ -17,25 +17,20 @@
 on:
   schedule:
     - cron: "0 3 * * *" # Every night. Scheduled workflows run on the default branch only
-  # After each snapshot refresh of the default branch, so new pool orgs start from the newest snapshot.
-  # Like the schedule, it runs from the copy of this file on the default branch
-  workflow_run:
-    workflows: ["Refresh scratch org snapshot (sfdx-hardis)"]
-    types: [completed]
-    branches:
-      - main # The default branch: the pool fills from the snapshot of the branch it runs on
+  # Called by scratch-snapshot-refresh.yml once a new snapshot of the default branch is Active
+  workflow_call:
   workflow_dispatch:
 permissions: read-all
 name: Refresh scratch org pool (sfdx-hardis)
 
+# A fixed name: when called, github.workflow is the caller's name, and a nightly run must still wait for it
 concurrency:
-  group: ${{ github.workflow }}
+  group: scratch-org-pool-refresh
   cancel-in-progress: false
 
 jobs:
   refresh_scratch_org_pool:
-    # A failed or cancelled snapshot refresh leaves the previous snapshot: the nightly run is enough then
-    if: ${{ vars.SCRATCH_ORG_POOL == 'true' && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success') }}
+    if: ${{ vars.SCRATCH_ORG_POOL == 'true' }}
     runs-on: ubuntu-latest
     # Job runs in sfdx-hardis docker image, that includes Salesforce CLI and all required plugins & dependencies.
     container: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
@@ -73,5 +68,5 @@ jobs:
         if: success() || failure()
         uses: actions/upload-artifact@v4
         with:
-          name: sfdx-hardis reports
+          name: sfdx-hardis pool reports # Not "sfdx-hardis reports": the snapshot workflow that calls it uploads that one
           path: hardis-report

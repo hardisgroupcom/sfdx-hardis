@@ -1,4 +1,5 @@
 import c from 'chalk';
+import fs from 'fs';
 import { SfCommand, Flags, optionalHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages, Org, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
@@ -142,6 +143,10 @@ The command has no prompt.
     }
 
     const deleted = await pruneScratchSnapshots(devHubConn, devHubUsername, scope, keep, this);
+    // GitHub Actions: the snapshot workflow refreshes the pool only when this step reports an Active snapshot
+    if (process.env.GITHUB_OUTPUT) {
+      fs.appendFileSync(process.env.GITHUB_OUTPUT, `snapshot=${name}\n`);
+    }
     return { outputString: `Snapshot ${name} of branch ${branch} is Active`, snapshotName: name, sha, deleted };
   }
 
