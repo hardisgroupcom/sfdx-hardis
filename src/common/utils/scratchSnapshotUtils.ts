@@ -144,7 +144,7 @@ export function scratchDefChangedSince(sha: string, cwd = process.cwd()): boolea
   return spawnSync('git', ['diff', '--quiet', sha, 'HEAD', '--', ...paths], { cwd }).status !== 0;
 }
 
-// A pool-fill step added, removed or changed since the snapshot commit (or its Apex script or data) needs an empty org.
+// A pool-fill step added, removed, changed or moved since the snapshot commit (or its Apex script or data) needs an empty org.
 // Read from git at both commits (project and branch config files), so a step coming from extends is not compared
 export async function orgInitStepChangedSince(sha: string, branch: string, cwd = process.cwd()): Promise<string | null> {
   const before = snapshotHeldSteps(readConfigAtCommit(sha, branch, cwd));
@@ -163,7 +163,8 @@ export async function orgInitStepChangedSince(sha: string, branch: string, cwd =
       return step.id;
     }
   }
-  return null;
+  // Same steps in another order: the snapshot holds the result of the old order
+  return after.find((step, index) => step.id !== before[index]?.id)?.id ?? null;
 }
 
 // Steps per role, as a pool: the source runs the pool fill plus packages and sources; a child installs missing packages,

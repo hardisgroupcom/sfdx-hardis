@@ -357,6 +357,14 @@ orgInitSteps:
     expect(await orgInitStepChangedSince(sha, 'main', dir)).to.equal('cmd');
   });
 
+  it('names the first step whose position changed, as the snapshot holds the result of the old order', async () => {
+    const script = '  - id: script\n    type: apex\n    parameters:\n      apexScript: scripts/apex/init.apex\n';
+    const users = '  - id: users\n    type: data\n    parameters:\n      sfdmuProject: scripts/data/Users\n';
+    write('config/.sfdx-hardis.yml', config().replace(script + users, users + script));
+    commit();
+    expect(await orgInitStepChangedSince(sha, 'main', dir)).to.equal('users');
+  });
+
   it('names a step removed since the snapshot, whose result the snapshot still holds', async () => {
     write('config/.sfdx-hardis.yml', config().replace('  - id: cmd\n    type: command\n    command: echo fill\n', ''));
     commit();
