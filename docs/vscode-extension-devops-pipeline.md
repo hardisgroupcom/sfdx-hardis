@@ -122,7 +122,7 @@ See [Configure overwrite management](salesforce-devops-config-overwrite.md) for 
 
 | What | Where |
 |---|---|
-| Show the major branches only, or the development orgs instead of the feature branches | The **Major branches / Feature branches / Dev orgs** switch above the diagram |
+| Show the major branches only, or the development orgs instead of the feature branches | The **Major branches / Feature branches / Dev orgs** switch in the top left corner of the diagram |
 | Group feature branches after N | `vsCodeSfdxHardis.pipelineFeatureBranchGroupThreshold` (default `3`) |
 | Branches, orgs, deployment options | **Pipeline Settings**, stored in `.sfdx-hardis.yml` |
 | Promotion branches | `enablePromotionBranches`, see [Promotion branches](salesforce-devops-promotion-branches.md) |
