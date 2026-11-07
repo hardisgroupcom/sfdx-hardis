@@ -87,6 +87,7 @@ describe('hardis:scratch:create pool or snapshot', () => {
 
   // A Dev Hub that fails the lookup, so only SCRATCH_ORG_SNAPSHOT can give a snapshot
   it('ignores SCRATCH_ORG_SNAPSHOT on a pool fill, and uses it otherwise', async () => {
+    const previous = process.env.SCRATCH_ORG_SNAPSHOT;
     process.env.SCRATCH_ORG_SNAPSHOT = 'BaseMain';
     try {
       const command = Object.create(ScratchCreate.prototype) as any;
@@ -95,7 +96,11 @@ describe('hardis:scratch:create pool or snapshot', () => {
       expect(await command.resolveSnapshot(flags)).to.deep.equal({ name: 'BaseMain', sha: '' });
       expect(await command.resolveSnapshot(flags, 'main')).to.equal(null);
     } finally {
-      delete process.env.SCRATCH_ORG_SNAPSHOT;
+      if (previous === undefined) {
+        delete process.env.SCRATCH_ORG_SNAPSHOT;
+      } else {
+        process.env.SCRATCH_ORG_SNAPSHOT = previous;
+      }
     }
   });
 
