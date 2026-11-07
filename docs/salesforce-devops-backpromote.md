@@ -16,6 +16,7 @@ A **backpromote** deploys into your sandbox what the team merged since your last
 
 ## When to backpromote
 
+- **When the [development orgs list](salesforce-devops-dev-orgs.md) says your org misses Pull Requests**: the DevOps Pipeline shows the count under its target branch.
 - **Before starting a User Story**, so that you work on the latest version of the parent branch. [New User Story](salesforce-devops-create-new-user-story.md) no longer updates the metadata of an existing sandbox: backpromote does.
 - **During a long User Story**, when a teammate merged something you need.
 - **After a sandbox refresh**, to bring the refreshed sandbox up to date with the parent branch.

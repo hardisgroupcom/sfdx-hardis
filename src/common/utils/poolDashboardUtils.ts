@@ -1,4 +1,14 @@
 import { DashboardComment, DashboardFormat } from '../gitProvider/gitProviderRoot.js';
+import {
+  buildDashboardCommentBody,
+  DashboardBlock,
+  DashboardCell,
+  decodeDashboardData,
+  encodeDashboardData,
+  formatDashboardDate,
+  formatDashboardDay,
+  renderDashboardBlocks,
+} from './dashboardDataUtils.js';
 
 // Title the dashboard is found by on the git provider
 export const POOL_DASHBOARD_TITLE = 'Scratch Orgs Pool Dashboard';
@@ -94,35 +104,17 @@ export interface PoolSummary {
   devHubLimits: PoolDevHubLimits | null;
 }
 
-// The data travels as one base64url token: no markup of any provider (Markdown, Bitbucket markup,
-// the HTML of Azure DevOps) can alter it, where a JSON block would be reformatted or escaped
-const DATA_MARKER_REGEX = /\[sfdx-hardis-pool-data:([A-Za-z0-9_-]+)\]/;
-
 export function buildPoolCommentBody(data: PoolCommentData, format: DashboardFormat): string {
-  const marker = `[sfdx-hardis-pool-data:${Buffer.from(JSON.stringify(data), 'utf8').toString('base64url')}]`;
-  const title = describePoolComment(data);
-  if (format === 'html') {
-    return `<div>${escapeHtml(title)}</div><div><small>Technical data used by sfdx-hardis, do not edit:</small></div><pre>${marker}</pre>`;
-  }
-  return `${title}\n\n<details>\n<summary>Technical data used by sfdx-hardis, do not edit</summary>\n\n\`\`\`\n${marker}\n\`\`\`\n\n</details>`;
+  return buildDashboardCommentBody(describePoolComment(data), encodeDashboardData('pool', data), format);
 }
 
 // Null for a comment that is not one of sfdx-hardis (a human wrote on the dashboard)
 export function parsePoolComment(comment: DashboardComment): PoolComment | null {
-  // A provider can wrap a long token: whitespace inside the marker is not data
-  const match = (comment.body || '').replace(/\s+/g, '').match(DATA_MARKER_REGEX);
-  if (!match) {
+  const data = decodeDashboardData('pool', comment.body);
+  if (data?.v !== 1 || !['entry', 'claim', 'failure', 'state'].includes(data?.kind)) {
     return null;
   }
-  try {
-    const data = JSON.parse(Buffer.from(match[1], 'base64url').toString('utf8'));
-    if (data?.v !== 1 || !['entry', 'claim', 'failure', 'state'].includes(data?.kind)) {
-      return null;
-    }
-    return { id: comment.id, createdDate: comment.createdDate, data };
-  } catch {
-    return null;
-  }
+  return { id: comment.id, createdDate: comment.createdDate, data };
 }
 
 export function daysUntil(date: string | undefined, now: Date = new Date()): number | null {
@@ -234,7 +226,7 @@ export function buildPoolDashboardBody(summary: PoolSummary, format: DashboardFo
       headers: ['Indicator', 'Value'],
       rows: [
         ['Available scratch orgs', `${summary.available} / ${summary.max}`],
-        ['Last refresh', summary.lastRefresh ? formatDate(summary.lastRefresh.date) : 'Never'],
+        ['Last refresh', summary.lastRefresh ? formatDashboardDate(summary.lastRefresh.date) : 'Never'],
         ['Last refresh job', jobLink(summary.lastRefresh?.jobUrl)],
         ['Dev Hub active scratch orgs', formatLimit(summary.devHubLimits?.activeScratchOrgs)],
         ['Dev Hub daily scratch orgs', formatLimit(summary.devHubLimits?.dailyScratchOrgs)],
@@ -248,7 +240,7 @@ export function buildPoolDashboardBody(summary: PoolSummary, format: DashboardFo
     blocks.push({
       table: {
         headers: ['Alias', 'Username', 'Created', 'Expires', 'Days left'],
-        rows: summary.orgs.map((org) => [org.alias, org.username, formatDay(org.createdDate), formatDay(org.expirationDate), org.daysLeft === null ? '' : String(org.daysLeft)]),
+        rows: summary.orgs.map((org) => [org.alias, org.username, formatDashboardDay(org.createdDate), formatDashboardDay(org.expirationDate), org.daysLeft === null ? '' : String(org.daysLeft)]),
       },
     });
   }
@@ -259,7 +251,7 @@ export function buildPoolDashboardBody(summary: PoolSummary, format: DashboardFo
     blocks.push({
       table: {
         headers: ['Date', 'Scratch org', 'Taken by', 'Branch', 'Pull Request', 'Job'],
-        rows: summary.history.map((fetch) => [formatDate(fetch.date), fetch.alias, fetch.by, fetch.branch, fetch.pullRequest, jobLink(fetch.jobUrl)]),
+        rows: summary.history.map((fetch) => [formatDashboardDate(fetch.date), fetch.alias, fetch.by, fetch.branch, fetch.pullRequest, jobLink(fetch.jobUrl)]),
       },
     });
   }
@@ -268,61 +260,25 @@ export function buildPoolDashboardBody(summary: PoolSummary, format: DashboardFo
     blocks.push({
       table: {
         headers: ['Date', 'Error', 'Job'],
-        rows: summary.failures.map((failure) => [formatDate(failure.date), failure.error, jobLink(failure.jobUrl)]),
+        rows: summary.failures.map((failure) => [formatDashboardDate(failure.date), failure.error, jobLink(failure.jobUrl)]),
       },
     });
   }
-  return blocks.map((block) => renderBlock(block, format)).join(format === 'html' ? '' : '\n\n');
-}
-
-// A cell is a text, or a link
-type DashboardCell = string | { label: string; url: string };
-
-interface DashboardBlock {
-  heading?: string;
-  text?: string;
-  table?: { headers: string[]; rows: DashboardCell[][] };
+  return renderDashboardBlocks(blocks, format);
 }
 
 // First line of a comment, for the human who opens the dashboard
 function describePoolComment(data: PoolCommentData): string {
   switch (data.kind) {
     case 'entry':
-      return `Scratch org available: ${data.alias} (${data.username}), expires on ${formatDay(data.expirationDate || '')}`;
+      return `Scratch org available: ${data.alias} (${data.username}), expires on ${formatDashboardDay(data.expirationDate || '')}`;
     case 'claim':
-      return `Scratch org ${data.alias} taken by ${data.by || 'unknown'} on ${formatDate(data.date || '')}${data.branch ? `, branch ${data.branch}` : ''}`;
+      return `Scratch org ${data.alias} taken by ${data.by || 'unknown'} on ${formatDashboardDate(data.date || '')}${data.branch ? `, branch ${data.branch}` : ''}`;
     case 'failure':
-      return `Scratch org creation failed on ${formatDate(data.date || '')}: ${data.error || ''}`;
+      return `Scratch org creation failed on ${formatDashboardDate(data.date || '')}: ${data.error || ''}`;
     default:
-      return `Pool refreshed on ${formatDate(data.date || '')}`;
+      return `Pool refreshed on ${formatDashboardDate(data.date || '')}`;
   }
-}
-
-function renderBlock(block: DashboardBlock, format: DashboardFormat): string {
-  if (block.heading) {
-    return format === 'html' ? `<h3>${escapeHtml(block.heading)}</h3>` : `## ${block.heading}`;
-  }
-  if (block.table) {
-    if (format === 'html') {
-      const head = block.table.headers.map((header) => `<th>${escapeHtml(header)}</th>`).join('');
-      const rows = block.table.rows.map((row) => `<tr>${row.map((cell) => `<td>${renderCell(cell, format)}</td>`).join('')}</tr>`).join('');
-      return `<table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>`;
-    }
-    const lines = [
-      `| ${block.table.headers.join(' | ')} |`,
-      `| ${block.table.headers.map(() => '---').join(' | ')} |`,
-      ...block.table.rows.map((row) => `| ${row.map((cell) => renderCell(cell, format)).join(' | ')} |`),
-    ];
-    return lines.join('\n');
-  }
-  return format === 'html' ? `<p>${escapeHtml(block.text || '')}</p>` : block.text || '';
-}
-
-function renderCell(cell: DashboardCell, format: DashboardFormat): string {
-  if (typeof cell !== 'string') {
-    return format === 'html' ? `<a href="${escapeHtml(cell.url)}">${escapeHtml(cell.label)}</a>` : `[${cell.label}](${cell.url})`;
-  }
-  return format === 'html' ? escapeHtml(cell) : cell.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
 }
 
 function jobLink(url: string | undefined): DashboardCell {
@@ -331,18 +287,4 @@ function jobLink(url: string | undefined): DashboardCell {
 
 function formatLimit(limit: PoolLimit | undefined): string {
   return limit ? `${limit.used} / ${limit.max}` : 'Unknown';
-}
-
-function formatDate(date: string): string {
-  const time = Date.parse(date);
-  return isNaN(time) ? date : new Date(time).toISOString().slice(0, 16).replace('T', ' ');
-}
-
-function formatDay(date: string): string {
-  const time = Date.parse(date);
-  return isNaN(time) ? date : new Date(time).toISOString().slice(0, 10);
-}
-
-function escapeHtml(text: string): string {
-  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }

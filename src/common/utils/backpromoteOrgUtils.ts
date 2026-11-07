@@ -41,6 +41,8 @@ export interface BackpromoteTargetOrgInfo {
   orgType: 'sandbox' | 'scratch' | 'developer' | 'production';
   orgId: string;
   sandboxName: string;
+  // The day a scratch org expires, null for any other org
+  expirationDate?: string | null;
   tracksSource: boolean;
   refusal: BackpromoteTargetOrgRefusal | null;
   message: string;
@@ -93,7 +95,8 @@ export async function getBackpromoteTargetOrgInfo(options: {
   } else if (refusal?.reason === 'majorOrg') {
     message = t('backpromoteTargetOrgIsMajorOrg', { username: options.username, branch: refusal.branchName });
   }
-  return { alias: options.alias, username: options.username, instanceUrl, orgType, orgId, sandboxName, tracksSource: options.tracksSource, refusal, message };
+  const expirationDate = organization.TrialExpirationDate ? String(organization.TrialExpirationDate) : null;
+  return { alias: options.alias, username: options.username, instanceUrl, orgType, orgId, sandboxName, expirationDate, tracksSource: options.tracksSource, refusal, message };
 }
 
 // ---- Comparison ----

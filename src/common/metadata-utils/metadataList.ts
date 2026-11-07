@@ -1748,6 +1748,13 @@ export function listMetadataTypes() {
         xmlName: 'ExperienceBundle',
       },
       {
+        directoryName: 'experienceContainers',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'experienceContainer',
+        xmlName: 'ExperienceContainer',
+      },
+      {
         directoryName: 'experiencePropertyTypeBundles',
         inFolder: false,
         metaFile: false,
@@ -2854,6 +2861,13 @@ export function listMetadataTypes() {
         metaFile: false,
         suffix: 'config',
         xmlName: 'NotificationTypeConfig',
+      },
+      {
+        directoryName: 'notificationDefinitions',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'notificationDefinition',
+        xmlName: 'NtfcnDefinition',
       },
       {
         directoryName: 'oauthcustomscopes',

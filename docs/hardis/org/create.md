@@ -18,6 +18,7 @@ Key functionalities:
 - **User Update:** Updates the main sandbox user's details (e.g., Last Name, First Name) and can fix country values or marketing user permissions if needed.
 - **Initialization Steps:** Runs the org initialization steps of the project that apply to sandboxes, in their order (`orgInitSteps`, edited from the Org Initialization panel of the VS Code extension). Without that key, the steps are built from the older keys `initPermissionSets`, `sandboxOrgInitApexScripts`, `dataPackages` and the `scripts/data/SandboxInit` folder. Run [hardis:org:init](https://sfdx-hardis.cloudity.com/hardis/org/init/) to run them again later.
 - **Error Handling:** Provides detailed error messages for common sandbox creation issues, including Salesforce-specific errors.
+- **Development orgs list:** Registers the new sandbox in the [development orgs](https://sfdx-hardis.cloudity.com/salesforce-devops-dev-orgs/) list of the project, with its owner and target branch (`--owner` and `--target-branch`, asked before the creation when omitted), so its owner knows when to run a backpromote.
 
 <details markdown="1">
 <summary>Technical explanations</summary>
@@ -33,6 +34,7 @@ The command's technical implementation involves:
 - **Error Assertions:** Uses `assert` to check the success of Salesforce CLI commands and provides custom error messages for better debugging.
 - **WebSocket Communication:** Uses `WebSocketClient.sendRefreshStatusMessage` to notify connected VS Code clients about the new sandbox.
 - **Required Plugin Check:** Explicitly lists `sfdmu` as a required plugin, indicating its role in data initialization.
+- **Development orgs list:** Calls `registerDevOrgUsage` (`src/common/utils/devOrgsRegistry.ts`) once the sandbox is initialized. Without a git provider token, or with `enableDevOrgsRegistry: false`, nothing is registered and the creation goes on.
 </details>
 
 ### Agent Mode
@@ -47,18 +49,21 @@ In agent mode:
 
 - The user email prompt is skipped; `USER_EMAIL` env var or `userEmail` config property is required.
 - If no email is available, an error is thrown.
+- The owner of the sandbox in the development orgs list is `--owner`, else the git user; its target branch is `--target-branch`, else `developmentBranch`.
 
 
 ## Parameters
 
-| Name         |  Type   | Description                                                   | Default | Required | Options |
-|:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent        | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
-| debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir    | option  | Import flag values from a directory.                          |         |          |         |
-| json         | boolean | Format output as json.                                        |         |          |         |
-| skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
-| websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+| Name          |  Type   | Description                                                                   | Default | Required | Options |
+|:--------------|:-------:|:------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent         | boolean | Run in non-interactive mode for agents and automation                         |         |          |         |
+| debug<br/>-d  | boolean | Activate debug mode (more logs)                                               |         |          |         |
+| flags-dir     | option  | Import flag values from a directory.                                          |         |          |         |
+| json          | boolean | Format output as json.                                                        |         |          |         |
+| owner         | option  | Owner of the sandbox in the development orgs list: "Name <email>" or an email |         |          |         |
+| skipauth      | boolean | Skip authentication check when a default username is required                 |         |          |         |
+| target-branch | option  | Major branch the sandbox targets, in the development orgs list                |         |          |         |
+| websocket     | option  | Websocket host:port for VsCode SFDX Hardis UI integration                     |         |          |         |
 
 ## Examples
 
