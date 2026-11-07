@@ -654,7 +654,7 @@ In agent mode:
   // The pool first, then a snapshot when the pool has no org left. A pool fill takes the snapshot of its own branch,
   // not of a Pull Request target. The source org of a snapshot, which must start empty, takes neither
   protected async takeOrgSource(flags): Promise<void> {
-    if (this.pool !== false) {
+    if (this.pool) {
       this.snapshot = await this.resolveSnapshot(flags, (await getCurrentGitBranch()) || '');
       return;
     }
@@ -681,7 +681,7 @@ In agent mode:
       return null;
     }
     const snapshotName = getEnvVar('SCRATCH_ORG_SNAPSHOT');
-    if (snapshotName && this.pool === false) {
+    if (snapshotName && !this.pool) {
       return { name: snapshotName, sha: '' };
     }
     if (snapshotName) {

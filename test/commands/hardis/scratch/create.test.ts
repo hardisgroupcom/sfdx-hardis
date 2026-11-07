@@ -64,6 +64,13 @@ describe('hardis:scratch:create pool or snapshot', () => {
     expect(command.calls).to.deep.equal(['snapshot']);
   });
 
+  it('treats an unset pool flag as a run that takes from the pool, not as a pool fill', async () => {
+    const command = probe({ scratchOrgAlias: 'PO-1' });
+    (command as any).pool = undefined;
+    await command.take();
+    expect(command.calls).to.deep.equal(['pool']);
+  });
+
   it('fills a pool org from the snapshot of its own branch, never from the pool', async () => {
     const command = probe({ scratchOrgAlias: 'PO-1' });
     (command as any).pool = true;
@@ -103,8 +110,8 @@ describe('hardis:scratch:create pool or snapshot', () => {
       expect(await take(false)).to.deep.equal({ snapshot: { name: 'BaseMain', sha: '' }, lookups: 0, ignored: false });
       // A pool fill says it ignores the variable, then still looks up the snapshot of its own branch
       expect(await take(true)).to.deep.equal({ snapshot: null, lookups: 1, ignored: true });
-      // An unset flag takes the pool fill path in takeOrgSource, so it must not get the named snapshot either
-      expect(await take(undefined)).to.deep.equal({ snapshot: null, lookups: 1, ignored: true });
+      // An unset flag is not a pool fill, as everywhere else in the command
+      expect(await take(undefined)).to.deep.equal({ snapshot: { name: 'BaseMain', sha: '' }, lookups: 0, ignored: false });
     } finally {
       if (previous === undefined) {
         delete process.env.SCRATCH_ORG_SNAPSHOT;
