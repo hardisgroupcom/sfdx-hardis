@@ -674,14 +674,14 @@ In agent mode:
     });
   }
 
-  // SCRATCH_ORG_SNAPSHOT names a snapshot (no known commit, so a full push). Otherwise the newest usable snapshot of
-  // the branch snapshotBranch gives. Any failure falls back to an empty scratch org.
+  // SCRATCH_ORG_SNAPSHOT names a snapshot (no known commit, so a full push), except on a pool fill (branch given).
+  // Otherwise the newest usable snapshot of the branch snapshotBranch gives. Any failure falls back to an empty org.
   protected async resolveSnapshot(flags, branch?: string): Promise<ScratchSnapshot | null> {
     if (process.env[SCRATCH_SNAPSHOT_DISABLED_ENV] === 'true') {
       return null;
     }
     const snapshotName = getEnvVar('SCRATCH_ORG_SNAPSHOT');
-    if (snapshotName) {
+    if (snapshotName && branch === undefined) {
       return { name: snapshotName, sha: '' };
     }
     try {

@@ -85,6 +85,20 @@ describe('hardis:scratch:create pool or snapshot', () => {
     expect(await command.branchFor(undefined, false)).to.equal(current ? 'release' : 'integration');
   });
 
+  // A Dev Hub that fails the lookup, so only SCRATCH_ORG_SNAPSHOT can give a snapshot
+  it('ignores SCRATCH_ORG_SNAPSHOT on a pool fill, and uses it otherwise', async () => {
+    process.env.SCRATCH_ORG_SNAPSHOT = 'BaseMain';
+    try {
+      const command = Object.create(ScratchCreate.prototype) as any;
+      command.configInfo = {};
+      const flags = { 'target-dev-hub': { getConnection: () => { throw new Error('no Dev Hub'); } } };
+      expect(await command.resolveSnapshot(flags)).to.deep.equal({ name: 'BaseMain', sha: '' });
+      expect(await command.resolveSnapshot(flags, 'main')).to.equal(null);
+    } finally {
+      delete process.env.SCRATCH_ORG_SNAPSHOT;
+    }
+  });
+
   it('leaves the Pull Request target to the lookup in CI, and keeps the branch of a pool fill', async () => {
     const command = probe(null);
     (command as any).configInfo = { developmentBranch: 'integration' };
