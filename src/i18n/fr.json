@@ -3869,7 +3869,7 @@
   "scratchSnapshotDeleteFailed": "Le snapshot {{name}} n'a pas pu être supprimé : {{message}}",
   "scratchSnapshotDeleting": "Suppression de l'ancien snapshot {{name}}...",
   "scratchSnapshotDelta": "Déploiement des modifications depuis le commit du snapshot {{sha}} : {{toDeploy}} composants à déployer, {{toDelete}} à supprimer",
-  "scratchSnapshotEnvIgnoredOnPoolFill": "SCRATCH_ORG_SNAPSHOT est ignorée lors du remplissage du pool, qui recherche le snapshot de sa propre branch",
+  "scratchSnapshotEnvIgnoredOnPoolFill": "SCRATCH_ORG_SNAPSHOT est ignorée lors du remplissage du pool",
   "scratchSnapshotFailed": "Le snapshot {{name}} a échoué : {{error}}",
   "scratchSnapshotHistoryFetchFailed": "L'historique git complet n'a pas pu être récupéré : chaque nouvelle scratch org du pool réessaie, et celle qui échoue est créée sans snapshot : {{message}}",
   "scratchSnapshotLimitReached": "Le Dev Hub a refusé le snapshot à cause d'une limite, les Pull Requests gardent le snapshot précédent : {{message}}",

@@ -3868,7 +3868,7 @@
   "scratchSnapshotDeleteFailed": "Snapshot {{name}} konnte nicht gelöscht werden: {{message}}",
   "scratchSnapshotDeleting": "Älterer Snapshot {{name}} wird gelöscht...",
   "scratchSnapshotDelta": "Bereitstellung der Änderungen seit dem Snapshot-Commit {{sha}}: {{toDeploy}} Komponenten bereitzustellen, {{toDelete}} zu löschen",
-  "scratchSnapshotEnvIgnoredOnPoolFill": "SCRATCH_ORG_SNAPSHOT wird beim Befüllen des Pools ignoriert, das den Snapshot des eigenen Branches sucht",
+  "scratchSnapshotEnvIgnoredOnPoolFill": "SCRATCH_ORG_SNAPSHOT wird beim Befüllen des Pools ignoriert",
   "scratchSnapshotFailed": "Snapshot {{name}} ist fehlgeschlagen: {{error}}",
   "scratchSnapshotHistoryFetchFailed": "Der vollständige Git-Verlauf konnte nicht abgerufen werden: jede neue Pool-Scratch-Org versucht es erneut, und eine, bei der es fehlschlägt, wird ohne Snapshot erstellt: {{message}}",
   "scratchSnapshotLimitReached": "Der Dev Hub hat den Snapshot wegen eines Limits abgelehnt, Pull Requests verwenden weiter den vorherigen Snapshot: {{message}}",
