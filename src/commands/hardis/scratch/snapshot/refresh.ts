@@ -31,7 +31,7 @@ export default class ScratchSnapshotRefresh extends SfCommand<any> {
 
 **Takes a Dev Hub org snapshot of a scratch org that holds the current commit of a major branch, so that Pull Request scratch orgs are created from it.**
 
-Run it in CI on every push to a major branch. It does nothing unless the branch config sets \`useScratchOrgSnapshot: true\`, so the same job can run on every major branch: the branch config is read first, and the command logs in to the Dev Hub only when the branch uses snapshots. In CI it always logs in with the credentials of the job, never with a default Dev Hub saved on the runner.
+Run it in CI on every push to a major branch. It does nothing unless the branch config sets \`useScratchOrgSnapshot: true\`, so the same job can run on every major branch: the branch config is read first, and the command logs in to the Dev Hub only when the branch uses snapshots. In CI it uses the Dev Hub given with \`--target-dev-hub\`, else logs in with the credentials of the job, not with the default Dev Hub saved on the runner. A Dev Hub already logged in on the runner under the same alias is still reused, as for every sfdx-hardis command.
 
 Key functionalities:
 
