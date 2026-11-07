@@ -147,8 +147,10 @@ export function scratchDefChangedSince(sha: string, cwd = process.cwd()): boolea
 // A pool-fill step added, removed, changed or moved since the snapshot commit (or its Apex script or data) needs an empty org.
 // Read from git at both commits (project and branch config files), so a step coming from extends is not compared
 export async function orgInitStepChangedSince(sha: string, branch: string, cwd = process.cwd()): Promise<string | null> {
-  const before = snapshotHeldSteps(readConfigAtCommit(sha, branch, cwd));
-  const after = snapshotHeldSteps(readConfigAtCommit('HEAD', branch, cwd));
+  const beforeFill = poolFillSteps(readConfigAtCommit(sha, branch, cwd));
+  const afterFill = poolFillSteps(readConfigAtCommit('HEAD', branch, cwd));
+  const before = snapshotHeldSteps(beforeFill);
+  const after = snapshotHeldSteps(afterFill);
   for (const step of before) {
     if (!after.some((afterStep) => afterStep.id === step.id)) {
       return step.id;
@@ -163,8 +165,8 @@ export async function orgInitStepChangedSince(sha: string, branch: string, cwd =
       return step.id;
     }
   }
-  // Same steps in another order: the snapshot holds the result of the old order
-  return after.find((step, index) => step.id !== before[index]?.id)?.id ?? null;
+  // Same steps in another order, deployment and packages included: the snapshot holds the result of the old order
+  return afterFill.find((step, index) => step.id !== beforeFill[index]?.id)?.id ?? null;
 }
 
 // Steps per role, as a pool: the source runs the pool fill plus packages and sources; a child installs missing packages,
@@ -330,11 +332,14 @@ export function getSnapshotDescriptionPrefix(scope: string): string {
   return `sfdx-hardis ${scope} sha=`;
 }
 
+// The steps a pool fill runs, in their order
+function poolFillSteps(config: any): any[] {
+  return selectOrgInitSteps(getOrgInitSteps(config).steps, { orgType: 'scratch', phase: 'pool-fill' });
+}
+
 // The steps whose result is in the snapshot and that a child does not run again
-function snapshotHeldSteps(config: any): any[] {
-  return selectOrgInitSteps(getOrgInitSteps(config).steps, { orgType: 'scratch', phase: 'pool-fill' }).filter(
-    (step) => !['deploy-sources', 'install-packages', 'assign-permission-sets'].includes(step.type)
-  );
+function snapshotHeldSteps(poolFill: any[]): any[] {
+  return poolFill.filter((step) => !['deploy-sources', 'install-packages', 'assign-permission-sets'].includes(step.type));
 }
 
 // The project config, then the branch config, as git holds them at a commit (no user config, no extends)

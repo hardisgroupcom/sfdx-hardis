@@ -365,6 +365,17 @@ orgInitSteps:
     expect(await orgInitStepChangedSince(sha, 'main', dir)).to.equal('users');
   });
 
+  it('names a step moved across the deployment of the sources', async () => {
+    const script = '  - id: script\n    type: apex\n    parameters:\n      apexScript: scripts/apex/init.apex\n';
+    const sources = '  - id: sources\n    type: deploy-sources\n';
+    write('config/.sfdx-hardis.yml', config().replace(script, script + sources));
+    commit();
+    const snapshotSha = git('rev-parse', 'HEAD');
+    write('config/.sfdx-hardis.yml', config().replace(script, sources + script));
+    commit();
+    expect(await orgInitStepChangedSince(snapshotSha, 'main', dir)).to.equal('sources');
+  });
+
   it('names a step removed since the snapshot, whose result the snapshot still holds', async () => {
     write('config/.sfdx-hardis.yml', config().replace('  - id: cmd\n    type: command\n    command: echo fill\n', ''));
     commit();
