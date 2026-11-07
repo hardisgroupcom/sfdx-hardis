@@ -1193,6 +1193,7 @@
   "devOrgRemoveTargetMissing": "Name the org to remove with --org-id or --target-org",
   "devOrgRemoved": "Development org {{name}} removed from the development orgs list",
   "devOrgRemoving": "Removing the development org {{orgId}} from the development orgs list...",
+  "devOrgSelectOrgToRegister": "Which org do you want to register as a development org?",
   "devOrgSelectToRemove": "Which development org do you want to remove?",
   "devOrgSelectToRemoveDescription": "Remove an org that was deleted, or that nobody uses anymore",
   "devOrgTargetBranchMissing": "Development org {{name}} has no target branch: give one with --target-branch",

@@ -12,7 +12,7 @@ The list lives in a "Development Orgs Dashboard" of the git provider (an issue, 
 
 sfdx-hardis registers an org on its own when a developer starts a User Story in it ([hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/)), saves it ([hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/)), runs a backpromote, or creates a sandbox with [hardis:org:create](https://sfdx-hardis.cloudity.com/hardis/org/create/). This command is for the release manager who creates a sandbox and assigns it, or who fixes an entry:
 
-- `--target-org` registers an org you are connected to (the default org when omitted);
+- `--target-org` registers an org you are connected to. Without it, the command asks which one (the default org in agent mode and in CI);
 - `--org-id` edits a registered org without connecting to it;
 - `--target-branch` sets the only target branch of the org;
 - `--owner` sets the owner, `--users` replaces the users, `--add-user` and `--remove-user` change them one at a time. A person is written `Name <email>`, or a bare email.

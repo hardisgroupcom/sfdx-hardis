@@ -1170,6 +1170,7 @@
   "devOrgsDashboardRollover": "O dashboard de orgs de desenvolvimento está cheio: movendo para um novo",
   "devOrgsDashboardUpdated": "Lista de orgs de desenvolvimento atualizada: {{url}}",
   "devOrgsDashboardUrl": "Dashboard de orgs de desenvolvimento: {{url}}",
+  "devOrgSelectOrgToRegister": "Qual org você quer registrar como org de desenvolvimento?",
   "devOrgSelectToRemove": "Qual org de desenvolvimento você quer remover?",
   "devOrgSelectToRemoveDescription": "Remova uma org que foi excluída ou que ninguém mais usa",
   "devOrgsListed": "{{count}} orgs de desenvolvimento listadas",

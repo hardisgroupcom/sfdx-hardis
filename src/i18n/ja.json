@@ -1187,6 +1187,7 @@
   "devOrgRemoveTargetMissing": "削除する org を --org-id または --target-org で指定してください",
   "devOrgRemoved": "開発 org {{name}} を開発 org の一覧から削除しました",
   "devOrgRemoving": "開発 org {{orgId}} を開発 org の一覧から削除しています...",
+  "devOrgSelectOrgToRegister": "開発組織として登録する組織を選択してください",
   "devOrgSelectToRemove": "どの開発 org を削除しますか?",
   "devOrgSelectToRemoveDescription": "削除済み、または誰も使用しなくなった org を削除します",
   "devOrgTargetBranchMissing": "開発 org {{name}} にはターゲットブランチがありません。--target-branch で指定してください",

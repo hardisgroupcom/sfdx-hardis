@@ -7,6 +7,7 @@ import { CONSTANTS, getConfig } from '../../../../config/index.js';
 import { isCI, uxLog } from '../../../../common/utils/index.js';
 import { t } from '../../../../common/utils/i18n.js';
 import { selectTargetBranch } from '../../../../common/utils/gitUtils.js';
+import { promptOrg } from '../../../../common/utils/orgUtils.js';
 import {
   parseDevOrgPersonFlag,
   parseDevOrgPersonList,
@@ -37,7 +38,7 @@ The list lives in a "Development Orgs Dashboard" of the git provider (an issue, 
 
 sfdx-hardis registers an org on its own when a developer starts a User Story in it ([hardis:work:new](${CONSTANTS.DOC_URL_ROOT}/hardis/work/new/)), saves it ([hardis:work:save](${CONSTANTS.DOC_URL_ROOT}/hardis/work/save/)), runs a backpromote, or creates a sandbox with [hardis:org:create](${CONSTANTS.DOC_URL_ROOT}/hardis/org/create/). This command is for the release manager who creates a sandbox and assigns it, or who fixes an entry:
 
-- \`--target-org\` registers an org you are connected to (the default org when omitted);
+- \`--target-org\` registers an org you are connected to. Without it, the command asks which one (the default org in agent mode and in CI);
 - \`--org-id\` edits a registered org without connecting to it;
 - \`--target-branch\` sets the only target branch of the org;
 - \`--owner\` sets the owner, \`--users\` replaces the users, \`--add-user\` and \`--remove-user\` change them one at a time. A person is written \`Name <email>\`, or a bare email.
@@ -135,7 +136,17 @@ In agent mode, nothing is asked: the target branch is \`--target-branch\`, else 
       const data = registered.data;
       identity = { orgId: data.orgId, orgType: data.orgType, sandboxName: data.sandboxName, alias: data.alias, instanceUrl: data.instanceUrl, expirationDate: data.expirationDate };
     } else {
-      const username = flags['target-org']?.getUsername();
+      let username = flags['target-org']?.getUsername();
+      // Interactive without --target-org: ask which org, rather than registering the default one
+      if (interactive && !this.argv.some((arg) => /^(--target-org|-o|--targetusername|-u)(=|$)/.test(arg))) {
+        const selected = await promptOrg(this, {
+          setDefault: false,
+          devSandbox: false,
+          promptMessage: t('devOrgSelectOrgToRegister'),
+          defaultOrgUsername: username || null,
+        });
+        username = selected?.username || username;
+      }
       if (!username) {
         throw new SfError(t('devOrgTargetOrgMissing'));
       }

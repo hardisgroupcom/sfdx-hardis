@@ -1189,6 +1189,7 @@
   "devOrgRemoveTargetMissing": "Należy wskazać org do usunięcia za pomocą --org-id lub --target-org",
   "devOrgRemoved": "Org deweloperski {{name}} usunięty z listy orgów deweloperskich",
   "devOrgRemoving": "Usuwanie orga deweloperskiego {{orgId}} z listy orgów deweloperskich...",
+  "devOrgSelectOrgToRegister": "Którą org zarejestrować jako org deweloperską?",
   "devOrgSelectToRemove": "Który org deweloperski usunąć?",
   "devOrgSelectToRemoveDescription": "Usunięcie orga, który został skasowany lub którego nikt już nie używa",
   "devOrgTargetBranchMissing": "Org deweloperski {{name}} nie ma docelowego brancha: należy go podać za pomocą --target-branch",

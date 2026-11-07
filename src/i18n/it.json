@@ -1189,6 +1189,7 @@
   "devOrgRemoveTargetMissing": "Indica la org da rimuovere con --org-id o --target-org",
   "devOrgRemoved": "Org di sviluppo {{name}} rimossa dalla lista delle org di sviluppo",
   "devOrgRemoving": "Rimozione della org di sviluppo {{orgId}} dalla lista delle org di sviluppo...",
+  "devOrgSelectOrgToRegister": "Quale org vuoi registrare come org di sviluppo?",
   "devOrgSelectToRemove": "Quale org di sviluppo vuoi rimuovere?",
   "devOrgSelectToRemoveDescription": "Rimuovi una org che è stata eliminata o che nessuno usa più",
   "devOrgTargetBranchMissing": "La org di sviluppo {{name}} non ha un branch di destinazione: indicane uno con --target-branch",

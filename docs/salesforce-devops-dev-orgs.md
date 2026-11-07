@@ -12,7 +12,7 @@ sfdx-hardis keeps the list of these development orgs, with the branch each of th
 
 ## Where you see it
 
-- **In VS Code**, once an org is registered, the switch at the top of the DevOps Pipeline shows either the **Feature branches** (the default) or the **Dev orgs**: the major branches, with the development orgs that target each of them on their left, linked by a dotted line. The orange chip on a line is the number of Pull Requests the org misses, to backpromote; no chip means the org is up to date. Click an org to see its owner, its users and what it misses, and to run a backpromote, edit it or remove it.
+- **In VS Code**, the switch at the top of the DevOps Pipeline shows either the **Feature branches** (the default) or the **Dev orgs**: the major branches, with the development orgs that target each of them on their left, linked by a dotted line. The orange chip on a line is the number of Pull Requests the org misses, to backpromote; no chip means the org is up to date. Click an org to see its owner, its users and what it misses, and to run a backpromote, edit it or remove it. A target branch no org targets yet shows a **+** node: click it to register an org for that branch.
 
   ![DevOps Pipeline showing the development orgs of the team next to their target branch](assets/images/dev-orgs-pipeline.png)
 
@@ -32,7 +32,9 @@ You have nothing to do: sfdx-hardis registers the org you work with when you
 - run a [backpromote](salesforce-devops-backpromote.md) on it: the date of the backpromote is where the count starts again;
 - create a sandbox with [hardis:org:create](hardis/org/create.md): you are asked who owns it and which branch it targets.
 
-A **release manager** who creates a sandbox for somebody else registers it, or changes its target branch, owner and users, from the DevOps Pipeline ("Register a dev org" in the settings menu, or Edit in the window of an org), or with [hardis:project:dev-org:register](hardis/project/dev-org/register.md):
+A **release manager** who creates a sandbox for somebody else registers it, or changes its target branch, owner and users, from the DevOps Pipeline (the **+** next to a target branch in the **Dev orgs** view, "Register a dev org" in the settings menu, or Edit in the window of an org), or with [hardis:project:dev-org:register](hardis/project/dev-org/register.md). The command asks which of your connected orgs to register:
+
+![Dev orgs view before any org is registered: a + next to each target branch](assets/images/dev-orgs-pipeline-empty.png)
 
 ```sh
 sf hardis:project:dev-org:register --target-org my-dev-sandbox --target-branch integration --owner "Jane Doe <jane.doe@example.com>" --users "john.smith@example.com"

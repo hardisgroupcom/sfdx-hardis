@@ -1189,6 +1189,7 @@
   "devOrgRemoveTargetMissing": "Geef de te verwijderen org op met --org-id of --target-org",
   "devOrgRemoved": "Ontwikkel-org {{name}} verwijderd uit de lijst met ontwikkel-orgs",
   "devOrgRemoving": "Ontwikkel-org {{orgId}} wordt verwijderd uit de lijst met ontwikkel-orgs...",
+  "devOrgSelectOrgToRegister": "Welke org wil je registreren als ontwikkel-org?",
   "devOrgSelectToRemove": "Welke ontwikkel-org wil je verwijderen?",
   "devOrgSelectToRemoveDescription": "Verwijder een org die is verwijderd of die niemand meer gebruikt",
   "devOrgTargetBranchMissing": "Ontwikkel-org {{name}} heeft geen doel-branch: geef er een op met --target-branch",
