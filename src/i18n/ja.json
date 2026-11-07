@@ -2209,6 +2209,7 @@
   "githubFetchingMergedPrs": "branch {{branchName}} の merge 済みプルリクエストを取得しています",
   "githubFindingLastMergedPr": "{{sourceBranch}} から {{targetBranch}} への最後に merge されたプルリクエストを検索しています",
   "githubIntegrationWarning": "{{message}}",
+  "githubIssuesDisabled": "リポジトリ {{repo}} では Issues が無効になっています (新しい fork はすべてそうです)。開発組織リストを使うには、GitHub の Settings > General > Features > Issues で有効にしてください",
   "githubListingClosedPullRequests": "クローズ済みのプルリクエストを一覧取得しています",
   "githubListingPrComments": "プルリクエスト {{prId}} のコメントを一覧取得しています",
   "githubListingPrCommentsAll": "プルリクエストのコメントを一覧取得しています...",

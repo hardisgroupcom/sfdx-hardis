@@ -40,7 +40,7 @@ A **release manager** who creates a sandbox for somebody else registers it, or c
 sf hardis:project:dev-org:register --target-org my-dev-sandbox --target-branch integration --owner "Jane Doe <jane.doe@example.com>" --users "john.smith@example.com"
 ```
 
-Registering needs a git provider token: in VS Code, connect to your git provider from the DevOps Pipeline. Without it, the commands only say they could not register the org.
+Registering needs a git provider token: in VS Code, connect to your git provider from the DevOps Pipeline. Without it, the commands only say they could not register the org. On GitHub, the repository also needs its issues switched on (Settings > General > Features > Issues): a new fork has them off.
 
 ## Rules
 

@@ -2211,6 +2211,7 @@
   "githubFetchingMergedPrs": "Récupération des PRs fusionnées pour la branche {{branchName}}",
   "githubFindingLastMergedPr": "Recherche de la dernière PR fusionnée de {{sourceBranch}} vers {{targetBranch}}",
   "githubIntegrationWarning": "{{message}}",
+  "githubIssuesDisabled": "Les issues sont désactivées dans le repository {{repo}} (comme dans tout nouveau fork) : activez-les dans GitHub, Settings > General > Features > Issues, pour utiliser la liste des orgs de développement",
   "githubListingClosedPullRequests": "Liste des Pull Requests fermées précédemment",
   "githubListingPrComments": "Liste des commentaires pour la PR {{prId}}",
   "githubListingPrCommentsAll": "Liste des commentaires de la Pull Request...",
