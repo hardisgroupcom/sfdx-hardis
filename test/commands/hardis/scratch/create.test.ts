@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import ScratchCreate from '../../../../src/commands/hardis/scratch/create.js';
 import { SCRATCH_SNAPSHOT_DISABLED_ENV } from '../../../../src/common/utils/scratchSnapshotUtils.js';
 import { getCurrentGitBranch } from '../../../../src/common/utils/index.js';
+import { t } from '../../../../src/common/utils/i18n.js';
 
 // Records which source the command asks for, without a Dev Hub
 class CreateProbe extends ScratchCreate {
@@ -98,20 +99,20 @@ describe('hardis:scratch:create pool or snapshot', () => {
     process.env.SCRATCH_ORG_SNAPSHOT = 'BaseMain';
     try {
       const take = async (pool?: boolean) => {
-        let lookups = 0;
+        let devHubCalls = 0;
         const logs: string[] = [];
-        const flags = { 'target-dev-hub': { getConnection: () => { lookups++; throw new Error('no Dev Hub'); } } };
+        const flags = { 'target-dev-hub': { getConnection: () => { devHubCalls++; throw new Error('no Dev Hub'); } } };
         const command = Object.create(ScratchCreate.prototype) as any;
         Object.assign(command, { pool, configInfo: {}, ux: { log: (text: string) => logs.push(text) } });
         await command.takeOrgSource(flags);
-        const ignored = logs.some((line) => line.includes('SCRATCH_ORG_SNAPSHOT is ignored on a pool fill'));
-        return { snapshot: command.snapshot, lookups, ignored };
+        const ignored = logs.some((line) => line.includes(t('scratchSnapshotEnvIgnoredOnPoolFill')));
+        return { snapshot: command.snapshot, devHubCalls, ignored };
       };
-      expect(await take(false)).to.deep.equal({ snapshot: { name: 'BaseMain', sha: '' }, lookups: 0, ignored: false });
-      // A pool fill says it ignores the variable, then still looks up the snapshot of its own branch
-      expect(await take(true)).to.deep.equal({ snapshot: null, lookups: 1, ignored: true });
+      expect(await take(false)).to.deep.equal({ snapshot: { name: 'BaseMain', sha: '' }, devHubCalls: 0, ignored: false });
+      // A pool fill says it ignores the variable, then still asks the Dev Hub for the snapshot of its own branch
+      expect(await take(true)).to.deep.equal({ snapshot: null, devHubCalls: 1, ignored: true });
       // An unset flag is not a pool fill, as everywhere else in the command
-      expect(await take(undefined)).to.deep.equal({ snapshot: { name: 'BaseMain', sha: '' }, lookups: 0, ignored: false });
+      expect(await take(undefined)).to.deep.equal({ snapshot: { name: 'BaseMain', sha: '' }, devHubCalls: 0, ignored: false });
     } finally {
       if (previous === undefined) {
         delete process.env.SCRATCH_ORG_SNAPSHOT;
