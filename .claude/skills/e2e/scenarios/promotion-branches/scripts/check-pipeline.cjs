@@ -56,11 +56,12 @@
 // Development orgs (enableDevOrgsRegistry), optional keys too:
 //   {
 //     "devOrgsFile": "<file holding the output of sf hardis:project:dev-org:list --json>",
-//     "devOrgNodes": { "mine": { "<orgId>": 1 }, "all": { "<orgId>": "none", "<other>": null } }
+//     "devOrgNodes": { "devOrgs": { "<orgId>": 1, "<other>": null }, "featureBranches": { "<orgId>": null } }
 //   }
 // "devOrgsFile" gives the extension the answer of the CLI, the way showPipeline.ts does.
-// "devOrgNodes" reads the diagram of each display mode (mine, all): a number or "2+" is the count
-// bubble of the node of the org, "none" a node without bubble, null no node for that org.
+// "devOrgNodes" reads the diagram of each view of the header switch (devOrgs, featureBranches): a
+// number or "2+" is the count bubble of the node of the org, "none" a node without bubble, null no
+// node for that org.
 
 const path = require("path");
 const fs = require("fs");
@@ -588,7 +589,7 @@ const same = (a, b) => a.length === b.length && a.every((n, i) => n === b[i]);
     const { devOrgNodeName } = req("utils/pipeline/devOrgsUtils.js");
     observed.devOrgNodes = {};
     for (const [mode, orgs] of Object.entries(expected.devOrgNodes)) {
-      const text = mode === "mine" ? data.mermaidDiagramDevOrgsMine : mode === "all" ? data.mermaidDiagramDevOrgsAll : data.mermaidDiagram;
+      const text = mode === "devOrgs" ? data.mermaidDiagramDevOrgs : data.mermaidDiagram;
       observed.devOrgNodes[mode] = {};
       for (const [orgId, want] of Object.entries(orgs)) {
         const nodeName = devOrgNodeName(orgId);

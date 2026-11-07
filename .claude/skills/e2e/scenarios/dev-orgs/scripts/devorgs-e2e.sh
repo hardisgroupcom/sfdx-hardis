@@ -284,7 +284,7 @@ fi
 
 # ------------------------------------------------------------------ pipeline-1: the dev org under integration, with its bubble
 if step pipeline-1; then
-  devorgs_pipeline pipeline-1 "$LOGS/list-merge-1.json" "{ \"mine\": { \"$DEV_ID\": 1 }, \"all\": { \"$DEV_ID\": 1 } }"
+  devorgs_pipeline pipeline-1 "$LOGS/list-merge-1.json" "{ \"devOrgs\": { \"$DEV_ID\": 1 }, \"featureBranches\": { \"$DEV_ID\": null } }"
 fi
 
 # ------------------------------------------------------------------ edit: a release manager moves the org to uat
@@ -346,7 +346,7 @@ fi
 
 # ------------------------------------------------------------------ pipeline-2: no bubble once up to date
 if step pipeline-2; then
-  devorgs_pipeline pipeline-2 "$LOGS/list-backpromote.json" "{ \"mine\": { \"$DEV_ID\": \"none\" }, \"all\": { \"$DEV_ID\": \"none\" } }"
+  devorgs_pipeline pipeline-2 "$LOGS/list-backpromote.json" "{ \"devOrgs\": { \"$DEV_ID\": \"none\" } }"
 fi
 
 # ------------------------------------------------------------------ refresh: list --refresh from a workstation
@@ -365,7 +365,7 @@ if step remove; then
   expect_json REMOVE-LIST "$LOGS/list-remove.json" "the list is empty" "!org && d.orgs.length===0"
   read_dashboard
   expect_json REMOVE-DASHBOARD "$LOGS/dashboard.json" "the dashboard says no org is registered" "/No development org is registered/.test(dash.body)"
-  devorgs_pipeline pipeline-3 "$LOGS/list-remove.json" "{ \"all\": { \"$DEV_ID\": null } }"
+  devorgs_pipeline pipeline-3 "$LOGS/list-remove.json" "{ \"devOrgs\": { \"$DEV_ID\": null } }"
 fi
 
 # ------------------------------------------------------------------ report
