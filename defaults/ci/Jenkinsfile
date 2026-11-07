@@ -421,13 +421,18 @@ pipeline {
                     environment name: 'USE_SCRATCH_ORGS', value: 'true'
                 }
             }
+            environment {
+                // Jenkins does not set CI: without it, the refresh logs in and cleans up as on a workstation
+                CI = 'true'
+            }
             steps {
                 withCredentials([
                     string(credentialsId: 'SFDX_AUTH_URL_DEV_HUB',  variable: 'SFDX_AUTH_URL_DEV_HUB',  optional: true),
                     string(credentialsId: 'SFDX_CLIENT_ID_DEVHUB',  variable: 'SFDX_CLIENT_ID_DEVHUB',  optional: true),
                     string(credentialsId: 'SFDX_CLIENT_KEY_DEVHUB', variable: 'SFDX_CLIENT_KEY_DEVHUB', optional: true),
                 ]) {
-                    sh 'sf hardis:scratch:snapshot:refresh'
+                    // ORG_ALIAS (set for the whole pipeline) names the branch org: the refresh must not target it
+                    sh 'ORG_ALIAS= sf hardis:scratch:snapshot:refresh'
                 }
             }
             post {
