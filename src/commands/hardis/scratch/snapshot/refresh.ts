@@ -151,10 +151,11 @@ The command has no prompt.
     return { outputString: `Snapshot ${name} of branch ${branch} is Active`, snapshotName: name, sha, deleted };
   }
 
-  // Called once the branch is known to use snapshots. In CI, always the job's own credentials: a default Dev Hub
-  // saved on a reused runner (Jenkins agent, self-hosted runner) can be another project's
+  // Called once the branch is known to use snapshots. In CI, a Dev Hub given on the command line or the job's own
+  // credentials, never the saved default: on a reused runner (Jenkins agent, self-hosted) it can be another project's
   protected async getDevHub(flags, ci = isCI): Promise<Org> {
-    return (!ci && flags['target-dev-hub']) || (await this.loginDevHub());
+    const explicit = this.argv.some((arg) => ['-v', '--target-dev-hub', '--targetdevhubusername'].includes(arg.split('=')[0]));
+    return ((!ci || explicit) && flags['target-dev-hub']) || (await this.loginDevHub());
   }
 
   protected async loginDevHub(): Promise<Org> {
