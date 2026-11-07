@@ -3870,7 +3870,7 @@
   "scratchSnapshotDeleting": "Oudere snapshot {{name}} wordt verwijderd...",
   "scratchSnapshotDelta": "De wijzigingen sinds de snapshot-commit {{sha}} worden geïmplementeerd: {{toDeploy}} componenten te implementeren, {{toDelete}} te verwijderen",
   "scratchSnapshotFailed": "Snapshot {{name}} is mislukt: {{error}}",
-  "scratchSnapshotHistoryFetchFailed": "De volledige git-geschiedenis kon niet worden opgehaald, elke nieuwe scratch org van de pool probeert het opnieuw: {{message}}",
+  "scratchSnapshotHistoryFetchFailed": "De volledige git-geschiedenis kon niet worden opgehaald: elke nieuwe scratch org van de pool probeert het opnieuw, en een die mislukt wordt zonder snapshot gemaakt: {{message}}",
   "scratchSnapshotLimitReached": "De Dev Hub heeft de snapshot geweigerd vanwege een limiet, pull requests blijven de vorige snapshot gebruiken: {{message}}",
   "scratchSnapshotLimitsUnread": "De snapshotlimieten van de Dev Hub konden niet worden gelezen, de vernieuwing gaat door: {{message}}",
   "scratchSnapshotMakingRoom": "Alle actieve snapshotplaatsen van de Dev Hub zijn bezet: de oudste snapshots van branch {{branch}} worden verwijderd om ruimte te maken voor de nieuwe",
