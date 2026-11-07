@@ -5,6 +5,7 @@ import * as path from 'path';
 import { execFileSync } from 'child_process';
 import ScratchSnapshotRefresh from '../../../../../src/commands/hardis/scratch/snapshot/refresh.js';
 import { clearListMajorOrgsCache } from '../../../../../src/common/utils/orgConfigUtils.js';
+import { t } from '../../../../../src/common/utils/i18n.js';
 
 // Counts the requests for the Dev Hub instead of reaching it, whatever default Dev Hub the runner has
 class RefreshProbe extends ScratchSnapshotRefresh {
@@ -54,5 +55,38 @@ describe('hardis:scratch:snapshot:refresh Dev Hub login', () => {
     }
     expect(error?.message).to.equal('Dev Hub login reached');
     expect(RefreshProbe.logins).to.equal(1);
+  });
+});
+
+// A command whose auth hook connects the given username, or nothing
+const refreshWithAuthHook = (username: string | null): any =>
+  new (ScratchSnapshotRefresh as any)([], {
+    runHook: async () => {
+      (globalThis as any).justConnectedOrg = username ? { username } : null;
+      return { successes: [], failures: [] };
+    },
+  });
+
+describe('hardis:scratch:snapshot:refresh loginDevHub', () => {
+  it('opens the Dev Hub the auth hook connected', async () => {
+    let error: Error | null = null;
+    try {
+      await refreshWithAuthHook('hub-from-hook@example.com').loginDevHub();
+    } catch (e) {
+      error = e as Error;
+    }
+    // No such login on the runner: reaching Org.create with that username is what is checked
+    expect(error?.name).to.equal('NamedOrgNotFoundError');
+    expect(error?.message).to.contain('hub-from-hook@example.com');
+  });
+
+  it('fails when the auth hook connects no Dev Hub', async () => {
+    let error: Error | null = null;
+    try {
+      await refreshWithAuthHook(null).loginDevHub();
+    } catch (e) {
+      error = e as Error;
+    }
+    expect(error?.message).to.equal(t('pleaseSelectOrLoginIntoDevHub'));
   });
 });
