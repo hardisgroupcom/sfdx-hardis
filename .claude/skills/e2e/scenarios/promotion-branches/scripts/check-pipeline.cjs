@@ -60,8 +60,8 @@
 //   }
 // "devOrgsFile" gives the extension the answer of the CLI, the way showPipeline.ts does.
 // "devOrgNodes" reads the diagram of each view of the header switch (devOrgs, featureBranches): a
-// number or "2+" is the "to backpromote" chip on the arrow that reaches the node of the org, "none"
-// a node without chip, null no node for that org.
+// number or "2+" is the "to backpromote" chip on the line from the node of the org to its branch,
+// "none" a node without chip, null no node for that org.
 
 const path = require("path");
 const fs = require("fs");
@@ -595,7 +595,7 @@ const same = (a, b) => a.length === b.length && a.every((n, i) => n === b[i]);
         const nodeName = devOrgNodeName(orgId);
         const lines = (text || "").split(/\r?\n/).map((candidate) => candidate.trim());
         const line = lines.find((candidate) => candidate.startsWith(nodeName + "[") || candidate.startsWith(nodeName + "("));
-        const arrow = lines.find((candidate) => candidate.endsWith(" " + nodeName) && candidate.includes("-.->"));
+        const arrow = lines.find((candidate) => candidate.startsWith(nodeName + " -.-"));
         const bubble = line ? ((arrow || "").match(/data-behind='([^']+)'/) || [])[1] || "none" : null;
         observed.devOrgNodes[mode][orgId] = bubble;
         if (String(bubble) !== String(want)) {
