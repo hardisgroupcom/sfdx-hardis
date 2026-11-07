@@ -60,8 +60,8 @@
 //   }
 // "devOrgsFile" gives the extension the answer of the CLI, the way showPipeline.ts does.
 // "devOrgNodes" reads the diagram of each view of the header switch (devOrgs, featureBranches): a
-// number or "2+" is the count bubble of the node of the org, "none" a node without bubble, null no
-// node for that org.
+// number or "2+" is the "to backpromote" chip on the arrow that reaches the node of the org, "none"
+// a node without chip, null no node for that org.
 
 const path = require("path");
 const fs = require("fs");
@@ -593,11 +593,13 @@ const same = (a, b) => a.length === b.length && a.every((n, i) => n === b[i]);
       observed.devOrgNodes[mode] = {};
       for (const [orgId, want] of Object.entries(orgs)) {
         const nodeName = devOrgNodeName(orgId);
-        const line = (text || "").split(/\r?\n/).find((candidate) => candidate.trim().startsWith(nodeName + "[") || candidate.trim().startsWith(nodeName + "("));
-        const bubble = line ? (line.match(/data-count='([^']+)'/) || [])[1] || "none" : null;
+        const lines = (text || "").split(/\r?\n/).map((candidate) => candidate.trim());
+        const line = lines.find((candidate) => candidate.startsWith(nodeName + "[") || candidate.startsWith(nodeName + "("));
+        const arrow = lines.find((candidate) => candidate.endsWith(" " + nodeName) && candidate.includes("-.->"));
+        const bubble = line ? ((arrow || "").match(/data-behind='([^']+)'/) || [])[1] || "none" : null;
         observed.devOrgNodes[mode][orgId] = bubble;
         if (String(bubble) !== String(want)) {
-          failures.push(`the ${mode} diagram shows ${line ? "the node of " + orgId + " with bubble " + bubble : "no node for " + orgId}, expected ${want === null ? "no node" : want}`);
+          failures.push(`the ${mode} diagram shows ${line ? "the node of " + orgId + " with chip " + bubble : "no node for " + orgId}, expected ${want === null ? "no node" : want}`);
         }
       }
     }
