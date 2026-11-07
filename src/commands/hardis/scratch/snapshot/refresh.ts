@@ -113,8 +113,9 @@ The command has no prompt.
     if (existing?.Status === 'Active') {
       uxLog("action", this, c.cyan(t('scratchSnapshotUpToDate', { name: c.green(name), branch })));
     } else if (existing && ['New', 'InProgress'].includes(existing.Status)) {
-      // Another job is taking the snapshot of the same commit
+      // An earlier job took the snapshot of the same commit and may have stopped before reporting it
       await waitSnapshotActive(devHubConn, name, timeoutMinutes, this);
+      taken = true;
     } else {
       if (existing) {
         await execSfdxJson(`sf org delete snapshot --snapshot ${name} --target-dev-hub ${devHubUsername} --no-prompt`, this, {

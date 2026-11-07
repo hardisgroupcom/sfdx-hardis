@@ -133,16 +133,25 @@ describe('hardis:scratch:snapshot:refresh Dev Hub choice', () => {
 
 // A Dev Hub answering the snapshot queries, and a snapshot signup that returns the given result
 class OutputProbe extends ScratchSnapshotRefresh {
-  public static existingStatus: string | null = null;
+  // Status of the snapshot record at each successive lookup; the last one repeats
+  public static statuses: string[] = [];
   public static created = true;
+  public static pruneFails = false;
   protected async getDevHub(): Promise<any> {
+    let lookups = 0;
     const conn = {
       instanceUrl: 'https://hub.example.com',
       limits: async () => ({}),
-      query: async (soql: string) => ({
-        done: true,
-        records: soql.includes('SnapshotName =') && OutputProbe.existingStatus ? [{ Status: OutputProbe.existingStatus }] : [],
-      }),
+      query: async (soql: string) => {
+        if (soql.includes('SnapshotName =')) {
+          const status = OutputProbe.statuses[Math.min(lookups++, OutputProbe.statuses.length - 1)];
+          return { done: true, records: status ? [{ Status: status }] : [] };
+        }
+        if (OutputProbe.pruneFails) {
+          throw new Error('Dev Hub session expired');
+        }
+        return { done: true, records: [] };
+      },
     };
     return { getConnection: () => conn, getUsername: () => 'hub@example.com' };
   }
@@ -172,8 +181,9 @@ describe('hardis:scratch:snapshot:refresh GitHub Actions output', () => {
     process.env.GITHUB_OUTPUT = outputFile;
     process.chdir(projectDir);
     clearListMajorOrgsCache();
-    OutputProbe.existingStatus = null;
+    OutputProbe.statuses = [];
     OutputProbe.created = true;
+    OutputProbe.pruneFails = false;
   });
 
   afterEach(() => {
@@ -193,9 +203,15 @@ describe('hardis:scratch:snapshot:refresh GitHub Actions output', () => {
   });
 
   it('reports nothing when the snapshot of this commit was already Active', async () => {
-    OutputProbe.existingStatus = 'Active';
+    OutputProbe.statuses = ['Active'];
     await OutputProbe.run([]);
     expect(fs.readFileSync(outputFile, 'utf8')).to.equal('');
+  });
+
+  it('reports a snapshot of this commit it waited for, as the run that started it may have died before reporting', async () => {
+    OutputProbe.statuses = ['InProgress', 'Active'];
+    const result: any = await OutputProbe.run([]);
+    expect(fs.readFileSync(outputFile, 'utf8')).to.equal(`snapshot=${result.snapshotName}\n`);
   });
 
   it('reports nothing when the Dev Hub refused the snapshot', async () => {
