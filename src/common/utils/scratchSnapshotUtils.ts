@@ -2,6 +2,7 @@ import c from 'chalk';
 import * as path from 'path';
 import { spawnSync } from 'child_process';
 import { createHash } from 'crypto';
+import { isDeepStrictEqual } from 'util';
 import { SfError } from '@salesforce/core';
 import { createTempDir, execSfdxJson, uxLog } from './index.js';
 import { soqlQuery } from './apiUtils.js';
@@ -155,7 +156,7 @@ export async function orgInitStepChangedSince(sha: string, branch: string, cwd =
     }
   }
   for (const step of after) {
-    if (JSON.stringify(step) !== JSON.stringify(before.find((beforeStep) => beforeStep.id === step.id))) {
+    if (!isDeepStrictEqual(step, before.find((beforeStep) => beforeStep.id === step.id))) {
       return step.id;
     }
     const files = [step.parameters?.apexScript, step.type === 'data' ? await resolveDataWorkspacePath(step.parameters?.sfdmuProject) : null].filter(Boolean);

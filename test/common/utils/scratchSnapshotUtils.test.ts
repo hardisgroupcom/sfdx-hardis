@@ -333,6 +333,12 @@ orgInitSteps:
     expect(await orgInitStepChangedSince(sha, 'main', dir)).to.equal(null);
   });
 
+  it('keeps the snapshot when only the key order of a step changed', async () => {
+    write('config/.sfdx-hardis.yml', config().replace('    type: apex\n    parameters:\n      apexScript: scripts/apex/init.apex\n', '    parameters:\n      apexScript: scripts/apex/init.apex\n    type: apex\n'));
+    commit();
+    expect(await orgInitStepChangedSince(sha, 'main', dir)).to.equal(null);
+  });
+
   it('names the step whose Apex script changed', async () => {
     write('scripts/apex/init.apex', 'System.debug(3);');
     commit();
