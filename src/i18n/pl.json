@@ -3869,6 +3869,7 @@
   "scratchSnapshotDeleteFailed": "Nie można usunąć snapshotu {{name}}: {{message}}",
   "scratchSnapshotDeleting": "Usuwanie starszego snapshotu {{name}}...",
   "scratchSnapshotDelta": "Wdrażanie zmian od commita snapshotu {{sha}}: {{toDeploy}} komponentów do wdrożenia, {{toDelete}} do usunięcia",
+  "scratchSnapshotEnvIgnoredOnPoolFill": "SCRATCH_ORG_SNAPSHOT jest ignorowana podczas zapełniania puli: org puli jest tworzony ze snapshotu własnego branch",
   "scratchSnapshotFailed": "Snapshot {{name}} nie powiódł się: {{error}}",
   "scratchSnapshotHistoryFetchFailed": "Nie udało się pobrać pełnej historii git: każda nowa scratch org z puli próbuje ponownie, a ta, której się nie uda, jest tworzona bez snapshotu: {{message}}",
   "scratchSnapshotLimitReached": "Dev Hub odrzucił snapshot z powodu limitu, Pull Requesty nadal używają poprzedniego snapshotu: {{message}}",

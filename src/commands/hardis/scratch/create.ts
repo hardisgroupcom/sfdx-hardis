@@ -684,6 +684,9 @@ In agent mode:
     if (snapshotName && !this.pool) {
       return { name: snapshotName, sha: '' };
     }
+    if (snapshotName) {
+      uxLog("log", this, c.grey(t('scratchSnapshotEnvIgnoredOnPoolFill')));
+    }
     try {
       const { snapshot, reason } = await resolveScratchSnapshot(flags['target-dev-hub'].getConnection(), await this.snapshotBranch(branch));
       if (!snapshot && reason) {
