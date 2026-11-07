@@ -117,7 +117,7 @@ describe('hardis:scratch:snapshot:refresh Dev Hub choice', () => {
   });
 
   it('in CI, uses a Dev Hub passed on the command line', async () => {
-    for (const argv of [['--target-dev-hub', 'MyHub'], ['-v', 'MyHub'], ['--target-dev-hub=MyHub']]) {
+    for (const argv of [['--target-dev-hub', 'MyHub'], ['-v', 'MyHub'], ['-vMyHub'], ['--target-dev-hub=MyHub']]) {
       const probe = new (DevHubChoiceProbe as any)(argv, {});
       expect(await probe.choose({ 'target-dev-hub': 'MyHub' }, true)).to.equal('MyHub');
       expect(probe.logins).to.equal(0);

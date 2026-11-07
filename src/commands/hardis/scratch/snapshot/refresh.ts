@@ -156,7 +156,9 @@ The command has no prompt.
   // Called once the branch is known to use snapshots. In CI, a Dev Hub given on the command line or the job's own
   // credentials, never the saved default: on a reused runner (Jenkins agent, self-hosted) it can be another project's
   protected async getDevHub(flags, ci = isCI): Promise<Org> {
-    const explicit = this.argv.some((arg) => ['-v', '--target-dev-hub', '--targetdevhubusername'].includes(arg.split('=')[0]));
+    const explicit = this.argv.some(
+      (arg) => ['--target-dev-hub', '--targetdevhubusername'].includes(arg.split('=')[0]) || (arg.startsWith('-v') && !arg.startsWith('--'))
+    );
     return ((!ci || explicit) && flags['target-dev-hub']) || (await this.loginDevHub());
   }
 
