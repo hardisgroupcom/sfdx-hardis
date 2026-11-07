@@ -681,7 +681,7 @@ In agent mode:
       return null;
     }
     const snapshotName = getEnvVar('SCRATCH_ORG_SNAPSHOT');
-    if (snapshotName && !this.pool) {
+    if (snapshotName && this.pool === false) {
       return { name: snapshotName, sha: '' };
     }
     if (snapshotName) {
