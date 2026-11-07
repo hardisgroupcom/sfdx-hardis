@@ -99,6 +99,11 @@ describe('BrowserAction.getDefinitionErrors and help', () => {
     expect((await new BrowserAction().getDefinitionErrors(action({ setting: 'salesforceToSalesforce', config: {} })))[0]).to.contain('retired');
   });
 
+  it('does not ask Browserforce again when an update leaves the setting and its value unchanged', async () => {
+    const unchanged = action({ setting: 'nope', config: { a: 1 } });
+    expect(await new BrowserAction().getDefinitionErrors(unchanged, 'post-deploy', structuredClone(unchanged))).to.deep.equal([]);
+  });
+
   it('returns the fields and the example of the setting with the validation error', async () => {
     let error: any = null;
     await throwActionValidationErrors(action({ setting: 'densitySettings', config: { density: 'Huge' } }), ['density: Invalid option']).catch((e) => (error = e));
@@ -139,6 +144,8 @@ describe('BrowserAction.run', () => {
     }));
     expect(result.statusCode).to.equal('success');
     expect(provider.calls[0]).to.deep.include({ setting: 'densitySettings', username: 'admin@example.com', dryRun: true, targetBranch: 'uat' });
+    // Never recorded as run in the org: the deployment after the merge must still apply it
+    expect(result.dryRun).to.equal(true);
   });
 
   it('applies the setting in a deployment job, and fails with Browserforce', async () => {

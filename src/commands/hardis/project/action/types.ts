@@ -6,7 +6,8 @@ import c from 'chalk';
 import { uxLog } from '../../../../common/utils/index.js';
 import { uxLogTableWithReport } from '../../../../common/utils/filesUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
-import { buildActionTypesDescription } from '../../../../common/utils/actionTypesUtils.js';
+import { buildActionTypesDescription, describeBuiltInType } from '../../../../common/utils/actionTypesUtils.js';
+import { DEPLOYMENT_ACTION_TYPES } from '../../../../common/actionsProvider/actionTypes.js';
 import { ActionWhen } from '../../../../common/actionsProvider/actionsProvider.js';
 import { assertNoFlagsOfOtherTypes, getBuiltInActionProvider } from '../../../../common/utils/actionUtils.js';
 
@@ -100,6 +101,11 @@ sf hardis:project:action:types --type browser --browser-setting densitySettings 
     }
     const description = await buildActionTypesDescription({ type: flags.type, when: flags.when as ActionWhen, flags });
     if (flags.type && description.types.length === 0 && description.customFunctions.length === 0) {
+      // A built-in type filtered out by --when exists: say it cannot run in that phase
+      if ((DEPLOYMENT_ACTION_TYPES as readonly string[]).includes(flags.type)) {
+        const { allowedWhen } = await describeBuiltInType(flags.type);
+        throw new SfError(t('actionTypeWrongPhase', { type: flags.type, when: allowedWhen.join(', ') }));
+      }
       throw new SfError(t('actionValidationUnknownType', { type: flags.type }));
     }
 

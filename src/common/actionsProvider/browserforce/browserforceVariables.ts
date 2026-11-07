@@ -49,10 +49,15 @@ export function findVariableReferences(value: any, pathPrefix = ''): VariableRef
 }
 
 /**
- * Reads the value of each referenced variable for the target branch. Every value found is registered
- * for masking: a value that differs per org may as well be a secret, Browserforce masks them all too.
+ * Reads the value of each referenced variable for the target branch. A value is registered for
+ * masking when one of its references is a secret: an ordinary value per org (Compact, a URL) masked
+ * everywhere would turn the same word into *** in every log and comment of the job.
  */
-export async function resolveVariables(references: VariableReference[], targetBranch: string | null): Promise<ResolvedVariables> {
+export async function resolveVariables(
+  references: VariableReference[],
+  targetBranch: string | null,
+  isSecret: (reference: VariableReference) => boolean = () => true
+): Promise<ResolvedVariables> {
   const resolved: ResolvedVariables = { env: {}, missing: [] };
   const names = [...new Set(references.map((reference) => reference.name))];
   if (names.length === 0) {
@@ -65,7 +70,9 @@ export async function resolveVariables(references: VariableReference[], targetBr
       resolved.missing.push({ name, lookedUp: secret.lookedUp });
       continue;
     }
-    registerSecretValue(secret.value);
+    if (references.some((reference) => reference.name === name && isSecret(reference))) {
+      registerSecretValue(secret.value);
+    }
     resolved.env[name] = secret.value;
   }
   return resolved;

@@ -109,6 +109,7 @@
   "actionRunSummary": "Acciones ejecutadas en {{orgBranch}}",
   "actionRunTargetOrg": "Org branch {{orgBranch}}, usuario {{username}}",
   "actionRunWrongCustomUsername": "Iniciaste sesión como {{actual}}, pero la acción {{label}} debe ejecutarse como {{expected}}.",
+  "actionSaveDetailsUnavailable": "La acción está guardada, pero no se ha podido describir lo que necesita: {{message}}",
   "actionSavedToFile": "Configuración guardada en {{file}}",
   "actionScopeBranch": "Branch",
   "actionScopeBranchDesc": "Configuración específica de la branch",

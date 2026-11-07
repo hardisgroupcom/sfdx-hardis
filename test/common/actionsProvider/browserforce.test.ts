@@ -108,6 +108,24 @@ describe('Browserforce variables', () => {
     }
   });
 
+  it('masks only the values of the references that are secrets', async () => {
+    const { redactSecrets } = await import('../../../src/common/utils/secretMaskingUtils.js');
+    const previous = { ...process.env };
+    process.env.BF_TEST_DENSITY = 'Compactissimo';
+    process.env.BF_TEST_PASSWORD = 'Sup3rS3cretValue';
+    try {
+      await resolveVariables(
+        [{ name: 'BF_TEST_DENSITY', path: 'density' }, { name: 'BF_TEST_PASSWORD', path: 'P.consumerSecret' }],
+        null,
+        (reference) => reference.path.endsWith('consumerSecret')
+      );
+      expect(redactSecrets('Compactissimo')).to.equal('Compactissimo');
+      expect(redactSecrets('Sup3rS3cretValue')).to.not.contain('Sup3rS3cretValue');
+    } finally {
+      process.env = previous;
+    }
+  });
+
   it('describes the names to declare, developer orgs included', async () => {
     const lookups = await describeVariableLookups({ MyProvider: { consumerSecret: '${MY_SECRET}' } });
     expect(lookups).to.have.lengthOf(1);

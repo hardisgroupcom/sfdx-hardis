@@ -109,6 +109,7 @@
   "actionRunSummary": "Acties uitgevoerd in {{orgBranch}}",
   "actionRunTargetOrg": "Org branch {{orgBranch}}, gebruiker {{username}}",
   "actionRunWrongCustomUsername": "Je bent ingelogd als {{actual}}, maar actie {{label}} moet worden uitgevoerd als {{expected}}.",
+  "actionSaveDetailsUnavailable": "De actie is opgeslagen, maar wat ze nodig heeft kon niet worden beschreven: {{message}}",
   "actionSavedToFile": "Configuratie opgeslagen in {{file}}",
   "actionScopeBranch": "Branch",
   "actionScopeBranchDesc": "Branch-specifieke configuratie",

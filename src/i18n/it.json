@@ -109,6 +109,7 @@
   "actionRunSummary": "Azioni eseguite in {{orgBranch}}",
   "actionRunTargetOrg": "Org branch {{orgBranch}}, utente {{username}}",
   "actionRunWrongCustomUsername": "Hai effettuato l'accesso come {{actual}}, ma l'azione {{label}} deve essere eseguita come {{expected}}.",
+  "actionSaveDetailsUnavailable": "L'azione è salvata, ma non è stato possibile descrivere ciò di cui ha bisogno: {{message}}",
   "actionSavedToFile": "Configurazione salvata in {{file}}",
   "actionScopeBranch": "Branch",
   "actionScopeBranchDesc": "Configurazione specifica per branch",

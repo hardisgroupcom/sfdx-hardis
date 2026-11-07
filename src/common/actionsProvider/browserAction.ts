@@ -1,10 +1,10 @@
 import { SfError } from '@salesforce/core';
 import c from 'chalk';
 import fs from 'fs';
-import { ActionsProvider, ActionParameterDescription, ActionResult, PrePostCommand } from './actionsProvider.js';
+import { ActionParameterDescription, ActionResult, ActionWhen, PrePostCommand } from './actionsProvider.js';
 import { uxLog } from '../utils/index.js';
 import { t } from '../utils/i18n.js';
-import type { BrowserforceApplyOptions, BrowserforceApplyOutcome } from './browserforce/browserforceRunner.js';
+import { BrowserforceActionsProvider } from './browserforce/browserforceActionsProvider.js';
 
 const BROWSER_FLAGS = ['browser-setting', 'browser-config'];
 
@@ -13,7 +13,7 @@ const BROWSER_FLAGS = ['browser-setting', 'browser-config'];
  * Metadata API cannot deploy, changed by driving the Setup pages in a headless browser.
  * In a deployment check nothing is changed: Browserforce reads the org and reports what would change.
  */
-export class BrowserAction extends ActionsProvider {
+export class BrowserAction extends BrowserforceActionsProvider {
   public getLabel(): string {
     return 'BrowserAction';
   }
@@ -49,7 +49,7 @@ export class BrowserAction extends ActionsProvider {
   }
 
   public async describeTypeDetails(flags: any): Promise<Record<string, any>> {
-    const { getBrowserforceCatalog, findBrowserforceSetting, findDeprecatedBrowserforceSetting } = await import('./browserforce/browserforceCatalog.js');
+    const { getBrowserforceCatalog, findBrowserforceSetting, describeMissingBrowserforceSetting } = await import('./browserforce/browserforceCatalog.js');
     const { describeSecretsLookup } = await import('./browserforce/browserforceVariables.js');
     const catalog = await getBrowserforceCatalog();
     const secretsLookup = await describeSecretsLookup();
@@ -69,10 +69,7 @@ export class BrowserAction extends ActionsProvider {
     }
     const setting = findBrowserforceSetting(catalog, settingKey);
     if (!setting) {
-      const deprecated = findDeprecatedBrowserforceSetting(catalog, settingKey);
-      throw new SfError(deprecated
-        ? t('actionValidationBrowserDeprecatedSetting', { setting: settingKey, message: deprecated.message })
-        : t('actionValidationBrowserUnknownSetting', { setting: settingKey, version: catalog.browserforceVersion }));
+      throw new SfError(describeMissingBrowserforceSetting(catalog, settingKey));
     }
     return { browserforceVersion: catalog.browserforceVersion, setting, secretsLookup };
   }
@@ -124,19 +121,26 @@ export class BrowserAction extends ActionsProvider {
     return orderParameters(updated);
   }
 
-  public async getDefinitionErrors(action: Partial<PrePostCommand>): Promise<string[]> {
+  // Browserforce is only asked when the value changed and it is already installed: a renamed action,
+  // or a workstation without Browserforce, does not install it nor wait for it. The run checks the
+  // value again anyway.
+  public async getDefinitionErrors(action: Partial<PrePostCommand>, _when?: ActionWhen, previous?: Partial<PrePostCommand>): Promise<string[]> {
     const errors = listShapeErrors(action.parameters);
     if (errors.length > 0) {
       return errors;
     }
     const setting = String(action.parameters!.setting);
-    const { getBrowserforceCatalog, findBrowserforceSetting, findDeprecatedBrowserforceSetting, validateBrowserforceConfig } = await import('./browserforce/browserforceCatalog.js');
+    const unchanged = previous?.type === action.type
+      && previous?.parameters?.setting === setting
+      && JSON.stringify(previous?.parameters?.config) === JSON.stringify(action.parameters!.config);
+    const { findInstalledBrowserforce } = await import('./browserforce/browserforcePlugin.js');
+    if (unchanged || !findInstalledBrowserforce()) {
+      return [];
+    }
+    const { getBrowserforceCatalog, findBrowserforceSetting, describeMissingBrowserforceSetting, validateBrowserforceConfig } = await import('./browserforce/browserforceCatalog.js');
     const catalog = await getBrowserforceCatalog();
     if (!findBrowserforceSetting(catalog, setting)) {
-      const deprecated = findDeprecatedBrowserforceSetting(catalog, setting);
-      return [deprecated
-        ? t('actionValidationBrowserDeprecatedSetting', { setting, message: deprecated.message })
-        : t('actionValidationBrowserUnknownSetting', { setting, version: catalog.browserforceVersion })];
+      return [describeMissingBrowserforceSetting(catalog, setting)];
     }
     const validation = await validateBrowserforceConfig(setting, action.parameters!.config);
     return validation.errors.map((error) => `${error.path}: ${error.message}`);
@@ -193,26 +197,21 @@ export class BrowserAction extends ActionsProvider {
       uxLog('error', this, c.red(`[DeploymentActions] ${message}`));
       return { statusCode: 'failed', output: message };
     }
+    const dryRun = cmd.pipelineContext?.checkOnly === 'true';
     const outcome = await this.applyWithBrowserforce({
       setting: String(cmd.parameters!.setting),
       config: cmd.parameters!.config,
       username,
-      dryRun: cmd.pipelineContext?.checkOnly === 'true',
+      dryRun,
       targetBranch: cmd.pipelineContext?.targetBranch || null,
     });
-    return { statusCode: outcome.success ? 'success' : 'failed', output: outcome.outputLines.join('\n') };
-  }
-
-  // Overridden by the tests, which cannot start a browser
-  protected async applyWithBrowserforce(options: BrowserforceApplyOptions): Promise<BrowserforceApplyOutcome> {
-    const { runBrowserforceApply } = await import('./browserforce/browserforceRunner.js');
-    return runBrowserforceApply(options);
+    return { statusCode: outcome.success ? 'success' : 'failed', output: outcome.outputLines.join('\n'), ...(dryRun ? { dryRun: true } : {}) };
   }
 
   private async promptParameters(flags: any, collected: Record<string, any>): Promise<Record<string, any>> {
     // Loaded only when prompting, so running the action never loads the prompt dependencies
     const { promptActionSelect, promptActionText } = await import('../utils/actionPromptUtils.js');
-    const { getBrowserforceCatalog, findBrowserforceSetting, describeSettingWarnings, validateBrowserforceConfig } = await import('./browserforce/browserforceCatalog.js');
+    const { getBrowserforceCatalog, findBrowserforceSetting, describeMissingBrowserforceSetting, describeSettingWarnings, validateBrowserforceConfig } = await import('./browserforce/browserforceCatalog.js');
     const catalog = await getBrowserforceCatalog();
     if (flags['browser-setting'] === undefined) {
       const choices = catalog.plugins.map((setting) => ({
@@ -232,7 +231,7 @@ export class BrowserAction extends ActionsProvider {
     const setting = findBrowserforceSetting(catalog, collected.setting);
     // An unknown key from --browser-setting would make every value invalid: the loop below would never end
     if (!setting) {
-      throw new SfError(t('actionValidationBrowserUnknownSetting', { setting: collected.setting, version: catalog.browserforceVersion }));
+      throw new SfError(describeMissingBrowserforceSetting(catalog, collected.setting));
     }
     uxLog('action', this, c.cyan(t('browserforceSettingSelected', { setting: collected.setting })));
     for (const warning of describeSettingWarnings(setting)) {

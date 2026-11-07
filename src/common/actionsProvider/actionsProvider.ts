@@ -120,6 +120,10 @@ export type ActionResult = {
     | 'context-validation-only' | 'context-deployment-only' | 'stopped-by-failure' | 'deployment-failed';
   // Label of the failed action that stopped this one (stopped-by-failure)
   stoppedByLabel?: string;
+  // The action only read the org and reported what it would change (a deployment check): it is
+  // shown in the comment of this job, but never recorded as run in the org, so the deployment job
+  // after the merge still runs it
+  dryRun?: boolean;
   // The action of the same run that already did the work of this one (identical-action-already-run)
   identicalTo?: IdenticalActionRef;
   // Values a custom function returned on the last line of its stdout, consumable by later actions
@@ -295,9 +299,10 @@ export abstract class ActionsProvider {
   /**
    * Errors of an action definition of this type, as translated messages (empty when valid), checked
    * when the action is saved. null when the type is checked by the generic validation.
+   * `previous` is the action before an update, when there is one.
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public async getDefinitionErrors(_action: Partial<PrePostCommand>, _when?: ActionWhen): Promise<string[] | null> {
+  public async getDefinitionErrors(_action: Partial<PrePostCommand>, _when?: ActionWhen, _previous?: Partial<PrePostCommand>): Promise<string[] | null> {
     return null;
   }
 

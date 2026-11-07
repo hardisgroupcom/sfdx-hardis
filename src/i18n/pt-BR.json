@@ -75,6 +75,7 @@
   "actionRunSummary": "Ações executadas em {{orgBranch}}",
   "actionRunTargetOrg": "Org branch {{orgBranch}}, usuário {{username}}",
   "actionRunWrongCustomUsername": "Você fez login como {{actual}}, mas a ação {{label}} deve ser executada como {{expected}}.",
+  "actionSaveDetailsUnavailable": "A ação foi salva, mas não foi possível descrever o que ela precisa: {{message}}",
   "actionSetStatusAlreadyDone": "{{label}} já está feita em {{orgBranch}}.",
   "actionSetStatusBranchChoice": "{{branch}} (org principal) - atualmente {{status}}",
   "actionSetStatusClosing": "Registrando a ação do Pull Request #{{pr}} como concluída em {{orgBranch}}...",

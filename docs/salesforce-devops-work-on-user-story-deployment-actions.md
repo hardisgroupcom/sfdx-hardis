@@ -476,7 +476,7 @@ The policy picker proposes the policies of the org and of the project.
 <details markdown="1"><summary>Technical: user-access-policy action (YAML)</summary>
 
 - **Activate** (`activate`, on by default): the policies are set to Active. A policy already active is left as it is. When Salesforce refuses, for example for a policy without filter or action, the action fails with the message of Salesforce.
-- **Apply to all users** (`applyToAll`, off by default): **Apply To All** runs for each policy, then the action waits until Salesforce records the run, for 5 minutes at most.
+- **Apply to all users** (`applyToAll`, off by default): **Apply To All** runs for each policy at each run of the action, then the action waits up to 2 minutes for Salesforce to record an access change. A policy that matches no user records none: the action then only warns.
 
 Salesforce has no API for Apply To All, so both are done by [Browserforce](https://github.com/amtrack/sfdx-browserforce-plugin) (its `userAccessPolicies` setting) in a headless browser, like a [browser action](#apply-a-setup-setting-in-a-browser). The action first reads the policies with the API, to say clearly when one is missing or when User Access Policies are not enabled.
 

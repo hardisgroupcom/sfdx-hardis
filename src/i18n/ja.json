@@ -109,6 +109,7 @@
   "actionRunSummary": "{{orgBranch}} で実行されたアクション",
   "actionRunTargetOrg": "org ブランチ {{orgBranch}}、ユーザー {{username}}",
   "actionRunWrongCustomUsername": "{{actual}} としてログインしましたが、アクション {{label}} は {{expected}} として実行する必要があります。",
+  "actionSaveDetailsUnavailable": "アクションは保存されましたが、必要なものを説明できませんでした: {{message}}",
   "actionSavedToFile": "設定が {{file}} に保存されました",
   "actionScopeBranch": "ブランチ",
   "actionScopeBranchDesc": "branch 固有の設定",

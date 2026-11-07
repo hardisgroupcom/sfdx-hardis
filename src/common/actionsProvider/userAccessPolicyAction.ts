@@ -1,10 +1,10 @@
 import { AuthInfo, Connection, SfError } from '@salesforce/core';
 import c from 'chalk';
-import { ActionsProvider, ActionResult, ActionWhen, PrePostCommand, ActionParameterDescription } from './actionsProvider.js';
+import { ActionResult, ActionWhen, PrePostCommand, ActionParameterDescription } from './actionsProvider.js';
 import { uxLog } from '../utils/index.js';
 import { soqlQuery } from '../utils/apiUtils.js';
 import { t } from '../utils/i18n.js';
-import type { BrowserforceApplyOptions, BrowserforceApplyOutcome } from './browserforce/browserforceRunner.js';
+import { BrowserforceActionsProvider } from './browserforce/browserforceActionsProvider.js';
 
 // A deployment check deploys nothing, so there is no policy to activate after it
 const USER_ACCESS_POLICY_CONTEXT: PrePostCommand['context'] = 'process-deployment-only';
@@ -26,7 +26,7 @@ export interface UserAccessPolicyRecord {
   Status: string;
 }
 
-export class UserAccessPolicyAction extends ActionsProvider {
+export class UserAccessPolicyAction extends BrowserforceActionsProvider {
   public getLabel(): string {
     return 'UserAccessPolicyAction';
   }
@@ -128,22 +128,22 @@ export class UserAccessPolicyAction extends ActionsProvider {
       return this.fail(t('userAccessPoliciesNotFound', { names: missingNames.join(', ') }));
     }
 
+    // Without a username, sf browserforce apply would get --target-org "" and fail with an unrelated message
+    const username = conn.getUsername();
+    if (!username) {
+      return this.fail(t('browserforceNoTargetOrg'));
+    }
+
     // 2. Activate them and apply them to all users with Browserforce: a deployment always leaves
     // them in Design, and Apply To All has no API
     const outcome = await this.applyWithBrowserforce({
       setting: 'userAccessPolicies',
       config: buildUserAccessPoliciesConfig(options.policies.map((name) => findPolicy(name)!.DeveloperName), options),
-      username: conn.getUsername() || '',
+      username,
       dryRun: false,
       targetBranch: cmd.pipelineContext?.targetBranch || null,
     });
     return { statusCode: outcome.success ? 'success' : 'failed', output: outcome.outputLines.join('\n') };
-  }
-
-  // Overridden by the tests, which cannot start a browser
-  protected async applyWithBrowserforce(options: BrowserforceApplyOptions): Promise<BrowserforceApplyOutcome> {
-    const { runBrowserforceApply } = await import('./browserforce/browserforceRunner.js');
-    return runBrowserforceApply(options);
   }
 
   private async getConnection(): Promise<Connection> {

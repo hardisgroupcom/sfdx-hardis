@@ -109,6 +109,7 @@
   "actionRunSummary": "Actions exécutées dans {{orgBranch}}",
   "actionRunTargetOrg": "Org branch {{orgBranch}}, utilisateur {{username}}",
   "actionRunWrongCustomUsername": "Vous vous êtes connecté en tant que {{actual}}, mais l'action {{label}} doit s'exécuter en tant que {{expected}}.",
+  "actionSaveDetailsUnavailable": "L'action est enregistrée, mais ce dont elle a besoin n'a pas pu être décrit : {{message}}",
   "actionSavedToFile": "Configuration enregistrée dans {{file}}",
   "actionScopeBranch": "Branch",
   "actionScopeBranchDesc": "Configuration spécifique à la branche",

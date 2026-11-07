@@ -87,7 +87,7 @@ A deployment always leaves the User Access Policies it contains in Design status
 
 - \`policies\`: developer names of the policies.
 - \`activate: true\` (default) activates them with the Salesforce API. A policy already active is left as is.
-- \`applyToAll: true\` also runs **Apply To All** for each policy, and waits until Salesforce records the run, for 5 minutes at most.
+- \`applyToAll: true\` also runs **Apply To All** for each policy, at each run, and waits up to 2 minutes for Salesforce to record an access change. A policy that matches no user records none: that is a warning, not a failure.
 
 Both are done by [Browserforce](https://github.com/amtrack/sfdx-browserforce-plugin) (\`userAccessPolicies\` setting) in a headless browser: Salesforce has no API for Apply To All. The plugin is installed when missing.
 

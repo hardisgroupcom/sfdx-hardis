@@ -254,6 +254,8 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
     const actionId = await this.resolveActionId(flags, agentMode, actions, t('selectActionToUpdate'));
 
     const { action, index } = findActionById(actions, actionId);
+    // As it was: a type may skip a costly check of what the update did not change
+    const previousAction: PrePostCommand = structuredClone(action);
 
     // In interactive mode, prompt for each field with current value
     if (!agentMode && !isCI) {
@@ -277,7 +279,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 
     // Validate against the phase the action ends up in, which --new-when may have changed
     const validationErrors = [
-      ...(await validateActionParameters(action, targetWhen)),
+      ...(await validateActionParameters(action, targetWhen, previousAction)),
       ...validateMovedFrom(action, scope, resolvedPrId),
     ];
     if (validationErrors.length > 0) {
@@ -340,7 +342,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
     delete movedAction.when;
     await this.applyFlagUpdates(movedAction, flags);
     const validationErrors = [
-      ...(await validateActionParameters(movedAction, when)),
+      ...(await validateActionParameters(movedAction, when, action)),
       ...validateMovedFrom(movedAction, 'pr', targetPrId),
     ];
     if (validationErrors.length > 0) {
@@ -450,6 +452,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 
   private async applyFlagUpdates(action: PrePostCommand, flags: any): Promise<void> {
     if (flags.label) action.label = flags.label;
+    const typeChanged = Boolean(flags.type && flags.type !== action.type);
     if (flags.type) {
       action.type = flags.type;
       action.parameters = {};
@@ -467,8 +470,8 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
     // What is specific to a built-in type is in its provider class
     const provider = await getBuiltInActionProvider(action.type);
     if (provider) action.parameters = provider.applyFlags(action.parameters, flags);
-    // A new type takes its default context, unless one is passed
-    const typeDefaultContext = flags.type ? provider?.getDefaultContext() : null;
+    // A new type takes its default context, unless one is passed: the same type keeps its context
+    const typeDefaultContext = typeChanged ? provider?.getDefaultContext() : null;
     if (typeDefaultContext && !flags.context) action.context = typeDefaultContext;
     // These types take their only context, unless one is passed and then validated
     if (DEPLOYMENT_ONLY_ACTION_TYPES.includes(action.type) && !flags.context) action.context = 'process-deployment-only';

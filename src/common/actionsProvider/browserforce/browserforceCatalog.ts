@@ -7,7 +7,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { SfError } from '@salesforce/core';
-import { uxLog } from '../../utils/index.js';
+import { createTempDir, removeTempDir, uxLog } from '../../utils/index.js';
 import { t } from '../../utils/i18n.js';
 import { ensureBrowserforce, execBrowserforceJson, InstalledBrowserforce } from './browserforcePlugin.js';
 
@@ -107,6 +107,14 @@ export function findDeprecatedBrowserforceSetting(catalog: BrowserforceCatalog, 
   return catalog.deprecatedSettings.find((deprecated) => deprecated.path === key || deprecated.path.startsWith(`${key}.`)) || null;
 }
 
+/** Why a setting key cannot be used: Browserforce removed it (with its migration message), or never had it */
+export function describeMissingBrowserforceSetting(catalog: BrowserforceCatalog, key: string): string {
+  const deprecated = findDeprecatedBrowserforceSetting(catalog, key);
+  return deprecated
+    ? t('actionValidationBrowserDeprecatedSetting', { setting: key, message: deprecated.message })
+    : t('actionValidationBrowserUnknownSetting', { setting: key, version: catalog.browserforceVersion });
+}
+
 /** The warnings of a setting, as translated sentences */
 export function describeSettingWarnings(setting: BrowserforceSetting): string[] {
   const warnings: string[] = [];
@@ -149,7 +157,7 @@ export function getCatalogCacheDir(): string {
 }
 
 async function runBrowserforceValidate(setting: string, config: any): Promise<BrowserforceValidationResult> {
-  const tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'sfdx-hardis-browserforce-'));
+  const tmpDir = await createTempDir();
   const configFile = path.join(tmpDir, `${randomUUID()}.json`);
   try {
     await fs.promises.writeFile(configFile, JSON.stringify({ settings: { [setting]: config } }, null, 2), 'utf8');
@@ -164,7 +172,7 @@ async function runBrowserforceValidate(setting: string, config: any): Promise<Br
       environmentVariables: Array.isArray(result.environmentVariables) ? result.environmentVariables : [],
     };
   } finally {
-    await fs.promises.rm(tmpDir, { recursive: true, force: true });
+    await removeTempDir(tmpDir);
   }
 }
 

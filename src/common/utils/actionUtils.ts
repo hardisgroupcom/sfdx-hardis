@@ -279,17 +279,28 @@ export async function throwActionValidationErrors(action: Partial<PrePostCommand
   throw error;
 }
 
-/** What the user has to know once the action is saved, from its type (variables to declare...) */
+/**
+ * What the user has to know once the action is saved, from its type (variables to declare...).
+ * The action is already written: a failure here is a warning, never an error a caller would read
+ * as "not saved" and create the action again.
+ */
 export async function getActionSaveDetails(action: Partial<PrePostCommand>): Promise<Record<string, any> | undefined> {
-  const provider = await getBuiltInActionProvider(action.type);
-  return (await provider?.getSaveDetails(action)) || undefined;
+  try {
+    const provider = await getBuiltInActionProvider(action.type);
+    return (await provider?.getSaveDetails(action)) || undefined;
+  } catch (e) {
+    uxLog("warning", this, c.yellow(t('actionSaveDetailsUnavailable', { message: (e as Error).message })));
+    return undefined;
+  }
 }
 
 /**
  * Validate type-specific parameters for an action.
  * Returns an array of error messages (empty if valid).
+ * `previous` is the action as it was before an update: a type may skip a costly check of what did
+ * not change.
  */
-export async function validateActionParameters(action: Partial<PrePostCommand>, when?: ActionWhen): Promise<string[]> {
+export async function validateActionParameters(action: Partial<PrePostCommand>, when?: ActionWhen, previous?: Partial<PrePostCommand>): Promise<string[]> {
   const errors: string[] = [];
   const type = action.type || 'command';
   // Actions read from a config file carry `when`; a freshly built one does not, so the caller
@@ -308,7 +319,7 @@ export async function validateActionParameters(action: Partial<PrePostCommand>, 
   }
 
   // A type whose provider checks its own definition
-  const providerErrors = await provider?.getDefinitionErrors(action, actionWhen);
+  const providerErrors = await provider?.getDefinitionErrors(action, actionWhen, previous);
   if (providerErrors) {
     errors.push(...providerErrors);
     return errors;

@@ -3,13 +3,13 @@
 // as environment variables of the Browserforce process, never in a file.
 import c from 'chalk';
 import fs from 'fs';
-import os from 'os';
 import path from 'path';
-import { uxLog } from '../../utils/index.js';
+import { createTempDir, removeTempDir, uxLog } from '../../utils/index.js';
 import { t } from '../../utils/i18n.js';
 import { redactSecrets } from '../../utils/secretMaskingUtils.js';
 import { ensureBrowserforce, execBrowserforceJson } from './browserforcePlugin.js';
-import { findVariableReferences, resolveVariables } from './browserforceVariables.js';
+import { findVariableReferences, resolveVariables, VariableReference } from './browserforceVariables.js';
+import type { BrowserforceField } from './browserforceCatalog.js';
 
 export interface BrowserforceApplyOptions {
   setting: string;
@@ -31,12 +31,14 @@ export interface BrowserforceApplyOutcome {
 const BROWSER_LAUNCH_ERROR_PATTERN = /Executable doesn't exist|browserType\.launch|Failed to launch|chrome-linux|ENOENT.*chrom/i;
 
 export async function runBrowserforceApply(options: BrowserforceApplyOptions): Promise<BrowserforceApplyOutcome> {
-  const variables = await resolveVariables(findVariableReferences(options.config), options.targetBranch);
+  const references = findVariableReferences(options.config);
+  const isSecret = references.length > 0 ? await buildSecretReferenceMatcher(options.setting) : () => true;
+  const variables = await resolveVariables(references, options.targetBranch, isSecret);
   if (variables.missing.length > 0) {
     return fail(variables.missing.map((variable) => t('browserVariableMissing', { name: variable.name, lookedUp: variable.lookedUp.join(', ') })));
   }
   await ensureBrowserforce();
-  const tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'sfdx-hardis-browserforce-'));
+  const tmpDir = await createTempDir();
   try {
     const configFile = path.join(tmpDir, 'config.json');
     await fs.promises.writeFile(configFile, JSON.stringify({ settings: { [options.setting]: options.config } }, null, 2), 'utf8');
@@ -57,8 +59,37 @@ export async function runBrowserforceApply(options: BrowserforceApplyOptions): P
     }
     return fail(lines);
   } finally {
-    await fs.promises.rm(tmpDir, { recursive: true, force: true });
+    await removeTempDir(tmpDir);
   }
+}
+
+/**
+ * Tells whether a variable reference fills a password field of the setting. A value per org (a
+ * density, a URL) stays readable in the outputs; only secrets are masked. When the catalog cannot
+ * say, the value is treated as a secret.
+ */
+async function buildSecretReferenceMatcher(setting: string): Promise<(reference: VariableReference) => boolean> {
+  let fields: BrowserforceField[] = [];
+  try {
+    const { getBrowserforceCatalog, findBrowserforceSetting } = await import('./browserforceCatalog.js');
+    fields = findBrowserforceSetting(await getBrowserforceCatalog(), setting)?.fields || [];
+  } catch {
+    return () => true;
+  }
+  const fieldPatterns = fields.map((field) => ({ field, pattern: buildFieldPathPattern(field.path) }));
+  return (reference) => {
+    const matched = fieldPatterns.find(({ pattern }) => pattern.test(reference.path));
+    return matched ? matched.field.isPassword : true;
+  };
+}
+
+// A catalog field path (portals[].name, *.consumerSecret) as a pattern of the paths of a value
+// (portals[0].name, MyProvider.consumerSecret)
+function buildFieldPathPattern(fieldPath: string): RegExp {
+  const escaped = fieldPath
+    .split('[]').map((part) => part.split('*').map((piece) => piece.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('[^.\\[\\]]+'))
+    .join('\\[\\d+\\]');
+  return new RegExp(`^${escaped}$`);
 }
 
 function buildApplyCommand(configFile: string, options: BrowserforceApplyOptions): string {

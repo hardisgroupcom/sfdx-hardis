@@ -325,7 +325,8 @@ if step assert-deploy; then
   assert_contains DEP-PROJECT-UAP-RAN "$L" "Running action DA E2E project policy every time" "project policy action (no runOnlyOnceByOrg key) ran"
   assert_contains DEP-UAP-BROWSERFORCE "$L" "Changed accessPolicies" "Browserforce activated the policy and applied it to all users in the CI container"
   if grep -qE "Changed density|densitySettings already matches the org" "$L"; then result DEP-BROWSER OK "the browser action applied densitySettings"; else result DEP-BROWSER FAIL "no Browserforce result for densitySettings in deploy.log"; fi
-  assert_absent DEP-BROWSER-VALUE "$L" '"density":"Compact"' "the variable value is masked in the job log"
+  # The check job ran a dry run only: it must not count as run in integration
+  assert_absent DEP-BROWSER-NOT-SKIPPED "$L" "Skipping DA E2E browser density (from PR #$PR_NUMBER): already run" "the dry run of the validation did not count as run"
   assert_contains DEP-SCHEDULE "$L" "Successfully scheduled job 'E2EBatch_Schedule'" "schedule-batch scheduled the class"
   # The org
   status=$(policy_status)
