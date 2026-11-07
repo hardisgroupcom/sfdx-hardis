@@ -13,6 +13,13 @@ sfdx-hardis keeps the list of these development orgs, with the branch each of th
 ## Where you see it
 
 - **In VS Code**, the DevOps Pipeline shows your development orgs under their target branch, with the number of Pull Requests they miss. The toggle at the top shows **your orgs** (the default: you are their owner or one of their users), **all** the orgs, or **none**. Click an org to see what it misses, and to run a backpromote, edit it or remove it.
+
+  ![DevOps Pipeline with the development orgs of the team under their target branch](assets/images/dev-orgs-pipeline.png)
+
+  Here, `dev` misses 3 Pull Requests merged into integration since its last backpromote, the scratch org `crm-1061` misses 1, and `dev2` has them all. `qa` targets uat: nobody used it for more than 30 days, so it is drawn as inactive, and it misses the promotion of integration into uat.
+
+  ![Details window of a development org, with the Pull Requests it misses and its Backpromote button](assets/images/dev-orgs-details.png)
+
 - **On your git provider**, the list is a "Development Orgs Dashboard": an issue on GitHub and GitLab, a work item on Azure DevOps, a dedicated Pull Request on Bitbucket. sfdx-hardis rewrites its text at every update: never edit it by hand.
 - **In a terminal**, [hardis:project:dev-org:list](hardis/project/dev-org/list.md) prints the list (`--mine` for your orgs only).
 
@@ -46,10 +53,10 @@ Registering needs a git provider token: in VS Code, connect to your git provider
 
 ## Configuration
 
-| Key | Default | What it does |
-|-----|---------|--------------|
-| `enableDevOrgsRegistry` | `true` | Set it to `false` in `config/.sfdx-hardis.yml` to turn the list off. |
-| `devOrgsStaleDays` | `30` | Days without activity before an org is marked stale. |
+| Key                     | Default | What it does                                                         |
+|-------------------------|---------|----------------------------------------------------------------------|
+| `enableDevOrgsRegistry` | `true`  | Set it to `false` in `config/.sfdx-hardis.yml` to turn the list off. |
+| `devOrgsStaleDays`      | `30`    | Days without activity before an org is marked stale.                 |
 
 Both can be set from the Pipeline Settings of the VS Code extension.
 
