@@ -6,6 +6,7 @@ import { DashboardRef, GitProviderRoot } from '../gitProvider/gitProviderRoot.js
 import { git, isCI, uxLog } from './index.js';
 import { t } from './i18n.js';
 import { findOrCreateDashboard, replaceDashboard } from './dashboardDataUtils.js';
+import { getAliasOfUsername } from './authUtils.js';
 import { getBackpromoteTargetOrgInfo } from './backpromoteOrgUtils.js';
 import { isVehicleMerge } from './backpromoteUtils.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
@@ -20,6 +21,7 @@ import {
   buildDevOrgRemoval,
   buildDevOrgsDashboardBody,
   buildDevOrgsSummary,
+  computeDevOrgBehind,
   DEV_ORGS_DASHBOARD_TITLE,
   DEV_ORGS_DEFAULT_STALE_DAYS,
   DevOrgBranchData,
@@ -172,7 +174,9 @@ export async function getCurrentGitUser(): Promise<DevOrgPerson | null> {
 export async function getDevOrgIdentity(username: string, alias: string | null): Promise<DevOrgIdentity | null> {
   const org = await Org.create({ aliasOrUsername: username });
   const conn = org.getConnection();
-  const info = await getBackpromoteTargetOrgInfo({ conn, username: conn.getUsername() || username, alias, tracksSource: false, sandboxNameOverride: null });
+  // The local alias names a scratch org: the name its developer knows it by
+  const resolvedAlias = alias || (await getAliasOfUsername(conn.getUsername() || username));
+  const info = await getBackpromoteTargetOrgInfo({ conn, username: conn.getUsername() || username, alias: resolvedAlias, tracksSource: false, sandboxNameOverride: null });
   if (info.refusal || info.orgType === 'production') {
     return null;
   }
@@ -256,6 +260,7 @@ export class DevOrgsRegistry {
     }
     await this.deleteComments(loaded.dashboard, replaced);
     await this.afterWrite(options.fullCleanup === true);
+    await this.completeBranchWindow(loaded, result.data, options.fullCleanup === true);
     return result;
   }
 
@@ -267,7 +272,7 @@ export class DevOrgsRegistry {
       return null;
     }
     const removalId = await this.gitProvider.createDashboardComment(loaded.dashboard, this.commentBody(buildDevOrgRemoval(existing.data, currentUser)));
-    const group = loaded.comments.filter((comment) => comment.data.kind === 'org' && comment.data.orgId === orgId);
+    const group = loaded.comments.filter((comment) => comment.data.kind === 'org' && comment.data.orgId === existing.data.orgId);
     // The removal comment only goes once nothing it hides is left
     if (await this.deleteComments(loaded.dashboard, group)) {
       await this.gitProvider.deleteDashboardComment(loaded.dashboard, removalId).catch(() => false);
@@ -355,6 +360,22 @@ export class DevOrgsRegistry {
       }
     }
     return allDeleted;
+  }
+
+  /**
+   * An org registered on a branch whose merged Pull Requests are not listed back to its start date
+   * (a new target branch, the first org of a branch) would stay "not computed" until the next
+   * merge: its branch is listed again now. Never fails the registration.
+   */
+  private async completeBranchWindow(loaded: LoadedDevOrgs, org: DevOrgData, fullCleanup: boolean): Promise<void> {
+    if (computeDevOrgBehind(org, loaded.state.branches.get(org.targetBranch)?.data) !== null) {
+      return;
+    }
+    try {
+      await this.refreshBranches({ branches: [org.targetBranch], jobUrl: null, fullCleanup });
+    } catch (e) {
+      uxLog("log", this, c.grey(t('devOrgsDashboardNotUpdated', { message: (e as Error).message })));
+    }
   }
 
   private async afterWrite(fullCleanup: boolean): Promise<void> {

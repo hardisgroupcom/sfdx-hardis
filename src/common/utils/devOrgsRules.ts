@@ -278,7 +278,22 @@ export function analyzeDevOrgComments(comments: DevOrgComment[], now: Date = new
 
 /** The org registered under this org id */
 export function findDevOrg(state: DevOrgsState, orgId: string): DevOrgComment<DevOrgData> | null {
-  return state.orgs.find((candidate) => candidate.data.orgId === orgId) || null;
+  return state.orgs.find((candidate) => isSameDevOrgId(candidate.data.orgId, orgId)) || null;
+}
+
+/**
+ * Two org ids of the same org: equal, or one is the 15-character form of the other (Setup shows
+ * 15 characters, sfdx-hardis stores the 18 of Organization.Id). The 15 first characters are case
+ * sensitive, the 3 last are a checksum.
+ */
+export function isSameDevOrgId(first: string | null | undefined, second: string | null | undefined): boolean {
+  if (!first || !second) {
+    return false;
+  }
+  if (first === second) {
+    return true;
+  }
+  return (first.length === 15 || second.length === 15) && first.length >= 15 && second.length >= 15 && first.slice(0, 15) === second.slice(0, 15);
 }
 
 /** A registered sandbox that has the name of this org under another org id: the org is its refresh */

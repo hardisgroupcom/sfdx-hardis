@@ -8,11 +8,24 @@ import { DevOrgPerson, DevOrgSummary, DevOrgsSummary, formatDevOrgPerson, parseD
 
 /** "Jane <jane@x.com>, john@y.com": throws on an entry that has no email */
 export function parseDevOrgPersonList(value: string | null | undefined): DevOrgPerson[] {
-  const entries = (value || '')
-    .split(/[,;\n]/)
-    .map((entry) => entry.trim())
-    .filter((entry) => entry !== '');
-  return entries.map((entry) => {
+  // "Name <email>" (a name may hold a comma, like "Doe, Jane") or a bare email, separated by
+  // commas, semicolons or new lines
+  const text = value || '';
+  const pattern = /[^\s,;<>]+@[^\s,;<>]+(?![^<]*>)|[^;\n<>]*<[^<>\n]+>/g;
+  const entries: string[] = [];
+  let leftover = '';
+  let last = 0;
+  for (const match of text.matchAll(pattern)) {
+    leftover += text.slice(last, match.index);
+    entries.push(match[0].replace(/^[\s,]+/, '').trim());
+    last = (match.index || 0) + match[0].length;
+  }
+  leftover += text.slice(last);
+  const stray = leftover.replace(/[\s,;]+/g, ' ').trim();
+  if (stray !== '') {
+    throw new SfError(t('devOrgInvalidPerson', { value: stray }));
+  }
+  return entries.filter((entry) => entry !== '').map((entry) => {
     const person = parseDevOrgPerson(entry);
     if (!person) {
       throw new SfError(t('devOrgInvalidPerson', { value: entry }));

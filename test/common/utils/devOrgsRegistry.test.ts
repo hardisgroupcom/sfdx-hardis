@@ -120,6 +120,8 @@ describe('DevOrgsRegistry', function () {
     const provider = new FakeDashboardProvider(false);
     const registry = newRegistry(provider);
     await registry.register({ org: identity(), targetBranch: 'integration', currentUser: jane });
+    // The registration already listed its branch once: count the listings of refreshBranches only
+    provider.listPullRequestsCalls = [];
     const registeredAt = Date.now();
     provider.mergedPullRequests = [
       mergedPr(1, new Date(registeredAt - 60 * 60 * 1000).toISOString()),
@@ -152,6 +154,32 @@ describe('DevOrgsRegistry', function () {
     expect(branchComments).to.have.length(1);
     const again = await newRegistry(provider).summary({ currentUser: jane, staleDays: 30 });
     expect(again.orgs[0].behind!.pullRequests[0].carried).to.deep.equal([{ number: 9, title: 'US 9', url: 'u' }]);
+  });
+
+  it('lists the branch of a registration at once, so a new or moved org is counted', async () => {
+    const provider = new FakeDashboardProvider(false);
+    await newRegistry(provider).register({ org: identity(), targetBranch: 'integration', currentUser: jane });
+    expect(provider.listPullRequestsCalls.map((call) => call.targetBranch)).to.deep.equal(['integration']);
+    const first = await newRegistry(provider).summary({ currentUser: jane, staleDays: 30 });
+    expect(first.orgs[0].behind?.count).to.equal(0);
+
+    // A registration that changes nothing on a counted branch lists nothing
+    await newRegistry(provider).register({ org: identity(), targetBranch: 'integration', currentUser: jane, users: [john] });
+    expect(provider.listPullRequestsCalls).to.have.length(1);
+
+    // Moved to uat by a release manager: uat is listed now, not at the next merge into it
+    await newRegistry(provider).register({ org: identity(), targetBranch: 'uat', setTargetBranch: true, currentUser: jane });
+    expect(provider.listPullRequestsCalls.map((call) => call.targetBranch)).to.deep.equal(['integration', 'uat']);
+    const moved = await newRegistry(provider).summary({ currentUser: jane, staleDays: 30 });
+    expect(moved.orgs[0].targetBranch).to.equal('uat');
+    expect(moved.orgs[0].behind?.count).to.equal(0);
+  });
+
+  it('finds an org by the 15-character form of its id', async () => {
+    const provider = new FakeDashboardProvider(false);
+    await newRegistry(provider).register({ org: identity(), targetBranch: 'integration', currentUser: jane });
+    expect(await newRegistry(provider).remove('00D000000000001', jane)).to.not.equal(null);
+    expect(orgComments(provider)).to.have.length(0);
   });
 
   it('moves to a new dashboard when the old one is worn out, without the obsolete comments', async () => {

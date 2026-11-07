@@ -20,7 +20,9 @@ import {
   isDevOrgStale,
   parseDevOrgComment,
   parseDevOrgPerson,
+  isSameDevOrgId,
 } from '../../../src/common/utils/devOrgsRules.js';
+import { parseDevOrgPersonList } from '../../../src/common/utils/devOrgsCommandUtils.js';
 
 const NOW = new Date('2026-11-07T12:00:00.000Z');
 const jane = { name: 'Jane Doe', email: 'jane@example.com' };
@@ -69,6 +71,28 @@ function comment<T extends DevOrgData | DevOrgBranchData>(data: T): DevOrgCommen
 }
 
 describe('devOrgsRules', () => {
+  describe('org ids and person lists', () => {
+    it('matches an 18-character org id with its 15-character form, never two other orgs', () => {
+      expect(isSameDevOrgId('00D000000000001AAA', '00D000000000001')).to.equal(true);
+      expect(isSameDevOrgId('00D000000000001', '00D000000000001AAA')).to.equal(true);
+      expect(isSameDevOrgId('00D000000000001AAA', '00D000000000001AAA')).to.equal(true);
+      expect(isSameDevOrgId('00D000000000001AAA', '00D000000000001BBB')).to.equal(false);
+      expect(isSameDevOrgId('00D000000000001AAA', '00d000000000001')).to.equal(false);
+      expect(isSameDevOrgId('00D000000000001AAA', '')).to.equal(false);
+    });
+
+    it('keeps a name holding a comma as one person', () => {
+      expect(parseDevOrgPersonList('Doe, Jane <jane@example.com>, john@example.com; Smith, John <js@example.com>')).to.deep.equal([
+        { name: 'Doe, Jane', email: 'jane@example.com' },
+        { name: 'john@example.com', email: 'john@example.com' },
+        { name: 'Smith, John', email: 'js@example.com' },
+      ]);
+      expect(parseDevOrgPersonList('Jane Doe <jane@example.com>\njohn@example.com')).to.have.length(2);
+      expect(parseDevOrgPersonList('')).to.deep.equal([]);
+      expect(() => parseDevOrgPersonList('jane@example.com, not a person')).to.throw();
+    });
+  });
+
   describe('comments', () => {
     it('reads back what it writes, in Markdown and in HTML', () => {
       const data = orgData();
