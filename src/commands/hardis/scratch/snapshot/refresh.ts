@@ -109,6 +109,7 @@ The command has no prompt.
     const timeoutMinutes = parsePositiveSetting(getEnvVar('SCRATCH_ORG_SNAPSHOT_WAIT'), 60);
 
     const existing = await getSnapshotRecord(devHubConn, name);
+    let taken = false;
     if (existing?.Status === 'Active') {
       uxLog("action", this, c.cyan(t('scratchSnapshotUpToDate', { name: c.green(name), branch })));
     } else if (existing && ['New', 'InProgress'].includes(existing.Status)) {
@@ -140,12 +141,12 @@ The command has no prompt.
       if (!created) {
         return { outputString: `Snapshot of branch ${branch} not taken: limit reached` };
       }
+      taken = true;
     }
 
     const deleted = await pruneScratchSnapshots(devHubConn, devHubUsername, scope, keep, this);
-    // GitHub Actions: the snapshot workflow refreshes the pool only when this step reports an Active snapshot
-    if (process.env.GITHUB_OUTPUT) {
-      fs.appendFileSync(process.env.GITHUB_OUTPUT, `snapshot=${name}\n`);
+    if (taken) {
+      this.reportNewSnapshot(name);
     }
     return { outputString: `Snapshot ${name} of branch ${branch} is Active`, snapshotName: name, sha, deleted };
   }
@@ -163,6 +164,19 @@ The command has no prompt.
       throw new SfError(t('pleaseSelectOrLoginIntoDevHub'));
     }
     return Org.create({ aliasOrUsername: username });
+  }
+
+  // GitHub Actions: the snapshot workflow starts the pool refresh only when this step reports a new snapshot.
+  // The snapshot is already Active, so a failed write only warns
+  protected reportNewSnapshot(name: string): void {
+    if (!process.env.GITHUB_OUTPUT) {
+      return;
+    }
+    try {
+      fs.appendFileSync(process.env.GITHUB_OUTPUT, `snapshot=${name}\n`);
+    } catch (e) {
+      uxLog("warning", this, c.yellow((e as Error).message));
+    }
   }
 
   // Null when the limits cannot be read: the refresh goes on, and a LIMIT_EXCEEDED from the snapshot call still stops it

@@ -116,3 +116,78 @@ describe('hardis:scratch:snapshot:refresh Dev Hub choice', () => {
     expect(probe.logins).to.equal(0);
   });
 });
+
+// A Dev Hub answering the snapshot queries, and a snapshot signup that returns the given result
+class OutputProbe extends ScratchSnapshotRefresh {
+  public static existingStatus: string | null = null;
+  public static created = true;
+  protected async getDevHub(): Promise<any> {
+    const conn = {
+      instanceUrl: 'https://hub.example.com',
+      limits: async () => ({}),
+      query: async (soql: string) => ({
+        done: true,
+        records: soql.includes('SnapshotName =') && OutputProbe.existingStatus ? [{ Status: OutputProbe.existingStatus }] : [],
+      }),
+    };
+    return { getConnection: () => conn, getUsername: () => 'hub@example.com' };
+  }
+  protected async createSnapshot(): Promise<boolean> {
+    return OutputProbe.created;
+  }
+}
+
+describe('hardis:scratch:snapshot:refresh GitHub Actions output', () => {
+  const originalCwd = process.cwd();
+  const originalOutput = process.env.GITHUB_OUTPUT;
+  let projectDir = '';
+  let outputFile = '';
+
+  beforeEach(() => {
+    projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapshot-output-'));
+    fs.mkdirSync(path.join(projectDir, 'config', 'branches'), { recursive: true });
+    fs.writeFileSync(path.join(projectDir, 'sfdx-project.json'), JSON.stringify({ packageDirectories: [{ path: 'force-app', default: true }] }));
+    fs.writeFileSync(path.join(projectDir, 'config', '.sfdx-hardis.yml'), 'projectName: acme\n');
+    fs.writeFileSync(path.join(projectDir, 'config', 'branches', '.sfdx-hardis.main.yml'), 'useScratchOrgSnapshot: true\n');
+    const git = (...args: string[]) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: projectDir });
+    git('init', '-q', '-b', 'main');
+    git('add', '-A');
+    git('commit', '-q', '-m', 'init');
+    outputFile = path.join(projectDir, 'github-output');
+    fs.writeFileSync(outputFile, '');
+    process.env.GITHUB_OUTPUT = outputFile;
+    process.chdir(projectDir);
+    clearListMajorOrgsCache();
+    OutputProbe.existingStatus = null;
+    OutputProbe.created = true;
+  });
+
+  afterEach(() => {
+    process.chdir(originalCwd);
+    if (originalOutput === undefined) {
+      delete process.env.GITHUB_OUTPUT;
+    } else {
+      process.env.GITHUB_OUTPUT = originalOutput;
+    }
+    clearListMajorOrgsCache();
+    fs.rmSync(projectDir, { recursive: true, force: true });
+  });
+
+  it('reports a snapshot taken by this run, so the workflow starts the pool refresh', async () => {
+    const result: any = await OutputProbe.run([]);
+    expect(fs.readFileSync(outputFile, 'utf8')).to.equal(`snapshot=${result.snapshotName}\n`);
+  });
+
+  it('reports nothing when the snapshot of this commit was already Active', async () => {
+    OutputProbe.existingStatus = 'Active';
+    await OutputProbe.run([]);
+    expect(fs.readFileSync(outputFile, 'utf8')).to.equal('');
+  });
+
+  it('reports nothing when the Dev Hub refused the snapshot', async () => {
+    OutputProbe.created = false;
+    const result: any = await OutputProbe.run([]);
+    expect(result.outputString).to.contain('not taken: limit reached');
+    expect(fs.readFileSync(outputFile, 'utf8')).to.equal('');
+  });
+});

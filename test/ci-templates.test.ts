@@ -7,28 +7,26 @@ const workflowsDir = path.join(process.cwd(), 'defaults', 'ci', '.github', 'work
 const readWorkflow = (file: string): any => yaml.load(fs.readFileSync(path.join(workflowsDir, file), 'utf8'));
 
 describe('GitHub CI templates', () => {
-  it('refreshes the scratch org pool only after a snapshot of the default branch is Active, and nightly', () => {
+  it('starts the scratch org pool refresh only after a new snapshot of the default branch, and nightly', () => {
     const snapshotWorkflow = readWorkflow('scratch-snapshot-refresh.yml');
     const poolWorkflow = readWorkflow('scratch-pool-refresh.yml');
     const snapshotJob = snapshotWorkflow.jobs.refresh_scratch_org_snapshot;
-    const refreshStep = snapshotJob.steps.find((step: any) => step.id === 'refresh');
-    assert.ok(refreshStep?.run.includes('sf hardis:scratch:snapshot:refresh'));
-    assert.equal(snapshotJob.outputs.snapshot, '${{ steps.refresh.outputs.snapshot }}');
-    const poolJob = snapshotWorkflow.jobs.refresh_scratch_org_pool;
-    assert.equal(poolJob.uses, './.github/workflows/scratch-pool-refresh.yml');
-    assert.equal(poolJob.needs, 'refresh_scratch_org_snapshot');
-    assert.ok(poolJob.if.includes("needs.refresh_scratch_org_snapshot.outputs.snapshot != ''"));
-    assert.ok(poolJob.if.includes('github.ref_name == github.event.repository.default_branch'));
-    assert.equal(poolJob.permissions.issues, 'write');
-    assert.ok('workflow_call' in poolWorkflow.on);
-    assert.ok(!('workflow_run' in poolWorkflow.on));
+    const stepIndex = (predicate: (step: any) => boolean) => snapshotJob.steps.findIndex(predicate);
+    const refreshIndex = stepIndex((step) => step.id === 'refresh');
+    assert.ok(snapshotJob.steps[refreshIndex].run.includes('sf hardis:scratch:snapshot:refresh'));
+    const startIndex = stepIndex((step) => String(step.run).includes('/actions/workflows/scratch-pool-refresh.yml/dispatches'));
+    assert.ok(startIndex > refreshIndex, 'the pool refresh starts after the snapshot refresh');
+    const startIf: string = snapshotJob.steps[startIndex].if;
+    assert.ok(startIf.includes("steps.refresh.outputs.snapshot != ''"));
+    assert.ok(startIf.includes("vars.SCRATCH_ORG_POOL == 'true'"));
+    assert.ok(startIf.includes('github.ref_name == github.event.repository.default_branch'));
+    // A project without the pool workflow file keeps its snapshots: no reference GitHub validates before the run
+    assert.ok(startIf.includes("hashFiles('.github/workflows/scratch-pool-refresh.yml') != ''"));
+    assert.ok(!Object.values(snapshotWorkflow.jobs).some((job: any) => job.uses));
+    assert.equal(snapshotJob.permissions.actions, 'write');
+    assert.ok('workflow_dispatch' in poolWorkflow.on);
+    assert.ok(!('workflow_run' in poolWorkflow.on) && !('workflow_call' in poolWorkflow.on));
     assert.ok(poolWorkflow.on.schedule?.length > 0, 'the nightly schedule is kept');
     assert.ok(poolWorkflow.jobs.refresh_scratch_org_pool.if.includes("vars.SCRATCH_ORG_POOL == 'true'"));
-    // When called, github.workflow is the caller's name: a fixed group keeps nightly and called runs in one queue
-    assert.ok(!poolWorkflow.concurrency.group.includes('github.workflow'));
-    const artifactNames = [snapshotJob, poolWorkflow.jobs.refresh_scratch_org_pool].map(
-      (job) => job.steps.find((step: any) => String(step.uses).startsWith('actions/upload-artifact')).with.name
-    );
-    assert.notEqual(artifactNames[0], artifactNames[1], 'one workflow run cannot upload two artifacts with one name');
   });
 });

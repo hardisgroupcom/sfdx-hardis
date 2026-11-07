@@ -41,8 +41,9 @@ jobs:
     # Job runs in sfdx-hardis docker image, that includes Salesforce CLI and all required plugins & dependencies.
     container: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
     name: Refresh scratch org snapshot
-    outputs:
-      snapshot: ${{ steps.refresh.outputs.snapshot }} # Set only when a snapshot of the branch is Active
+    permissions:
+      contents: read
+      actions: write # Allows starting the scratch org pool refresh workflow
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -67,20 +68,20 @@ jobs:
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           sf hardis:scratch:snapshot:refresh
 
+      # Once a new snapshot of the default branch is Active, start the pool refresh so new pool orgs start from it.
+      # A project or branch without snapshots, or without scratch-pool-refresh.yml, never starts it
+      - name: Start scratch org pool refresh
+        if: ${{ steps.refresh.outputs.snapshot != '' && vars.SCRATCH_ORG_POOL == 'true' && github.ref_name == github.event.repository.default_branch && hashFiles('.github/workflows/scratch-pool-refresh.yml') != '' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl --fail-with-body -sS -X POST -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" \
+            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/workflows/scratch-pool-refresh.yml/dispatches" \
+            -d "{\"ref\": \"$GITHUB_REF_NAME\"}"
+
       - name: Archive sfdx-hardis reports
         if: success() || failure()
         uses: actions/upload-artifact@v4
         with:
           name: sfdx-hardis reports
           path: hardis-report
-
-  # After a snapshot of the default branch went Active, so new pool orgs start from it. A project or branch
-  # without snapshots never starts it. Runs only when the repository variable SCRATCH_ORG_POOL is "true"
-  refresh_scratch_org_pool:
-    needs: refresh_scratch_org_snapshot
-    if: ${{ needs.refresh_scratch_org_snapshot.outputs.snapshot != '' && github.ref_name == github.event.repository.default_branch }}
-    permissions:
-      issues: write # Allows sfdx-hardis to update the "Scratch Orgs Pool Dashboard" issue
-      contents: read
-    uses: ./.github/workflows/scratch-pool-refresh.yml
-    secrets: inherit

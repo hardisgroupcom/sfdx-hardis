@@ -17,15 +17,13 @@
 on:
   schedule:
     - cron: "0 3 * * *" # Every night. Scheduled workflows run on the default branch only
-  # Called by scratch-snapshot-refresh.yml once a new snapshot of the default branch is Active
-  workflow_call:
+  # Also started by scratch-snapshot-refresh.yml once a new snapshot of the default branch is Active
   workflow_dispatch:
 permissions: read-all
 name: Refresh scratch org pool (sfdx-hardis)
 
-# A fixed name: when called, github.workflow is the caller's name, and a nightly run must still wait for it
 concurrency:
-  group: scratch-org-pool-refresh
+  group: ${{ github.workflow }}
   cancel-in-progress: false
 
 jobs:
@@ -68,5 +66,5 @@ jobs:
         if: success() || failure()
         uses: actions/upload-artifact@v4
         with:
-          name: sfdx-hardis pool reports # Not "sfdx-hardis reports": the snapshot workflow that calls it uploads that one
+          name: sfdx-hardis reports
           path: hardis-report
