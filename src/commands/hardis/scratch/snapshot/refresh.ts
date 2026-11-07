@@ -169,19 +169,6 @@ The command has no prompt.
     return Org.create({ aliasOrUsername: username });
   }
 
-  // GitHub Actions: the snapshot workflow starts the pool refresh only when this step reports a new snapshot.
-  // The snapshot is already Active, so a failed write only warns
-  protected reportNewSnapshot(name: string): void {
-    if (!process.env.GITHUB_OUTPUT) {
-      return;
-    }
-    try {
-      fs.appendFileSync(process.env.GITHUB_OUTPUT, `snapshot=${name}\n`);
-    } catch (e) {
-      uxLog("warning", this, c.yellow((e as Error).message));
-    }
-  }
-
   // Null when the limits cannot be read: the refresh goes on, and a LIMIT_EXCEEDED from the snapshot call still stops it
   protected async readDevHubLimits(devHubConn: any): Promise<any> {
     try {
@@ -227,6 +214,19 @@ The command has no prompt.
       return true;
     } finally {
       await execSfdxJson(`sf org delete scratch --no-prompt --target-org ${sourceOrg}`, this, { fail: false, output: true, debug: this.debugMode });
+    }
+  }
+
+  // GitHub Actions: the snapshot workflow starts the pool refresh only when this step reports a new snapshot.
+  // The snapshot is already Active, so a failed write only warns
+  protected reportNewSnapshot(name: string): void {
+    if (!process.env.GITHUB_OUTPUT) {
+      return;
+    }
+    try {
+      fs.appendFileSync(process.env.GITHUB_OUTPUT, `snapshot=${name}\n`);
+    } catch (e) {
+      uxLog("warning", this, c.yellow((e as Error).message));
     }
   }
 }
