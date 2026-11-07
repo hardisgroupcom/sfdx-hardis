@@ -2522,6 +2522,31 @@
       "title": "Enable delta deployments between major branches (NOT RECOMMENDED)",
       "type": "boolean"
     },
+    "enableMajorBranchDeploymentCheck": {
+      "$id": "#/properties/enableMajorBranchDeploymentCheck",
+      "description": "Shows on each major branch node of the DevOps Pipeline (VS Code) the result of the last scheduled deployment check of the branch against its org (sf hardis:project:deploy:smart --check --major-branch-check). Schedule the check job of your CI/CD platform first.",
+      "default": false,
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-setup-major-branch-check/",
+      "examples": [
+        true,
+        false
+      ],
+      "title": "Enable major branch deployment check",
+      "type": "boolean"
+    },
+    "majorBranchDeploymentCheckValidityHours": {
+      "$id": "#/properties/majorBranchDeploymentCheckValidityHours",
+      "description": "Age after which the last major branch deployment check is shown as stale in the DevOps Pipeline. A check is also stale when a deployment finished after it.",
+      "default": 24,
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-setup-major-branch-check/",
+      "examples": [
+        24,
+        72
+      ],
+      "minimum": 1,
+      "title": "Major branch deployment check validity (hours)",
+      "type": "integer"
+    },
     "allowedPromotionSteps": {
       "$id": "#/properties/allowedPromotionSteps",
       "description": "Beta feature. Required as soon as enablePromotionBranches is true.\nSource and target branches a release manager is allowed to assemble a promotion between (ex: only from uat to preprod).\nEvery other step is left out of the prompts of sf hardis:project:promotion:create and of the DevOps Pipeline, and naming one anyway fails the command.\nLeave an entry without a target to allow every merge target of that source branch.\nWhile the list is missing, sf hardis:project:promotion:create stops and asks for it: no promotion can be assembled before the project says between which branches.",
@@ -4520,7 +4545,7 @@
     "serviceNowCommentField": {
       "$id": "#/properties/serviceNowCommentField",
       "default": "work_notes",
-      "description": "Journal field the deployment comment, and the comments posted with hardis:ticket:post-comment, are written into. work_notes is the internal journal, comments is read by the person who opened the record. The SERVICENOW_COMMENT_FIELD environment variable and the --servicenow-field flag of hardis:ticket:post-comment take precedence.",
+      "description": "Journal field the deployment comment, and the comments posted with hardis:ticket:post-comment, are written into. work_notes is the internal journal, comments is read by the person who opened the record. The SERVICENOW_COMMENT_FIELD environment variable and the --comment-field flag of hardis:ticket:post-comment take precedence.",
       "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-servicenow/",
       "examples": [
         "work_notes",

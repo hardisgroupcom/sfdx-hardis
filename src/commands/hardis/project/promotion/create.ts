@@ -67,8 +67,10 @@ The deployment jobs then treat the declared Pull Requests as the scope of the pr
 On a cherry-pick conflict, you choose (or \`--on-conflict\` decides) to:
 
 - **commit-with-markers, and all the following conflicts** (**recommended**, the first answer offered): same as below, and the command stops asking for the rest of the promotion. A promotion window conflicts on the same files story after story, so the promotion is assembled in one go and every conflict is then solved in a single pass by a coding agent: copy the prompt from the Pull Request description (also saved in \`hardis-report/\`) and paste it to Claude Code, Codex, Copilot... This is a prompt answer only, \`--on-conflict commit-with-markers\` already applies to every conflict;
-- **commit-with-markers**: commit the story anyway with its git conflict markers, so the conflicts can be solved later on the branch, by hand or with a coding agent. The Pull Request description lists the files to fix and embeds a ready-to-paste prompt for a coding agent (Claude Code, Codex, Copilot...), also saved as a markdown report in \`hardis-report/\`. The validation job fails until the markers are gone;
+- **commit-with-markers**: commit the story anyway with its git conflict markers, so the conflicts can be solved later on the branch, by hand or with a coding agent. The Pull Request description lists the files to fix and embeds a ready-to-paste prompt for a coding agent (Claude Code, Codex, Copilot...), also saved as a markdown report in \`hardis-report/\`. The validation job fails until the markers are gone. The git hooks of the project are skipped for that commit only (a pre-commit hook would fail on the markers); the commit that solves them runs the hooks as usual;
+- **solve now**: the conflicting files are listed (and opened, when VS Code runs the command), you solve them while the command waits, then confirm. The command checks that no marker is left in those files and commits the story with its resolution (the git hooks of the project run, as for any clean commit). Until then you can still commit with the markers, skip the story or abort. Asked again at the next conflict, and a prompt answer only: nothing can solve a conflict unattended;
 - **skip**: leave the story out, it is listed as such in the Pull Request description;
+- **take-source** (**risky**, for this conflict or all the following ones): keep the source branch version of the conflicting lines, the rest of each file still merges both sides. Nobody reviews that choice: a change made in the target branch on the same lines (a hotfix, a retrofit) can be lost, and lines of User Stories that are not promoted can come along, and no validation job notices. The Pull Request description lists those files under a warning, and the commit message names them. A file deleted on one side and changed on the other gets the source side too: kept as the story has it, or deleted when the story deleted it, so this answer never asks again;
 - **abort**: stop, the branch is deleted and nothing is pushed.
 
 <details markdown="1">
@@ -77,6 +79,8 @@ On a cherry-pick conflict, you choose (or \`--on-conflict\` decides) to:
 - Candidates are the first-parent commits of \`origin/<source>\` since its merge base with \`origin/<target>\`, grouped with their Pull Requests like \`hardis:work:backpromote\` does (Pull Request numbers read from the merge commit messages and completed by the git provider API, whose connection this command requires).
 - A first-parent commit that only moves other merges (a major-to-major sync like \`integration -> uat\`, a promotion branch merged into its target) is opened up into the first-parent commits it brought in, so each User Story is a candidate of its own instead of the whole sync window being a single row.
 - The branch is created with \`git checkout -b <name> origin/<target>\`, commits are applied with \`git cherry-pick -x\` (\`-m 1\` for merge commits).
+- **take-source** cherry-picks the story again with \`git cherry-pick -x -X theirs\`: "theirs" is the commit being picked (source branch), "ours" the promotion branch (target branch).
+- A commit holding conflict markers is made with \`-c core.hooksPath=<empty folder>\`, a private folder created for that commit and removed after it: \`git cherry-pick\` has no \`--no-verify\`, and this skips the hooks of any hook manager (Husky, pre-commit, lefthook, \`.git/hooks\`).
 - The Pull Request is created through the git provider API (GitHub, GitLab, Azure DevOps, Bitbucket token), or with the \`gh\` CLI on GitHub. The creation is retried a few times: the branch is pushed a fraction of a second before, and a provider that has not indexed the new ref yet answers that the source branch does not exist. Without either, the branch is pushed and the description is saved under \`hardis-report/\` to create the Pull Request by hand, and the message names the reason the provider gave.
 - The date and the time are in UTC. The name is checked against every promotion branch of the step that exists or existed: local and remote branches, remote-tracking refs, the merge commits of the target branch and its Pull Requests merged in the last two days. A name already taken gets \`-2\`, \`-3\`..., one more than the highest one found, and the branch creation stops on a name that still exists instead of resuming that branch.
 </details>
@@ -93,7 +97,7 @@ In agent mode:
 
 - \`--source-branch\` and \`--pull-requests\` are required; \`--target-branch\` defaults to the first merge target of the source branch. Outside agent mode, \`--pull-requests\` only preselects the stories in the prompt (this is how the VS Code extension passes the stories ticked in the DevOps Pipeline), and the user confirms the selection.
 - Every number of \`--pull-requests\` must match a Pull Request merged into the source branch and not yet promoted, otherwise the command fails before touching git.
-- A cherry-pick conflict undoes the whole promotion (branch deleted, nothing pushed) and fails the command naming the conflicting Pull Request, unless \`--on-conflict skip\` or \`--on-conflict commit-with-markers\` is passed.
+- A cherry-pick conflict undoes the whole promotion (branch deleted, nothing pushed) and fails the command naming the conflicting Pull Request, unless \`--on-conflict skip\`, \`--on-conflict commit-with-markers\` or \`--on-conflict take-source\` (risky, see above) is passed.
 - To choose those numbers first, list what can be promoted with \`sf hardis:project:promotion:list-candidates --agent --source-branch uat --json\`: same candidates, nothing created.
 - The git provider token must be available (ex: \`GITHUB_TOKEN\`), from the environment or from a \`.env\` file at the repository root: agent mode never prompts for the connection, it stops without it.
 
@@ -140,7 +144,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
     }),
     'on-conflict': Flags.string({
       options: PROMOTION_CONFLICT_CHOICES,
-      description: 'What to do when a cherry-pick conflicts: skip (leave the story out), commit-with-markers (commit it with its conflict markers, to solve later), abort (undo the whole promotion). Prompted if not provided, abort in agent mode.',
+      description: 'What to do when a cherry-pick conflicts: skip (leave the story out), commit-with-markers (commit it with its conflict markers, to solve later), take-source (risky: keep the source branch version of the conflicting lines, without review), abort (undo the whole promotion). Prompted if not provided, abort in agent mode.',
     }),
     agent: Flags.boolean({
       default: false,
@@ -238,9 +242,10 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
     let picked: PromotionCandidate[] = [];
     let skipped: PromotionCandidate[] = [];
     let alreadyThere: PromotionCandidate[] = [];
-    let conflicted: Array<{ candidate: PromotionCandidate; files: string[] }> = [];
+    let conflicted: Array<{ candidate: PromotionCandidate; files: string[]; noMarkerFiles: string[] }> = [];
+    let resolvedWithSource: Array<{ candidate: PromotionCandidate; files: string[] }> = [];
     try {
-      ({ picked, skipped, alreadyThere, conflicted } = await cherryPickCandidates(selected, branchName, previousBranch, onConflict, agentMode, this));
+      ({ picked, skipped, alreadyThere, conflicted, resolvedWithSource } = await cherryPickCandidates(selected, branchName, previousBranch, onConflict, agentMode, this));
     } catch (e) {
       // cherryPickCandidates undoes what it started for the outcomes it knows about, but an
       // unexpected error (or the "exit this script" choice of the prompt) would otherwise leave the
@@ -261,7 +266,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
       throw new SfError(t('promotionCreateNothingPicked'));
     }
 
-    const stories = toStories(picked, conflicted);
+    const stories = toStories(picked, conflicted, resolvedWithSource);
     const skippedStories = toStories(skipped);
     const alreadyThereStories = toStories(alreadyThere);
     const ticketIds = await collectStoryTicketIds(stories);
@@ -298,6 +303,13 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
       // dropping it, so the count and the list always agree
       prList: stories.map((story) => (story.number > 0 ? `#${story.number}` : `[${story.commitHash.substring(0, 7)}]`)).join(', ') || '-',
     })));
+    if (resolvedWithSource.length > 0) {
+      uxLog('warning', this, c.yellow(t('promotionCreateDoneWithSourceVersion', {
+        count: resolvedWithSource.length,
+        source: sourceBranch,
+        files: [...new Set(resolvedWithSource.flatMap((entry) => entry.files))].join(', ') || '-',
+      })));
+    }
     let conflictPromptFile: string | null = null;
     if (conflicted.length > 0) {
       uxLog('warning', this, c.yellow(t('promotionCreateDoneWithConflicts', {
@@ -333,6 +345,11 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
       skippedPullRequests: skippedStories.map((story) => story.number).filter((number) => number > 0),
       alreadyInTargetPullRequests: alreadyThereStories.map((story) => story.number).filter((number) => number > 0),
       conflictedPullRequests: conflicted.map((entry) => ({
+        pullRequests: entry.candidate.pullRequestNumbers,
+        files: entry.files,
+        noMarkerFiles: entry.noMarkerFiles,
+      })),
+      resolvedWithSourcePullRequests: resolvedWithSource.map((entry) => ({
         pullRequests: entry.candidate.pullRequestNumbers,
         files: entry.files,
       })),

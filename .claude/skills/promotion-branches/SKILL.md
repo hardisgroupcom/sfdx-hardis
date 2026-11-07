@@ -147,6 +147,41 @@ Break one of these and the feature is wrong, whatever the tests say.
     value**: `PROMOTION_CONFLICT_CHOICES` stays `skip` / `commit-with-markers` / `abort`, because
     `--on-conflict` already applies to every conflict. A promotion window usually conflicts on the
     same files story after story, so answering ten times in a row is answering once.
+    `solve-now` is the other prompt-only answer (`solveConflictsNow`): the conflicting files are
+    listed, and opened when VS Code runs the command (`WebSocketClient.requestOpenFile`), the user
+    confirms, and the cherry-pick is only finished when `filesStillHoldingConflictMarkers` (paths
+    from the repository root; an unreadable file is not clean) finds none left in those files. Only
+    tracked files are staged (`git add -u`), and a cherry-pick the user committed or undid from VS
+    Code is told apart by HEAD. It is never remembered (each conflict needs its own resolution) and
+    never a flag value (nothing solves a conflict unattended); agent mode keeps `abort`.
+    `take-source` (flag value too) and its prompt-only `take-source-all` are the **risky** answers,
+    offered last and labelled so: `cherryPickKeepingSource` aborts the conflicted cherry-pick and
+    redoes it with `git cherry-pick -x -X theirs` ("theirs" = the story, "ours" = the promotion
+    branch). It can drop a target-side change on the same lines and bring lines of stories left
+    behind, and no job notices, so it is never a default and always leaves a trace: the files go to
+    `resolvedWithSource`, the Pull Request description gets a warning and a section, the commit
+    message names them (amended through `execCommand`: simple-git refuses a `core.hooksPath`
+    option). `-X theirs` only settles conflicts inside a file: a file deleted on one side and
+    changed on the other (`DU`, `UD`) gets the source side in `settleConflictsWithSource` (kept as
+    the story has it, deleted when the story deleted it, `git checkout --theirs` for anything else),
+    then the commit runs without hooks, like a pick git settles by itself (which runs none). The
+    "and every following one" answer promises not to ask again: it must never re-ask. Only what even
+    that cannot settle is asked again without the risky answers, and the files already settled are
+    still reported (`keptSourceFiles`).
+    Every answer is proven in `test/common/utils/promotionConflictAnswers.test.ts`, on a
+    repository built for each test (a hotfix on the same lines, a file deleted on the target, a
+    pre-commit hook refusing every commit). The interactive answers are given through
+    `setConflictQuestionAnswererForTests`, since `prompts()` refuses to run on CI. A change to the
+    conflict handling adds its case there.
+32. **Committing markers is never stopped by the project's git hooks, and nothing else skips them.**
+    `commitWithConflictMarkers` runs `cherry-pick --continue` (and its `commit` fallback) through
+    `withoutGitHooks`: `-c core.hooksPath=<private empty folder>`, created with `mkdtemp` for that
+    call and removed after it (a fixed folder in the shared temp directory would let another user
+    plant a hook). A pre-commit hook running lint-staged or Prettier fails on `<<<<<<<` and used to
+    stop the command with a branch half assembled. `cherry-pick` has no `--no-verify`, and the `-c`
+    override covers every hook manager without touching the repository config. A clean
+    cherry-pick, the `solve-now` commit and the later commit that solves the markers all run the
+    hooks as usual.
 20. **A resolution nobody can read is not a resolution.** `buildConflictResolutionPrompt` asks the
     coding agent for a commit message whose body carries one line per conflicting file, naming the
     story, what the target side had, what the story added and what was kept, and forbids

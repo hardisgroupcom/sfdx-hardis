@@ -269,7 +269,9 @@ The **Preview** tab runs `hardis:project:replacement:preview` for the org you pi
 
 ### Pull Request comments
 
-The deployment check and deployment comments have a **Replacement rules** section: the rules applied, where they come from, the number of files they changed, and the warnings (missing secret, required rule without match, invalid rule, unreadable issue, element that will make the deployment fail). It is open when there are warnings. Values are never shown.
+The deployment check and deployment comments have a **Replacement rules** section: the rules applied, where they come from, the number of files they changed, what each rule changed in each file, and the warnings (missing secret, required rule without match, invalid rule, unreadable issue, element that will make the deployment fail). It is open when there are warnings.
+
+What a rule changed is told by element names only, the same way in the job logs: `1 elements removed for API 67.0: userPermissions ManageSandboxes` for a Profile, `2 values set in NamedCredential/endpoint` for an `xml-value` rule. An element is named by its identifier (`name`, `fullName`, `object`, `field`...), or by the identifier of the element that holds it, and a file lists 20 names at most. Values are never shown, neither in the logs nor in the comment.
 
 ---
 

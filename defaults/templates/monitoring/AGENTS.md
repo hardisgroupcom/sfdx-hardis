@@ -148,6 +148,7 @@ Read the configuration from the deployment branch itself (`git -C ../<name> show
 - While it is open, the pipeline runs `sf hardis:project:deploy:smart --check`: a validation (check-only deployment with the Apex tests) against the org of the target branch. On GitHub it is the `check-deploy.yml` workflow, on GitLab the check job of `.gitlab-ci.yml`, on Azure DevOps `azure-pipelines-checks.yml`.
 - Once merged, the pipeline runs `sf hardis:project:deploy:smart` on the target branch and deploys to its org (`process-deploy.yml` on GitHub, `azure-pipelines-deployment.yml` on Azure DevOps). It uses a Quick Deploy of the validation when it can.
 - sfdx-hardis comments the Pull Request with the result of the check, the deployment errors and their fix tips, the Flow visual differences and the deployment actions. Read those comments first: they explain a failure better than the raw logs.
+- A project can also schedule a nightly major branch deployment check (`sf hardis:project:deploy:smart --check --major-branch-check`): a full check-only deployment of each major branch to its own org, with no Pull Request comment and no deployment action. A red check means the org drifted from its branch (a change made by hand, a refresh, a failed deployment). It is not a deployment: never count it as one. Its job is `check_deploy_to_current_branch_org` on GitLab, the `check-major-branch-deploy.yml` workflow on GitHub, `azure-pipelines-major-branch-check.yml` on Azure DevOps.
 
 #### What gets deployed
 
@@ -372,7 +373,7 @@ Any other command against an org counts as a write: do not run it, even when the
 | `mkdocs.yml` | Menu and settings of the documentation site built from `docs/`. |
 | `.sfdx-hardis.yml` | sfdx-hardis configuration of the branch: monitored org, notification settings, custom `monitoringCommands` and `monitoringDisable`, the `deploymentRepository` (and optional `deploymentBranch`) that deploys to the org, and the `grafanaUrl` (and optional datasource uids) that receives the monitoring results. Never a secret. |
 | `sfdx-project.json` | Salesforce DX project definition, including the API version used for the retrieve. |
-| `.gitlab-ci.yml`, `.github/workflows/`, `azure-pipelines.yml`, `bitbucket-pipelines.yml`, `Jenkinsfile` | The monitoring pipeline for each CI/CD platform. Only one of them is used. On GitHub, the workflow lives on the default branch and runs all monitoring branches. |
+| `.gitlab-ci.yml`, `.github/workflows/`, `azure-pipelines.yml`, `bitbucket-pipelines.yml`, `Jenkinsfile` | The monitoring pipeline for each CI/CD platform. Only one of them is used. On GitHub, the workflow lives on the default branch and runs all monitoring branches. Each one starts with the URL of the sfdx-hardis template it comes from: to upgrade it, compare it with that template. |
 | `.mega-linter.yml`, `.jscpd.json` | MegaLinter and copy-paste detection settings. The backup adds `DISABLE_ERRORS: true` to `.mega-linter.yml` when the key is missing, so that MegaLinter findings do not fail its job, and creates the file when the repository has none. |
 | `THIS_IS_MONITORING`, `DO_NOT_DEPLOY_FROM_THIS_REPO` | Empty marker files: this repository is for monitoring only. |
 

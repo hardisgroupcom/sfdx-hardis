@@ -1,3 +1,9 @@
+// Source of this file: the sfdx-hardis default template
+//   https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/Jenkinsfile
+//   raw: https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/defaults/monitoring/Jenkinsfile
+// To upgrade it, compare it with the latest version of that template and bring in its changes,
+// keeping what is specific to this project (branch names, secrets, runner tags, image, custom jobs).
+// What changed between versions: https://github.com/hardisgroupcom/sfdx-hardis/blob/main/CHANGELOG.md
 // Pipeline for Salesforce monitoring using sfdx-hardis
 //
 // SETUP (do a CTRL+F on "MANUAL"):

@@ -159,6 +159,18 @@ replacementRules:
     expect(redactSecrets('value p@ss$word-uat here')).to.equal('value *** here');
     expect(JSON.stringify(report)).to.not.include('p@ss$word-uat');
     expect(buildReplacementRulesMarkdown(report)).to.not.include('p@ss$word-uat');
+    // What changed is named, never a value: the element path for the values, the element for a removal
+    const detailOf = (ruleId: string) => report.results.find((result) => result.ruleId === ruleId && result.status === 'changed')?.detail || '';
+    expect(detailOf('payment-api-endpoint')).to.equal('1 values set in NamedCredential/endpoint');
+    expect(detailOf('payment-api-password')).to.equal('1 values set in NamedCredential/password');
+    expect(detailOf('uat-hide-case-actions')).to.equal('1 elements removed: platformActionList');
+    const markdown = buildReplacementRulesMarkdown(report);
+    expect(markdown).to.include('**What the rules changed**');
+    expect(markdown).to.include('| `uat-hide-case-actions` | `force-app/main/default/layouts/Case-Case Layout.layout-meta.xml` | 1 elements removed: platformActionList |');
+    for (const value of ['https://uat.example.com', 'https://dev.example.com', 'from-git', 'p@ss$word-uat']) {
+      expect(JSON.stringify(report.results), value).to.not.include(value);
+      expect(markdown, value).to.not.include(value);
+    }
 
     expect(session.restore()).to.equal(2);
     expect(read(files.namedCredential)).to.equal(NAMED_CREDENTIAL);
@@ -214,6 +226,13 @@ replacementRules:
     expect(flow).to.include('<limit>5</limit>');
     const risky = session.report.warnings.find((warning) => warning.kind === 'risky-element');
     expect(risky?.ruleId).to.equal('builtin-flow-get-records-limit');
+    // The warning names the element the deployment will fail on, by the flow element holding it
+    expect(risky?.message).to.include('recordLookups Get_Cases: limit');
+    const endsDetail = session.report.results.find((result) => result.ruleId === 'builtin-flow-ends')?.detail || '';
+    expect(endsDetail).to.equal('1 elements removed for API 62.0: ends The_End');
+    // A text rule says how many matches, never the text found or written
+    const textDetail = session.report.results.find((result) => result.ruleId === 'apex-payment-host')?.detail || '';
+    expect(textDetail).to.not.include('example.com');
     expect(session.report.appliedRules.map((rule) => rule.id)).to.include.members(['builtin-flow-ends', 'builtin-flow-metrics-data-cloud', 'apex-payment-host']);
     session.restore();
     expect(read(files.flow)).to.equal(FLOW);
@@ -294,6 +313,9 @@ replacementRules:
     expect(profile).to.include('<name>ViewSetup</name>');
     expect(profile).to.not.include('NotInThisOrg');
     expect(session.report.appliedRules.map((rule) => rule.id)).to.include('builtin-unknown-user-permissions');
+    // The log and the Pull Request comment say which permission went
+    const detail = session.report.results.find((result) => result.ruleId === 'builtin-unknown-user-permissions')?.detail || '';
+    expect(detail).to.equal('1 elements removed for API 68.0: userPermissions NotInThisOrg');
     session.restore();
   });
 

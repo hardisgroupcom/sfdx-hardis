@@ -14,6 +14,28 @@
 - New deployment tip for [an agent running user without access to the agent](https://sfdx-hardis.cloudity.com/sf-deployment-assistant/Agent-running-user-has-no-access-to-the-agent/).
 - Upgrade **follow-redirects** to 1.16.2, which stops custom credential headers from being sent to another site on a redirect (CVE-2026-116689).
 
+## [8.23.0] 2026-11-06
+
+- [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/#3-answer-the-conflicts-if-any) (Beta), [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/):
+  - New "solve the conflicts now" answer, which opens the conflicting files in VS Code and continues once they are solved.
+  - New risky `take-source` answer (also `--on-conflict take-source`), which keeps the source branch version of the conflicting lines and lists those files in the Pull Request for review.
+  - Committing a story with its conflict markers no longer fails on the git hooks of the project (Husky, pre-commit...).
+- [Major branch deployment check](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-major-branch-check/):
+  - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): new mode to check every night that a major branch can still be deployed to its org, without commenting the last merged Pull Request nor replaying its deployment actions.
+  - The default CI/CD templates hold the job, ready to schedule. On GitLab, add `--major-branch-check` to your existing `check_deploy_to_current_branch_org` job.
+  - The VS Code DevOps Pipeline can color each major branch with the result of its last check.
+- [Replacement rules](https://sfdx-hardis.cloudity.com/salesforce-devops-config-replacement-rules/) (Beta): the logs and the Pull Request comment name the elements each rule removed or changed in each file, like the user permissions removed from a Profile, never their values.
+- Default CI/CD files now start with the URL of the template they come from, to upgrade them by hand or with a coding agent.
+
+## [8.22.0] 2026-11-02
+
+- [hardis:ticket:list](https://sfdx-hardis.cloudity.com/hardis/ticket/list/), [hardis:ticket:whoami](https://sfdx-hardis.cloudity.com/hardis/ticket/whoami/), [hardis:ticket:meta](https://sfdx-hardis.cloudity.com/hardis/ticket/meta/) and [hardis:ticket:set-label](https://sfdx-hardis.cloudity.com/hardis/ticket/set-label/): **new commands** to search tickets with the same criteria on every ticketing system, show the authenticated account, list the types and statuses of a project, and label a ticket.
+- [hardis:ticket:post-comment](https://sfdx-hardis.cloudity.com/hardis/ticket/post-comment/) can qualify the ticket in the same run (prefix, label, status, story points, assignee mention), its `--servicenow-field` becomes `--comment-field` (the former name still works), and [hardis:ticket:get](https://sfdx-hardis.cloudity.com/hardis/ticket/get/) reads several tickets at once.
+- Ticket comments: on Azure Boards they are read and posted in the project of the work item, on JIRA Server / Data Center a code block no longer breaks the rest of the comment, and ServiceNow reports a tag it could not attach.
+- [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/): the monitoring repository gets its `.gitignore` again, so `hardis-report/`, `config/user/` and certificates are no longer committed ([sfdx-hardis-training#196](https://github.com/hardisgroupcom/sfdx-hardis-training/discussions/196)).
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) and [hardis:doc:flow2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/flow2markdown/): no failed `sf org display` step in VS Code when no `TECHNICAL_ORG` is defined ([sfdx-hardis-training#141](https://github.com/hardisgroupcom/sfdx-hardis-training/discussions/141)).
+- Doc: the [Install packages](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-install-packages/) page shows that `installPackagesDuringCheckDeploy` goes at the root of `.sfdx-hardis.yml` ([#2426](https://github.com/hardisgroupcom/sfdx-hardis/discussions/2426)).
+
 ## [8.21.0] 2026-10-30
 
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): deployment keywords in the Pull Request description or the latest commit (like NO_DELTA or nodelta) match in any case, and are ignored inside HTML comments and code blocks ([#2423](https://github.com/hardisgroupcom/sfdx-hardis/issues/2423)).

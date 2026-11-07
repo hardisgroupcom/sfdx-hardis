@@ -37,7 +37,7 @@ describe('promotionCreateCherryPickRefused', () => {
     // The guard has to run before the conflict choices are offered, otherwise an agent aborts and a
     // human is asked to pick between three ways of solving something that does not exist
     const guard = source.indexOf(KEY);
-    const conflictChoice = source.indexOf('promptConflictChoice(candidate, commandThis)');
+    const conflictChoice = source.indexOf('promptConflictChoice(candidate, commandThis');
     expect(guard, 'the refused cherry-pick message is not raised in promotionCreateUtils').to.be.greaterThan(-1);
     expect(conflictChoice).to.be.greaterThan(-1);
     expect(guard, 'the refused cherry-pick guard must come before the conflict choices').to.be.lessThan(conflictChoice);

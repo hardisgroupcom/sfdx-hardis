@@ -23,6 +23,7 @@ Your goal is to design a solution and produce a technical specification.
    - Allowed exception: keep top-level `Messages.importMessagesDirectoryFromMetaUrl(import.meta.url)` and `const messages = Messages.loadMessages(...)` in command files when needed for oclif message lookup.
    - Consider the provider pattern if external integrations are involved
    - A deployment action type keeps everything specific to it (flags, prompts, validation, phases, defaults) in its `ActionsProvider` subclass, never in `base.ts`, `create.ts`, `update.ts` or `actionUtils.ts`: see "Deployment action types" in the `architecture` skill
+   - Every provider family (git, notification, ticketing, AI, actions...) is agnostic outside its implementation classes: commands, index.ts, root classes and shared utils never name an implementation nor use its native syntax (JQL, WIQL, API filters, Slack blocks...); they speak a common format each provider converts in its own class. See "Rule for every provider family" in the `architecture` skill
    - Plan i18n keys if new user-visible strings are needed
    - If config properties are added/modified, plan updates to `config/sfdx-hardis.jsonschema.json`
    - Consider edge cases and error handling

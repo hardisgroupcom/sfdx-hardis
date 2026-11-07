@@ -496,7 +496,8 @@ function pushResult(
       ruleId: item.rule.id,
       message: t('replacementRulesRiskyElement', {
         file,
-        element: item.rule.builtIn.xmlPaths.join(', '),
+        // The element paths followed by the elements found, so the user knows what to fix
+        element: detail || item.rule.builtIn.xmlPaths.join(', '),
         apiVersion: formatApiVersion(report.target.apiVersion),
         id: item.rule.id,
       }),

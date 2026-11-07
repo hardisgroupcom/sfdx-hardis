@@ -13,7 +13,27 @@ An AI agent can report what it designed or tested on the ticket it worked on, a 
 - **Several tickets:** repeat `--id` (or separate the identifiers with commas). Each ticket is handled on its own: one failing does not stop the others.
 - **Markdown in, native format out:** headings, bold, italic, links, lists, tables and code blocks become an Atlassian document on Jira Cloud, wiki markup on Jira Server / Data Center, HTML on Azure Boards and Aha!, and plain text with the URLs spelled out in a ServiceNow journal.
 - **Update instead of adding** (`--marker`): a rerun with the same marker replaces the comment it posted before, so a CI job can keep one status comment up to date. ServiceNow journal notes cannot be edited: a new note is added there, with a warning.
-- **Report:** a table and a CSV file with the action (created, updated or failed) and the link of each comment. Exit code 0 when every comment was posted, 2 when some failed, 1 when all failed.
+- **Report:** a table and a CSV file with the action (created, updated, skipped, refused or failed) and the link of each comment. Exit code 0 when no ticket failed or was refused, 2 when some did (or a status or points step failed), 1 when all did. A skipped ticket is not a failure.
+
+### Qualifying a ticket in the same run
+
+Options meant for an agent that reviews a backlog. Each ticket goes through the same steps, in this order:
+
+1. **Checks, before any write:** `--allowed-projects a,b` leaves a ticket of another project untouched (action `refused`, `errorName: TicketOutOfScope`). `--skip-if-marked` leaves untouched a ticket that carries `--marker-label` (default `--label`), or a comment of the authenticated account starting with `--prefix` (action `skipped`, `errorName: TicketAlreadyMarked`): it is neither commented nor updated, even with `--marker`. Comments of other accounts never count.
+2. **Comment**, with `--prefix` as its first line (never twice), `--mention-assignee` adding a real mention of the assignee read on the ticket (never taken from the text; nothing when unassigned), and `--visibility role:<role>` or `group:<group>` restricting it to the members of a role or a group. A ticketing system that cannot restrict comments refuses `--visibility` with `TicketProviderNotSupported`, before anything is written.
+3. **Label** (`--label`), added on top of the existing ones. If it cannot be added, the result is `failed` although the comment is saved: add the label only, do not post again.
+4. **Status** (`--transition`): the target status, by name, untranslated name or id, never the name of the transition.
+5. **Story points** (`--points`): a filled value is kept unless `--overwrite-points`. `--points-field` names the field; a ticketing system that cannot find it alone refuses `--points` without it, before anything is written. A ticket type without the field is `skipped`, not an error.
+
+Each ticketing system checks these options before the first write on each ticket: a label it cannot store, a missing field or a restriction it cannot apply fail the ticket with nothing written.
+
+`--strict-markdown` keeps only headings, bullet and numbered lists, paragraphs, bold and inline code: links, images, HTML, code blocks, tables and mentions are posted as literal text, so text quoted from a ticket cannot inject anything. Without it, the full markdown is converted as usual.
+
+A failed status or points step does not undo the comment. Each result carries `label`, `transition` and `points`: `{status: done | skipped | failed | not-requested, value, field, reason, error: {name, message}}`. A failed step names its error: `TicketTransitionInvalid` (status unknown for the type of the ticket, or move refused by the workflow), `TicketPointsInvalid` (no `--points-field` where it is required, or value refused). A failed status or points step makes the exit code 2, and is counted in `stepsFailed`.
+
+**Checking the result:** [hardis:ticket:get](https://sfdx-hardis.cloudity.com/hardis/ticket/get/) returns the comments as flattened plain text, without their HTML or Atlassian formatting: it tells what was posted, not how it renders. Check the rendering (headings, lists, mention, visibility) in the ticketing system itself.
+
+**JIRA Cloud or Server:** JIRA Cloud is recognized by its host (`atlassian.net` or `.jira.com`). A Cloud site reached through a custom domain is taken for Server / Data Center, and gets wiki markup instead of an Atlassian document.
 
 ### Provider detection
 
@@ -31,7 +51,7 @@ The ticketing variables sfdx-hardis already documents, from CI/CD variables or a
 
 - **JIRA:** `JIRA_HOST` + (`JIRA_EMAIL` + `JIRA_TOKEN`) or `JIRA_PAT` or (`JIRA_CLIENT_ID` + `JIRA_CLIENT_SECRET`)
 - **Azure Boards:** a token (`CI_SFDX_HARDIS_AZURE_TOKEN`, `SYSTEM_ACCESSTOKEN` or `AZURE_DEVOPS_EXT_PAT`). The organization and the project are read from the git remote, or from `SYSTEM_COLLECTIONURI` and `SYSTEM_TEAMPROJECT`.
-- **ServiceNow:** `SERVICENOW_URL` + `SERVICENOW_USERNAME` + `SERVICENOW_PASSWORD`. The note goes to `work_notes` by default: `--servicenow-field`, then `SERVICENOW_COMMENT_FIELD`, then the `serviceNowCommentField` configuration choose another journal field, such as `comments`.
+- **ServiceNow:** `SERVICENOW_URL` + `SERVICENOW_USERNAME` + `SERVICENOW_PASSWORD`. The note goes to `work_notes` by default: `--comment-field` (formerly `--servicenow-field`, still accepted), then `SERVICENOW_COMMENT_FIELD`, then the `serviceNowCommentField` configuration choose another journal field, such as `comments`.
 - **Aha!:** `AHA_HOST` + `AHA_API_KEY`
 
 <details markdown="1">
@@ -40,6 +60,7 @@ The ticketing variables sfdx-hardis already documents, from CI/CD variables or a
 - **One posting path:** every connector implements `postComment(ticketId, markdown, options)`, and its deployment comments call it too. `TicketProvider.postComment()` picks the connector with the same routing as `TicketProvider.getTicketDetails()`.
 - **Conversion:** the markdown is read with `marked`. Azure Boards and Aha! get its sanitized HTML. The Atlassian document, the wiki markup and the plain text are built from the same tokens, so a comment reads the same everywhere.
 - **Marker:** `sfdx-hardis:<marker>` is written in the comment, hidden in the title of an empty element on Azure Boards and Aha! (Azure Boards strips HTML comments), as a last line in code format on JIRA and ServiceNow, which have no hidden text. A rerun reads the comments of the ticket and updates the most recent one holding the marker. A marker holds letters, digits, `_`, `.`, `:` and `-`, 80 characters at most.
+- **Qualification options:** before the first write on a ticket, the command calls `validateQualifyOptions()` on its provider; each ticketing system applies its own rules in its class. **JIRA:** labels without spaces, `--points` needs `--points-field customfield_NNNNN`, `--visibility` becomes the `visibility` of the comment. **Azure Boards:** `--points-field` is optional, the field is found on the work item type (StoryPoints, then Effort, then Size); `--visibility` is refused; with `--strict-markdown` the headings keep their markdown level (`#` gives `<h1>`), with an empty line before each one but the first. **ServiceNow:** labels are tags, the status is a `state` choice of the table, points go to `story_points` (or `--points-field`), the assignee is named as text, `--visibility` is refused. **Aha!:** labels are tags, the status is a workflow status, points go to `original_estimate` (or a custom field named by `--points-field`), the assignee is named as text, `--visibility` is refused.
 - **Proxy support:** the HTTP calls go through the shared proxy-aware client (`HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY`).
 
 </details>
@@ -60,16 +81,28 @@ The same applies in CI.
 | Name             |  Type   | Description                                                                                                                                                                               | Default | Required |                Options                |
 |:-----------------|:-------:|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------------------------------------:|
 | agent            | boolean | Run in non-interactive mode for agents and automation                                                                                                                                     |         |          |                                       |
+| allowed-projects | option  | Comma-separated projects the tickets must belong to: any other one is refused (action refused) and left untouched                                                                         |         |          |                                       |
+| comment-field    | option  | Field the comment is written to, for a ticketing system that keeps comments in several fields. Ignored by the others                                                                      |         |          |                                       |
 | debug<br/>-d     | boolean | Activate debug mode (more logs)                                                                                                                                                           |         |          |                                       |
 | file<br/>-f      | option  | Markdown file holding the comment to post, instead of --message                                                                                                                           |         |          |                                       |
 | flags-dir        | option  | Import flag values from a directory.                                                                                                                                                      |         |          |                                       |
 | id<br/>-i        | option  | Ticket to comment on: JIRA key or Aha! feature (ACME-123), Azure Boards work item (1234 or AB-1234) or ServiceNow number (INC0012345). Repeat it, or separate the identifiers with commas |         |          |                                       |
 | json             | boolean | Format output as json.                                                                                                                                                                    |         |          |                                       |
+| label            | option  | Label added to the ticket once the comment is posted                                                                                                                                      |         |          |                                       |
 | marker           | option  | Key of the comment: a rerun with the same marker updates the comment it posted before instead of adding one                                                                               |         |          |                                       |
+| marker-label     | option  | Label checked by --skip-if-marked. Defaults to --label                                                                                                                                    |         |          |                                       |
+| mention-assignee | boolean | Mention the assignee read on the ticket, under the first line of the comment                                                                                                              |         |          |                                       |
 | message<br/>-m   | option  | Comment to post, in markdown                                                                                                                                                              |         |          |                                       |
+| overwrite-points | boolean | Replace story points that are already filled                                                                                                                                              |         |          |                                       |
+| points           | option  | Story points written once the comment is posted. A filled value is kept unless --overwrite-points                                                                                         |         |          |                                       |
+| points-field     | option  | Field the story points are written to, as the ticketing system names it. Some ticketing systems require it with --points                                                                  |         |          |                                       |
+| prefix           | option  | First line of the comment, added unless the text already starts with it                                                                                                                   |         |          |                                       |
 | provider<br/>-p  | option  | Force the ticketing system instead of deducing it from the identifier                                                                                                                     |         |          | jira<br/>azure<br/>servicenow<br/>aha |
-| servicenow-field | option  | ServiceNow journal field written to (work_notes by default, comments for a note the requester reads)                                                                                      |         |          |                                       |
+| skip-if-marked   | boolean | Leave a ticket untouched (action skipped) when it carries --marker-label or a comment of this account starting with --prefix                                                              |         |          |                                       |
 | skipauth         | boolean | Skip authentication check when a default username is required                                                                                                                             |         |          |                                       |
+| strict-markdown  | boolean | Keep only headings, lists, paragraphs, bold and code; every other construct (link, image, HTML, mention...) is posted as literal text                                                     |         |          |                                       |
+| transition       | option  | Status the ticket is moved to once the comment is posted (name, untranslated name or id)                                                                                                  |         |          |                                       |
+| visibility       | option  | role:<role> or group:<group>: restrict the comment to its members. Refused by a ticketing system that cannot restrict comments                                                            |         |          |                                       |
 | websocket        | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                                 |         |          |                                       |
 
 ## Examples
@@ -83,15 +116,31 @@ $ sf hardis:ticket:post-comment --id ACME-4567 --id ACME-4568 --file release-not
 ```
 
 ```shell
+$ sf hardis:ticket:post-comment --id ACME-4567 --file docs/ACME-4567/design.md --marker design --agent
+```
+
+```shell
+$ sf hardis:ticket:post-comment --id ACME-4567 --file draft.md --prefix "Automatic qualification" --skip-if-marked --label ia-qualified --transition "Ready for dev" --points 3 --points-field customfield_10016 --mention-assignee --visibility role:Developers --allowed-projects ACME --strict-markdown --agent --json
+```
+
+```shell
 $ sf hardis:ticket:post-comment --id AB-1234 --file test-report.md --marker test-report
 ```
 
 ```shell
-$ sf hardis:ticket:post-comment --id INC0012345 --message "Fixed in the last release" --servicenow-field comments
+$ sf hardis:ticket:post-comment --id AB-1234 --file draft.md --prefix "Automatic qualification" --skip-if-marked --label ia-qualified --transition Active --points 3 --mention-assignee --allowed-projects "My Project" --agent --json
 ```
 
 ```shell
-$ sf hardis:ticket:post-comment --id ACME-4567 --file docs/ACME-4567/design.md --marker design --agent
+$ sf hardis:ticket:post-comment --id INC0012345 --message "Fixed in the last release" --comment-field comments
+```
+
+```shell
+$ sf hardis:ticket:post-comment --id STRY0010001 --file draft.md --prefix "Automatic qualification" --skip-if-marked --label ia-qualified --transition "Work in progress" --points 5 --mention-assignee --agent --json
+```
+
+```shell
+$ sf hardis:ticket:post-comment --id PROD-12 --provider aha --file draft.md --prefix "Automatic qualification" --skip-if-marked --label ia-qualified --transition "Ready to develop" --points 3 --mention-assignee --agent --json
 ```
 
 

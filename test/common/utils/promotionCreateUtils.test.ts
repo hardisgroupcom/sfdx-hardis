@@ -12,6 +12,7 @@ import {
   buildConflictResolutionPrompt,
   buildPromotionPullRequestBody,
   buildPromotionPullRequestTitle,
+  cherryPickCandidates,
   computePromotionBranchName,
   countsAsAlreadyPromoted,
   declaredPullRequestNumbers,
@@ -873,6 +874,153 @@ describe('listFilesWithConflictMarkers()', () => {
   it('scans from the repository root when started from a sub-folder', async () => {
     process.chdir(path.join(repo, 'labs'));
     expect(await listFilesWithConflictMarkers(commandThis, ['labs/**'])).to.deep.equal(['Status__c.field-meta.xml', 'résumé.md']);
+  });
+});
+
+/**
+ * A repository where the story of uat and a hotfix of preprod changed the same line, checked out
+ * on preprod (the promotion branch starts there), the current directory moved into it.
+ * `withFailingHooks` installs hooks that refuse every commit, the way Husky does it.
+ */
+function useConflictingRepository(prefix: string, withFailingHooks: boolean) {
+  const repo = { dir: '', previousCwd: '' };
+  const git = (args: string[]) => spawnSync('git', args, { cwd: repo.dir, encoding: 'utf8' });
+  const file = () => path.join(repo.dir, 'Status__c.field-meta.xml');
+  before(() => {
+    repo.dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+    git(['init', '-b', 'preprod']);
+    git(['config', 'user.email', 'test@example.invalid']);
+    git(['config', 'user.name', 'Test']);
+    fs.writeFileSync(file(), '<CustomField>\n<label>base</label>\n<length>10</length>\n</CustomField>\n');
+    git(['add', '-A']);
+    git(['commit', '-m', 'base']);
+    git(['checkout', '-b', 'uat']);
+    fs.writeFileSync(file(), '<CustomField>\n<label>story</label>\n<length>10</length>\n</CustomField>\n');
+    git(['commit', '-am', 'the story']);
+    git(['checkout', 'preprod']);
+    fs.writeFileSync(file(), '<CustomField>\n<label>hotfix</label>\n<length>10</length>\n</CustomField>\n');
+    git(['commit', '-am', 'a hotfix in preprod']);
+    if (withFailingHooks) {
+      fs.mkdirSync(path.join(repo.dir, '.husky'));
+      for (const hook of ['pre-commit', 'commit-msg']) {
+        fs.writeFileSync(path.join(repo.dir, '.husky', hook), '#!/bin/sh\necho "lint failed" >&2\nexit 1\n', { mode: 0o755 });
+      }
+      git(['config', 'core.hooksPath', '.husky']);
+    }
+    repo.previousCwd = process.cwd();
+    process.chdir(repo.dir);
+  });
+  // Again before each test: the code under test runs git in the current folder, and on the full
+  // Windows CI run something else moved it between two tests of this suite
+  beforeEach(() => {
+    process.chdir(repo.dir);
+  });
+  after(() => {
+    process.chdir(repo.previousCwd);
+    fs.rmSync(repo.dir, { recursive: true, force: true });
+  });
+  const story = () => {
+    const hash = git(['rev-parse', 'uat']).stdout.trim();
+    return { hash, candidate: { label: '#482 the story', group: { commit: { hash } } } as unknown as PromotionCandidate };
+  };
+  return { git, file, story };
+}
+
+describe('cherryPickCandidates() committing conflict markers', () => {
+  // A project with a pre-commit hook (Husky with lint-staged, Prettier...) fails a commit holding
+  // conflict markers. Committing them is the point here: the hooks must not stop the promotion.
+  const { git, file, story } = useConflictingRepository('promo-hooks-', true);
+
+  it('commits the markers whatever the hooks of the project say, and leaves the hooks on', async () => {
+    const { hash: storyHash, candidate } = story();
+    const outcome = await cherryPickCandidates([candidate], 'preprod', 'preprod', 'commit-with-markers', false, {});
+    expect(outcome.conflicted.map((entry) => entry.files)).to.deep.equal([['Status__c.field-meta.xml']]);
+    expect(fs.readFileSync(file(), 'utf8')).to.match(/^<<<<<<< /m);
+    expect(git(['log', '-1', '--format=%B']).stdout).to.contain(`(cherry picked from commit ${storyHash})`);
+    expect(git(['status', '--porcelain']).stdout.trim()).to.equal('');
+    // Only that commit skipped them: the repository configuration is untouched
+    expect(git(['config', 'core.hooksPath']).stdout.trim()).to.equal('.husky');
+    expect(process.env.HUSKY).to.equal(undefined);
+  });
+});
+
+describe('cherryPickCandidates() keeping the source version (take-source)', () => {
+  const { git, file, story } = useConflictingRepository('promo-take-source-', false);
+
+  it('takes the conflicting line from the story, and says so in the commit message', async () => {
+    const { hash: storyHash, candidate } = story();
+    const outcome = await cherryPickCandidates([candidate], 'preprod', 'preprod', 'take-source', false, {});
+    expect(outcome.resolvedWithSource.map((entry) => entry.files)).to.deep.equal([['Status__c.field-meta.xml']]);
+    expect(outcome.conflicted).to.deep.equal([]);
+    // The hotfix of preprod on that line is gone: this is exactly what the warning is about
+    // git on Windows may check the file out with CRLF
+    expect(fs.readFileSync(file(), 'utf8').replace(/\r\n/g, '\n')).to.equal('<CustomField>\n<label>story</label>\n<length>10</length>\n</CustomField>\n');
+    const message = git(['log', '-1', '--format=%B']).stdout;
+    expect(message).to.contain(`(cherry picked from commit ${storyHash})`);
+    expect(message).to.contain('take-source');
+    expect(message).to.contain('- Status__c.field-meta.xml');
+  });
+
+  it('keeps the story version of a file the target branch deleted, which -X theirs leaves open', async () => {
+    // The story changes Extra.cls, which preprod deleted: -X theirs leaves it as a conflict
+    git(['checkout', '-q', 'uat']);
+    fs.writeFileSync(path.join(path.dirname(file()), 'Extra.cls'), 'v1\n');
+    git(['add', '-A']);
+    git(['commit', '-qm', 'extra class']);
+    git(['checkout', '-q', 'preprod']);
+    git(['cherry-pick', 'uat']);
+    git(['rm', '-q', 'Extra.cls']);
+    git(['commit', '-qm', 'preprod deletes the class']);
+    git(['checkout', '-q', 'uat']);
+    fs.writeFileSync(path.join(path.dirname(file()), 'Extra.cls'), 'v2\n');
+    git(['commit', '-qam', 'the story changes the class']);
+    git(['checkout', '-q', '-b', 'promotion/uat/preprod/test', 'preprod']);
+    const hash = git(['rev-parse', 'uat']).stdout.trim();
+    const candidate = { label: '#483 class story', group: { commit: { hash } } } as unknown as PromotionCandidate;
+    // Agent mode: nothing may be asked, and keeping the source version needs nothing more
+    const outcome = await cherryPickCandidates([candidate], 'promotion/uat/preprod/test', 'preprod', 'take-source', true, {});
+    expect(outcome.picked).to.have.length(1);
+    expect(outcome.resolvedWithSource.map((entry) => entry.files)).to.deep.equal([['Extra.cls']]);
+    expect(git(['show', 'HEAD:Extra.cls']).stdout.replace(/\r\n/g, '\n')).to.equal('v2\n');
+    expect(git(['log', '-1', '--format=%B']).stdout).to.contain('- Extra.cls');
+  });
+
+  it('warns the reviewer in the Pull Request description', () => {
+    const body = buildPromotionPullRequestBody({
+      sourceBranch: 'uat',
+      targetBranch: 'preprod',
+      branchName: 'promotion/uat/preprod/2026-11-05-1600',
+      stories: [{ number: 482, title: 'the story', author: 'a', webUrl: '', sourceBranch: 'feature/a', commitHash: 'abcdef1', sourceVersionFiles: ['Status__c.field-meta.xml'] }],
+      skipped: [],
+      ticketIds: [],
+    });
+    expect(body).to.contain('Conflicts resolved automatically, to review before merging');
+    expect(body).to.contain('## Conflicts resolved by keeping the `uat` version');
+    expect(body).to.contain('  - `Status__c.field-meta.xml`');
+  });
+});
+
+describe('buildPromotionPullRequestBody() with a file deleted on one side', () => {
+  it('says the validation job cannot catch a conflict git could not mark', () => {
+    const body = buildPromotionPullRequestBody({
+      sourceBranch: 'uat',
+      targetBranch: 'preprod',
+      branchName: 'promotion/uat/preprod/2026-11-05-1600',
+      stories: [{
+        number: 483,
+        title: 'class story',
+        author: 'a',
+        webUrl: '',
+        sourceBranch: 'feature/b',
+        commitHash: 'abcdef1',
+        conflictFiles: ['Layout.layout-meta.xml', 'Extra.cls'],
+        conflictNoMarkerFiles: ['Extra.cls'],
+      }],
+      skipped: [],
+      ticketIds: [],
+    });
+    expect(body).to.contain('  - `Layout.layout-meta.xml`\n');
+    expect(body).to.match(/ {2}- `Extra\.cls` \(deleted on one side and changed on the other: .*validation job cannot catch it/);
   });
 });
 
