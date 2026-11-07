@@ -7,7 +7,7 @@
 
 **Takes a Dev Hub org snapshot of a scratch org that holds the current commit of a major branch, so that Pull Request scratch orgs are created from it.**
 
-Run it in CI on every push to a major branch. It does nothing unless the branch config sets `useScratchOrgSnapshot: true`, so the same job can run on every major branch: the branch config is read first, and the command logs in to the Dev Hub only when the branch uses snapshots.
+Run it in CI on every push to a major branch. It does nothing unless the branch config sets `useScratchOrgSnapshot: true`, so the same job can run on every major branch: the branch config is read first, and the command logs in to the Dev Hub only when the branch uses snapshots. In CI it always logs in with the credentials of the job, never with a default Dev Hub saved on the runner.
 
 Key functionalities:
 

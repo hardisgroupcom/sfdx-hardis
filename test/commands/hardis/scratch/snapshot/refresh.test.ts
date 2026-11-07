@@ -90,3 +90,29 @@ describe('hardis:scratch:snapshot:refresh loginDevHub', () => {
     expect(error?.message).to.equal(t('pleaseSelectOrLoginIntoDevHub'));
   });
 });
+
+// Counts the logins and returns a marker instead of a Dev Hub
+class DevHubChoiceProbe extends ScratchSnapshotRefresh {
+  public logins = 0;
+  public choose(flags: any, ci: boolean): Promise<any> {
+    return this.getDevHub(flags, ci);
+  }
+  protected async loginDevHub(): Promise<any> {
+    this.logins++;
+    return 'hub from the job credentials';
+  }
+}
+
+describe('hardis:scratch:snapshot:refresh Dev Hub choice', () => {
+  it('in CI, logs in from the job credentials even when a default Dev Hub is saved on the machine', async () => {
+    const probe = new (DevHubChoiceProbe as any)([], {});
+    expect(await probe.choose({ 'target-dev-hub': 'saved default hub' }, true)).to.equal('hub from the job credentials');
+    expect(probe.logins).to.equal(1);
+  });
+
+  it('outside CI, uses the default Dev Hub of the workstation', async () => {
+    const probe = new (DevHubChoiceProbe as any)([], {});
+    expect(await probe.choose({ 'target-dev-hub': 'saved default hub' }, false)).to.equal('saved default hub');
+    expect(probe.logins).to.equal(0);
+  });
+});

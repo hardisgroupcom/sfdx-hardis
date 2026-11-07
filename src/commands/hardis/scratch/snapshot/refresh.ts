@@ -2,7 +2,7 @@ import c from 'chalk';
 import { SfCommand, Flags, optionalHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages, Org, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
-import { execSfdxJson, getCurrentGitBranch, git, uxLog } from '../../../../common/utils/index.js';
+import { execSfdxJson, getCurrentGitBranch, git, isCI, uxLog } from '../../../../common/utils/index.js';
 import { runAuthHook } from '../../../../common/utils/authUtils.js';
 import {
   getExhaustedSnapshotLimit,
@@ -30,7 +30,7 @@ export default class ScratchSnapshotRefresh extends SfCommand<any> {
 
 **Takes a Dev Hub org snapshot of a scratch org that holds the current commit of a major branch, so that Pull Request scratch orgs are created from it.**
 
-Run it in CI on every push to a major branch. It does nothing unless the branch config sets \`useScratchOrgSnapshot: true\`, so the same job can run on every major branch: the branch config is read first, and the command logs in to the Dev Hub only when the branch uses snapshots.
+Run it in CI on every push to a major branch. It does nothing unless the branch config sets \`useScratchOrgSnapshot: true\`, so the same job can run on every major branch: the branch config is read first, and the command logs in to the Dev Hub only when the branch uses snapshots. In CI it always logs in with the credentials of the job, never with a default Dev Hub saved on the runner.
 
 Key functionalities:
 
@@ -145,10 +145,10 @@ The command has no prompt.
     return { outputString: `Snapshot ${name} of branch ${branch} is Active`, snapshotName: name, sha, deleted };
   }
 
-  // The CI jobs run the refresh on every push to a major branch: logging in only once the branch is known to use
-  // snapshots keeps the Dev Hub out of the projects that do not
-  protected async getDevHub(flags): Promise<Org> {
-    return flags['target-dev-hub'] || (await this.loginDevHub());
+  // Called once the branch is known to use snapshots. In CI, always the job's own credentials: a default Dev Hub
+  // saved on a reused runner (Jenkins agent, self-hosted runner) can be another project's
+  protected async getDevHub(flags, ci = isCI): Promise<Org> {
+    return (!ci && flags['target-dev-hub']) || (await this.loginDevHub());
   }
 
   protected async loginDevHub(): Promise<Org> {
