@@ -33,6 +33,7 @@ import {
   PoolState,
   PoolSummary,
 } from '../utils/poolDashboardUtils.js';
+import { findOrCreateDashboard, replaceDashboard } from '../utils/dashboardDataUtils.js';
 import { deleteScratchOrgFromDevHub, getScratchOrgId, updateActiveScratchOrgRecord } from '../utils/poolDevHubUtils.js';
 
 // How many times a job tries another scratch org when the one it wanted was taken by another job
@@ -339,60 +340,27 @@ export class GitProviderPoolStorage implements PoolStorageInterface {
     }
   }
 
-  // Opens a new dashboard holding the same comments, and closes the old one
+  // Opens a new dashboard holding the same comments, and closes the old one. Entries are copied
+  // first: a claim names the comment id of its entry, and the copies get new ids.
   private async replaceDashboard(): Promise<void> {
-    const oldDashboard = this.dashboard!;
     uxLog("log", this, c.grey('[pool] ' + t('poolDashboardRollover')));
-    const copied = new Set<number>();
-    const newEntryIds = new Map<number, number>();
-    // Entries first: a claim names the comment id of its entry, and the copies get new ids
-    const copyComments = async (target: DashboardRef) => {
-      const comments = (await this.listPoolComments(oldDashboard)).filter((comment) => !copied.has(comment.id));
-      for (const comment of [...comments.filter((candidate) => candidate.data.kind === 'entry'), ...comments.filter((candidate) => candidate.data.kind !== 'entry')]) {
+    this.dashboard = await replaceDashboard<PoolComment>({
+      provider: this.provider(),
+      oldDashboard: this.dashboard!,
+      createEmpty: () => this.createEmptyDashboard(),
+      onCreated: (dashboard) => {
+        this.dashboard = dashboard;
+      },
+      listComments: (dashboard) => this.listPoolComments(dashboard),
+      copyOrder: (comments) => [...comments.filter((candidate) => candidate.data.kind === 'entry'), ...comments.filter((candidate) => candidate.data.kind !== 'entry')],
+      copyBody: (comment, newIds) => {
         const data = { ...comment.data };
-        if (data.kind === 'claim' && newEntryIds.has(Number(data.entry))) {
-          data.entry = newEntryIds.get(Number(data.entry));
+        if (data.kind === 'claim' && newIds.has(Number(data.entry))) {
+          data.entry = newIds.get(Number(data.entry));
         }
-        const newId = await this.provider().createDashboardComment(target, this.commentBody(data));
-        if (data.kind === 'entry') {
-          newEntryIds.set(comment.id, newId);
-        }
-        copied.add(comment.id);
-      }
-    };
-    if (!this.provider().allowsTwoOpenDashboards()) {
-      // The old one must be closed first. The new one is created without looking for it: the
-      // listing of a provider can still return the dashboard that was closed a moment ago.
-      const comments = await this.listPoolComments(oldDashboard);
-      await this.provider().closeDashboard(oldDashboard);
-      const newDashboard = await this.createEmptyDashboard();
-      this.dashboard = newDashboard;
-      for (const comment of [...comments.filter((candidate) => candidate.data.kind === 'entry'), ...comments.filter((candidate) => candidate.data.kind !== 'entry')]) {
-        const data = { ...comment.data };
-        if (data.kind === 'claim' && newEntryIds.has(Number(data.entry))) {
-          data.entry = newEntryIds.get(Number(data.entry));
-        }
-        const newId = await this.provider().createDashboardComment(newDashboard, this.commentBody(data));
-        if (data.kind === 'entry') {
-          newEntryIds.set(comment.id, newId);
-        }
-      }
-      return;
-    }
-    // The old dashboard stays the one every job finds until the copy is complete: a copy that
-    // fails loses nothing, and the next refresh tries again
-    const newDashboard = await this.createEmptyDashboard();
-    try {
-      await copyComments(newDashboard);
-      await this.provider().closeDashboard(oldDashboard);
-      // What jobs wrote on the old dashboard during the copy: a claim missed here would give its
-      // scratch org a second time
-      await copyComments(newDashboard);
-    } catch (e) {
-      await this.provider().closeDashboard(newDashboard).catch(() => undefined);
-      throw e;
-    }
-    this.dashboard = newDashboard;
+        return this.commentBody(data);
+      },
+    });
   }
 
   // Never fails the caller: the body is a display, the comments are the pool
@@ -458,18 +426,7 @@ export class GitProviderPoolStorage implements PoolStorageInterface {
       return this.dashboard;
     }
     await this.initialize();
-    this.dashboard = await this.provider().findDashboard(this.dashboardTitle());
-    if (!this.dashboard && create) {
-      const created = await this.createEmptyDashboard();
-      // Another job can have created it at the same moment: everybody keeps the oldest one
-      const found = await this.provider().findDashboard(this.dashboardTitle()).catch(() => null);
-      if (found && found.id < created.id) {
-        await this.provider().closeDashboard(created).catch(() => undefined);
-        this.dashboard = found;
-      } else {
-        this.dashboard = created;
-      }
-    }
+    this.dashboard = await findOrCreateDashboard(this.provider(), this.dashboardTitle(), create, () => this.createEmptyDashboard());
     return this.dashboard;
   }
 

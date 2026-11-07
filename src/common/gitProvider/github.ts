@@ -573,8 +573,16 @@ ${getBannerMarkdownAndLink()}
   }
 
   public async createDashboard(title: string, body: string): Promise<DashboardRef> {
-    const response = await this.api.post<any>(`${this.repoPath()}/issues`, { title, body });
-    return { id: response.data.number, url: response.data.html_url };
+    try {
+      const response = await this.api.post<any>(`${this.repoPath()}/issues`, { title, body });
+      return { id: response.data.number, url: response.data.html_url };
+    } catch (e) {
+      // 410: the repository has its issues switched off, as every new fork has
+      if ((e as any)?.status === 410) {
+        throw new SfError(t('githubIssuesDisabled', { repo: `${this.repoOwner}/${this.repoName}` }));
+      }
+      throw e;
+    }
   }
 
   public async updateDashboardBody(dashboard: DashboardRef, title: string, body: string): Promise<void> {

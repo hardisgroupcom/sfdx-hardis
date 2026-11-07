@@ -133,6 +133,7 @@ nav:
               - Deployment actions: salesforce-devops-work-on-user-story-deployment-actions.md
               - Custom functions: salesforce-devops-work-on-user-story-custom-functions.md
               - Backpromote (Beta): salesforce-devops-backpromote.md
+              - Development orgs list: salesforce-devops-dev-orgs.md
           - 3. Publish your User Story: salesforce-devops-publish-user-story.md
           - 4. Create the Pull Request:
               - On GitHub: salesforce-devops-pull-request-github.md
@@ -452,6 +453,9 @@ nav:
           - deploy sources metadata: hardis/project/deploy/sources/metadata.md
           - deploy start: hardis/project/deploy/start.md
           - deploy validate: hardis/project/deploy/validate.md
+          - dev-org list: hardis/project/dev-org/list.md
+          - dev-org register: hardis/project/dev-org/register.md
+          - dev-org remove: hardis/project/dev-org/remove.md
           - fix profiletabs: hardis/project/fix/profiletabs.md
           - fix v53flexipages: hardis/project/fix/v53flexipages.md
           - generate bypass: hardis/project/generate/bypass.md
