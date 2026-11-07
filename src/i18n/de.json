@@ -3869,6 +3869,7 @@
   "scratchSnapshotDeleting": "Älterer Snapshot {{name}} wird gelöscht...",
   "scratchSnapshotDelta": "Bereitstellung der Änderungen seit dem Snapshot-Commit {{sha}}: {{toDeploy}} Komponenten bereitzustellen, {{toDelete}} zu löschen",
   "scratchSnapshotFailed": "Snapshot {{name}} ist fehlgeschlagen: {{error}}",
+  "scratchSnapshotHistoryFetchFailed": "Der vollständige Git-Verlauf konnte nicht abgerufen werden, jede neue Pool-Scratch-Org versucht es erneut: {{message}}",
   "scratchSnapshotLimitReached": "Der Dev Hub hat den Snapshot wegen eines Limits abgelehnt, Pull Requests verwenden weiter den vorherigen Snapshot: {{message}}",
   "scratchSnapshotLimitsUnread": "Die Snapshot-Limits des Dev Hub konnten nicht gelesen werden, der Refresh läuft weiter: {{message}}",
   "scratchSnapshotMakingRoom": "Alle aktiven Snapshot-Plätze des Dev Hub sind belegt: Die ältesten Snapshots des Branch {{branch}} werden gelöscht, um Platz für den neuen zu schaffen",

@@ -178,7 +178,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
       try {
         fetchFullHistoryIfShallow();
       } catch (e) {
-        uxLog("warning", this, c.yellow(t('scratchSnapshotNotUsed', { reason: (e as Error).message })));
+        uxLog("warning", this, c.yellow(t('scratchSnapshotHistoryFetchFailed', { message: (e as Error).message })));
       }
     }
     for (let i = 0; i < numberOfOrgsToCreate; i++) {

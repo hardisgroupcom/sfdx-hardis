@@ -3870,6 +3870,7 @@
   "scratchSnapshotDeleting": "Eliminazione dello snapshot meno recente {{name}}...",
   "scratchSnapshotDelta": "Distribuzione delle modifiche dal commit dello snapshot {{sha}}: {{toDeploy}} componenti da distribuire, {{toDelete}} da eliminare",
   "scratchSnapshotFailed": "Lo snapshot {{name}} non è riuscito: {{error}}",
+  "scratchSnapshotHistoryFetchFailed": "Non è stato possibile recuperare la cronologia git completa, ogni nuova scratch org del pool riproverà: {{message}}",
   "scratchSnapshotLimitReached": "Il Dev Hub ha rifiutato lo snapshot per un limite, le pull request continuano a usare lo snapshot precedente: {{message}}",
   "scratchSnapshotLimitsUnread": "Non è stato possibile leggere i limiti degli snapshot del Dev Hub, l'aggiornamento continua: {{message}}",
   "scratchSnapshotMakingRoom": "Tutti gli slot di snapshot attivi del Dev Hub sono occupati: eliminazione degli snapshot meno recenti del branch {{branch}} per fare spazio al nuovo",

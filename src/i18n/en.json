@@ -3874,6 +3874,7 @@
   "scratchSnapshotDeleting": "Deleting the older snapshot {{name}}...",
   "scratchSnapshotDelta": "Deploying the changes since the snapshot commit {{sha}}: {{toDeploy}} components to deploy, {{toDelete}} to delete",
   "scratchSnapshotFailed": "Snapshot {{name}} failed: {{error}}",
+  "scratchSnapshotHistoryFetchFailed": "The full git history could not be fetched, each new pool scratch org will try again: {{message}}",
   "scratchSnapshotLimitReached": "The Dev Hub refused the snapshot because of a limit, Pull Requests keep the previous snapshot: {{message}}",
   "scratchSnapshotLimitsUnread": "The snapshot limits of the Dev Hub could not be read, so the refresh goes on: {{message}}",
   "scratchSnapshotMakingRoom": "Every active snapshot slot of the Dev Hub is taken: deleting the oldest snapshots of branch {{branch}} to make room for the new one",
