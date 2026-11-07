@@ -68,6 +68,12 @@ const refreshWithAuthHook = (username: string | null): any =>
   });
 
 describe('hardis:scratch:snapshot:refresh loginDevHub', () => {
+  const originalConnectedOrg = (globalThis as any).justConnectedOrg;
+
+  afterEach(() => {
+    (globalThis as any).justConnectedOrg = originalConnectedOrg;
+  });
+
   it('opens the Dev Hub the auth hook connected', async () => {
     let error: Error | null = null;
     try {
