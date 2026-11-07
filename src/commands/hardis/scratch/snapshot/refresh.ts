@@ -145,10 +145,11 @@ The command has no prompt.
       taken = true;
     }
 
-    const deleted = await pruneScratchSnapshots(devHubConn, devHubUsername, scope, keep, this);
+    // Before the prune: the snapshot is Active, so a failed prune must not skip the pool refresh
     if (taken) {
       this.reportNewSnapshot(name);
     }
+    const deleted = await pruneScratchSnapshots(devHubConn, devHubUsername, scope, keep, this);
     return { outputString: `Snapshot ${name} of branch ${branch} is Active`, snapshotName: name, sha, deleted };
   }
 

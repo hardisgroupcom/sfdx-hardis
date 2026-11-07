@@ -214,6 +214,18 @@ describe('hardis:scratch:snapshot:refresh GitHub Actions output', () => {
     expect(fs.readFileSync(outputFile, 'utf8')).to.equal(`snapshot=${result.snapshotName}\n`);
   });
 
+  it('reports a new snapshot before pruning the older ones, so a failed prune still starts the pool refresh', async () => {
+    OutputProbe.pruneFails = true;
+    let error: Error | null = null;
+    try {
+      await OutputProbe.run([]);
+    } catch (e) {
+      error = e as Error;
+    }
+    expect(error?.message).to.contain('Dev Hub session expired');
+    expect(fs.readFileSync(outputFile, 'utf8')).to.match(/^snapshot=SH/);
+  });
+
   it('reports nothing when the Dev Hub refused the snapshot', async () => {
     OutputProbe.created = false;
     const result: any = await OutputProbe.run([]);
