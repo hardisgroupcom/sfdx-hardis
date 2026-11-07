@@ -12,7 +12,7 @@ sfdx-hardis keeps the list of these development orgs, with the branch each of th
 
 ## Where you see it
 
-- **In VS Code**, the switch at the top of the DevOps Pipeline shows either the **Feature branches** (the default) or the **Dev orgs**: the major branches, with the development orgs that target each of them on their left, linked by a dotted line. The orange chip on a line is the number of Pull Requests the org misses, to backpromote; no chip means the org is up to date. Click an org to see its owner, its users and what it misses, and to run a backpromote, edit it or remove it. A target branch no org targets yet shows a **+** node: click it to register an org for that branch.
+- **In VS Code**, the switch above the diagram of the DevOps Pipeline shows the **Major branches**, the **Feature branches** (the default) or the **Dev orgs**: the major branches, with the development orgs that target each of them on their left, linked by a dotted line. The orange chip on a line is the number of Pull Requests the org misses, to backpromote; no chip means the org is up to date. Click an org to see its owner, its users and what it misses, and to run a backpromote, edit it or remove it. A target branch no org targets yet shows a **+** node: click it to register an org for that branch.
 
   ![DevOps Pipeline showing the development orgs of the team next to their target branch](assets/images/dev-orgs-pipeline.png)
 

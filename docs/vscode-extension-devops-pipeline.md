@@ -24,7 +24,7 @@ For the concepts behind it (major branches, merges, delta deployments), read [Sa
 - **(1)** is a feature branch, with the number of its Pull Request. When too many target the same branch, they are grouped in a **+N more** box.
 - **(2)** is a major branch. The badge on its corner counts the Pull Requests open against it. Click it to see its Pull Requests, tickets and deployment actions.
 - **(3)** is the org a major branch deploys to. The dotted line carries the result of the last deployment triggered by a merge: a check mark when it passed. Pipelines started by a schedule or through the API do not change it.
-- **(4)** switches between the **Feature branches** view, where the panel always opens, and the **Dev orgs** view: the major branches with the developer sandboxes and scratch orgs that target them, and what each one misses (see [Development orgs list](salesforce-devops-dev-orgs.md)).
+- **(4)** switches what the diagram shows next to the major branches: nothing more (**Major branches**), the **Feature branches** (where the panel always opens), or the **Dev orgs**, the developer sandboxes and scratch orgs that target them and what each one misses (see [Development orgs list](salesforce-devops-dev-orgs.md)).
 - **(5)** opens the pipeline settings menu, **(6)** the package files menu, **(7)** the [Pull Requests explorer](#find-and-open-any-pull-request), and **(8)** reloads branches, Pull Requests and deployments. The last button of the row opens this guide.
 - **(9)** is the legend of the lines and statuses.
 - **(10)** switches between the contribution cards and the list of open Pull Requests.
@@ -122,7 +122,7 @@ See [Configure overwrite management](salesforce-devops-config-overwrite.md) for 
 
 | What | Where |
 |---|---|
-| Show the development orgs instead of the feature branches | The **Feature branches / Dev orgs** switch of the header |
+| Show the major branches only, or the development orgs instead of the feature branches | The **Major branches / Feature branches / Dev orgs** switch above the diagram |
 | Group feature branches after N | `vsCodeSfdxHardis.pipelineFeatureBranchGroupThreshold` (default `3`) |
 | Branches, orgs, deployment options | **Pipeline Settings**, stored in `.sfdx-hardis.yml` |
 | Promotion branches | `enablePromotionBranches`, see [Promotion branches](salesforce-devops-promotion-branches.md) |
