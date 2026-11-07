@@ -52,6 +52,15 @@
 // diagram and in the major branches one: the node must carry that class and no other
 // gitBranchCheck* class (gitMajor / gitMain therefore means "no check class at all").
 // "checkLinks": every majorBranchCheck.webUrl is an http(s) URL on the host of the origin remote.
+//
+// Development orgs (enableDevOrgsRegistry), optional keys too:
+//   {
+//     "devOrgsFile": "<file holding the output of sf hardis:project:dev-org:list --json>",
+//     "devOrgNodes": { "mine": { "<orgId>": 1 }, "all": { "<orgId>": "none", "<other>": null } }
+//   }
+// "devOrgsFile" gives the extension the answer of the CLI, the way showPipeline.ts does.
+// "devOrgNodes" reads the diagram of each display mode (mine, all): a number or "2+" is the count
+// bubble of the node of the org, "none" a node without bubble, null no node for that org.
 
 const path = require("path");
 const fs = require("fs");
@@ -298,9 +307,20 @@ const same = (a, b) => a.length === b.length && a.every((n, i) => n === b[i]);
     process.exit(2);
   }
   const openPullRequests = await provider.listOpenPullRequests();
+  let devOrgs;
+  if (expected.devOrgsFile) {
+    const answer = JSON.parse(fs.readFileSync(expected.devOrgsFile, "utf8").replace(/^[^{]*/, ""));
+    const outcome = req("utils/pipeline/devOrgsUtils.js").readDevOrgsOutcome({ status: 0, result: answer.result || answer });
+    if (!outcome.devOrgs) {
+      console.error("devOrgsFile is not an answer of sf hardis:project:dev-org:list: " + JSON.stringify(outcome.error));
+      process.exit(2);
+    }
+    devOrgs = outcome.devOrgs;
+  }
   const data = await new PipelineDataProvider().getPipelineData(true, {
     browseGitProvider: true,
     openPullRequests,
+    devOrgs,
   });
 
   const promotionConfig = data.promotionBranches || { enabled: false, allowedSteps: [] };
@@ -561,6 +581,23 @@ const same = (a, b) => a.length === b.length && a.every((n, i) => n === b[i]);
       const checkClasses = classes.filter((cls) => cls.startsWith("gitBranchCheck"));
       if (!classes.includes(want) || checkClasses.some((cls) => cls !== want)) {
         failures.push(`the ${branch} node of the ${kind} diagram has classes ${classes.join(" ")}, expected ${want}`);
+      }
+    }
+  }
+  if (expected.devOrgNodes) {
+    const { devOrgNodeName } = req("utils/pipeline/devOrgsUtils.js");
+    observed.devOrgNodes = {};
+    for (const [mode, orgs] of Object.entries(expected.devOrgNodes)) {
+      const text = mode === "mine" ? data.mermaidDiagramDevOrgsMine : mode === "all" ? data.mermaidDiagramDevOrgsAll : data.mermaidDiagram;
+      observed.devOrgNodes[mode] = {};
+      for (const [orgId, want] of Object.entries(orgs)) {
+        const nodeName = devOrgNodeName(orgId);
+        const line = (text || "").split(/\r?\n/).find((candidate) => candidate.trim().startsWith(nodeName + "[") || candidate.trim().startsWith(nodeName + "("));
+        const bubble = line ? (line.match(/data-count='([^']+)'/) || [])[1] || "none" : null;
+        observed.devOrgNodes[mode][orgId] = bubble;
+        if (String(bubble) !== String(want)) {
+          failures.push(`the ${mode} diagram shows ${line ? "the node of " + orgId + " with bubble " + bubble : "no node for " + orgId}, expected ${want === null ? "no node" : want}`);
+        }
       }
     }
   }
