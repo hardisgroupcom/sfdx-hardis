@@ -90,17 +90,21 @@ describe('hardis:scratch:create pool or snapshot', () => {
     const previous = process.env.SCRATCH_ORG_SNAPSHOT;
     process.env.SCRATCH_ORG_SNAPSHOT = 'BaseMain';
     try {
-      const flags = { 'target-dev-hub': { getConnection: () => { throw new Error('no Dev Hub'); } } };
       const take = async (pool?: boolean) => {
+        let lookups = 0;
+        const logs: string[] = [];
+        const flags = { 'target-dev-hub': { getConnection: () => { lookups++; throw new Error('no Dev Hub'); } } };
         const command = Object.create(ScratchCreate.prototype) as any;
-        Object.assign(command, { pool, configInfo: {} });
+        Object.assign(command, { pool, configInfo: {}, ux: { log: (text: string) => logs.push(text) } });
         await command.takeOrgSource(flags);
-        return command.snapshot;
+        const ignored = logs.some((line) => line.includes('SCRATCH_ORG_SNAPSHOT is ignored on a pool fill'));
+        return { snapshot: command.snapshot, lookups, ignored };
       };
-      expect(await take(false)).to.deep.equal({ name: 'BaseMain', sha: '' });
-      expect(await take(true)).to.equal(null);
+      expect(await take(false)).to.deep.equal({ snapshot: { name: 'BaseMain', sha: '' }, lookups: 0, ignored: false });
+      // A pool fill says it ignores the variable, then still looks up the snapshot of its own branch
+      expect(await take(true)).to.deep.equal({ snapshot: null, lookups: 1, ignored: true });
       // An unset flag takes the pool fill path in takeOrgSource, so it must not get the named snapshot either
-      expect(await take(undefined)).to.equal(null);
+      expect(await take(undefined)).to.deep.equal({ snapshot: null, lookups: 1, ignored: true });
     } finally {
       if (previous === undefined) {
         delete process.env.SCRATCH_ORG_SNAPSHOT;
