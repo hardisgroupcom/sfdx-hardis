@@ -16,6 +16,7 @@ describe('GitHub CI templates', () => {
     assert.ok(snapshotJob.steps[refreshIndex].run.includes('sf hardis:scratch:snapshot:refresh'));
     const startIndex = stepIndex((step) => String(step.run).includes('/actions/workflows/scratch-pool-refresh.yml/dispatches'));
     assert.ok(startIndex > refreshIndex, 'the pool refresh starts after the snapshot refresh');
+    assert.equal(snapshotJob.steps[startIndex]['continue-on-error'], true, 'a failed start must not fail an Active snapshot');
     const startIf: string = snapshotJob.steps[startIndex].if;
     assert.ok(startIf.includes("steps.refresh.outputs.snapshot != ''"));
     assert.ok(startIf.includes("vars.SCRATCH_ORG_POOL == 'true'"));

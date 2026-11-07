@@ -71,11 +71,12 @@ jobs:
       # Once a new snapshot of the default branch is Active, start the pool refresh so new pool orgs start from it.
       # A project or branch without snapshots, or without scratch-pool-refresh.yml, never starts it
       - name: Start scratch org pool refresh
+        continue-on-error: true # The snapshot is already Active: a failed start leaves the pool to its nightly run
         if: ${{ steps.refresh.outputs.snapshot != '' && vars.SCRATCH_ORG_POOL == 'true' && github.ref_name == github.event.repository.default_branch && hashFiles('.github/workflows/scratch-pool-refresh.yml') != '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          curl --fail-with-body -sS -X POST -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" \
+          curl --fail-with-body --max-time 60 -sS -X POST -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" \
             "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/workflows/scratch-pool-refresh.yml/dispatches" \
             -d "{\"ref\": \"$GITHUB_REF_NAME\"}"
 
