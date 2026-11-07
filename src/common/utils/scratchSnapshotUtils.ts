@@ -328,6 +328,10 @@ export function parsePositiveSetting(value: unknown, defaultValue: number): numb
   return Math.max(1, parsed);
 }
 
+export function getSnapshotDescriptionPrefix(scope: string): string {
+  return `sfdx-hardis ${scope} sha=`;
+}
+
 // The steps whose result is in the snapshot and that a child does not run again
 function snapshotHeldSteps(config: any): any[] {
   return selectOrgInitSteps(getOrgInitSteps(config).steps, { orgType: 'scratch', phase: 'pool-fill' }).filter(
@@ -351,8 +355,4 @@ function readConfigAtCommit(ref: string, branch: string, cwd: string): any {
     read(projectConfigFiles.filter((file) => !file.endsWith('.json'))),
     read([`config/branches/.sfdx-hardis.${branchName}.yaml`, `config/branches/.sfdx-hardis.${branchName}.yml`])
   );
-}
-
-export function getSnapshotDescriptionPrefix(scope: string): string {
-  return `sfdx-hardis ${scope} sha=`;
 }
