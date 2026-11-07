@@ -84,7 +84,7 @@ describe('devOrgsRules', () => {
     it('keeps a name holding a comma as one person', () => {
       expect(parseDevOrgPersonList('Doe, Jane <jane@example.com>, john@example.com; Smith, John <js@example.com>')).to.deep.equal([
         { name: 'Doe, Jane', email: 'jane@example.com' },
-        { name: 'john@example.com', email: 'john@example.com' },
+        { name: 'john', email: 'john@example.com' },
         { name: 'Smith, John', email: 'js@example.com' },
       ]);
       expect(parseDevOrgPersonList('Jane Doe <jane@example.com>\njohn@example.com')).to.have.length(2);
@@ -261,7 +261,8 @@ describe('devOrgsRules', () => {
   describe('people and status', () => {
     it('reads "Name <email>" and a bare email', () => {
       expect(parseDevOrgPerson('Jane Doe <jane@example.com>')).to.deep.equal(jane);
-      expect(parseDevOrgPerson('jane@example.com')).to.deep.equal({ name: 'jane@example.com', email: 'jane@example.com' });
+      expect(parseDevOrgPerson('jane@example.com')).to.deep.equal({ name: 'jane', email: 'jane@example.com' });
+      expect(parseDevOrgPerson('<jane.doe@example.com>')).to.deep.equal({ name: 'jane.doe', email: 'jane.doe@example.com' });
       expect(parseDevOrgPerson('Jane Doe')).to.equal(null);
     });
 

@@ -505,17 +505,21 @@ export function isDevOrgExpired(org: Pick<DevOrgData, 'orgType' | 'expirationDat
   return !isNaN(time) && now.getTime() > time + DAY_MS;
 }
 
-/** "Jane Doe <jane@example.com>", or a bare email */
+/** "Jane Doe <jane@example.com>", or a bare email, whose name is what comes before the @ */
 export function parseDevOrgPerson(value: string): DevOrgPerson | null {
   const text = (value || '').trim();
   const match = text.match(/^(.*?)\s*<([^<>\s]+@[^<>\s]+)>$/);
   if (match) {
-    return { name: match[1].trim() || match[2], email: match[2] };
+    return { name: match[1].trim() || nameOfEmail(match[2]), email: match[2] };
   }
   if (/^[^\s@]+@[^\s@]+$/.test(text)) {
-    return { name: text, email: text };
+    return { name: nameOfEmail(text), email: text };
   }
   return null;
+}
+
+function nameOfEmail(email: string): string {
+  return email.split('@')[0] || email;
 }
 
 export function formatDevOrgPerson(person: DevOrgPerson | null | undefined): string {

@@ -1183,6 +1183,7 @@
   "devOrgOtherTargetBranch": "Development org {{name}} is registered for target branch {{registeredBranch}}, not {{branch}}. Its backpromote reminders stay based on {{registeredBranch}}.",
   "devOrgOwnerPrompt": "Who owns this org?",
   "devOrgOwnerPromptDescription": "The owner is told when the org needs a backpromote. Write Name <email>, or an email",
+  "devOrgPersonAskAgain": "{{message}}. Please try again",
   "devOrgRefreshedSandboxReplaced": "Sandbox {{name}} was refreshed: it replaces its previous entry in the development orgs list",
   "devOrgRegistered": "Development org {{name}} registered for target branch {{branch}}",
   "devOrgRegistering": "Registering development org {{name}} in the development orgs list...",

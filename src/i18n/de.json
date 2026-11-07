@@ -1178,6 +1178,7 @@
   "devOrgOtherTargetBranch": "Die Entwicklungs-Org {{name}} ist für den Ziel-Branch {{registeredBranch}} registriert, nicht für {{branch}}. Ihre backpromote-Erinnerungen basieren weiterhin auf {{registeredBranch}}.",
   "devOrgOwnerPrompt": "Wer ist Eigentümer dieser Org?",
   "devOrgOwnerPromptDescription": "Der Eigentümer wird informiert, wenn die Org ein backpromote benötigt. Schreiben Sie Name <email> oder eine E-Mail-Adresse",
+  "devOrgPersonAskAgain": "{{message}}. Bitte noch einmal eingeben",
   "devOrgRefreshedSandboxReplaced": "Die Sandbox {{name}} wurde aktualisiert: Sie ersetzt ihren bisherigen Eintrag in der Liste der Entwicklungs-Orgs",
   "devOrgRegistered": "Entwicklungs-Org {{name}} für den Ziel-Branch {{branch}} registriert",
   "devOrgRegistering": "Entwicklungs-Org {{name}} wird in der Liste der Entwicklungs-Orgs registriert...",

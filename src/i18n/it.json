@@ -1179,6 +1179,7 @@
   "devOrgOtherTargetBranch": "La org di sviluppo {{name}} è registrata per il branch di destinazione {{registeredBranch}}, non {{branch}}. I suoi promemoria di backpromote restano basati su {{registeredBranch}}.",
   "devOrgOwnerPrompt": "Chi è il proprietario di questa org?",
   "devOrgOwnerPromptDescription": "Il proprietario viene avvisato quando la org ha bisogno di un backpromote. Scrivi Nome <email>, oppure un'email",
+  "devOrgPersonAskAgain": "{{message}}. Riprova",
   "devOrgRefreshedSandboxReplaced": "La sandbox {{name}} è stata aggiornata: sostituisce la sua voce precedente nella lista delle org di sviluppo",
   "devOrgRegistered": "Org di sviluppo {{name}} registrata per il branch di destinazione {{branch}}",
   "devOrgRegistering": "Registrazione della org di sviluppo {{name}} nella lista delle org di sviluppo...",

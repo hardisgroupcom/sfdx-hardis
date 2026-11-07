@@ -46,28 +46,46 @@ export function parseDevOrgPersonFlag(value: string | null | undefined): DevOrgP
   return person;
 }
 
-export async function promptDevOrgOwner(initial: DevOrgPerson | null): Promise<DevOrgPerson | null> {
-  const response = await prompts({
-    type: 'text',
-    name: 'owner',
-    message: c.cyanBright(t('devOrgOwnerPrompt')),
-    description: t('devOrgOwnerPromptDescription'),
-    placeholder: 'Ex: Jane Doe <jane.doe@example.com>',
-    initial: formatDevOrgPerson(initial),
-  });
-  return parseDevOrgPersonFlag(response.owner) || initial;
+// A person that cannot be read asks the question again, with what was wrong, rather than
+// failing the command
+export async function promptDevOrgOwner(commandThis: any, initial: DevOrgPerson | null): Promise<DevOrgPerson | null> {
+  let initialText = formatDevOrgPerson(initial);
+  for (;;) {
+    const response = await prompts({
+      type: 'text',
+      name: 'owner',
+      message: c.cyanBright(t('devOrgOwnerPrompt')),
+      description: t('devOrgOwnerPromptDescription'),
+      placeholder: 'Ex: Jane Doe <jane.doe@example.com>',
+      initial: initialText,
+    });
+    try {
+      return parseDevOrgPersonFlag(response.owner) || initial;
+    } catch (e) {
+      uxLog("action", commandThis, c.yellow(t('devOrgPersonAskAgain', { message: (e as Error).message })));
+      initialText = String(response.owner || '');
+    }
+  }
 }
 
-export async function promptDevOrgUsers(initial: DevOrgPerson[]): Promise<DevOrgPerson[]> {
-  const response = await prompts({
-    type: 'text',
-    name: 'users',
-    message: c.cyanBright(t('devOrgUsersPrompt')),
-    description: t('devOrgUsersPromptDescription'),
-    placeholder: 'Ex: Jane Doe <jane.doe@example.com>, john.smith@example.com',
-    initial: initial.map((person) => formatDevOrgPerson(person)).join(', '),
-  });
-  return parseDevOrgPersonList(response.users);
+export async function promptDevOrgUsers(commandThis: any, initial: DevOrgPerson[]): Promise<DevOrgPerson[]> {
+  let initialText = initial.map((person) => formatDevOrgPerson(person)).join(', ');
+  for (;;) {
+    const response = await prompts({
+      type: 'text',
+      name: 'users',
+      message: c.cyanBright(t('devOrgUsersPrompt')),
+      description: t('devOrgUsersPromptDescription'),
+      placeholder: 'Ex: Jane Doe <jane.doe@example.com>, john.smith@example.com',
+      initial: initialText,
+    });
+    try {
+      return parseDevOrgPersonList(response.users);
+    } catch (e) {
+      uxLog("action", commandThis, c.yellow(t('devOrgPersonAskAgain', { message: (e as Error).message })));
+      initialText = String(response.users || '');
+    }
+  }
 }
 
 export async function selectRegisteredDevOrg(orgs: DevOrgSummary[]): Promise<DevOrgSummary | null> {

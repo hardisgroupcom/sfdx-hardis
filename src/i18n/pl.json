@@ -1179,6 +1179,7 @@
   "devOrgOtherTargetBranch": "Org deweloperski {{name}} jest zarejestrowany dla docelowego brancha {{registeredBranch}}, a nie {{branch}}. Jego przypomnienia o backpromote nadal opierają się na {{registeredBranch}}.",
   "devOrgOwnerPrompt": "Kto jest właścicielem tego orga?",
   "devOrgOwnerPromptDescription": "Właściciel jest powiadamiany, gdy org wymaga backpromote. Należy wpisać Imię <email> lub adres e-mail",
+  "devOrgPersonAskAgain": "{{message}}. Spróbuj ponownie",
   "devOrgRefreshedSandboxReplaced": "Sandbox {{name}} został odświeżony: zastępuje swój poprzedni wpis na liście orgów deweloperskich",
   "devOrgRegistered": "Org deweloperski {{name}} zarejestrowany dla docelowego brancha {{branch}}",
   "devOrgRegistering": "Rejestrowanie orga deweloperskiego {{name}} na liście orgów deweloperskich...",

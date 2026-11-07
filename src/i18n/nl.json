@@ -1179,6 +1179,7 @@
   "devOrgOtherTargetBranch": "Ontwikkel-org {{name}} is geregistreerd voor doel-branch {{registeredBranch}}, niet voor {{branch}}. De backpromote-herinneringen blijven gebaseerd op {{registeredBranch}}.",
   "devOrgOwnerPrompt": "Wie is de eigenaar van deze org?",
   "devOrgOwnerPromptDescription": "De eigenaar krijgt een melding wanneer de org een backpromote nodig heeft. Schrijf Naam <email>, of een e-mailadres",
+  "devOrgPersonAskAgain": "{{message}}. Probeer het opnieuw",
   "devOrgRefreshedSandboxReplaced": "Sandbox {{name}} is ververst: ze vervangt haar vorige vermelding in de lijst met ontwikkel-orgs",
   "devOrgRegistered": "Ontwikkel-org {{name}} geregistreerd voor doel-branch {{branch}}",
   "devOrgRegistering": "Ontwikkel-org {{name}} wordt geregistreerd in de lijst met ontwikkel-orgs...",

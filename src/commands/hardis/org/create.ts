@@ -186,7 +186,7 @@ In agent mode:
     this.devOrgOwner = parseDevOrgPersonFlag(flags.owner);
     if (!this.devOrgOwner) {
       const currentUser = await getCurrentGitUser();
-      this.devOrgOwner = interactive ? await promptDevOrgOwner(currentUser) : currentUser;
+      this.devOrgOwner = interactive ? await promptDevOrgOwner(this, currentUser) : currentUser;
     }
     this.devOrgTargetBranch = flags['target-branch'] || null;
     if (!this.devOrgTargetBranch) {

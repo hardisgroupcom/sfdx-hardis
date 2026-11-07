@@ -41,7 +41,7 @@ sfdx-hardis registers an org on its own when a developer starts a User Story in 
 - \`--target-org\` registers an org you are connected to. Without it, the command asks which one (the default org in agent mode and in CI);
 - \`--org-id\` edits a registered org without connecting to it;
 - \`--target-branch\` sets the only target branch of the org;
-- \`--owner\` sets the owner, \`--users\` replaces the users, \`--add-user\` and \`--remove-user\` change them one at a time. A person is written \`Name <email>\`, or a bare email.
+- \`--owner\` sets the owner, \`--users\` replaces the users, \`--add-user\` and \`--remove-user\` change them one at a time. A person is written \`Name <email>\`, or a bare email whose name is what comes before the @. In interactive mode, a person that cannot be read asks the question again.
 
 A production org, or the org of a major branch, is never registered. A sandbox registered under a new org id with the name of a registered one is a refreshed sandbox: it replaces the old entry, as a new sandbox.
 
@@ -170,10 +170,10 @@ In agent mode, nothing is asked: the target branch is \`--target-branch\`, else 
     let owner = flags.owner !== undefined ? parseDevOrgPersonFlag(flags.owner) : undefined;
     let users = flags.users !== undefined ? parseDevOrgPersonList(flags.users) : null;
     if (interactive && flags.owner === undefined) {
-      owner = await promptDevOrgOwner(existing?.owner || currentUser);
+      owner = await promptDevOrgOwner(this, existing?.owner || currentUser);
     }
     if (interactive && flags.users === undefined && !flags['add-user'] && !flags['remove-user']) {
-      users = await promptDevOrgUsers(existing?.users || []);
+      users = await promptDevOrgUsers(this, existing?.users || []);
     }
     uxLog("action", this, c.cyan(t('devOrgRegistering', { name: existing?.name || identity.sandboxName })));
     const result = await registry.register(

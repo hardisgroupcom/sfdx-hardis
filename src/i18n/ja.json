@@ -1177,6 +1177,7 @@
   "devOrgOtherTargetBranch": "開発 org {{name}} は、{{branch}} ではなくターゲットブランチ {{registeredBranch}} 用に登録されています。backpromote のリマインダーは引き続き {{registeredBranch}} が基準です。",
   "devOrgOwnerPrompt": "この org の所有者は誰ですか?",
   "devOrgOwnerPromptDescription": "org に backpromote が必要になると所有者に通知されます。名前 <email> 形式、またはメールアドレスを入力してください",
+  "devOrgPersonAskAgain": "{{message}}。もう一度入力してください",
   "devOrgRefreshedSandboxReplaced": "サンドボックス {{name}} が更新されました。開発 org の一覧の以前のエントリを置き換えます",
   "devOrgRegistered": "開発 org {{name}} をターゲットブランチ {{branch}} 用に登録しました",
   "devOrgRegistering": "開発 org {{name}} を開発 org の一覧に登録しています...",
