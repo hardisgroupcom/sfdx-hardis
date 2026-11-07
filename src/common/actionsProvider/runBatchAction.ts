@@ -1,5 +1,5 @@
 import { Connection, SfError } from '@salesforce/core';
-import { ActionsProvider, ActionResult, PrePostCommand, buildActionOutput } from './actionsProvider.js';
+import { ActionsProvider, ActionResult, PrePostCommand, buildActionOutput, ActionParameterDescription } from './actionsProvider.js';
 import {
   HIDDEN_APEX_BODY,
   buildApexClassQuery,
@@ -180,6 +180,16 @@ export function evaluateBatchJob(job: any, successEvenIfBatchErrors: boolean): R
 export class RunBatchAction extends ActionsProvider {
   public getLabel(): string {
     return 'RunBatchAction';
+  }
+
+  public getParameterDescriptions(): ActionParameterDescription[] {
+    return [
+      { name: 'className', path: 'parameters.className', flag: 'class-name', type: 'string', required: true, description: 'Apex class to run (implements Database.Batchable)' },
+      { name: 'runMode', path: 'parameters.runMode', flag: 'run-mode', type: 'string', required: false, default: 'wait', enum: ['wait', 'no-wait'], description: 'wait follows the job until it ends, no-wait launches it and goes on' },
+      { name: 'batchSize', path: 'parameters.batchSize', flag: 'batch-size', type: 'integer', required: false, default: 200, description: 'Records per batch' },
+      { name: 'waitTimeoutMinutes', path: 'parameters.waitTimeoutMinutes', flag: 'wait-timeout', type: 'integer', required: false, default: 60, description: 'In wait mode: minutes to wait before the action fails' },
+      { name: 'successEvenIfBatchErrors', path: 'parameters.successEvenIfBatchErrors', flag: 'success-even-if-batch-errors', type: 'boolean', required: false, default: false, description: 'In wait mode: keep the action successful when batches end in error' },
+    ];
   }
 
   public async checkParameters(cmd: PrePostCommand): Promise<ActionResult | null> {

@@ -204,6 +204,10 @@ if step repo; then
     result REPO FAIL "workflows not written, see build.log"
     exit 1
   }
+  # The browser action reads DA_E2E_DENSITY for integration: GitHub only passes the secrets a job lists
+  for wf in check-deploy process-deploy; do
+    sed -i 's/^\( *\)FORCE_COLOR: "1"$/\1DA_E2E_DENSITY_INTEGRATION: ${{ secrets.DA_E2E_DENSITY_INTEGRATION }}\n&/' "$WORK/.github/workflows/$wf.yml"
+  done
   (cd "$WORK" && git add -A && git commit -q -m "CI workflows of the sfdx-hardis branch $SFDX_HARDIS_BRANCH")
   if [ -z "${REPO:-}" ]; then
     owner="${GH_E2E_OWNER:-$(gh api user --jq .login)}"
@@ -216,6 +220,7 @@ if step repo; then
     result REPO FAIL "repository $REPO not created, see build.log"
     exit 1
   }
+  printf 'Compact' | gh secret set DA_E2E_DENSITY_INTEGRATION -R "$REPO" >/dev/null
   # The harness does not stop on a failed push or secret: check what the jobs need
   branches=$(gh api "repos/$REPO/branches" --jq '[.[].name] | sort | join(" ")' 2>/dev/null)
   secrets=$(gh secret list -R "$REPO" --json name --jq '[.[].name | select(startswith("SFDX_AUTH_URL_"))] | length' 2>/dev/null)
@@ -253,6 +258,7 @@ if step pr; then
   create_action post-run-batch --when post-deploy --type run-batch --label "DA E2E run batch" --class-name E2EBatch --run-mode wait --wait-timeout 10
   create_action post-schedule --when post-deploy --type schedule-batch --label "DA E2E schedule batch" --class-name E2EBatch --cron-expression "0 0 3 * * ?"
   create_action post-uap --when post-deploy --type user-access-policy --label "DA E2E policy apply to all" --policies UAP_Spike_Policy --apply-to-all
+  create_action post-browser --when post-deploy --type browser --label "DA E2E browser density" --browser-setting densitySettings --browser-config '{"density":"${DA_E2E_DENSITY}"}'
   create_action post-manual --when post-deploy --type manual --label "DA E2E manual step" --instructions "Check the e2e org"
   # Refusals of the generic checks, against the branch under test
   (cd "$WORK" && node "$DEV_JS" hardis:project:action:create --agent --scope pr --pr-id "$PR_NUMBER" --when pre-deploy --type user-access-policy --label x --policies A --json >"$LOGS/refuse-phase.json" 2>&1)
@@ -265,6 +271,10 @@ if step pr; then
   if [ "$once" = "false" ]; then result YAML-UAP-ONCE OK "the user-access-policy action runs at every deployment"; else result YAML-UAP-ONCE FAIL "runOnlyOnceByOrg of the user-access-policy action: $once"; fi
   assert_contains YAML-RUN-BATCH "$F" "className: E2EBatch" "run-batch parameters collected by its provider"
   assert_contains YAML-REMOVE "$F" "ApexClass:E2ESkipped" "remove-packagexml-items items stored"
+  browser_context=$(action_field "$F" browser context)
+  if [ "$browser_context" = "all" ]; then result YAML-BROWSER-CONTEXT OK "the browser action runs in checks too"; else result YAML-BROWSER-CONTEXT FAIL "context of the browser action: $browser_context"; fi
+  assert_contains YAML-BROWSER-VARIABLE "$F" 'density: ${DA_E2E_DENSITY}' "the variable reference is stored, not a value"
+  assert_contains CREATE-BROWSER-VARIABLES "$LOGS/create-post-browser.json" "DA_E2E_DENSITY_INTEGRATION" "action:create lists the variables to declare per major branch"
   (cd "$WORK" && git add -A && git commit -q -m "Deployment actions" && git push -q)
 fi
 
@@ -281,12 +291,13 @@ if step check; then
   L="$LOGS/check.log"
   assert_contains CHECK-PRE-COMMAND "$L" "DA_E2E_PRE_COMMAND_MARKER" "pre command (context all) runs in the validation"
   assert_contains CHECK-REMOVE "$L" "Removed 1 item(s) from" "remove-packagexml-items runs in the validation"
-  assert_absent CHECK-NO-UAP "$L" "Activating user access policy" "no policy activated by a validation"
-  assert_absent CHECK-NO-APPLY "$L" "applied to all users" "no Apply To All in a validation"
+  assert_absent CHECK-NO-UAP "$L" "Changed accessPolicies" "no policy activated nor applied by a validation"
+  if grep -qE "Dry run: (would change density|densitySettings already matches)" "$L"; then result CHECK-BROWSER-DRY-RUN OK "the browser action only read the org in the validation"; else result CHECK-BROWSER-DRY-RUN FAIL "no dry run of the browser action in check.log"; fi
+  assert_absent CHECK-BROWSER-NOT-APPLIED "$L" "Changed density" "the validation changed no setting"
   assert_absent CHECK-NO-PROJECT-ONCE "$L" "DA_E2E_PROJECT_ONCE_MARKER" "no deployment-only command in a validation"
   ci_pr_comments "$PR_NUMBER" check-comments
   C="$LOGS/check-comments.log"
-  for label in "DA E2E pre command" "DA E2E remove skipped class" "DA E2E apex account" "DA E2E run batch" "DA E2E schedule batch" "DA E2E policy apply to all" "DA E2E manual step"; do
+  for label in "DA E2E pre command" "DA E2E remove skipped class" "DA E2E apex account" "DA E2E run batch" "DA E2E schedule batch" "DA E2E policy apply to all" "DA E2E browser density" "DA E2E manual step"; do
     assert_contains "CHECK-COMMENT-${label// /-}" "$C" "$label" "action listed in the Pull Request comments"
   done
 fi
@@ -312,8 +323,9 @@ if step assert-deploy; then
   assert_contains DEP-REMOVE "$L" "Removed 1 item(s) from" "E2ESkipped removed from the deployment package"
   assert_contains DEP-PROJECT-ONCE "$L" "DA_E2E_PROJECT_ONCE_MARKER" "project command ran"
   assert_contains DEP-PROJECT-UAP-RAN "$L" "Running action DA E2E project policy every time" "project policy action (no runOnlyOnceByOrg key) ran"
-  assert_contains DEP-UAP-ACTIVATED "$L" "User access policy UAP_Spike_Policy is active" "the deployment reset the policy and the action activated it"
-  assert_contains DEP-UAP-APPLIED "$L" "User access policy UAP_Spike_Policy was applied to all users" "Apply To All ran in the CI container"
+  assert_contains DEP-UAP-BROWSERFORCE "$L" "Changed accessPolicies" "Browserforce activated the policy and applied it to all users in the CI container"
+  if grep -qE "Changed density|densitySettings already matches the org" "$L"; then result DEP-BROWSER OK "the browser action applied densitySettings"; else result DEP-BROWSER FAIL "no Browserforce result for densitySettings in deploy.log"; fi
+  assert_absent DEP-BROWSER-VALUE "$L" '"density":"Compact"' "the variable value is masked in the job log"
   assert_contains DEP-SCHEDULE "$L" "Successfully scheduled job 'E2EBatch_Schedule'" "schedule-batch scheduled the class"
   # The org
   status=$(policy_status)
@@ -346,7 +358,8 @@ if step rerun; then
   assert_contains RERUN-PROJECT-ONCE "$L" "Skipping DA E2E project command once: already run" "project command (no runOnlyOnceByOrg key, once per org by default) skipped"
   assert_contains RERUN-PROJECT-UAP-RAN "$L" "Running action DA E2E project policy every time" "project policy action (no runOnlyOnceByOrg key, every deployment for its type) ran again"
   assert_absent RERUN-PR-UAP-RAN "$L" "DA E2E policy apply to all (from PR #$PR_NUMBER): already run" "PR policy action runs again"
-  assert_contains RERUN-UAP-APPLIED "$L" "User access policy UAP_Spike_Policy was applied to all users" "Apply To All ran again"
+  assert_contains RERUN-UAP-APPLIED "$L" "Changed accessPolicies" "Browserforce activated and applied the policy again"
+  assert_contains RERUN-BROWSER-ONCE "$L" "DA E2E browser density (from PR #$PR_NUMBER): already run" "browser action skipped: already run in the org"
   assert_count RERUN-ORG-PSA "SELECT COUNT() FROM PermissionSetAssignment WHERE PermissionSet.Name = 'UAP_Spike_PS' AND Assignee.Username LIKE 'da-e2e-user%'" ge 1 "permission set given back again"
   status=$(policy_status)
   if [ "$status" = "Active" ]; then result RERUN-ORG-POLICY OK "policy Active after the rerun"; else result RERUN-ORG-POLICY FAIL "policy is $status after the rerun"; fi

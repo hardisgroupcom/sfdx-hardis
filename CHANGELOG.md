@@ -2,7 +2,11 @@
 
 ## [beta] (main)
 
+- New [hardis:project:action:types](https://sfdx-hardis.cloudity.com/hardis/project/action/types/): describes what each deployment action type expects, for AI agents and scripts.
 - New [Development orgs list](https://sfdx-hardis.cloudity.com/salesforce-devops-dev-orgs/): see which dev sandboxes and scratch orgs miss Pull Requests merged into their target branch, so their owners know when to backpromote.
+- [Deployment actions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/):
+  - New [Browser](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#apply-a-setup-setting-in-a-browser) action type: applies with Browserforce a Setup setting the Metadata API cannot deploy.
+  - The [User Access Policy](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#activate-user-access-policies) action now activates User Access Policies and runs Apply To All through Browserforce.
 
 ## [8.23.0] 2026-11-06
 

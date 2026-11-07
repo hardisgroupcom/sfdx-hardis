@@ -21,6 +21,7 @@ export type BuiltInActionType =
   | 'run-batch'
   | 'remove-packagexml-items'
   | 'user-access-policy'
+  | 'browser'
   // Org initialization steps only (orgInitSteps), never deployment actions
   | 'install-packages'
   | 'deploy-sources'
@@ -59,6 +60,8 @@ export interface PrePostCommand {
     successEvenIfBatchErrors?: boolean; // for 'run-batch' actions in wait mode (optional, defaults to false)
     permissionSets?: string[]; // for 'assign-permission-sets' org initialization steps
     packageXmlItems?: string[] | string; // for 'remove-packagexml-items' actions (each item: "TypeName:Member1,Member2"; a single string is accepted for a single entry)
+    setting?: string;        // for 'browser' actions: the Browserforce setting key (densitySettings...)
+    config?: any;            // for 'browser' actions: the value of that setting
     [key: string]: any;
   };
   command: string;
@@ -87,6 +90,21 @@ export interface PrePostCommand {
   runAtPoolFill?: boolean;
   // Attached by the org initialization runner before the step runs
   orgInitContext?: OrgInitContext;
+}
+
+/** One field of an action definition, as hardis:project:action:types describes it. */
+export interface ActionParameterDescription {
+  // Name of the field
+  name: string;
+  // Where the field is stored in the action: 'parameters.<name>', or 'command' for a command action
+  path: string;
+  // Flag of hardis:project:action:create and update that sets it
+  flag?: string;
+  type: 'string' | 'string[]' | 'boolean' | 'integer' | 'json';
+  required: boolean;
+  default?: any;
+  enum?: string[];
+  description: string;
 }
 
 export type ActionResult = {
@@ -178,6 +196,10 @@ export abstract class ActionsProvider {
       const UserAccessPolicyAction = await import('./userAccessPolicyAction.js');
       actionInstance = new UserAccessPolicyAction.UserAccessPolicyAction();
     }
+    else if (type === 'browser') {
+      const BrowserAction = await import('./browserAction.js');
+      actionInstance = new BrowserAction.BrowserAction();
+    }
     else if (type === 'install-packages') {
       const InstallPackagesAction = await import('./installPackagesAction.js');
       actionInstance = new InstallPackagesAction.InstallPackagesAction();
@@ -229,6 +251,31 @@ export abstract class ActionsProvider {
     return [];
   }
 
+  // Context of a new action of this type, or null for the generic default
+  public getDefaultContext(): PrePostCommand['context'] | null {
+    return null;
+  }
+
+  /**
+   * What an action of this type takes, for hardis:project:action:types: one entry per field the
+   * action definition holds, with the flag of hardis:project:action:create that sets it.
+   */
+  public getParameterDescriptions(): ActionParameterDescription[] {
+    return [];
+  }
+
+  /** Data only this type has, for hardis:project:action:types (flags of that command included) */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async describeTypeDetails(_flags: any): Promise<Record<string, any> | null> {
+    return null;
+  }
+
+  // Shows the details of describeTypeDetails in the terminal and the VS Code command runner
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async logTypeDetails(_details: Record<string, any>, _commandThis: any): Promise<void> {
+    return;
+  }
+
   /**
    * Parameters of a new or edited action of this type, for hardis:project:action:create and update:
    * from the flags when headless, from prompts seeded with the current values otherwise.
@@ -251,6 +298,24 @@ export abstract class ActionsProvider {
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async getDefinitionErrors(_action: Partial<PrePostCommand>, _when?: ActionWhen): Promise<string[] | null> {
+    return null;
+  }
+
+  /**
+   * What helps fixing an invalid definition of this type (expected format, example), returned with
+   * the validation error of hardis:project:action:create and update, so an agent can fix it in one try.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async getDefinitionHelp(_action: Partial<PrePostCommand>): Promise<Record<string, any> | null> {
+    return null;
+  }
+
+  /**
+   * What the user has to know once an action of this type is saved (variables to declare...),
+   * returned as typeDetails by hardis:project:action:create and update.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async getSaveDetails(_action: Partial<PrePostCommand>): Promise<Record<string, any> | null> {
     return null;
   }
 

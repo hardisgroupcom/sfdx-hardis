@@ -181,7 +181,7 @@ function shouldInitWebSocket(commandId: string, config: any): boolean {
         return false; // Hidden commands are likely not meant for end-users, so we can skip
       }
       const pluginName = command?.pluginName ?? command?.plugin?.name;
-      if (!pluginName || ["sfdx-git-delta", "sfdmu", "sf-git-merge-driver"].includes(pluginName)) {
+      if (!pluginName || ["sfdx-git-delta", "sfdmu", "sf-git-merge-driver", "sfdx-browserforce-plugin"].includes(pluginName)) {
         return false; // If we can't determine the plugin, we can't assume it depends on sfdx-hardis
       }
       for (const plugin of config.plugins?.values?.() ?? []) {

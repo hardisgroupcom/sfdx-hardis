@@ -266,6 +266,26 @@ export async function assertNoFlagsOfOtherTypes(type: string, flags: any): Promi
 }
 
 /**
+ * Throws the validation errors of an action. The error data carries what helps fixing the definition
+ * when its type provides it (expected format, example): an agent reads it in the --json output.
+ */
+export async function throwActionValidationErrors(action: Partial<PrePostCommand>, errors: string[]): Promise<never> {
+  const error = new SfError(t('actionValidationErrors', { errors: errors.join('\n') }), 'ActionValidationError');
+  const provider = await getBuiltInActionProvider(action.type);
+  const help = await provider?.getDefinitionHelp(action).catch(() => null);
+  if (help) {
+    error.setData({ errors, ...help });
+  }
+  throw error;
+}
+
+/** What the user has to know once the action is saved, from its type (variables to declare...) */
+export async function getActionSaveDetails(action: Partial<PrePostCommand>): Promise<Record<string, any> | undefined> {
+  const provider = await getBuiltInActionProvider(action.type);
+  return (await provider?.getSaveDetails(action)) || undefined;
+}
+
+/**
  * Validate type-specific parameters for an action.
  * Returns an array of error messages (empty if valid).
  */

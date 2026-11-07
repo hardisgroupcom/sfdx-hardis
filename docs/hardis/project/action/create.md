@@ -8,7 +8,7 @@
 
 **Creates a new deployment action in the project configuration.**
 
-Deployment actions are pre- or post-deployment steps that run automatically during CI/CD pipelines. This command lets you define new actions of various types (shell command, data import, Apex script, community publish, manual instructions, batch scheduling, immediate batch run, or package.xml items removal) and store them at project, branch, or pull request scope.
+Deployment actions are pre- or post-deployment steps that run automatically during CI/CD pipelines. This command lets you define new actions of various types (shell command, data import, Apex script, community publish, manual instructions, batch scheduling, immediate batch run, package.xml items removal, User Access Policies activation, or a Setup setting applied in a browser) and store them at project, branch, or pull request scope.
 
 New actions are appended to the end of the action list. Use `hardis:project:action:reorder` to change position.
 
@@ -53,9 +53,32 @@ A deployment always leaves the User Access Policies it contains in Design status
 
 - `policies`: developer names of the policies.
 - `activate: true` (default) activates them with the Salesforce API. A policy already active is left as is.
-- `applyToAll: true` also runs **Apply To All** for each policy. Salesforce has no API for it, so the action clicks the button of the Setup page in a headless Chrome. It then waits until Salesforce records the run, for 5 minutes at most.
+- `applyToAll: true` also runs **Apply To All** for each policy, and waits until Salesforce records the run, for 5 minutes at most.
+
+Both are done by [Browserforce](https://github.com/amtrack/sfdx-browserforce-plugin) (`userAccessPolicies` setting) in a headless browser: Salesforce has no API for Apply To All. The plugin is installed when missing.
 
 A user-access-policy action is `post-deploy` only, and only runs in the `process-deployment-only` context. It runs at every deployment by default (`runOnlyOnceByOrg: false`), because each new deployment of a policy turns it off again.
+
+### Apply a Setup setting in a browser
+
+Some Setup settings cannot be deployed with the Metadata API. A `browser` action applies one setting of [Browserforce](https://github.com/amtrack/sfdx-browserforce-plugin) (sfdx-browserforce-plugin, installed when missing) by driving the Setup pages in a headless browser.
+
+- `setting`: the key of the Browserforce setting (`densitySettings`, `companyInformation`...)
+- `config`: its value. Browserforce only changes what differs from the org.
+- A value can be read from a CI/CD variable, written as a placeholder (its syntax is in the [deployment actions documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#apply-a-setup-setting-in-a-browser)): `VARIABLE_<BRANCH>` first (for example `VARIABLE_UAT` when deploying to `uat`), then `VARIABLE`. Use it for secrets and for values that differ per org. The values are masked in every output.
+- During a deployment check (default context `all`), nothing is changed: Browserforce reads the org and the Pull Request comment shows what would change.
+
+```yaml
+commandsPostDeploy:
+  - id: 2f0c4d1e-7a3b-4c5d-9e8f-0a1b2c3d4e5f
+    label: Compact density for all users
+    type: browser
+    context: all
+    parameters:
+      setting: densitySettings
+      config:
+        density: Compact
+```
 
 A manual action declared `pre-deploy` is always stored with the `all` context: it has to be done before the merge, so the deployment check lists it too.
 
@@ -70,9 +93,11 @@ sf hardis:project:action:create --agent --scope branch --when pre-deploy --type 
 Required in agent mode:
 
 - `--scope`, `--when`, `--type`, `--label`
-- Type-specific flags: `--command` for command, `--apex-script` for apex, `--sfdmu-project` for data, `--community-name` for publish-community, `--instructions` for manual, `--class-name` and `--cron-expression` for schedule-batch, `--class-name` for run-batch (`--run-mode` defaults to `wait`), `--packagexml-items` for remove-packagexml-items, `--policies` for user-access-policy (`--activate` defaults to `true`, `--apply-to-all` to `false`)
+- Type-specific flags: list them, with what each type expects, with `sf hardis:project:action:types --json`. `--command` for command, `--apex-script` for apex, `--sfdmu-project` for data, `--community-name` for publish-community, `--instructions` for manual, `--class-name` and `--cron-expression` for schedule-batch, `--class-name` for run-batch (`--run-mode` defaults to `wait`), `--packagexml-items` for remove-packagexml-items, `--policies` for user-access-policy (`--activate` defaults to `true`, `--apply-to-all` to `false`), `--browser-setting` and `--browser-config` for browser (JSON, or the path of a .json file; its format: `sf hardis:project:action:types --type browser --browser-setting <key> --json`)
 
-In agent mode, `--context` defaults to `process-deployment-only`. `--run-only-once-by-org` defaults to `true` (use `--no-run-only-once-by-org` to disable); other optional boolean flags default to `false`.
+When the definition is invalid, the `--json` error carries what helps fixing it in `data` (for a browser action: the fields of the setting and an example). The `--json` result of a saved action may carry `typeDetails`: for a browser action, the CI/CD variables to declare for each major branch.
+
+In agent mode, `--context` defaults to `process-deployment-only`, or to the default of the type (`all` for remove-packagexml-items and browser). `--run-only-once-by-org` defaults to `true` (use `--no-run-only-once-by-org` to disable); other optional boolean flags default to `false`.
 
 Use `--include-target-branches` or `--exclude-target-branches` (comma-separated, mutually exclusive) to restrict the action to some target branches. Without either flag, the action runs on all of them.
 
@@ -94,9 +119,11 @@ Use `--include-target-branches` or `--exclude-target-branches` (comma-separated,
 | agent                        | boolean | Run in non-interactive mode for agents and automation                                                                                                                                                                    |         |          |                                                           |
 | allow-failure                | boolean | Allow action to fail without blocking deployment                                                                                                                                                                         |         |          |                                                           |
 | apex-script                  | option  | Path to Apex script file (for apex type)                                                                                                                                                                                 |         |          |                                                           |
-| apply-to-all                 | boolean | For user-access-policy type: also run Apply To All for each policy, by driving the Setup page in a headless browser (default: false)                                                                                     |         |          |                                                           |
+| apply-to-all                 | boolean | For user-access-policy type: also run Apply To All for each policy, with Browserforce (default: false)                                                                                                                   |         |          |                                                           |
 | batch-size                   | option  | Batch size for run-batch type (optional, 1 to 2000, defaults to 200)                                                                                                                                                     |         |          |                                                           |
 | branch                       | option  | Target branch name (for branch scope, defaults to current branch)                                                                                                                                                        |         |          |                                                           |
+| browser-config               | option  | For browser type: value of the setting, as JSON or the path of a .json file. A secret or a value that differs per org can be read from a CI/CD variable: see the deployment actions documentation for the placeholder    |         |          |                                                           |
+| browser-setting              | option  | For browser type: key of the Browserforce setting to apply. List them with sf hardis:project:action:types --type browser                                                                                                 |         |          |                                                           |
 | class-name                   | option  | Apex batch class name (for schedule-batch and run-batch types). Write a global class of a managed package with its namespace: ns.ClassName                                                                               |         |          |                                                           |
 | command                      | option  | Shell command to execute (for command type)                                                                                                                                                                              |         |          |                                                           |
 | community-name               | option  | Community name (for publish-community type)                                                                                                                                                                              |         |          |                                                           |
@@ -120,7 +147,7 @@ Use `--include-target-branches` or `--exclude-target-branches` (comma-separated,
 | scope                        | option  | Configuration scope: project, branch, or pr                                                                                                                                                                              |         |          |                 project<br/>branch<br/>pr                 |
 | sfdmu-project                | option  | SFDMU workspace name (for data type)                                                                                                                                                                                     |         |          |                                                           |
 | success-even-if-batch-errors | boolean | For run-batch type in wait mode: keep the action successful when the batch completes with errors                                                                                                                         |         |          |                                                           |
-| type                         | option  | Type of action: a built-in type (command, data, apex, publish-community, manual, schedule-batch, run-batch, remove-packagexml-items, user-access-policy) or the id of a project custom function                          |         |          |                                                           |
+| type                         | option  | Type of action: a built-in type (command, data, apex, publish-community, manual, schedule-batch, run-batch, remove-packagexml-items, user-access-policy, browser) or the id of a project custom function                 |         |          |                                                           |
 | wait-timeout                 | option  | Minutes to wait for the batch of a run-batch action in wait mode (optional, defaults to 60)                                                                                                                              |         |          |                                                           |
 | websocket                    | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                                                                |         |          |                                                           |
 | when                         | option  | When to run the action: pre-deploy or post-deploy                                                                                                                                                                        |         |          |                pre-deploy<br/>post-deploy                 |
@@ -149,6 +176,10 @@ $ sf hardis:project:action:create --agent --scope pr --pr-id 123 --when post-dep
 
 ```shell
 $ sf hardis:project:action:create --agent --scope project --when post-deploy --type user-access-policy --label "Activate sales access policies" --policies "Sales_Rep_Access,Sales_Manager_Access" --apply-to-all
+```
+
+```shell
+$ sf hardis:project:action:create --agent --scope project --when post-deploy --type browser --label "Compact density" --browser-setting densitySettings --browser-config '{"density":"Compact"}'
 ```
 
 ```shell

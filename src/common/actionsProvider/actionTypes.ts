@@ -12,6 +12,7 @@ export const DEPLOYMENT_ACTION_TYPES = [
   'run-batch',
   'remove-packagexml-items',
   'user-access-policy',
+  'browser',
 ] as const;
 
 /**

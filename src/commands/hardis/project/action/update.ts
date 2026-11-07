@@ -13,12 +13,14 @@ import {
   applyBranchFilterFlagsToAction,
   assertNoFlagsOfOtherTypes,
   findActionById,
+  getActionSaveDetails,
   getBuiltInActionProvider,
   listAvailableActionTypes,
   logActionSummary,
   readActions,
   readPullRequestDescriptionActions,
   resolvePrId,
+  throwActionValidationErrors,
   validateActionParameters,
   validateMovedFrom,
   writeActions,
@@ -74,6 +76,7 @@ Required in agent mode:
 - \`--move-to-pr\` requires \`--scope pr\` and the number of the original Pull Request in \`--pr-id\`. When the action is not in its YAML file, it is read from the description of the Pull Request through the git provider API.
 - A \`run-batch\` action is updated with \`--class-name\`, \`--run-mode\`, \`--batch-size\`, \`--wait-timeout\` and \`--success-even-if-batch-errors\`. It only runs in the \`process-deployment-only\` context.
 - A \`user-access-policy\` action is updated with \`--policies\`, \`--activate\` and \`--apply-to-all\`. It is \`post-deploy\` only, and only runs in the \`process-deployment-only\` context. Changing an action to this type sets \`runOnlyOnceByOrg\` to false, unless \`--run-only-once-by-org\` is passed.
+- A \`browser\` action is updated with \`--browser-setting\` and \`--browser-config\` (JSON, or the path of a .json file). Changing the setting without \`--browser-config\` removes the value of the previous setting. Changing an action to this type sets its context to \`all\`, unless \`--context\` is passed.
 - A \`manual\` action declared \`pre-deploy\` is always stored with the \`all\` context.
 </details>
 
@@ -115,7 +118,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
       description: 'Pull request ID (for pr scope, defaults to draft)',
     }),
     type: Flags.string({
-      description: 'New type of action: a built-in type (command, data, apex, publish-community, manual, schedule-batch, run-batch, remove-packagexml-items, user-access-policy) or the id of a project custom function',
+      description: 'New type of action: a built-in type (command, data, apex, publish-community, manual, schedule-batch, run-batch, remove-packagexml-items, user-access-policy, browser) or the id of a project custom function',
     }),
     label: Flags.string({
       description: 'New label for the action',
@@ -170,11 +173,17 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
     }),
     'apply-to-all': Flags.boolean({
       allowNo: true,
-      description: 'For user-access-policy type: also run Apply To All for each policy, by driving the Setup page in a headless browser',
+      description: 'For user-access-policy type: also run Apply To All for each policy, with Browserforce',
     }),
     'new-when': Flags.string({
       options: ['pre-deploy', 'post-deploy'],
       description: 'Move the action to the other deployment phase. --when still says where to find it',
+    }),
+    'browser-setting': Flags.string({
+      description: 'For browser type: key of the Browserforce setting to apply. List them with sf hardis:project:action:types --type browser',
+    }),
+    'browser-config': Flags.string({
+      description: 'For browser type: value of the setting, as JSON or the path of a .json file. A secret or a value that differs per org can be read from a CI/CD variable: see the deployment actions documentation for the placeholder',
     }),
     'function-input': Flags.string({
       multiple: true,
@@ -272,7 +281,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
       ...validateMovedFrom(action, scope, resolvedPrId),
     ];
     if (validationErrors.length > 0) {
-      throw new SfError(t('actionValidationErrors', { errors: validationErrors.join('\n') }));
+      await throwActionValidationErrors(action, validationErrors);
     }
 
     uxLog("action", this, c.cyan(t('savingDeploymentActions')));
@@ -294,9 +303,11 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
     logActionSummary(this, action);
     uxLog("log", this, c.grey(t('actionSavedToFile', { file: configFile })));
 
+    const typeDetails = await getActionSaveDetails(action);
+
     WebSocketClient.sendRefreshPipelineMessage();
 
-    return { outputString: 'Action updated', action: action as any, configFile, movedTo: isPhaseMove ? targetWhen : undefined };
+    return { outputString: 'Action updated', action: action as any, configFile, movedTo: isPhaseMove ? targetWhen : undefined, typeDetails };
   }
 
   /**
@@ -333,7 +344,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
       ...validateMovedFrom(movedAction, 'pr', targetPrId),
     ];
     if (validationErrors.length > 0) {
-      throw new SfError(t('actionValidationErrors', { errors: validationErrors.join('\n') }));
+      await throwActionValidationErrors(movedAction, validationErrors);
     }
     uxLog("action", this, c.cyan(t('savingDeploymentActions')));
     if (fromFile) {
@@ -357,7 +368,8 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
     if (newLabel) action.label = newLabel;
 
     const newType = await this.promptSelect(t('selectActionType'), await listAvailableActionTypes(targetWhen), action.type);
-    if (newType && newType !== action.type) {
+    const typeChanged = Boolean(newType && newType !== action.type);
+    if (typeChanged) {
       action.type = newType;
       action.parameters = {};
       action.command = '';
@@ -365,6 +377,9 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 
     // What is specific to a built-in type is in its provider class
     const provider = await getBuiltInActionProvider(action.type);
+    // A new type proposes its default context
+    const typeDefaultContext = typeChanged ? provider?.getDefaultContext() : null;
+    if (typeDefaultContext) action.context = typeDefaultContext;
     const providerParameters = await provider?.collectParameters({}, false, action.parameters);
     if (providerParameters) {
       action.parameters = providerParameters;
@@ -452,6 +467,9 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
     // What is specific to a built-in type is in its provider class
     const provider = await getBuiltInActionProvider(action.type);
     if (provider) action.parameters = provider.applyFlags(action.parameters, flags);
+    // A new type takes its default context, unless one is passed
+    const typeDefaultContext = flags.type ? provider?.getDefaultContext() : null;
+    if (typeDefaultContext && !flags.context) action.context = typeDefaultContext;
     // These types take their only context, unless one is passed and then validated
     if (DEPLOYMENT_ONLY_ACTION_TYPES.includes(action.type) && !flags.context) action.context = 'process-deployment-only';
     if (flags['packagexml-items']) {

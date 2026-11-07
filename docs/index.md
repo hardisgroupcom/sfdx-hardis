@@ -185,6 +185,7 @@ For advanced use, please also install dependencies
 sf plugins install @salesforce/plugin-packaging
 sf plugins install sfdx-git-delta
 sf plugins install sfdmu
+sf plugins install sfdx-browserforce-plugin
 ```
 
 If you are using CI/CD scripts, use `echo y | sf plugins install ...` to bypass prompt.
@@ -605,6 +606,7 @@ cd -
 
 - [SFDX Git Delta](https://github.com/scolladon/sfdx-git-delta)
 - [Salesforce Data Move Utility](https://github.com/forcedotcom/SFDX-Data-Move-Utility)
+- [Browserforce](https://github.com/amtrack/sfdx-browserforce-plugin)
 
 ## Contributors
 
@@ -883,6 +885,7 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 | [**hardis:project:action:test-class:add**](hardis/project/action/test-class/add.md)               | Add deployment Apex test class                                                                                                                                                                                         |
 | [**hardis:project:action:test-class:list**](hardis/project/action/test-class/list.md)             | List deployment Apex test classes                                                                                                                                                                                      |
 | [**hardis:project:action:test-class:remove**](hardis/project/action/test-class/remove.md)         | Remove deployment Apex test class                                                                                                                                                                                      |
+| [**hardis:project:action:types**](hardis/project/action/types.md)                                 | Describe deployment action types                                                                                                                                                                                       |
 | [**hardis:project:action:update**](hardis/project/action/update.md)                               | Update deployment action                                                                                                                                                                                               |
 | [**hardis:project:audit:apiversion**](hardis/project/audit/apiversion.md)                         | Audit Metadatas API Version                                                                                                                                                                                            |
 | [**hardis:project:audit:callincallout**](hardis/project/audit/callincallout.md)                   | Audit CallIns and CallOuts                                                                                                                                                                                             |

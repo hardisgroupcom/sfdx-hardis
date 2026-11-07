@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { UserAccessPolicyAction } from '../../../src/common/actionsProvider/userAccessPolicyAction.js';
-import { buildApplyPolicyPath, scrubLoginSecrets } from '../../../src/common/utils/userAccessPolicyBrowserUtils.js';
+import { UserAccessPolicyAction, buildUserAccessPoliciesConfig } from '../../../src/common/actionsProvider/userAccessPolicyAction.js';
+import type { BrowserforceApplyOptions, BrowserforceApplyOutcome } from '../../../src/common/actionsProvider/browserforce/browserforceRunner.js';
 import { PrePostCommand } from '../../../src/common/actionsProvider/actionsProvider.js';
 import { resolveRunOnlyOnceByOrg } from '../../../src/common/actionsProvider/actionTypes.js';
 import {
@@ -112,102 +112,93 @@ describe('UserAccessPolicyAction.getIdentityParameters', () => {
 
 describe('UserAccessPolicyAction.run', () => {
   let previousConn: any;
-  let updates: any[];
 
-  function fakeConnection(options: { records?: any[]; queryError?: any; updateResult?: any; statusAfterUpdate?: string }): any {
-    let updated = false;
+  // Browserforce cannot run in the tests: the calls are recorded and answered with the given outcome
+  class TestUserAccessPolicyAction extends UserAccessPolicyAction {
+    public calls: BrowserforceApplyOptions[] = [];
+    public constructor(private readonly outcome: BrowserforceApplyOutcome = { success: true, outputLines: [] }) {
+      super();
+    }
+    protected async applyWithBrowserforce(options: BrowserforceApplyOptions): Promise<BrowserforceApplyOutcome> {
+      this.calls.push(options);
+      return this.outcome;
+    }
+  }
+
+  function fakeConnection(options: { records?: any[]; queryError?: any }): any {
     return {
       instanceUrl: 'https://example.my.salesforce.com',
+      getUsername: () => 'admin@example.com',
       query: async () => {
         if (options.queryError) {
           throw options.queryError;
         }
-        const records = (options.records || []).map((record) =>
-          updated ? { ...record, Status: options.statusAfterUpdate ?? 'Active' } : record
-        );
-        return { done: true, records };
+        return { done: true, records: options.records || [] };
       },
-      sobject: () => ({
-        update: async (record: any) => {
-          updates.push(record);
-          updated = true;
-          return options.updateResult ?? { success: true };
-        },
-      }),
     };
   }
 
   beforeEach(() => {
     previousConn = globalThis.jsForceConn;
-    updates = [];
   });
 
   afterEach(() => {
     globalThis.jsForceConn = previousConn;
   });
 
-  it('activates a policy left in Design by the deployment', async () => {
-    globalThis.jsForceConn = fakeConnection({ records: [{ Id: '3xE000000000001AAA', DeveloperName: 'A', Status: 'Design' }] });
-    const result = await new UserAccessPolicyAction().run(action({ policies: ['A'] }));
+  it('activates the policies with Browserforce, with their developer name as written in the org', async () => {
+    globalThis.jsForceConn = fakeConnection({ records: [{ Id: '3xE000000000001AAA', DeveloperName: 'Sales_Access', Status: 'Design' }] });
+    const provider = new TestUserAccessPolicyAction();
+    const result = await provider.run(action({ policies: ['sales_access'] }, { pipelineContext: { targetBranch: 'uat' } as any }));
     expect(result.statusCode).to.equal('success');
-    expect(updates).to.deep.equal([{ Id: '3xE000000000001AAA', Status: 'Active' }]);
+    expect(provider.calls).to.deep.equal([{
+      setting: 'userAccessPolicies',
+      config: { accessPolicies: [{ apiName: 'Sales_Access', active: true }] },
+      username: 'admin@example.com',
+      dryRun: false,
+      targetBranch: 'uat',
+    }]);
   });
 
-  it('leaves an active policy as it is', async () => {
-    globalThis.jsForceConn = fakeConnection({ records: [{ Id: '3xE000000000001AAA', DeveloperName: 'A', Status: 'Active' }] });
-    const result = await new UserAccessPolicyAction().run(action({ policies: ['A'] }));
-    expect(result.statusCode).to.equal('success');
-    expect(updates).to.have.lengthOf(0);
-  });
-
-  it('fails when a policy is not in the org', async () => {
+  it('fails when Browserforce fails, with its output', async () => {
     globalThis.jsForceConn = fakeConnection({ records: [{ Id: '3xE000000000001AAA', DeveloperName: 'A', Status: 'Design' }] });
-    const result = await new UserAccessPolicyAction().run(action({ policies: ['A', 'Missing'] }));
-    expect(result.statusCode).to.equal('failed');
-    expect(updates).to.have.lengthOf(0);
-  });
-
-  it('fails when User Access Policies are not enabled in the org', async () => {
-    globalThis.jsForceConn = fakeConnection({ queryError: Object.assign(new Error('sObject type not supported'), { errorCode: 'INVALID_TYPE' }) });
-    const result = await new UserAccessPolicyAction().run(action({ policies: ['A'] }));
-    expect(result.statusCode).to.equal('failed');
-  });
-
-  it('fails when Salesforce refuses the activation', async () => {
-    globalThis.jsForceConn = fakeConnection({
-      records: [{ Id: '3xE000000000001AAA', DeveloperName: 'A', Status: 'Design' }],
-      updateResult: { success: false, errors: [{ message: 'You cannot set a policy as active without at least 1 filter and 1 action.' }] },
-    });
-    const result = await new UserAccessPolicyAction().run(action({ policies: ['A'] }));
+    const provider = new TestUserAccessPolicyAction({ success: false, outputLines: ['You cannot set a policy as active without at least 1 filter and 1 action.'] });
+    const result = await provider.run(action({ policies: ['A'] }));
     expect(result.statusCode).to.equal('failed');
     expect(result.output).to.contain('at least 1 filter');
   });
 
-  it('fails when the policy is still not active after the update', async () => {
-    globalThis.jsForceConn = fakeConnection({
-      records: [{ Id: '3xE000000000001AAA', DeveloperName: 'A', Status: 'Design' }],
-      statusAfterUpdate: 'Design',
-    });
-    const result = await new UserAccessPolicyAction().run(action({ policies: ['A'] }));
+  it('fails when a policy is not in the org, without starting Browserforce', async () => {
+    globalThis.jsForceConn = fakeConnection({ records: [{ Id: '3xE000000000001AAA', DeveloperName: 'A', Status: 'Design' }] });
+    const provider = new TestUserAccessPolicyAction();
+    const result = await provider.run(action({ policies: ['A', 'Missing'] }));
     expect(result.statusCode).to.equal('failed');
+    expect(provider.calls).to.have.lengthOf(0);
+  });
+
+  it('fails when User Access Policies are not enabled in the org', async () => {
+    globalThis.jsForceConn = fakeConnection({ queryError: Object.assign(new Error('sObject type not supported'), { errorCode: 'INVALID_TYPE' }) });
+    const provider = new TestUserAccessPolicyAction();
+    const result = await provider.run(action({ policies: ['A'] }));
+    expect(result.statusCode).to.equal('failed');
+    expect(provider.calls).to.have.lengthOf(0);
   });
 
   it('fails before reading the org when the parameters are wrong', async () => {
     globalThis.jsForceConn = fakeConnection({ queryError: new Error('must not be queried') });
-    const result = await new UserAccessPolicyAction().run(action({ policies: [] }));
+    const provider = new TestUserAccessPolicyAction();
+    const result = await provider.run(action({ policies: [] }));
     expect(result.statusCode).to.equal('failed');
+    expect(provider.calls).to.have.lengthOf(0);
   });
 });
 
-describe('user access policy browser helpers', () => {
-  it('opens the classic page of the policy with its 15 character id', () => {
-    expect(buildApplyPolicyPath('3xEAq000000L2EvMAK')).to.equal('/005?id=3xEAq000000L2Ev&isUserEntityOverride=1');
-  });
-
-  it('removes the one-time token and the session id from a message', () => {
-    const message = 'net::ERR at https://x.my.salesforce.com/secur/frontdoor.jsp?otp=SECRET123&cshc=1 and ?sid=00D!abc';
-    expect(scrubLoginSecrets(message)).to.not.contain('SECRET123');
-    expect(scrubLoginSecrets(message)).to.not.contain('00D!abc');
+describe('buildUserAccessPoliciesConfig', () => {
+  it('only writes active and applyToAll when the action asks for them', () => {
+    expect(buildUserAccessPoliciesConfig(['A'], { policies: ['A'], activate: true, applyToAll: false })).to.deep.equal({ accessPolicies: [{ apiName: 'A', active: true }] });
+    expect(buildUserAccessPoliciesConfig(['A', 'B'], { policies: ['A', 'B'], activate: false, applyToAll: true })).to.deep.equal({
+      accessPolicies: [{ apiName: 'A', applyToAll: true }, { apiName: 'B', applyToAll: true }],
+    });
   });
 });
 

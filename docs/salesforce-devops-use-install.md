@@ -64,6 +64,7 @@ The **Dependencies** section of the SFDX Hardis side bar shows the same informat
 >   - [sfdx-hardis](https://github.com/hardisgroupcom/sfdx-hardis)
 >   - [SFDX Git Delta](https://github.com/scolladon/sfdx-git-delta)
 >   - [Salesforce Data Move Utility](https://github.com/forcedotcom/SFDX-Data-Move-Utility) (SFDMU)
+>   - [Browserforce](https://github.com/amtrack/sfdx-browserforce-plugin) (Setup settings applied in a browser by deployment actions)
 >   - [@salesforce/plugin-packaging](https://github.com/salesforcecli/plugin-packaging)
 >   - [sf-git-merge-driver](https://github.com/scolladon/sf-git-merge-driver)
 > - The [Salesforce Extension Pack](https://marketplace.visualstudio.com/items?itemName=salesforce.salesforcedx-vscode) for VS Code
@@ -127,6 +128,7 @@ sudo sf plugins install sfdx-hardis
 sudo sf plugins install @salesforce/plugin-packaging
 sudo sf plugins install sfdmu
 sudo sf plugins install sfdx-git-delta
+sudo sf plugins install sfdx-browserforce-plugin
 sudo sf plugins install sf-git-merge-driver
 ```
 
