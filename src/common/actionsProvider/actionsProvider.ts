@@ -21,6 +21,9 @@ export type BuiltInActionType =
   | 'run-batch'
   | 'remove-packagexml-items'
   | 'user-access-policy'
+  | 'agent-activate'
+  | 'agent-publish'
+  | 'agent-running-user'
   // Org initialization steps only (orgInitSteps), never deployment actions
   | 'install-packages'
   | 'deploy-sources'
@@ -59,6 +62,8 @@ export interface PrePostCommand {
     successEvenIfBatchErrors?: boolean; // for 'run-batch' actions in wait mode (optional, defaults to false)
     permissionSets?: string[]; // for 'assign-permission-sets' org initialization steps
     packageXmlItems?: string[] | string; // for 'remove-packagexml-items' actions (each item: "TypeName:Member1,Member2"; a single string is accepted for a single entry)
+    agentName?: string;      // for 'agent-activate', 'agent-publish' and 'agent-running-user' actions
+    agentVersion?: string;   // for 'agent-activate' actions (optional, a version number or latest, defaults to latest)
     [key: string]: any;
   };
   command: string;
@@ -178,6 +183,18 @@ export abstract class ActionsProvider {
       const UserAccessPolicyAction = await import('./userAccessPolicyAction.js');
       actionInstance = new UserAccessPolicyAction.UserAccessPolicyAction();
     }
+    else if (type === 'agent-activate') {
+      const AgentActivateAction = await import('./agentActivateAction.js');
+      actionInstance = new AgentActivateAction.AgentActivateAction();
+    }
+    else if (type === 'agent-publish') {
+      const AgentPublishAction = await import('./agentPublishAction.js');
+      actionInstance = new AgentPublishAction.AgentPublishAction();
+    }
+    else if (type === 'agent-running-user') {
+      const AgentRunningUserAction = await import('./agentRunningUserAction.js');
+      actionInstance = new AgentRunningUserAction.AgentRunningUserAction();
+    }
     else if (type === 'install-packages') {
       const InstallPackagesAction = await import('./installPackagesAction.js');
       actionInstance = new InstallPackagesAction.InstallPackagesAction();
@@ -221,6 +238,11 @@ export abstract class ActionsProvider {
 
   // Phases an action of this type may run in, or null when it may run in both
   public getAllowedWhen(): ActionWhen[] | null {
+    return null;
+  }
+
+  // Context of a new action of this type when none is given, or null for the generic default
+  public getDefaultContext(): PrePostCommand['context'] | null {
     return null;
   }
 

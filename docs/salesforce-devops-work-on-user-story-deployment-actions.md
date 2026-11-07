@@ -507,6 +507,97 @@ commandsPostDeploy:
 
 </details>
 
+#### Publish an Agentforce agent
+
+The project holds the authoring bundle of each [Agentforce agent](salesforce-ci-cd-agentforce-agents.md), its Agent Script, and no version. This action publishes the bundle in the target org right after the deployment, which creates a new version numbered by that org, then activates it, so users talk to the agent you just delivered.
+
+The cleaning `autoAddAgentsDeploymentActions` of [hardis:work:save](hardis/work/save.md) writes this action for each agent whose bundle changed in a User Story: see [Agentforce agents in CI/CD](salesforce-ci-cd-agentforce-agents.md#automate-it-at-each-user-story). Add it yourself when the cleaning is not on.
+
+<details markdown="1"><summary>Technical: agent-publish action (YAML)</summary>
+
+The action runs `sf agent publish authoring-bundle --skip-retrieve` on `aiAuthoringBundles/<agentName>/` with the replacement rules of the target org applied, finds the version the publication created, runs `sf agent activate` on it, and reads the status again to check it.
+
+The action runs after the deployment only, and only in the `process-deployment-only` context: a deployment check deploys nothing. It runs once by org by default (`runOnlyOnceByOrg: true`): each publication creates a new version, even when the Agent Script did not change.
+
+The target org must be on API 68.0 or above.
+
+| Custom parameter       | Required? | Description            | Example            |
+|------------------------|:---------:|------------------------|--------------------|
+| `parameters.agentName` | Yes       | API name of the agent. | `My_Service_Agent` |
+
+```yaml
+commandsPostDeploy:
+  - id: 2c9e4f1b-8a3d-4e6f-b5c7-1d2e3f4a5b6c
+    label: Publish the service agent
+    type: agent-publish
+    parameters:
+      agentName: My_Service_Agent
+    context: process-deployment-only
+    runOnlyOnceByOrg: true
+```
+
+</details>
+
+#### Activate a version of an Agentforce agent
+
+This action activates a version of an [Agentforce agent](salesforce-ci-cd-agentforce-agents.md) that the target org already has, for example to go back to a previous version. An agent delivered with an [agent-publish](#publish-an-agentforce-agent) action is already active.
+
+<details markdown="1"><summary>Technical: agent-activate action (YAML)</summary>
+
+The action finds the version in the target org, then runs `sf agent activate`, and reads the status again to check it. A version already active is left as it is. With `latest`, the highest version of the agent in the target org is activated.
+
+The action runs after the deployment only, and only in the `process-deployment-only` context: a deployment check deploys nothing. It runs at every deployment by default (`runOnlyOnceByOrg: false`).
+
+The target org must be on API 68.0 or above.
+
+| Custom parameter          | Required? | Description                                                            | Example            |
+|---------------------------|:---------:|------------------------------------------------------------------------|--------------------|
+| `parameters.agentName`    | Yes       | API name of the agent.                                                 | `My_Service_Agent` |
+| `parameters.agentVersion` | No        | Version number, or `latest` for the highest one. Defaults to `latest`. | `3`                |
+
+```yaml
+commandsPostDeploy:
+  - id: 7d1f3c2a-5e4b-4c8a-9f61-2b3e4d5a6c7e
+    label: Activate the service agent
+    type: agent-activate
+    parameters:
+      agentName: My_Service_Agent
+      agentVersion: latest
+    context: process-deployment-only
+    runOnlyOnceByOrg: false
+```
+
+</details>
+
+#### Create the running user of an Agentforce agent
+
+A service [Agentforce agent](salesforce-ci-cd-agentforce-agents.md#the-running-user-of-a-service-agent) runs as a user of its org, and a user is not deployed. This action creates it before the deployment, in an org that has none, so the agent can be published and activated. The built-in replacement rule `builtin-agent-running-user` then writes this user in the deployed and published bundle.
+
+The cleaning `autoAddAgentsDeploymentActions` of [hardis:work:save](hardis/work/save.md) writes this action for each changed agent that runs as a user.
+
+<details markdown="1"><summary>Technical: agent-running-user action (YAML)</summary>
+
+The action reads the usernames of the agent in the project (`botUser`, `default_agent_user`). When the target org has them, or has the user created for the agent before (`<agent>.<unique id>@<org id>.ext`, profile **Einstein Agent User**), nothing is created. Otherwise it runs `sf org create agent-user`.
+
+The action runs before the deployment only. Use the `all` context, so the deployment check validates the agent with the user of the target org. It runs at every deployment by default (`runOnlyOnceByOrg: false`): an existing user is found again.
+
+| Custom parameter       | Required? | Description            | Example            |
+|------------------------|:---------:|------------------------|--------------------|
+| `parameters.agentName` | Yes       | API name of the agent. | `My_Service_Agent` |
+
+```yaml
+commandsPreDeploy:
+  - id: 3b6c2f1e-8d4a-4e7b-a5c9-1f2d3e4a5b6c
+    label: Create the running user of agent My_Service_Agent when the org has none
+    type: agent-running-user
+    parameters:
+      agentName: My_Service_Agent
+    context: all
+    runOnlyOnceByOrg: false
+```
+
+</details>
+
 #### Remove items from package.xml
 
 Excludes some metadata from the deployment without touching your repository: the listed items are removed from the calculated package.xml just before deploying. Useful for org-specific components that exist in git but must not reach a given org.

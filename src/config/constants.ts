@@ -22,6 +22,9 @@ export const CONSTANTS = {
     .map((item) => item.trim())
     .filter((item) => item.length > 0) ?? [
       "ActionLinkGroupTemplate",
+      "AiAgentDefinition",
+      "AiAgentDefinitionVersion",
+      "AiAuthoringBundle",
       "AnalyticSnapshot",
       "AppMenu",
       "Audience",

@@ -631,6 +631,7 @@
       "items": {
         "type": "string",
         "enum": [
+          "autoAddAgentsDeploymentActions",
           "caseentitlement",
           "checkPermissions",
           "dashboards",
@@ -647,6 +648,7 @@
           "v60"
         ],
         "enumNames": [
+          "Agentforce agents deployment actions",
           "Case Entitlement",
           "Check Permissions",
           "Dashboards",
@@ -938,7 +940,8 @@
                   "run-batch",
                   "publish-community",
                   "manual",
-                  "remove-packagexml-items"
+                  "remove-packagexml-items",
+                  "agent-running-user"
                 ],
                 "enumNames": [
                   "Command",
@@ -948,7 +951,8 @@
                   "Run Batch",
                   "Publish Community",
                   "Manual Action",
-                  "Remove package.xml Items"
+                  "Remove package.xml Items",
+                  "Create Agentforce Agent Running User"
                 ]
               },
               {
@@ -1070,6 +1074,15 @@
                 "type": [
                   "array",
                   "string"
+                ]
+              },
+              "agentName": {
+                "$id": "#/properties/commandsPreDeploy/items/properties/parameters/agentName",
+                "description": "For 'agent-running-user' actions: API name of the Agentforce agent whose running user is created in the target org when it has none",
+                "title": "Agent API name",
+                "type": "string",
+                "examples": [
+                  "My_Service_Agent"
                 ]
               }
             },
@@ -1238,6 +1251,7 @@
               "publish-community",
               "manual",
               "user-access-policy",
+              "agent-activate",
               "notifySlack"
             ],
             "anyOf": [
@@ -1250,7 +1264,9 @@
                   "run-batch",
                   "publish-community",
                   "manual",
-                  "user-access-policy"
+                  "user-access-policy",
+                  "agent-activate",
+                  "agent-publish"
                 ],
                 "enumNames": [
                   "Command",
@@ -1260,7 +1276,9 @@
                   "Run Batch",
                   "Publish Community",
                   "Manual Action",
-                  "User Access Policy"
+                  "User Access Policy",
+                  "Activate Agentforce Agent",
+                  "Publish Agentforce Agent"
                 ]
               },
               {
@@ -1394,6 +1412,26 @@
                 "title": "Apply to all users",
                 "type": "boolean",
                 "default": false
+              },
+              "agentName": {
+                "$id": "#/properties/commandsPostDeploy/items/properties/parameters/agentName",
+                "description": "For 'agent-activate' and 'agent-publish' actions: API name of the Agentforce agent to activate or to publish after the deployment",
+                "title": "Agent API name",
+                "type": "string",
+                "examples": [
+                  "My_Service_Agent"
+                ]
+              },
+              "agentVersion": {
+                "$id": "#/properties/commandsPostDeploy/items/properties/parameters/agentVersion",
+                "description": "For 'agent-activate' actions: version number of the agent to activate, or latest for the highest version in the target org",
+                "title": "Agent version",
+                "type": "string",
+                "default": "latest",
+                "examples": [
+                  "latest",
+                  "3"
+                ]
               }
             },
             "additionalProperties": true

@@ -18,6 +18,7 @@ import { getConfig, setConfig } from '../../../../config/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
 import { FilterXmlContent } from './filter-xml-content.js';
 import LintAccess from '../../lint/access.js';
+import CleanAgentsDeploymentActions from './agents-deployment-actions.js';
 import CleanEmptyItems from './emptyitems.js';
 import CleanFlowPositions from './flowpositions.js';
 import CleanListViews from './listviews.js';
@@ -31,6 +32,7 @@ import { t } from '../../../../common/utils/i18n.js';
 // allCleaningTypes below, which carries the label and the command class of each: a test checks both lists
 // stay in sync, as several cleaning types used to be missing here and were not selectable at all
 const CLEANING_TYPES = [
+  'autoAddAgentsDeploymentActions',
   'caseentitlement',
   'checkPermissions',
   'dashboards',
@@ -103,7 +105,7 @@ The command's technical implementation involves several steps:
 
 - **Configuration Loading:** It reads the project's configuration to determine default cleaning types and user preferences.
 - **Cleaning Type Processing:** For each selected cleaning type, it either executes a dedicated sub-command (e.g., 
-- **Delta scope:** \`--delta-from\` is passed on to the cleanings that delete files (\`emptyItems\`): \`hardis:work:save\` sends the commit its git delta starts from, so a file that already exists there is never deleted (the next delta would turn that deletion into a destructive change).
+- **Delta scope:** \`--delta-from\` is passed on to the cleanings that depend on the git delta: \`hardis:work:save\` sends the commit its git delta starts from. \`emptyItems\` never deletes a file that already exists there (the next delta would turn that deletion into a destructive change), and \`autoAddAgentsDeploymentActions\` only handles the agents changed since that commit.
 - **XML Filtering:** For template-based cleanings, it constructs a temporary JSON configuration file based on predefined templates or user-provided 
 - **Package.xml Cleanup:** It iterates through 
 - **Object Property Removal:** The 
@@ -160,6 +162,12 @@ The command's technical implementation involves several steps:
   protected debugMode = false;
   protected cleaningTypes: any[] = [];
   protected allCleaningTypes: CleaningType[] = [
+    {
+      value: 'autoAddAgentsDeploymentActions',
+      title: t('cleaningTypeAutoAddAgentsDeploymentActions'),
+      commandClass: CleanAgentsDeploymentActions,
+      scopedByDeltaFrom: true,
+    },
     {
       value: 'checkPermissions',
       title: t('cleaningTypeCheckPermissions'),

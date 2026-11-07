@@ -43,6 +43,12 @@ This will activate delta deployments only between minor and major branches (majo
 
 If you want to force the delta deployment into major orgs (ex: preprod to prod), this is not recommended but you can use env variable ALWAYS_ENABLE_DELTA_DEPLOYMENT=true
 
+### Agentforce agents
+
+The running user of a service agent (`botUser`, `default_agent_user`) is a user of the target org: the built-in replacement rule `builtin-agent-running-user` writes it in the deployed files. It never creates a user: an `agent-running-user` deployment action does.
+
+See [Agentforce agents in CI/CD](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-agentforce-agents/).
+
 ### Smart Deployments Tests
 
 Not all metadata updates can break test classes, use Smart Deployment Tests to skip running test classes if ALL the following conditions are met:
@@ -59,6 +65,9 @@ Activate Smart Deployment tests with:
 Defaut list for **NOT_IMPACTING_METADATA_TYPES** (can be overridden with comma-separated list on env var NOT_IMPACTING_METADATA_TYPES)
 
 - ActionLinkGroupTemplate
+- AiAgentDefinition
+- AiAgentDefinitionVersion
+- AiAuthoringBundle
 - AnalyticSnapshot
 - AppMenu
 - Audience

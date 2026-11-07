@@ -2,6 +2,18 @@
 
 ## [beta] (main)
 
+- New [hardis:org:retrieve:agent](https://sfdx-hardis.cloudity.com/hardis/org/retrieve/agent/): Retrieve a version of an Agentforce agent as one Agent Script per agent, with its dependencies, so a new version shows as a plain change in the Pull Request. It lists the objects and fields the agent needs that the project lacks, warns when the agent runs as a user of the source org only, and moves an agent of the format before API 68.0 (`GenAiPlannerBundle`, `Bot`). See [Agentforce agents in CI/CD](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-agentforce-agents/).
+- New cleaning `autoAddAgentsDeploymentActions` ([hardis:project:clean:agents-deployment-actions](https://sfdx-hardis.cloudity.com/hardis/project/clean/agents-deployment-actions/)), run by [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/): adds the publication of each changed Agentforce agent, and the creation of its running user, to the Pull Request deployment actions.
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): the running user of a service agent is written in the deployed files with the user of the target org (new built-in replacement rule `builtin-agent-running-user`). The rule never creates a user: when the org has none, it says which deployment action to add.
+- [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/): a file already modified before the cleaning and changed again by it, such as the draft deployment actions, is now committed with the cleaned files instead of being left out of the push.
+- [Deployment actions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/):
+  - New action to [publish an Agentforce agent](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#publish-an-agentforce-agent) after a deployment: each org gets its own version, numbered by that org, which is activated.
+  - New action to [activate a version of an Agentforce agent](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#activate-a-version-of-an-agentforce-agent), for example to go back to a previous one. When Salesforce refuses an agent without a running user, the error says how to fix it.
+  - New action to [create the running user of an Agentforce agent](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#create-the-running-user-of-an-agentforce-agent) with `sf org create agent-user` before a deployment, in an org that has none. It runs in the deployment checks too, so a check validates the agent with its real user.
+- MegaLinter configuration: the files of Agentforce agent versions and authoring bundles are no longer linted as JSON. Their agent graph (`agentGraph/*_graph.json`) is base64 text that failed the JSON linters, and fixes applied to their action schemas made every new retrieve show up as a change.
+- New deployment tip for [an agent running user without access to the agent](https://sfdx-hardis.cloudity.com/sf-deployment-assistant/Agent-running-user-has-no-access-to-the-agent/).
+- Upgrade **follow-redirects** to 1.16.2, which stops custom credential headers from being sent to another site on a redirect (CVE-2026-116689).
+
 ## [8.23.0] 2026-11-06
 
 - [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/#3-answer-the-conflicts-if-any) (Beta), [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/):

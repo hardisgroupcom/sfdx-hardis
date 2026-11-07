@@ -447,6 +447,7 @@ Nine built-in action types are available, plus the [custom functions](salesforce
 | `run-batch`               | `--class-name`                                |
 | `remove-packagexml-items` | `--packagexml-items`                          |
 | `user-access-policy`      | `--policies`                                  |
+| `agent-activate`          | `--agent-name`                                |
 | Id of a custom function   | `--function-input name=value`, once per input |
 
 An agent works with these commands in three ways:
@@ -585,6 +586,7 @@ Plus the type-specific flags of the table above.
 | `--success-even-if-batch-errors` | `false`                   | For `run-batch` in `wait` mode: keep the action successful when the job completes with batches in error                                   |
 | `--activate`                     | `true`                    | For `user-access-policy`: activate the policies. `--no-activate` to only apply them                                                       |
 | `--apply-to-all`                 | `false`                   | For `user-access-policy`: also run Apply To All for each policy, from the Setup page in a headless Chrome                                 |
+| `--agent-version`                | `latest`                  | For `agent-activate`: version number to activate, or `latest` for the highest version in the target org                                   |
 
 Things to know:
 
