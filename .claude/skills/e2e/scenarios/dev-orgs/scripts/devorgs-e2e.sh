@@ -109,7 +109,7 @@ list_dev_orgs() {
 # document), d (j.result.devOrgs), org (the entry of the dev org) and dash (dashboard.json)
 expect_json() {
   local id="$1" file="$2" desc="$3" cond="$4" out
-  out=$(DEV_ID="$DEV_ID" PR1="${PR1:-0}" PR_V="${PR_V:-0}" OWNER_EMAIL="$OWNER_EMAIL" node -e "
+  if out=$(DEV_ID="$DEV_ID" PR1="${PR1:-0}" PR_V="${PR_V:-0}" OWNER_EMAIL="$OWNER_EMAIL" node -e "
 const fs=require('fs');
 let j={};try{const t=fs.readFileSync(process.argv[1],'utf8');j=JSON.parse(t.slice(t.indexOf('{')))}catch(e){console.log('not JSON: '+process.argv[1]);process.exit(1)}
 const d=(j.result||{}).devOrgs||{orgs:[]};
@@ -118,8 +118,7 @@ const dash=fs.existsSync(process.argv[2])?JSON.parse(fs.readFileSync(process.arg
 const PR1=Number(process.env.PR1), PR_V=Number(process.env.PR_V);
 let ok=false;try{ok=!!($cond)}catch(e){console.log(String(e));process.exit(1)}
 const brief=org?{targetBranch:org.targetBranch,owner:org.owner&&org.owner.email,users:(org.users||[]).map((u)=>u.email),isMine:org.isMine,lastBackpromote:org.lastBackpromote,behind:org.behind&&{count:org.behind.count,prs:org.behind.pullRequests.map((p)=>[p.number,p.vehicle,p.carried&&p.carried.map((c)=>c.number)])}}:{orgs:(d.orgs||[]).length,error:j.result&&j.result.errorKind,message:j.message};
-console.log(JSON.stringify(brief));process.exit(ok?0:1)" "$(native "$file")" "$(native "$LOGS/dashboard.json")" 2>&1)
-  if [ $? -eq 0 ]; then
+console.log(JSON.stringify(brief));process.exit(ok?0:1)" "$(native "$file")" "$(native "$LOGS/dashboard.json")" 2>&1); then
     record "$id" OK "$desc"
   else
     record "$id" FAIL "$desc: $out"
