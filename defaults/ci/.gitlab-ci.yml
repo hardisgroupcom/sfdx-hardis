@@ -139,7 +139,6 @@ create_scratch_org:
   # Merge Requests taking a scratch org from the pool at the same time are queued, so two of them
   # never get the same one. Remove this line if you do not use a scratch org pool.
   resource_group: scratch_org_pool
-  variables:
   script:
     - |
       if [ "${CI_COMMIT_REF_NAME#auto-fix/}" != "$CI_COMMIT_REF_NAME" ]; then
