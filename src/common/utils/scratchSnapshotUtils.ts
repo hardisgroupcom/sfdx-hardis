@@ -144,9 +144,8 @@ export function scratchDefChangedSince(sha: string, cwd = process.cwd()): boolea
   return spawnSync('git', ['diff', '--quiet', sha, 'HEAD', '--', ...paths], { cwd }).status !== 0;
 }
 
-// A snapshot holds the result of the steps run at pool fill, which a child does not run again: a step added, removed
-// or changed since the snapshot commit, or a change to the Apex script or data workspace it names, needs an empty org.
-// Read from git at both commits, project and branch config files, so a step coming from extends is not compared
+// A pool-fill step added, removed or changed since the snapshot commit (or its Apex script or data) needs an empty org.
+// Read from git at both commits (project and branch config files), so a step coming from extends is not compared
 export async function orgInitStepChangedSince(sha: string, branch: string, cwd = process.cwd()): Promise<string | null> {
   const before = snapshotHeldSteps(readConfigAtCommit(sha, branch, cwd));
   const after = snapshotHeldSteps(readConfigAtCommit('HEAD', branch, cwd));
@@ -167,10 +166,8 @@ export async function orgInitStepChangedSince(sha: string, branch: string, cwd =
   return null;
 }
 
-// The org init steps of a snapshot route, as a pool: the source runs what a pool fill runs, always with the
-// packages and the deployment of the sources; a child installs the packages before its delta (only those it lacks
-// are installed), then runs the rest, plus the permission set assignments. A pool org filled from a snapshot gets
-// only the permission set assignments: the snapshot holds the rest of the fill, the fetch runs what is left
+// Steps per role, as a pool: the source runs the pool fill plus packages and sources; a child installs missing packages,
+// takes its delta, then runs the rest plus permission sets; a pool fill from a snapshot only assigns permission sets
 export function selectSnapshotOrgInitStepIds(config: any, role: 'source' | 'child-packages' | 'child' | 'pool-fill'): string[] {
   const steps = selectOrgInitSteps(getOrgInitSteps(config).steps, { orgType: 'scratch', phase: role === 'pool-fill' ? 'pool-fill' : 'all' });
   const selected =
