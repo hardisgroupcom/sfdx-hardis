@@ -139,7 +139,11 @@ class OutputProbe extends ScratchSnapshotRefresh {
   public static pruneFails = false;
   public static limits: any = {};
   public static logs: string[] = [];
-  public ux: any = { log: (text: string) => OutputProbe.logs.push(text) };
+  // SfCommand keeps ux private: set it after super() so uxLog writes into logs
+  public constructor(argv: string[], config: any) {
+    super(argv, config);
+    (this as any).ux = { log: (text: string) => OutputProbe.logs.push(text) };
+  }
   protected async getDevHub(): Promise<any> {
     let lookups = 0;
     const conn = {
