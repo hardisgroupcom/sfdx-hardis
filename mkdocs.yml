@@ -143,8 +143,8 @@ nav:
                   - Remove items from package.xml: salesforce-devops-work-on-user-story-deployment-actions-remove-packagexml-items.md
                   - Manual step: salesforce-devops-work-on-user-story-deployment-actions-manual.md
                   - Publish an Agentforce agent: salesforce-devops-work-on-user-story-deployment-actions-agent-publish.md
-                  - Activate a version of an Agentforce agent: salesforce-devops-work-on-user-story-deployment-actions-agent-activate.md
                   - Create the running user of an Agentforce agent: salesforce-devops-work-on-user-story-deployment-actions-agent-running-user.md
+                  - Activate a version of an Agentforce agent: salesforce-devops-work-on-user-story-deployment-actions-agent-activate.md
                   - Custom functions: salesforce-devops-work-on-user-story-custom-functions.md
               - Agentforce agents: salesforce-ci-cd-agentforce-agents.md
               - Backpromote (Beta): salesforce-devops-backpromote.md

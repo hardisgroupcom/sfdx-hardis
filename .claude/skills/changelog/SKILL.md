@@ -1,6 +1,6 @@
 ---
 name: changelog
-description: Style rules for CHANGELOG.md entries, and how the beta section is organized (one group per command or feature, groups ordered by theme). Load it before any edit of CHANGELOG.md - when the user asks to update, add to, or write entries, and at the changelog step of the implement skill and agent.
+description: Style rules for CHANGELOG.md entries, and how the beta section is organized (headlines of the major features first, then one group per command or feature, groups ordered by theme). Load it before any edit of CHANGELOG.md - when the user asks to update, add to, or write entries, and at the changelog step of the implement skill and agent.
 user-invocable: false
 ---
 
@@ -33,6 +33,7 @@ The beta section is read as a whole at release time. Adding an entry means leavi
 
    | # | Theme                    | What goes there                                                                                                              |
    |---|--------------------------|------------------------------------------------------------------------------------------------------------------------------|
+   | 0 | Headlines                | The major features of the coming release, see below                                                                          |
    | 1 | New commands             | Lines starting with `New [hardis:...]`                                                                                       |
    | 2 | CI/CD pipeline           | `hardis:project:deploy:*`, `hardis:work:*`, Pull Request comments, deployment actions, promotion branches, backpromote, DORA |
    | 3 | Org monitoring           | `hardis:org:monitor:*`, `hardis:org:diagnose:*`, `hardis:org:configure:monitoring`, notifications, Grafana                   |
@@ -41,8 +42,28 @@ The beta section is read as a whole at release time. Adding an entry means leavi
    | 6 | Integrations             | Lines starting with a provider name: `GitHub:`, `GitLab:`, `Azure DevOps:`, `Bitbucket:`, `Jira:`, `ServiceNow:`...          |
    | 7 | Doc site and others      | Lines starting with `Doc:`, dependencies, internal changes worth a line                                                      |
 
-4. **The themes are an order, not headers.** Never write a theme name in the file: the section stays a flat list of top-level bullets, with nested bullets only for the changes of a group.
-5. **Only the beta section is reorganized.** Never touch a released version section.
+4. **Headlines come first.** The few major features of the coming release (usually one to three, a new feature with its own doc page rather than a fix or an option) open the section, each as one group:
+   - The top-level bullet is the feature name in bold, its doc link, then one short sentence on what the user gets: `- **Scratch org snapshots** ([doc](https://sfdx-hardis.cloudity.com/...)), off by default: <what it does for the user>.`
+   - Every change of that feature goes under it as a nested bullet, one line each, whatever command it touches (a new command, a new env var, a new deployment action type...): a command or an action type that belongs to a headline is not repeated lower in the section.
+   - When a change makes a feature a headline (a new feature with its own doc page, or the user names it), turn its existing group into a headline and move it up. When the user names the headlines, follow their choice and their order.
+   - Only the headlines are in bold at top level. The other groups keep the plain style.
+
+   Example of a beta section with two headlines:
+
+   ```markdown
+   ## [beta] (main)
+
+   - **Browserforce** ([doc](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions-browser/)): apply the Setup settings the Metadata API cannot deploy, with your Pull Request.
+     - New [Browser](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions-browser/) deployment action type.
+     - Both types can also be [org initialization steps](https://sfdx-hardis.cloudity.com/salesforce-devops-org-initialization/).
+   - **Development orgs list** ([doc](https://sfdx-hardis.cloudity.com/salesforce-devops-dev-orgs/)): see which dev sandboxes and scratch orgs miss merged Pull Requests.
+   - New [hardis:project:action:types](https://sfdx-hardis.cloudity.com/hardis/project/action/types/): <change>.
+   - [hardis:doc:plugin:generate](https://sfdx-hardis.cloudity.com/hardis/doc/plugin/generate/): <change>.
+   ```
+
+5. **Trim long entries when you reorganize.** A group whose lines run into paragraphs (several sentences, env vars and implementation details) is rewritten as one line for the feature and one short line per change. What only explains how it works goes to the doc page, not the changelog.
+6. **The themes are an order, not headers.** Never write a theme name in the file: the section stays a flat list of top-level bullets, with nested bullets only for the changes of a group.
+7. **Only the beta section is reorganized.** Never touch a released version section.
 
 Example of a beta section after three Pull Requests on the same command and one on another:
 
