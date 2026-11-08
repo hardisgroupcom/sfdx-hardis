@@ -631,6 +631,7 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 - [Taha Basri](https://www.linkedin.com/in/tahabasri/), for his work about generating documentation of LWC
 - [Anush Poudel](https://www.linkedin.com/in/anushpoudel/), for integrating sfdx-hardis with multiple LLMs using langchainJs
 - [Sebastien Colladon](https://www.linkedin.com/in/sebastien-colladon/), for providing sfdx-git-delta which is highly used within sfdx-hardis
+- [Haim Knokh](https://github.com/hknokh), for providing SFDMU (Salesforce Data Move Utility) which runs the data imports and exports of sfdx-hardis
 - [Matthias Rolke](https://github.com/amtrack), for providing Browserforce (sfdx-browserforce-plugin) which applies the Setup settings of browser deployment actions
 - [Stepan Stepanov](https://www.linkedin.com/in/stepan-stepanov-79a48734/), for implementing the deployment mode _delta with dependencies_
 - [Shamina Mossodeean](https://www.linkedin.com/in/shaminam/), for automating SF decomposed metadata
