@@ -262,26 +262,26 @@ export function isSnapshotSignupRetryable(createResult: any): boolean {
   if (createResult?.error?.code === 68) {
     return false;
   }
-  const message = String(createResult?.errorMessage || createResult?.message || '');
   // AuthCodeExchangeError: the org was created and only its login failed. NamedOrgNotFoundError: no Dev Hub login
-  return !/ScratchOrgInfoTimeoutError|MyDomainResolverTimeoutError|Socket timeout occurred|LIMIT_EXCEEDED|AuthCodeExchangeError|NamedOrgNotFoundError/.test(message);
+  return !/ScratchOrgInfoTimeoutError|MyDomainResolverTimeoutError|Socket timeout occurred|LIMIT_EXCEEDED|AuthCodeExchangeError|NamedOrgNotFoundError/.test(signupErrorText(createResult));
 }
 
-// The Salesforce error of a failed signup: "NAME: message" plus the first entry of data, read from the CLI JSON on the
-// child process stdout. Else the first line after the sfdx-hardis header, else null
+// The Salesforce error of a failed signup: "NAME: message" plus the first entry of data, from the CLI JSON on the child
+// process stdout. Without that JSON, the first line of the text that is not a header or a warning; else null
 export function getSnapshotSignupError(createResult: any): string | null {
+  const stdout = String(createResult?.error?.stdout ?? '');
   try {
-    const error = JSON.parse(String(createResult?.error?.stdout ?? ''));
-    if (error?.name) {
-      const first = Array.isArray(error.data) ? error.data[0] : null;
-      const detail = first ? ` ${[first.errorCode, first.message].filter(Boolean).join(': ')}` : '';
-      return `${error.name}: ${String(error.message || '').split('\n')[0]}${detail}`.trim();
-    }
+    const error = JSON.parse(stdout.slice(stdout.indexOf('{'), stdout.lastIndexOf('}') + 1));
+    const first = Array.isArray(error?.data) ? error.data[0] : null;
+    const detail = typeof first === 'string' ? first : [first?.errorCode, first?.message].filter(Boolean).join(': ');
+    const message = firstLine(error?.message);
+    const summary = error?.name ? [error.name, message].filter(Boolean).join(': ') : message;
+    return [summary, detail].filter(Boolean).join(' ') || null;
   } catch {
     // No CLI JSON on stdout: the text below says what failed
   }
-  const lines = String(createResult?.errorMessage || createResult?.message || '').split('\n').map((line) => line.trim());
-  return lines.find((line) => line && line !== 'undefined' && !line.startsWith('[sfdx-hardis][ERROR]')) ?? null;
+  const lines = signupErrorText(createResult).split('\n').map((line) => line.trim()).filter((line) => line && !SIGNUP_TEXT_NOISE.test(line));
+  return lines[0] ?? null;
 }
 
 // The snapshot limit that has nothing left, read before the refresh builds its source org. Null when both have room
@@ -375,4 +375,15 @@ function readConfigAtCommit(ref: string, branch: string, cwd: string): any {
     read(projectConfigFiles.filter((file) => !file.endsWith('.json'))),
     read([`config/branches/.sfdx-hardis.${branchName}.yaml`, `config/branches/.sfdx-hardis.${branchName}.yml`])
   );
+}
+
+// Header, Node and CLI warnings, bare JSON braces and empty stream markers name no error
+const SIGNUP_TEXT_NOISE = /^(\[sfdx-hardis\]\[ERROR\]|\(node:\d+\)|Warning:|undefined$|[{}[\]],?$)/;
+
+function signupErrorText(createResult: any): string {
+  return String(createResult?.errorMessage || createResult?.message || '');
+}
+
+function firstLine(text: unknown): string {
+  return String(text ?? '').split('\n').map((line) => line.trim()).find(Boolean) ?? '';
 }

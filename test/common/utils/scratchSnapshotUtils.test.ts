@@ -181,7 +181,8 @@ describe('getSnapshotSignupError', () => {
   // The shape execSfdxJson returns: errorMessage is header + stdout + stderr, error is the child process error
   const HEADER = '[sfdx-hardis][ERROR] Error processing command';
   const failed = (stdout: string, stderr = '') => ({ status: 1, errorMessage: `${HEADER}\n${stdout}\n${stderr}`, error: { code: 1, stdout, stderr } });
-  const missingSnapshot = '{\n  "name": "MULTIPLE_API_ERRORS",\n  "message": "Multiple errors returned.\\n  Check `error.data` for the error details",\n  "exitCode": 1,\n  "context": "OrgCreateScratch",\n  "data": null\n}';
+  // Keys and values of a real failed signup from a missing snapshot, hub 3, 2026-11-08 (stack and cause left out)
+  const missingSnapshot = JSON.stringify({ name: 'MULTIPLE_API_ERRORS', message: 'Multiple errors returned.\n  Check `error.data` for the error details', exitCode: 1, context: 'OrgCreateScratch', warnings: [], code: 'MULTIPLE_API_ERRORS', status: 1, commandName: 'OrgCreateScratch' }, null, 2);
 
   it('names the Salesforce error of a signup from a missing snapshot (real Dev Hub output)', () => {
     expect(getSnapshotSignupError(failed(missingSnapshot))).to.equal('MULTIPLE_API_ERRORS: Multiple errors returned.');
@@ -194,6 +195,24 @@ describe('getSnapshotSignupError', () => {
   it('adds the first Salesforce error of data when the CLI gives one', () => {
     const withData = JSON.stringify({ name: 'MULTIPLE_API_ERRORS', message: 'Multiple errors returned.', data: [{ errorCode: 'NOT_FOUND', message: 'Snapshot SHx not found' }] });
     expect(getSnapshotSignupError(failed(withData))).to.equal('MULTIPLE_API_ERRORS: Multiple errors returned. NOT_FOUND: Snapshot SHx not found');
+  });
+
+  it('reads the JSON when the CLI prints its update warning before it on stdout', () => {
+    expect(getSnapshotSignupError(failed(`Warning: @salesforce/cli update available from 2.1 to 2.2.\n${missingSnapshot}`))).to.equal('MULTIPLE_API_ERRORS: Multiple errors returned.');
+  });
+
+  it('takes the first non-empty line of the message, and a data entry given as text', () => {
+    expect(getSnapshotSignupError(failed(JSON.stringify({ name: 'SfError', message: '\nScratch org signup failed' })))).to.equal('SfError: Scratch org signup failed');
+    expect(getSnapshotSignupError(failed(JSON.stringify({ name: 'X', message: 'Failed', data: ['Snapshot SHx not found'] })))).to.equal('X: Failed Snapshot SHx not found');
+  });
+
+  it('gives null for CLI JSON that names no error, rather than a line of it', () => {
+    expect(getSnapshotSignupError(failed('{\n  "status": 1,\n  "result": {}\n}'))).to.equal(null);
+  });
+
+  it('skips Node warnings in stderr', () => {
+    const stderr = '(node:4242) [DEP0040] DeprecationWarning: The punycode module is deprecated.\nError: INVALID_INPUT bad definition';
+    expect(getSnapshotSignupError(failed('', stderr))).to.equal('Error: INVALID_INPUT bad definition');
   });
 
   it('falls back to the first line after the sfdx-hardis header, and gives null when there is nothing', () => {
