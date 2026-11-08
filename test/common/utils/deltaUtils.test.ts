@@ -367,5 +367,37 @@ describe('deployUtils.extendPackageFileWithDependencies', async () => {
     );
     await extendPackageFileWithDependencies(deltaXmlFile, fullXmlFile);
   });
+
+  it('reads each full manifest of a process, not only the first one', async () => {
+    await extendPackageFileWithDependencies(deltaXmlFile, fullXmlFile);
+    const otherFullXmlFile = path.join(tmpDir, 'other-package.xml');
+    fs.writeFileSync(
+      otherFullXmlFile,
+      `<?xml version="1.0" encoding="UTF-8"?>
+      <Package xmlns="http://soap.sforce.com/2006/04/metadata">
+        <types>
+          <members>Opportunity.OtherType</members>
+          <name>RecordType</name>
+        </types>
+        <version>63.0</version>
+      </Package>`,
+      'utf8'
+    );
+    fs.writeFileSync(
+      deltaXmlFile,
+      `<?xml version="1.0" encoding="UTF-8"?>
+      <Package xmlns="http://soap.sforce.com/2006/04/metadata">
+        <types>
+          <members>Opportunity.SomeField__c</members>
+          <name>CustomField</name>
+        </types>
+        <version>63.0</version>
+      </Package>`,
+      'utf8'
+    );
+    await extendPackageFileWithDependencies(deltaXmlFile, otherFullXmlFile);
+    const recordTypes = (await xml2js.parseStringPromise(fs.readFileSync(deltaXmlFile, 'utf8'))).Package.types.find((type) => type.name[0] === 'RecordType');
+    expect(recordTypes?.members).to.deep.equal(['Opportunity.OtherType']);
+  });
 });
 

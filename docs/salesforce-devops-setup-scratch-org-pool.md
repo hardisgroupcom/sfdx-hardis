@@ -17,6 +17,7 @@ When the pool is filled, each scratch org gets the [org initialization steps](sa
 - [Configure the pool](#configure-the-pool)
 - [Schedule the pool refresh](#schedule-the-pool-refresh)
 - [Run the scratch org jobs on Pull Requests](#run-the-scratch-org-jobs-on-pull-requests)
+- [Use scratch org snapshots for Pull Requests](#use-scratch-org-snapshots-for-pull-requests)
 - [Use the pool from VS Code](#use-the-pool-from-vs-code)
 - [The dashboard on your git provider](#the-dashboard-on-your-git-provider)
 - [Rotate the encryption key](#rotate-the-encryption-key)
@@ -94,6 +95,77 @@ On each Pull Request, the scratch org jobs take a scratch org from the pool (or 
 - **GitHub Actions, Azure Pipelines, Bitbucket Pipelines, Jenkins**: the jobs are off by default. Set the variable `USE_SCRATCH_ORGS` to `true` to run them.
 
 When a job fails, its scratch org is kept until it expires, so you can investigate. To keep it after a successful job too, set `CI_DELETE_SCRATCH_ORG` to `false`, and put it back to `true` afterwards.
+
+### Use scratch org snapshots for Pull Requests
+
+As the project grows, pushing all of it into an empty scratch org on every Pull Request gets slow. With snapshots, a job keeps a [Dev Hub org snapshot](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_snapshots_intro.htm) of each major branch, and the scratch orgs of Pull Requests are created from it: only what changed since the commit of the snapshot is deployed.
+
+```mermaid
+flowchart LR
+    M["Push to a major branch"] --> R["sf hardis:scratch:snapshot:refresh<br/>empty scratch org, full deployment, snapshot"]
+    R -.-> S["Pull Request: scratch org created from the snapshot"]
+    S --> D["Deploy the changes since the snapshot commit"] --> V["Run Apex tests"]
+```
+
+The full deployment into an empty scratch org still happens, once per push to the major branch instead of once per Pull Request.
+
+To enable it on a major branch:
+
+1. Enable **Scratch Org Snapshots** in the Setup of your Dev Hub, and set `USE_SCRATCH_ORGS` to `true` (see above).
+2. In the branch config of the major branch, set `useScratchOrgSnapshot: true`, for example in `config/branches/.sfdx-hardis.integration.yml`. `scratchOrgSnapshotKeep` (default `2`) is the number of snapshots kept for the branch.
+3. Push to the branch: the job **Refresh scratch org snapshot** takes the first snapshot. Until it is Active, Pull Requests use an empty scratch org as before.
+
+The job reads the branch config before it logs in to the Dev Hub: on a branch without `useScratchOrgSnapshot: true`, it ends at once. On GitLab, `gitlab-ci-config.yml` sets `USE_SCRATCH_ORGS: "true"` by default, so the job starts on every push to a major branch and ends there.
+
+On Bitbucket Pipelines, the step **Refresh scratch org snapshot** runs after the deployment step, as the steps of a Bitbucket pipeline run one after the other: a commit that fails to deploy to the org of the branch gets no snapshot. On the other CI servers, the snapshot job runs beside the deployment.
+
+#### Snapshots and the pool
+
+Snapshots and the [pool](#how-it-works) work together: the snapshot feeds the pool, and the pool feeds the Pull Requests.
+
+```mermaid
+flowchart LR
+    M["1. Push to a major branch"] --> R["snapshot:refresh<br/>full deployment, snapshot"]
+    R -.-> P["2. Pool refresh<br/>pool orgs created from the snapshot"]
+    P -.-> PR["3. Pull Request<br/>takes a pool org, deploys its changes"]
+    R -.-> PR
+```
+
+1. **Push to a major branch**: the snapshot refresh deploys the branch into an empty scratch org, runs the [org initialization steps](salesforce-devops-org-initialization.md) run when filling the pool, and takes the snapshot.
+2. **Pool refresh**: each new pool org is created from the newest usable snapshot of the branch the pool refresh runs on. It installs the packages the snapshot lacks, deploys what changed since the snapshot commit and assigns the permission sets. The steps already in the snapshot are not run again. Without a usable snapshot, the pool org is filled as before.
+3. **Pull Request**: the job takes a pool org first, which is instant, and deploys what changed since the pool org was filled. When the pool has no org left, the scratch org is created from the snapshot, else empty.
+
+Each part works alone:
+
+| You use         | Jobs    | The Pull Request scratch org                                |
+|-----------------|---------|-------------------------------------------------------------|
+| The pool only   | 2 and 3 | Taken from the pool, filled with a full deployment as today |
+| Snapshots only  | 1 and 3 | Created from the snapshot                                   |
+| Both            | 1, 2, 3 | Taken from the pool, filled from the snapshot               |
+
+Schedule the pool refresh after the snapshot refresh, so new pool orgs start from the newest snapshot. On GitHub Actions, `scratch-snapshot-refresh.yml` already starts `scratch-pool-refresh.yml` once a new snapshot of the default branch is Active, when the repository variable `SCRATCH_ORG_POOL` is `true` and the pool workflow file is in the repository. The pool refresh still runs every night. A project or branch that does not use snapshots never starts it. On GitLab CI, Azure Pipelines, Bitbucket Pipelines and Jenkins, schedule the pool refresh at a time when the snapshot refresh is over.
+
+[New User Story](salesforce-devops-create-new-user-story.md) also takes a pool org first. When the pool has no org left, it creates the scratch org from the snapshot of the major branch the User Story starts from.
+
+#### Good to know
+
+- The scratch org of a Pull Request is created from the newest Active snapshot of its target branch whose commit is in the history of the Pull Request. The target branch is the one of the Pull Request the git provider gives; without it, it is read from `FORCE_TARGET_BRANCH`, then from the CI tool's own variable (`GITHUB_BASE_REF`, `CI_MERGE_REQUEST_TARGET_BRANCH_NAME`, `SYSTEM_PULLREQUEST_TARGETBRANCH`, `BITBUCKET_PR_DESTINATION_BRANCH`, `CHANGE_TARGET`). When there is no usable snapshot, the scratch org is created empty and the job log says why.
+- Outside CI, the target branch is the major branch the User Story started from, else `developmentBranch`. A CI server that does not set the variable `CI` takes that path too: set `CI=true` in its scratch org jobs (the Jenkins template does).
+- A scratch org from a snapshot starts from the stable point of the branch: it gets the commits since the snapshot, not the uncommitted changes of the working copy. Commit them before creating the scratch org, as its source tracking then lists only the changes made from that point.
+- When the Pull Request changes `config/project-scratch-def.json` or a file under its `settingsPath`, the scratch org is created empty: a scratch org from a snapshot keeps the features and settings of the snapshot commit.
+- When the Pull Request changes or moves an org initialization step run when filling the pool, its Apex script or its data workspace, the scratch org is created empty too, so the change is tested. The next snapshot holds it.
+- The steps are compared as written in the config files at both commits, with the Apex script and data workspace they name. A file that a `command` step reads, and a legacy `scripts/data/ScratchInit` folder deleted by the Pull Request, are not compared: such a change shows at the next snapshot refresh.
+- These two checks apply to a scratch org created from a snapshot. A scratch org taken from the pool comes first and is not checked: it keeps the scratch org definition and the step results of its pool fill, as before snapshots.
+- With `CI_SCRATCH_MODE=deploy`, `useDeltaDeploymentWithDependencies` applies to the delta as it does in deployments: the delta also gets what depends on the changed items, as the record types of a changed field.
+- The [org initialization steps](salesforce-devops-org-initialization.md) run as for a scratch org pool: the steps run when filling the pool (`runAtPoolFill`, on by default) run once, in the scratch org of the snapshot, and their result is in every scratch org created from it. A scratch org from a snapshot first installs the packages of `installedPackages` it lacks, as a Pull Request that adds a package can deploy metadata that needs it, then gets the delta, then the steps with `runAtPoolFill: false` and the permission set assignments.
+- So `runAtPoolFill` also decides what a snapshot holds. A step with `runAtPoolFill: false` placed before `deploy-sources` runs after the delta. That is fine for most steps, but a step that prepares the deployment must keep `runAtPoolFill` on.
+- What a step of yours grants to the admin user of the snapshot scratch org may not reach the admin user of a scratch org created from the snapshot. The permission set assignments run again in each scratch org, so the built-in step is covered.
+- A Pull Request proves that its changes deploy on the head of its target branch, not from empty. A change that only fails from empty, as a picklist value removed while a record type still uses it, shows at the next snapshot refresh: that refresh fails, and the previous snapshot stays in use.
+- `commandsPreDeploy`, `commandsPostDeploy`, the deferred sharing calculation and the deployment actions run in the snapshot refresh only, not around the delta of a Pull Request.
+- A snapshot child takes a few minutes to create, more than an empty scratch org. Snapshots pay off when the full deployment takes longer than that.
+- Salesforce writes that snapshots "are intended to include only dependent packages, metadata, and test data".
+- Every snapshot counts in the active snapshots allocation of the Dev Hub, and the Dev Hub also limits the snapshots taken per day. When that limit is reached, Pull Requests keep using the previous snapshot.
+- The first pull from a scratch org created from a snapshot can list `fragment_space/DefaultWidgetSpace`, a component Salesforce creates in that org, and fail to retrieve it. Add `**/digitalExperiences/fragment_space/**` to `.forceignore`.
 
 ### Use the pool from VS Code
 

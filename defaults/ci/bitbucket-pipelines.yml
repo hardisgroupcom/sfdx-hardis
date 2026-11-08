@@ -201,3 +201,24 @@ pipelines:
             - sf hardis:project:deploy:smart
           artifacts:
             - hardis-report/**
+      # Refresh the scratch org snapshot of the branch when its branch config sets useScratchOrgSnapshot: true,
+      # so that the scratch orgs of Pull Requests to that branch are created from it.
+      # Runs only when the repository variable USE_SCRATCH_ORGS is "true"
+      # It runs after the deployment, as Bitbucket steps run one after the other: a commit that fails to deploy gets no snapshot
+      # More info at https://sfdx-hardis.cloudity.com/hardis/scratch/snapshot/refresh/
+      - step:
+          name: Refresh scratch org snapshot
+          max-time: 120
+          clone:
+            depth: full
+          script:
+            - |
+              if [ "$USE_SCRATCH_ORGS" != "true" ]; then
+                echo "[sfdx-hardis] USE_SCRATCH_ORGS is not true: no scratch org snapshot"
+                exit 0
+              fi
+            - export CI_COMMIT_REF_NAME=$BITBUCKET_BRANCH
+            - export FORCE_COLOR=1
+            - sf hardis:scratch:snapshot:refresh
+          artifacts:
+            - hardis-report/**
