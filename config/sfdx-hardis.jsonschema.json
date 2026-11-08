@@ -1451,17 +1451,6 @@
                   "My_Service_Agent"
                 ]
               },
-              "agentVersion": {
-                "$id": "#/properties/commandsPostDeploy/items/properties/parameters/agentVersion",
-                "description": "For 'agent-activate' actions: version number of the agent to activate, or latest for the highest version in the target org",
-                "title": "Agent version",
-                "type": "string",
-                "default": "latest",
-                "examples": [
-                  "latest",
-                  "3"
-                ]
-              },
               "setting": {
                 "$id": "#/properties/commandsPostDeploy/items/properties/parameters/setting",
                 "description": "For 'browser' actions: key of the Browserforce setting to apply (densitySettings, companyInformation...). List them with sf hardis:project:action:types --type browser",

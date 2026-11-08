@@ -590,7 +590,6 @@ Plus the type-specific flags of the table above.
 | `--success-even-if-batch-errors` | `false`                   | For `run-batch` in `wait` mode: keep the action successful when the job completes with batches in error                                   |
 | `--activate`                     | `true`                    | For `user-access-policy`: activate the policies. `--no-activate` to only apply them                                                       |
 | `--apply-to-all`                 | `false`                   | For `user-access-policy`: also run Apply To All for each policy, with Browserforce                                                        |
-| `--agent-version`                | `latest`                  | For `agent-activate`: version number to activate, or `latest` for the highest version in the target org                                   |
 | `--browser-setting`              |                           | For `browser`: key of the Browserforce setting (`sf hardis:project:action:types --type browser`)                                          |
 | `--browser-config`               |                           | For `browser`: value of the setting, as JSON or the path of a `.json` file. `"${VARIABLE}"` reads a CI/CD variable                        |
 

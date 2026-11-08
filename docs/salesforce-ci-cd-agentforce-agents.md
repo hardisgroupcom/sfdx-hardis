@@ -65,7 +65,7 @@ Agent metadata types do not trigger Apex tests with [Smart Deployment Tests](har
 2. Run [hardis:org:retrieve:agent](hardis/org/retrieve/agent.md) again: it writes the new version over the Agent Script of `aiAuthoringBundles/<Agent>/`.
 3. Commit and open your Pull Request as usual. The Pull Request shows the change of the Agent Script against the version the project had. With the [cleaning](#automate-it-at-each-user-story), the publication of the agent is added to the deployment actions of the Pull Request.
 
-Each org of the pipeline then gets a new version, numbered by that org, which is activated, and Salesforce deactivates the previous one. The older versions stay in the orgs: to go back to one of them, activate it with an [agent-activate deployment action](salesforce-devops-work-on-user-story-deployment-actions.md#activate-a-version-of-an-agentforce-agent), or revert the change of the Agent Script and publish again.
+Each org of the pipeline then gets a new version, numbered by that org, which is activated, and Salesforce deactivates the previous one. The older versions stay in the orgs, with a different number in each org: to go back to one of them, revert the change of the Agent Script and publish again.
 
 Keep the bundle folder of each agent in the project. Removing an agent from the orgs is not automated: Salesforce refuses to delete an agent definition that has versions, and deleting authoring bundles from an org deletes agent versions.
 

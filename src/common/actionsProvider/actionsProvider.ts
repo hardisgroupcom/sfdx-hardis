@@ -64,7 +64,6 @@ export interface PrePostCommand {
     permissionSets?: string[]; // for 'assign-permission-sets' org initialization steps
     packageXmlItems?: string[] | string; // for 'remove-packagexml-items' actions (each item: "TypeName:Member1,Member2"; a single string is accepted for a single entry)
     agentName?: string;      // for 'agent-activate', 'agent-publish' and 'agent-running-user' actions
-    agentVersion?: string;   // for 'agent-activate' actions (optional, a version number or latest, defaults to latest)
     setting?: string;        // for 'browser' actions: the Browserforce setting key (densitySettings...)
     config?: any;            // for 'browser' actions: the value of that setting
     [key: string]: any;

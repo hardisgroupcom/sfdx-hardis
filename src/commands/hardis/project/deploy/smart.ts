@@ -95,14 +95,6 @@ This will activate delta deployments only between minor and major branches (majo
 
 If you want to force the delta deployment into major orgs (ex: preprod to prod), this is not recommended but you can use env variable ALWAYS_ENABLE_DELTA_DEPLOYMENT=true
 
-### Agentforce agents
-
-The authoring bundle of an agent is deployed like any other metadata, which creates no agent version. An \`agent-publish\` deployment action publishes it after the deployment, and activates the version this creates in the target org.
-
-The running user of a service agent (\`default_agent_user\`) is a user of the target org: the built-in replacement rule \`builtin-agent-running-user\` writes it in the deployed files. It never creates a user: an \`agent-running-user\` deployment action does.
-
-See [Agentforce agents in CI/CD](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-agentforce-agents/).
-
 ### Smart Deployments Tests
 
 Not all metadata updates can break test classes, use Smart Deployment Tests to skip running test classes if ALL the following conditions are met:

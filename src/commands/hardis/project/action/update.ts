@@ -77,7 +77,7 @@ Required in agent mode:
 - A \`run-batch\` action is updated with \`--class-name\`, \`--run-mode\`, \`--batch-size\`, \`--wait-timeout\` and \`--success-even-if-batch-errors\`. It only runs in the \`process-deployment-only\` context.
 - A \`user-access-policy\` action is updated with \`--policies\`, \`--activate\` and \`--apply-to-all\`. It is \`post-deploy\` only, and only runs in the \`process-deployment-only\` context. Changing an action to this type sets \`runOnlyOnceByOrg\` to false, unless \`--run-only-once-by-org\` is passed.
 - An \`agent-publish\` action is updated with \`--agent-name\`. It is \`post-deploy\` only, and only runs in the \`process-deployment-only\` context.
-- An \`agent-activate\` action is updated with \`--agent-name\` and \`--agent-version\`. It is \`post-deploy\` only, and only runs in the \`process-deployment-only\` context. Changing an action to this type sets \`runOnlyOnceByOrg\` to false, unless \`--run-only-once-by-org\` is passed.
+- An \`agent-activate\` action is updated with \`--agent-name\`. It is \`post-deploy\` only, and only runs in the \`process-deployment-only\` context. Changing an action to this type sets \`runOnlyOnceByOrg\` to false, unless \`--run-only-once-by-org\` is passed.
 - An \`agent-running-user\` action is updated with \`--agent-name\`. It is \`pre-deploy\` only. Changing an action to this type sets \`runOnlyOnceByOrg\` to false, unless \`--run-only-once-by-org\` is passed.
 - A \`browser\` action is updated with \`--browser-setting\` and \`--browser-config\` (JSON, or the path of a .json file). Changing the setting without \`--browser-config\` removes the value of the previous setting. Changing an action to this type sets its context to \`all\`, unless \`--context\` is passed.
 - A \`manual\` action declared \`pre-deploy\` is always stored with the \`all\` context.
@@ -180,9 +180,6 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
     }),
     'agent-name': Flags.string({
       description: 'New API name of the Agentforce agent (for agent-publish, agent-activate and agent-running-user types)',
-    }),
-    'agent-version': Flags.string({
-      description: 'For agent-activate type: new version number to activate, or latest',
     }),
     'new-when': Flags.string({
       options: ['pre-deploy', 'post-deploy'],

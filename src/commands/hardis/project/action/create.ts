@@ -101,15 +101,6 @@ An \`agent-publish\` action, run after the deployment, publishes the authoring b
 
 An agent-publish action is \`post-deploy\` only, and only runs in the \`process-deployment-only\` context. It runs once by org by default (\`runOnlyOnceByOrg: true\`): each publication creates a new version, even when the bundle did not change.
 
-### Activate a version of an Agentforce agent
-
-An \`agent-activate\` action, run after the deployment, activates a version of an agent with \`sf agent activate\`, for example to go back to a previous version.
-
-- \`agentName\`: API name of the agent.
-- \`agentVersion\`: the version number, or \`latest\` (default) for the highest version of the agent in the target org.
-
-A version already active is left as is. An agent-activate action is \`post-deploy\` only, and only runs in the \`process-deployment-only\` context. It runs at every deployment by default (\`runOnlyOnceByOrg: false\`), so a new version brought by a later deployment gets activated too.
-
 ### Create the running user of an Agentforce agent
 
 An \`agent-running-user\` action, run before the deployment, creates the running user of a service agent with \`sf org create agent-user\` when the target org has none. The built-in replacement rule \`builtin-agent-running-user\` then writes that user in the deployed files.
@@ -117,6 +108,15 @@ An \`agent-running-user\` action, run before the deployment, creates the running
 - \`agentName\`: API name of the agent.
 
 A user already there (the one of git, or one created before for the agent) is kept. No user is created when a rule of the project writes the running user, or when the replacement rules are skipped for the target. An agent-running-user action is \`pre-deploy\` only, and its context defaults to \`all\`, so the deployment check validates the agent with its real user. A deployment check never creates the user in production: the deployment does. It runs at every deployment by default (\`runOnlyOnceByOrg: false\`).
+
+### Activate a version of an Agentforce agent
+
+An \`agent-activate\` action, run after the deployment, activates the latest version of an agent in the target org with \`sf agent activate\`. Each org numbers its own versions, so the action takes no version number.
+
+- \`agentName\`: API name of the agent.
+
+A version already active is left as is. An agent-activate action is \`post-deploy\` only, and only runs in the \`process-deployment-only\` context. It runs at every deployment by default (\`runOnlyOnceByOrg: false\`), so a new version brought by a later deployment gets activated too.
+
 ### Apply a Setup setting in a browser
 
 Some Setup settings cannot be deployed with the Metadata API. A \`browser\` action applies one setting of [Browserforce](https://github.com/amtrack/sfdx-browserforce-plugin) (sfdx-browserforce-plugin, installed when missing) by driving the Setup pages in a headless browser.
@@ -151,7 +151,7 @@ sf hardis:project:action:create --agent --scope branch --when pre-deploy --type 
 Required in agent mode:
 
 - \`--scope\`, \`--when\`, \`--type\`, \`--label\`
-- Type-specific flags: list them, with what each type expects, with \`sf hardis:project:action:types --json\`. \`--command\` for command, \`--apex-script\` for apex, \`--sfdmu-project\` for data, \`--community-name\` for publish-community, \`--instructions\` for manual, \`--class-name\` and \`--cron-expression\` for schedule-batch, \`--class-name\` for run-batch (\`--run-mode\` defaults to \`wait\`), \`--packagexml-items\` for remove-packagexml-items, \`--policies\` for user-access-policy (\`--activate\` defaults to \`true\`, \`--apply-to-all\` to \`false\`), \`--browser-setting\` and \`--browser-config\` for browser (JSON, or the path of a .json file; its format: \`sf hardis:project:action:types --type browser --browser-setting <key> --json\`), \`--agent-name\` for agent-publish, agent-activate (\`--agent-version\` defaults to \`latest\`) and agent-running-user
+- Type-specific flags: list them, with what each type expects, with \`sf hardis:project:action:types --json\`. \`--command\` for command, \`--apex-script\` for apex, \`--sfdmu-project\` for data, \`--community-name\` for publish-community, \`--instructions\` for manual, \`--class-name\` and \`--cron-expression\` for schedule-batch, \`--class-name\` for run-batch (\`--run-mode\` defaults to \`wait\`), \`--packagexml-items\` for remove-packagexml-items, \`--policies\` for user-access-policy (\`--activate\` defaults to \`true\`, \`--apply-to-all\` to \`false\`), \`--browser-setting\` and \`--browser-config\` for browser (JSON, or the path of a .json file; its format: \`sf hardis:project:action:types --type browser --browser-setting <key> --json\`), \`--agent-name\` for agent-publish, agent-running-user and agent-activate
 
 When the definition is invalid, the \`--json\` error carries what helps fixing it in \`data\` (for a browser action: the fields of the setting and an example). The \`--json\` result of a saved action may carry \`typeDetails\`: for a browser action, the CI/CD variables to declare for each major branch.
 
@@ -177,8 +177,8 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
     '$ sf hardis:project:action:create --agent --scope pr --pr-id 123 --when post-deploy --type run-batch --label "Recalculate crew capacity" --class-name CrewCapacityBatch --run-mode wait --wait-timeout 30',
     '$ sf hardis:project:action:create --agent --scope project --when post-deploy --type user-access-policy --label "Activate sales access policies" --policies "Sales_Rep_Access,Sales_Manager_Access" --apply-to-all',
     '$ sf hardis:project:action:create --agent --scope pr --pr-id 123 --when post-deploy --type agent-publish --label "Publish the service agent" --agent-name My_Service_Agent',
-    '$ sf hardis:project:action:create --agent --scope project --when post-deploy --type agent-activate --label "Activate the service agent" --agent-name My_Service_Agent --agent-version latest',
     '$ sf hardis:project:action:create --agent --scope pr --pr-id 123 --when pre-deploy --context all --type agent-running-user --label "Create the running user of the service agent" --agent-name My_Service_Agent',
+    '$ sf hardis:project:action:create --agent --scope project --when post-deploy --type agent-activate --label "Activate the service agent" --agent-name My_Service_Agent',
     '$ sf hardis:project:action:create --agent --scope project --when post-deploy --type browser --label "Compact density" --browser-setting densitySettings --browser-config \'{"density":"Compact"}\'',
     '$ sf hardis:project:action:create --agent --scope project --when post-deploy --type apex --label "Reset demo data" --apex-script scripts/apex/reset-demo.apex --exclude-target-branches "main,preprod"',
   ];
@@ -263,9 +263,6 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
     }),
     'agent-name': Flags.string({
       description: 'API name of the Agentforce agent (for agent-publish, agent-activate and agent-running-user types)',
-    }),
-    'agent-version': Flags.string({
-      description: 'For agent-activate type: version number to activate, or latest for the highest version in the target org (default: latest)',
     }),
     'function-input': Flags.string({
       multiple: true,

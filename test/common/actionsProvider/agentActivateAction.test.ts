@@ -25,25 +25,18 @@ describe('AgentActivateAction type rules', () => {
     expect(DEPLOYMENT_ONLY_ACTION_TYPES).to.include('agent-activate');
     expect(resolveRunOnlyOnceByOrg({ type: 'agent-activate' })).to.equal(false);
     expect(resolveRunOnlyOnceByOrg({ type: 'agent-activate', runOnlyOnceByOrg: true })).to.equal(true);
-    expect(provider.getFlagNames()).to.deep.equal(['agent-name', 'agent-version']);
+    expect(provider.getFlagNames()).to.deep.equal(['agent-name']);
   });
 });
 
 describe('AgentActivateAction.getDefinitionErrors', () => {
-  it('accepts an agent name alone, or with a version number', async () => {
+  it('accepts an agent name', async () => {
     expect(await provider.getDefinitionErrors(action({ agentName: 'My_Agent' }))).to.deep.equal([]);
-    expect(await provider.getDefinitionErrors(action({ agentName: 'My_Agent', agentVersion: '3' }))).to.deep.equal([]);
-    expect(await provider.getDefinitionErrors(action({ agentName: 'My_Agent', agentVersion: 4 }))).to.deep.equal([]);
   });
 
   it('requires an agent name that can be written in a command line', async () => {
     expect(await provider.getDefinitionErrors(action({}))).to.have.lengthOf(1);
     expect(await provider.getDefinitionErrors(action({ agentName: 'My_Agent; rm -rf /' }))).to.have.lengthOf(1);
-  });
-
-  it('rejects a version that is neither a number nor latest', async () => {
-    expect(await provider.getDefinitionErrors(action({ agentName: 'A', agentVersion: 'v2' }))).to.have.lengthOf(1);
-    expect(await provider.getDefinitionErrors(action({ agentName: 'A', agentVersion: '0' }))).to.have.lengthOf(1);
   });
 
   it('is post-deploy only, and only accepts the process-deployment-only context', async () => {
@@ -56,9 +49,9 @@ describe('AgentActivateAction.getDefinitionErrors', () => {
 });
 
 describe('AgentActivateAction parameters', () => {
-  it('applies only the flags passed, with latest as the default version', () => {
-    expect(provider.applyFlags({ agentName: 'A', agentVersion: '2' }, { 'agent-version': 'LATEST' })).to.deep.equal({ agentName: 'A', agentVersion: 'latest' });
-    expect(provider.applyFlags({}, { 'agent-name': ' B ' })).to.deep.equal({ agentName: 'B', agentVersion: 'latest' });
+  it('applies only the flags passed', () => {
+    expect(provider.applyFlags({ agentName: 'A' }, {})).to.deep.equal({ agentName: 'A' });
+    expect(provider.applyFlags({}, { 'agent-name': ' B ' })).to.deep.equal({ agentName: 'B' });
   });
 
   it('requires --agent-name when headless', async () => {
@@ -69,12 +62,12 @@ describe('AgentActivateAction parameters', () => {
       error = e;
     }
     expect(error).to.not.equal(null);
-    expect(await provider.collectParameters({ 'agent-name': 'A' }, true, {})).to.deep.equal({ agentName: 'A', agentVersion: 'latest' });
+    expect(await provider.collectParameters({ 'agent-name': 'A' }, true, {})).to.deep.equal({ agentName: 'A' });
   });
 
-  it('treats an unset version and latest as the same action', () => {
+  it('identifies the action by its agent name, whatever its case', () => {
     expect(provider.getIdentityParameters(action({ agentName: 'My_Agent' }))).to.deep.equal(
-      provider.getIdentityParameters(action({ agentName: 'my_agent', agentVersion: 'Latest' }))
+      provider.getIdentityParameters(action({ agentName: 'my_agent' }))
     );
   });
 });
@@ -113,9 +106,9 @@ describe('AgentActivateAction.run', () => {
     expect(result.statusCode).to.equal('success');
   });
 
-  it('fails when the version is not in the org', async () => {
-    globalThis.jsForceConn = fakeConnection([{ fullName: 'My_Agent#1', status: 'Active' }]);
-    const result = await provider.run(action({ agentName: 'My_Agent', agentVersion: '5' }));
+  it('fails when the org has no version of the agent', async () => {
+    globalThis.jsForceConn = fakeConnection([{ fullName: 'Other_Agent#1', status: 'Active' }]);
+    const result = await provider.run(action({ agentName: 'My_Agent' }));
     expect(result.statusCode).to.equal('failed');
   });
 
