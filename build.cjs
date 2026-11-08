@@ -496,15 +496,17 @@ class SfdxHardisBuilder {
         return null;
       }
       listed.add(target);
-      const frontMatter = this.readFrontMatter(`./docs/${target}`);
-      const url = LLMS_TXT_RAW_ROOT + this.getMarkdownSourcePath(target);
+      const { frontMatter, sourcePath } = this.readMarkdownPage(target);
+      const url = LLMS_TXT_RAW_ROOT + sourcePath;
       const title = frontMatter.title || label;
       return `- [${title}](${url})` + (frontMatter.description ? `: ${frontMatter.description}` : "");
     };
+    // A menu entry without a label (- page.md) is a page titled by its own front matter
+    const navEntries = (item) => (typeof item === "string" ? [[item, item]] : Object.entries(item));
     // The pages of a menu folder; a folder inside it gets a ### heading
     const flatten = (items, depth = 0) =>
       items.flatMap((item) =>
-        Object.entries(item).flatMap(([label, value]) => {
+        navEntries(item).flatMap(([label, value]) => {
           if (!Array.isArray(value)) {
             return [pageLine(label, value)];
           }
@@ -516,7 +518,7 @@ class SfdxHardisBuilder {
     const startPages = [];
     const optionalPages = [];
     for (const item of mkdocs.nav) {
-      const [[label, value]] = Object.entries(item);
+      const [[label, value]] = navEntries(item);
       if (!Array.isArray(value)) {
         if (value === "index.md" || value === "sfdx-hardis-config-file.md") {
           continue;
@@ -556,25 +558,23 @@ class SfdxHardisBuilder {
     this.writeFileIfChanged("./docs/llms.txt", md.join("\n"));
   }
 
-  // Path in the repository of the Markdown a page is made of: the page itself, or the file it
-  // only includes (--8<-- "../CHANGELOG.md"), which is what an agent should read
-  getMarkdownSourcePath(target) {
-    const body = fs
-      .readFileSync(`./docs/${target}`, "utf-8")
-      .replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, "")
-      .replace(/<!--[\s\S]*?-->/g, "")
-      .trim();
-    const include = body.match(/^--8<-- "\.\.\/([^"]+)"$/);
-    return include ? include[1] : `docs/${target}`;
-  }
-
-  // Front matter of a Markdown page, or {} when it has none
-  readFrontMatter(file) {
+  // A page of the menu, read once: its front matter ({} when it has none), and the path in the
+  // repository of the Markdown it is made of: the page itself, or the file it only includes
+  // (--8<-- "../CHANGELOG.md"), which is what an agent should read
+  readMarkdownPage(target) {
+    const file = `./docs/${target}`;
     if (!fs.existsSync(file)) {
       throw new Error(`mkdocs.yml lists ${file}, which does not exist`);
     }
-    const match = fs.readFileSync(file, "utf-8").match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n/);
-    return match ? yaml.load(match[1]) || {} : {};
+    const content = fs.readFileSync(file, "utf-8");
+    const frontMatterMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n/);
+    const frontMatter = frontMatterMatch ? yaml.load(frontMatterMatch[1]) || {} : {};
+    const body = content
+      .substring(frontMatterMatch ? frontMatterMatch[0].length : 0)
+      .replace(/<!--[\s\S]*?-->/g, "")
+      .trim();
+    const include = body.match(/^--8<-- "\.\.\/([^"]+)"$/);
+    return { frontMatter, sourcePath: include ? include[1] : `docs/${target}` };
   }
 
   truncateReadme() {

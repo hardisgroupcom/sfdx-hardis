@@ -156,6 +156,24 @@ describe('plugin doc: pages', () => {
     );
   });
 
+  it('keeps inline code as it is in a meta description', () => {
+    const frontMatter = buildFrontMatter('T', 'Pass `--name <orgName>` to read `MyObject__c`, in __bold__ and <b>HTML</b>.');
+    assert.ok(frontMatter.includes('description: "Pass --name <orgName> to read MyObject__c, in bold and HTML."'));
+  });
+
+  it('cuts a long meta description without any space at the limit', () => {
+    const description = buildFrontMatter('T', 'x'.repeat(400)).split('\n')[2];
+    assert.equal(description, `description: "${'x'.repeat(297)}..."`);
+  });
+
+  it('describes a command page with its first paragraph only, when the next one follows a colon and a code block', () => {
+    const markdown = buildCommandDocMarkdown({
+      id: 'hardis:org:thing',
+      description: 'Run it this way:\n\n```sh\nsf hardis:org:thing\n```\n\nAnother paragraph.',
+    });
+    assert.ok(markdown.startsWith('---\ntitle: "hardis:org:thing"\ndescription: "Run it this way:"\n---\n'));
+  });
+
   it('cuts a long meta description at a word, and escapes quotes', () => {
     const frontMatter = buildFrontMatter('A "quoted" title', 'word '.repeat(100));
     assert.ok(frontMatter.startsWith('---\ntitle: "A \\"quoted\\" title"\ndescription: "word word'));

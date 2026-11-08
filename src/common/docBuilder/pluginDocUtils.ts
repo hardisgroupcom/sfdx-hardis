@@ -292,10 +292,12 @@ function getFirstParagraph(markdown: string): string {
   const paragraph: string[] = [];
   const listItems: string[] = [];
   let inCodeBlock = false;
+  let paragraphClosed = false;
   for (const rawLine of markdown.split(/\r?\n/)) {
     const line = rawLine.trim();
     if (/^(```|~~~)/.test(line)) {
       inCodeBlock = !inCodeBlock;
+      paragraphClosed = paragraph.length > 0;
       continue;
     }
     if (inCodeBlock) {
@@ -308,6 +310,7 @@ function getFirstParagraph(markdown: string): string {
       if (listItem) {
         listItems.push(listItem[1]);
       }
+      paragraphClosed = true;
       continue;
     }
     if (line === '' || /^(#|<|!\[|\[!\[|[-*+] |\d+\. |\||>)/.test(line)) {
@@ -316,7 +319,8 @@ function getFirstParagraph(markdown: string): string {
       }
       continue;
     }
-    if (listItems.length > 0) {
+    // Prose after the list, or after a blank line or a code block, is another paragraph
+    if (listItems.length > 0 || paragraphClosed) {
       break;
     }
     paragraph.push(line);
@@ -324,20 +328,34 @@ function getFirstParagraph(markdown: string): string {
   return listItems.length > 0 ? `${paragraph.join(' ')} ${listItems.join(', ')}` : paragraph.join(' ');
 }
 
-// Plain text of at most 300 characters, cut at a word: a meta description shows no Markdown
+/**
+ * Plain text of at most 300 characters, cut at a word: a meta description shows no Markdown.
+ * Inline code keeps its text as it is (`--name <orgName>`, `MyObject__c`).
+ */
 function toMetaDescription(markdown: string): string {
   const text = markdown
     .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replace(/<[^>]+>/g, '')
-    .replace(/(\*\*|__|`)/g, '')
-    .replace(/(^|\s)_([^_]+)_(?=\s|$|[.,;:)])/g, '$1$2')
+    // Odd parts are the inline code spans
+    .split(/`([^`]*)`/)
+    .map((part, index) =>
+      index % 2 === 1
+        ? part
+        : part
+            .replace(/<[^>]+>/g, '')
+            .replace(/\*\*/g, '')
+            .replace(/(^|[^\w])__([^_]+)__(?=[^\w]|$)/g, '$1$2')
+            .replace(/(^|\s)_([^_]+)_(?=\s|$|[.,;:)])/g, '$1$2')
+    )
+    .join('')
     .replace(/\s+/g, ' ')
     .trim();
   if (text.length <= 300) {
     return text;
   }
-  return text.substring(0, text.lastIndexOf(' ', 297)).replace(/[\s,;:.]+$/, '') + '...';
+  // A text without any space to cut at is cut at the limit
+  const cutIndex = text.lastIndexOf(' ', 297);
+  return text.substring(0, cutIndex > 0 ? cutIndex : 297).replace(/[\s,;:.]+$/, '') + '...';
 }
 
 function escapeRegex(text: string): string {

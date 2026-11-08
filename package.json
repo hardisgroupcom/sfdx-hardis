@@ -290,6 +290,7 @@
       },
       "files": [
         "test/**/*.ts",
+        "test/**/*.mjs",
         "src/**/*.ts",
         "**/tsconfig.json",
         ".mocha*",
