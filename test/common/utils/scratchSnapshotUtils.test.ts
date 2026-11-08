@@ -703,6 +703,12 @@ describe('getConfigOfSnapshotBranch', () => {
     expect(config.projectName).to.equal('demo');
   });
 
+  it('reads the snapshot branch even when CONFIG_BRANCH names the job branch, as Azure jobs set it', async () => {
+    process.env.CONFIG_BRANCH = 'feature__story';
+    const config = await getConfigOfSnapshotBranch('main');
+    expect(config.installedPackages.map((p: any) => p.SubscriberPackageName)).to.deep.equal(['MainOnly']);
+  });
+
   it('leaves the cached config of the job as it was, so cached readers do not get the snapshot branch', async () => {
     await getConfig('user');
     await getConfigOfSnapshotBranch('main');
