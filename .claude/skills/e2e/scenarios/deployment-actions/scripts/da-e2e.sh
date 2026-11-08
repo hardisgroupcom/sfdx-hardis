@@ -335,7 +335,17 @@ if step assert-deploy; then
   if [ -n "$uac" ] && [ "$uac" != "<query failed>" ] && [ "$uac" != "${UAC_BEFORE_DEPLOY:-}" ]; then result ORG-UAC OK "new UserAccessChange ($uac)"; else result ORG-UAC FAIL "no new UserAccessChange (before ${UAC_BEFORE_DEPLOY:-none}, now ${uac:-none})"; fi
   assert_count ORG-PSA "SELECT COUNT() FROM PermissionSetAssignment WHERE PermissionSet.Name = 'UAP_Spike_PS' AND Assignee.Username LIKE 'da-e2e-user%'" ge 1 "Apply To All gave the permission set back"
   desc=$(soql_value "SELECT Description FROM Account WHERE Name = 'DA_E2E_APEX' LIMIT 1" "j.result.records[0]?.Description")
-  if [ "$desc" = "batched-by-da-e2e" ]; then result ORG-APEX-BATCH OK "apex created the account, run-batch updated it"; else result ORG-APEX-BATCH FAIL "account description: '${desc:-<no account>}'"; fi
+  apex_count=$(soql_count "SELECT COUNT() FROM Account WHERE Name = 'DA_E2E_APEX'")
+  if [ "$desc" = "batched-by-da-e2e" ]; then
+    result ORG-APEX-BATCH OK "apex created the account, run-batch updated it"
+  elif [ "${apex_count:-0}" -ge 1 ] && grep -q "completed less than 180 minutes ago" "$L"; then
+    # A scratch org kept from a run of the last 3 hours: run-batch rightly launches no new job
+    result ORG-APEX-BATCH SKIP "apex created the account; run-batch launched no job, one completed in this org less than 3 hours ago (as designed)"
+  elif [ "${apex_count:-0}" -ge 1 ]; then
+    result ORG-APEX-BATCH FAIL "apex created the account, but run-batch did not update it (description '${desc}')"
+  else
+    result ORG-APEX-BATCH FAIL "no DA_E2E_APEX account: the apex action did not create it"
+  fi
   assert_count ORG-CRON "SELECT COUNT() FROM CronTrigger WHERE CronJobDetail.Name = 'E2EBatch_Schedule'" eq 1 "E2EBatch_Schedule scheduled"
   assert_count ORG-SKIPPED "SELECT COUNT() FROM ApexClass WHERE Name = 'E2ESkipped'" eq 0 "E2ESkipped not deployed"
   ci_pr_comments "$PR_NUMBER" deploy-comments
