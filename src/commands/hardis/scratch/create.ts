@@ -229,7 +229,7 @@ In agent mode:
       if (this.snapshot?.sha) {
         await deploySnapshotDelta(this.snapshot, initConfig, this.scratchOrgUsername, this, this.debugMode);
       } else if (this.snapshot) {
-        await initOrgMetadatas(this.configInfo, this.scratchOrgUsername, this.scratchOrgAlias, this.projectScratchDef, this.debugMode, {
+        await initOrgMetadatas(initConfig, this.scratchOrgUsername, this.scratchOrgAlias, this.projectScratchDef, this.debugMode, {
           scratch: true,
         });
       }
