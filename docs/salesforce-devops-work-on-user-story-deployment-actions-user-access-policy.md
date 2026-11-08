@@ -12,6 +12,12 @@ A deployment always leaves the [User Access Policies](https://help.salesforce.co
 
 The policy picker proposes the policies of the org and of the project.
 
+![User Access Policies deployment action](assets/images/screenshot-deployment-action-user-access-policy.jpg)
+
+It can also be an [org initialization step](salesforce-devops-org-initialization.md): after `deploy-sources`, the policies of the project are in Design status in a new scratch org too.
+
+To choose when a policy runs (when a user is created, updated, or both) or to deactivate one, use a [browser action](salesforce-devops-work-on-user-story-deployment-actions-browser.md#run-a-user-access-policy-on-new-users-only) with the `userAccessPolicies` setting of Browserforce.
+
 <details markdown="1"><summary>Technical: user-access-policy action (YAML)</summary>
 
 - **Activate** (`activate`, on by default): the policies are set to Active. A policy already active is left as it is. When Salesforce refuses, for example for a policy without filter or action, the action fails with the message of Salesforce.

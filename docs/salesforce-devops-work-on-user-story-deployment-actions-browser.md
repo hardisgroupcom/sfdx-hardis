@@ -12,7 +12,62 @@ Some Setup settings cannot be deployed with the Metadata API: the density of Lig
 
 In VS Code, pick the setting in the list: its fields show as a form, with the example of Browserforce already filled in, and its warnings (a value that cannot be changed back, a feature that only exists in Salesforce Classic, what the org needs first). **Edit as JSON** shows the whole value, and **Check with Browserforce** validates it before saving.
 
+![Browser deployment action](assets/images/screenshot-deployment-action-browser.jpg)
+
 During a deployment check, nothing is changed: Browserforce reads the org and the Pull Request comment shows what the deployment will change.
+
+A browser action can also be an [org initialization step](salesforce-devops-org-initialization.md), to set up each new scratch org or refreshed sandbox the same way.
+
+### Examples
+
+#### Run a User Access Policy on new users only
+
+The [Activate User Access Policies](salesforce-devops-work-on-user-story-deployment-actions-user-access-policy.md) type activates policies and runs **Apply To All** on them, which covers most needs. The `userAccessPolicies` setting of Browserforce goes further, policy by policy: choose when the policy runs (when a user is created, updated, or both), deactivate it, or run **Apply To All** without changing its status.
+
+Here, the Sales Rep policy only runs when a user is created, and **Apply To All** gives its access to the users that already match it:
+
+![Browser deployment action with the userAccessPolicies setting](assets/images/screenshot-deployment-action-browser-user-access-policies.jpg)
+
+```yaml
+commandsPostDeploy:
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-128a00000014
+    label: Run the Sales Rep access policy on new users only
+    type: browser
+    context: all
+    parameters:
+      setting: userAccessPolicies
+      config:
+        accessPolicies:
+          - apiName: Sales_Rep_Access
+            active: true
+            "on": Create
+            applyToAll: true
+```
+
+#### Change the API name of a picklist value
+
+With the Metadata API, a new API name is a new picklist value: the records keep the old one. To fix a typo in an API name (`Platinium` instead of `Platinum`), the Pull Request adds the new value to the field, and a browser action with the `picklists` setting of Browserforce does the rest after the deployment: it replaces the old value with the new one in every record that uses it, then deletes the old value (`absent: true`).
+
+![Browser deployment action with the picklists setting](assets/images/screenshot-deployment-action-browser-picklists.jpg)
+
+```yaml
+commandsPostDeploy:
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-128a00000015
+    label: Fix the API name of the Platinium account tier
+    type: browser
+    context: all
+    parameters:
+      setting: picklists
+      config:
+        picklistValues:
+          - metadataType: CustomField
+            metadataFullName: Account.Tier__c
+            value: Platinium
+            newValue: Platinum
+            absent: true
+```
+
+Once the action has run in every org, remove the old value from the field in git, so that a later deployment does not create it again. The same setting replaces values of a standard field (`metadataType: StandardValueSet`) or of a global value set (`GlobalValueSet`).
 
 <details markdown="1"><summary>Technical: browser action (YAML)</summary>
 

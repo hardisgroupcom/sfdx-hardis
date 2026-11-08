@@ -14,6 +14,7 @@ import {
   checkOrgInitSteps,
   getOrgInitSteps,
   getScratchOrgDefHints,
+  listOrgInitStepTypes,
   getScratchOrgShape,
   normalizeOrgInitStep,
   runOrgInitSteps,
@@ -157,6 +158,28 @@ describe('orgInitUtils', () => {
       const stepIds = errors.map((error) => error.stepId);
       expect(stepIds).to.include.members(['manual', 'xml', 'when', 'sources', 'permsets', 'unknown']);
       expect(errors.filter((error) => error.stepId === 'when').length).to.equal(2);
+    });
+
+    it('accepts the Browserforce types: user-access-policy and browser', async () => {
+      // An sf data folder without Browserforce: only the shape of the steps is checked, no sf process
+      const previousDataDir = process.env.SF_DATA_DIR;
+      process.env.SF_DATA_DIR = path.resolve('empty-sf-data');
+      await fs.ensureDir(process.env.SF_DATA_DIR);
+      try {
+        const errors = await checkOrgInitSteps([
+          normalizeOrgInitStep({ id: 'uap', type: 'user-access-policy', parameters: { policies: ['Sales_Rep_Access'], activate: true } }),
+          normalizeOrgInitStep({ id: 'browser', type: 'browser', parameters: { setting: 'densitySettings', config: { density: 'Compact' } } }),
+          normalizeOrgInitStep({ id: 'no-config', type: 'browser', parameters: { setting: 'densitySettings' } }),
+        ]);
+        expect(errors.map((error) => error.stepId)).to.deep.equal(['no-config']);
+        expect(listOrgInitStepTypes().map((stepType) => stepType.type)).to.include.members(['user-access-policy', 'browser']);
+      } finally {
+        if (previousDataDir === undefined) {
+          delete process.env.SF_DATA_DIR;
+        } else {
+          process.env.SF_DATA_DIR = previousDataDir;
+        }
+      }
     });
 
     it('ignores deployment-only fields left empty', async () => {

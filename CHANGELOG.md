@@ -14,7 +14,8 @@
 - [Deployment actions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/):
   - New [Browser](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions-browser/) action type: applies with Browserforce a Setup setting the Metadata API cannot deploy.
   - The [User Access Policy](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions-user-access-policy/) action now activates User Access Policies and runs Apply To All through Browserforce.
-  - Documentation: an overview page, and one page per action type.
+  - Documentation: an overview page, and one page per action type, each with a screenshot of its editor in VS Code; the Browser page shows how to run a User Access Policy on new users only and how to change the API name of a picklist value.
+  - The Browser and User Access Policy types can also be [org initialization steps](https://sfdx-hardis.cloudity.com/salesforce-devops-org-initialization/).
 - [hardis:doc:plugin:generate](https://sfdx-hardis.cloudity.com/hardis/doc/plugin/generate/): every generated page has a title and a meta description for search engines.
 - Documentation site: new [llms.txt](https://sfdx-hardis.cloudity.com/llms.txt), which lists every page, command and setting for coding agents, with a link to its Markdown source.
 
