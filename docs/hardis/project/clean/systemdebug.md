@@ -1,3 +1,7 @@
+---
+title: "hardis:project:clean:systemdebug - Clean System debug"
+description: "Removes or comments out System.debug() statements from Apex classes and triggers in your Salesforce DX project."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:clean:systemdebug
 

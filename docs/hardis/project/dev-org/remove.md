@@ -1,3 +1,7 @@
+---
+title: "hardis:project:dev-org:remove - Remove a development org"
+description: "Removes a developer sandbox or a scratch org from the development orgs list of the project."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:dev-org:remove
 

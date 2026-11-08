@@ -1,3 +1,7 @@
+---
+title: "hardis:scratch:pool:refresh - Refresh scratch org pool"
+description: "Refreshes a scratch org pool by creating new scratch orgs to fill the pool and deleting expired ones."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:scratch:pool:refresh
 

@@ -1,3 +1,7 @@
+---
+title: "hardis:org:retrieve:packageconfig - Retrieve package configuration from an org"
+description: "Retrieves the installed package configuration from a Salesforce org and optionally updates the local project configuration."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:retrieve:packageconfig
 

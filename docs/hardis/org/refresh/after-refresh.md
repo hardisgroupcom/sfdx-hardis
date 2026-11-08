@@ -1,3 +1,7 @@
+---
+title: "hardis:org:refresh:after-refresh - Restore Connected Apps after org refresh"
+description: "Restores all previously backed-up Connected Apps (including Consumer Secrets), External Client Apps (including credentials), certificates, custom settings, records and other metadata to a Salesforce org after a sandbox refresh."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:refresh:after-refresh
 

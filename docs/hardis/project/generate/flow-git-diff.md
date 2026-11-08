@@ -1,3 +1,7 @@
+---
+title: "hardis:project:generate:flow-git-diff - Generate Flow Visual Gif Diff"
+description: "Generate Flow Visual Git Diff markdown between 2 commits"
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:generate:flow-git-diff
 

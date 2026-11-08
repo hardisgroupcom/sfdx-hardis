@@ -1,3 +1,7 @@
+---
+title: "hardis:work:new - New User Story"
+description: "Assisted menu to start working on a Salesforce User Story, streamlining the setup of your development environment."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:work:new
 

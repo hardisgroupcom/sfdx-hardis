@@ -1,3 +1,7 @@
+---
+title: "hardis:lint:metadatastatus - check inactive metadatas"
+description: "Checks for inactive metadata elements within your Salesforce DX project, helping to maintain a clean and efficient codebase."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:lint:metadatastatus
 

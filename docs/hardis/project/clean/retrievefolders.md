@@ -1,3 +1,7 @@
+---
+title: "hardis:project:clean:retrievefolders - Retrieve dashboards, documents and report folders in DX sources"
+description: "Retrieves specific folders of Dashboards, Documents, Email Templates, and Reports from a Salesforce org into your DX project sources."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:clean:retrievefolders
 

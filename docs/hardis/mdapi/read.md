@@ -1,3 +1,7 @@
+---
+title: "hardis:mdapi:read - Read metadata using the CRUD-based Metadata API"
+description: "Retrieves metadata from an org using the CRUD-based Metadata API (readMetadata), writing complete source files."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:mdapi:read
 

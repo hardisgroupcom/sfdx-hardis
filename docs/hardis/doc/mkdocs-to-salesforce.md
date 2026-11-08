@@ -1,3 +1,7 @@
+---
+title: "hardis:doc:mkdocs-to-salesforce - MkDocs to Salesforce"
+description: "Generates MkDocs HTML pages and deploys them to a Salesforce org as a static resource, Visualforce page, and Custom Tab."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:doc:mkdocs-to-salesforce
 

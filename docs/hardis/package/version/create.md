@@ -1,3 +1,7 @@
+---
+title: "hardis:package:version:create - Create a new version of a package"
+description: "Creates a new version of a Salesforce package (2GP or Unlocked) in your Dev Hub."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:package:version:create
 

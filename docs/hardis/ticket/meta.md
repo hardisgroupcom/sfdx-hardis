@@ -1,3 +1,7 @@
+---
+title: "hardis:ticket:meta - Describe a ticketing project"
+description: "Lists what a ticketing project accepts - issue types, statuses, and the statuses of each type - or the projects the credentials can see, so that a script can be configured without guessing names."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:ticket:meta
 

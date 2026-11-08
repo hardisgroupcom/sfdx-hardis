@@ -1,3 +1,7 @@
+---
+title: "hardis:datacloud:extract:agentforce-conversations - Extract Agentforce Conversations Data from Data Cloud"
+description: "Extracts Agentforce conversations data from Data Cloud and generates a detailed report."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:datacloud:extract:agentforce-conversations
 

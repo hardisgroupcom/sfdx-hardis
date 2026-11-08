@@ -1,3 +1,7 @@
+---
+title: "hardis:project:convert:profilestopermsets - Convert Profiles into Permission Sets"
+description: "Converts existing Salesforce Profiles into Permission Sets, facilitating a more granular and recommended security model."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:convert:profilestopermsets
 

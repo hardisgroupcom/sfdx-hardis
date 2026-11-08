@@ -1,3 +1,7 @@
+---
+title: "hardis:project:clean:listviews - Replace Mine by Everything in ListViews"
+description: "Replace Mine by Everything in ListView, and log the replacements in sfdx-hardis.yml"
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:clean:listviews
 

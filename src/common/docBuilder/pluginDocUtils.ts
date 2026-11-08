@@ -64,7 +64,7 @@ export function getCommandDocRelativePath(commandId: string): string {
 export function listGeneratedCommandPages(docsRoot: string): GeneratedCommandPage[] {
   const pages: GeneratedCommandPage[] = [];
   for (const file of listMarkdownFiles(docsRoot)) {
-    const content = fs.readFileSync(file, 'utf8');
+    const content = removeFrontMatter(fs.readFileSync(file, 'utf8'));
     if (!content.startsWith(GENERATED_PLUGIN_DOC_HEADER_START)) {
       continue;
     }
@@ -79,7 +79,13 @@ export function listGeneratedCommandPages(docsRoot: string): GeneratedCommandPag
 
 // Markdown page of a single command
 export function buildCommandDocMarkdown(command: any): string {
-  const lines = [GENERATED_PLUGIN_DOC_HEADER];
+  const lines = [
+    buildFrontMatter(
+      command.title ? `${command.id} - ${command.title}` : command.id,
+      command.summary || getFirstParagraph(command.description || '') || command.title || command.id
+    ),
+    GENERATED_PLUGIN_DOC_HEADER,
+  ];
   // Title
   lines.push(`# ${command.id}`, '');
   // Description
@@ -114,7 +120,8 @@ export function buildIndexAndCommandsMarkdown(
   pjson: any,
   readme: string
 ): { indexMarkdown: string; commandsMarkdown: string } {
-  const lines = [GENERATED_PLUGIN_DOC_HEADER];
+  const pluginName = pjson.name || '';
+  const lines = [buildFrontMatter(pluginName, pjson.description || pluginName), GENERATED_PLUGIN_DOC_HEADER];
   let reusableReadmePartFound = false;
   // Try to find README content until auto-generated commands
   const limitStrings = ['## Commands', '## COMMANDS', '# Commands', '<!-- commands -->'];
@@ -131,7 +138,12 @@ export function buildIndexAndCommandsMarkdown(
   }
 
   // Build commands (for index.md and commands.md)
-  const cmdLines: string[] = [];
+  const cmdLines: string[] = [
+    buildFrontMatter(
+      `${pluginName} commands`,
+      `All the commands of ${pluginName}, grouped by topic, with a link to the page of each one.`
+    ),
+  ];
   lines.push('', '## Commands');
   cmdLines.push('# Commands');
   let currentSection = '';
@@ -190,6 +202,16 @@ export function getCommandTitle(command: any): string {
     .map((line: string) => line.trim())
     .find((line: string) => line !== '' && !line.startsWith('#') && !line.startsWith('<'));
   return firstTextLine || '';
+}
+
+/**
+ * Front matter of a generated page: the title and the meta description search engines show.
+ * The values are written as JSON strings, which YAML reads as double-quoted strings.
+ */
+export function buildFrontMatter(title: string, description: string): string {
+  return ['---', `title: ${JSON.stringify(title)}`, `description: ${JSON.stringify(toMetaDescription(description))}`, '---'].join(
+    '\n'
+  );
 }
 
 // Row of the Parameters table for a flag, as oclif caches it
@@ -251,6 +273,57 @@ export function formatMarkdownTables(markdown: string): string {
     i = end;
   }
   return result.join('\n');
+}
+
+// A page that opens with a front matter block, without it
+function removeFrontMatter(content: string): string {
+  const match = content.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n/);
+  return match ? content.substring(match[0].length) : content;
+}
+
+// First paragraph of prose of a command description: no heading, picture, HTML or list
+function getFirstParagraph(markdown: string): string {
+  const paragraph: string[] = [];
+  let inCodeBlock = false;
+  for (const rawLine of markdown.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (/^(```|~~~)/.test(line)) {
+      inCodeBlock = !inCodeBlock;
+      continue;
+    }
+    if (inCodeBlock) {
+      continue;
+    }
+    if (line === '') {
+      if (paragraph.length > 0) {
+        break;
+      }
+      continue;
+    }
+    if (/^(#|<|!\[|\[!\[|[-*+] |\d+\. |\||>)/.test(line)) {
+      if (paragraph.length > 0) {
+        break;
+      }
+      continue;
+    }
+    paragraph.push(line);
+  }
+  return paragraph.join(' ');
+}
+
+// Plain text of at most 300 characters, cut at a word: a meta description shows no Markdown
+function toMetaDescription(markdown: string): string {
+  const text = markdown
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/<[^>]+>/g, '')
+    .replace(/(\*\*|__|`)/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (text.length <= 300) {
+    return text;
+  }
+  return text.substring(0, text.lastIndexOf(' ', 297)).replace(/[\s,;:.]+$/, '') + '...';
 }
 
 function escapeRegex(text: string): string {

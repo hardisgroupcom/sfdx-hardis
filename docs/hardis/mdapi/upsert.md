@@ -1,3 +1,7 @@
+---
+title: "hardis:mdapi:upsert - Upsert metadata using the CRUD-based Metadata API"
+description: "Deploys local source files to an org using the CRUD-based Metadata API (upsertMetadata), pushing each component whole."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:mdapi:upsert
 

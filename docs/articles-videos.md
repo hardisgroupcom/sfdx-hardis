@@ -1,3 +1,7 @@
+---
+title: "Articles and videos about sfdx-hardis"
+description: "Web articles, recorded conferences, podcasts and videos about sfdx-hardis and Salesforce DevOps."
+---
 ### Web Articles
 
 Here are some articles about [sfdx-hardis](https://sfdx-hardis.cloudity.com/)

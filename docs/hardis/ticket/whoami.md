@@ -1,3 +1,7 @@
+---
+title: "hardis:ticket:whoami - Show the ticketing account"
+description: "Shows the account the configured credentials authenticate as on the ticketing system, so that a script can check its setup before a run."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:ticket:whoami
 

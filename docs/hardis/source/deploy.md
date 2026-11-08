@@ -1,3 +1,7 @@
+---
+title: "hardis:source:deploy"
+description: "sfdx-hardis wrapper for sfdx force:source:deploy that displays tips to solve deployment errors."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:source:deploy
 

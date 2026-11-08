@@ -1,3 +1,7 @@
+---
+title: "hardis:project:action:create - Create deployment action"
+description: "Creates a new deployment action in the project configuration."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:action:create
 

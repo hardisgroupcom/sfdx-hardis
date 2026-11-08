@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:consumption-alerts - Check consumption utilization alerts"
+description: "Reports the consumption and license utilization alerts that Salesforce itself raised on the org."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:consumption-alerts
 

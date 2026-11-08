@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:unused-apex-classes - Detect unused Apex classes in an org"
+description: "List all async Apex classes (Batch,Queueable,Schedulable) that has not been called for more than 365 days."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:unused-apex-classes
 

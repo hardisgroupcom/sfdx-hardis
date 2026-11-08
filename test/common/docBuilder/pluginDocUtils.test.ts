@@ -5,6 +5,7 @@ import path from 'path';
 import {
   GENERATED_PLUGIN_DOC_HEADER,
   buildCommandDocMarkdown,
+  buildFrontMatter,
   buildFlagTableRow,
   buildIndexAndCommandsMarkdown,
   buildRemovedCommandPage,
@@ -120,11 +121,34 @@ describe('plugin doc: pages', () => {
     examples: ['$ sf hardis:work:save'],
   };
 
-  it('builds a command page with its header, title and padded parameters', () => {
+  it('builds a command page with its front matter, header, title and padded parameters', () => {
     const markdown = buildCommandDocMarkdown(command);
-    assert.ok(markdown.startsWith(GENERATED_PLUGIN_DOC_HEADER + '\n# hardis:work:save\n'));
+    assert.ok(
+      markdown.startsWith(
+        '---\ntitle: "hardis:work:save - Save User Story"\ndescription: "Saves the work."\n---\n' +
+          GENERATED_PLUGIN_DOC_HEADER +
+          '\n# hardis:work:save\n'
+      )
+    );
     assert.ok(markdown.includes('| debug<br/>-d | boolean | Debug       |         |          |         |'));
     assert.ok(markdown.includes('```shell\n$ sf hardis:work:save\n```'));
+  });
+
+  it('describes a command page with the first paragraph of prose of its description, as plain text', () => {
+    const markdown = buildCommandDocMarkdown({
+      id: 'hardis:org:thing',
+      description:
+        '\n## Command Behavior\n\n[![](https://example.com/a.gif)](https://example.com)\n\n**Does the `thing`** in [the org](https://example.com).\nSecond line.\n\n- A list',
+    });
+    assert.ok(markdown.startsWith('---\ntitle: "hardis:org:thing"\ndescription: "Does the thing in the org. Second line."\n---\n'));
+  });
+
+  it('cuts a long meta description at a word, and escapes quotes', () => {
+    const frontMatter = buildFrontMatter('A "quoted" title', 'word '.repeat(100));
+    assert.ok(frontMatter.startsWith('---\ntitle: "A \\"quoted\\" title"\ndescription: "word word'));
+    const description = frontMatter.split('\n')[2];
+    assert.ok(description.endsWith('word..."'));
+    assert.ok(description.length < 320);
   });
 
   it('takes the title of a command from its title, its summary, then its description', () => {
@@ -141,6 +165,8 @@ describe('plugin doc: pages', () => {
     assert.ok(!indexMarkdown.includes('old list'));
     assert.ok(commandsMarkdown.includes('| [**hardis:work:save**](hardis/work/save.md) | Save User Story |'));
     assert.ok(indexMarkdown.includes('| [**hardis:work:save**](hardis/work/save.md) | Save User Story |'));
+    assert.ok(indexMarkdown.startsWith('---\ntitle: "my-plugin"\ndescription: "my-plugin"\n---\n' + GENERATED_PLUGIN_DOC_HEADER));
+    assert.ok(commandsMarkdown.startsWith('---\ntitle: "my-plugin commands"\n'));
   });
 
   it('builds a removed command page out of the search, linking the list of commands', () => {
@@ -164,13 +190,18 @@ describe('plugin doc: generated pages on disk', () => {
     fs.rmSync(docsRoot, { recursive: true, force: true });
   });
 
-  it('lists the generated command pages only', () => {
+  it('lists the generated command pages only, with or without front matter', () => {
     fs.writeFileSync(path.join(docsRoot, 'hardis', 'work', 'save.md'), `${GENERATED_PLUGIN_DOC_HEADER}\n# hardis:work:save\n`);
+    fs.writeFileSync(
+      path.join(docsRoot, 'hardis', 'work', 'new.md'),
+      buildCommandDocMarkdown({ id: 'hardis:work:new', title: 'New User Story' }).replace(/\n/g, '\r\n')
+    );
     // Same header, but not a command page
     fs.writeFileSync(path.join(docsRoot, 'index.md'), `${GENERATED_PLUGIN_DOC_HEADER}\n# my-plugin\n`);
     fs.writeFileSync(path.join(docsRoot, 'hardis', 'work', 'guide.md'), '# hardis:work:guide\n\nWritten by hand\n');
     fs.writeFileSync(path.join(docsRoot, 'hardis', 'work', 'old.md'), buildRemovedCommandPage('hardis:work:old'));
     assert.deepEqual(listGeneratedCommandPages(docsRoot), [
+      { commandId: 'hardis:work:new', file: path.join(docsRoot, 'hardis', 'work', 'new.md') },
       { commandId: 'hardis:work:save', file: path.join(docsRoot, 'hardis', 'work', 'save.md') },
     ]);
   });

@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:audittrail - Diagnose content of Setup Audit Trail"
+description: "Export Audit trail into a CSV file with selected criteria, and highlight suspect actions"
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:audittrail
 

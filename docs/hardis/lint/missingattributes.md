@@ -1,3 +1,7 @@
+---
+title: "hardis:lint:missingattributes - check missing description on custom fields"
+description: "Checks for missing descriptions on custom fields within your Salesforce DX project."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:lint:missingattributes
 

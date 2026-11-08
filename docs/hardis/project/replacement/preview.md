@@ -1,3 +1,7 @@
+---
+title: "hardis:project:replacement:preview - Preview replacement rules (Beta)"
+description: "Shows what the replacement rules would change in the local files for a deployment to a target org. Nothing is written."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:replacement:preview
 

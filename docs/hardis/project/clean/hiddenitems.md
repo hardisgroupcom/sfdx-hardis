@@ -1,3 +1,7 @@
+---
+title: "hardis:project:clean:hiddenitems - Clean retrieved hidden items in dx sources"
+description: "Removes hidden or temporary metadata items from your Salesforce DX project sources."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:clean:hiddenitems
 

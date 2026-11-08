@@ -1,3 +1,7 @@
+---
+title: "hardis:project:clean:filter-xml-content"
+description: "Filters the content of Salesforce metadata XML files to remove specific elements, enabling more granular deployments."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:clean:filter-xml-content
 

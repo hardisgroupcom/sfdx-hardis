@@ -1,3 +1,7 @@
+---
+title: "hardis:project:audit:apiversion - Audit Metadatas API Version"
+description: "This command identifies metadata with an apiVersion lower than the value specified in the --minimumapiversion parameter."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:audit:apiversion
 

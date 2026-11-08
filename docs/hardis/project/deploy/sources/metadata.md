@@ -1,3 +1,7 @@
+---
+title: "hardis:project:deploy:sources:metadata - Deploy metadata sources to org"
+description: "Deploy metadatas to source org"
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:deploy:sources:metadata
 

@@ -1,3 +1,7 @@
+---
+title: "hardis:work:save - Save User Story"
+description: "Guides the user through the process of saving their work, preparing it for a Merge Request (also named Pull Request), and pushing changes to the remote Git repository."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:work:save
 

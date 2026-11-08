@@ -1,3 +1,7 @@
+---
+title: "hardis:project:audit:duplicatefiles - Find duplicate sfdx files"
+description: "Identifies and reports on duplicate file names within your Salesforce DX project folder."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:audit:duplicatefiles
 

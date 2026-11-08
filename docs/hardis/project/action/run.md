@@ -1,3 +1,7 @@
+---
+title: "hardis:project:action:run - Run a deployment action"
+description: "Runs one post-deployment action again, outside of a deployment job, after it failed or was stopped by a failure."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:action:run
 

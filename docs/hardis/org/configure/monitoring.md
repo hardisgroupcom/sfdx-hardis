@@ -1,3 +1,7 @@
+---
+title: "hardis:org:configure:monitoring - Configure org monitoring"
+description: "Configures the monitoring of a Salesforce org within a dedicated Git repository."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:configure:monitoring
 
@@ -38,7 +42,8 @@ The command's technical implementation involves a series of Git operations, file
 - **Configuration Management:** Updates the `.sfdx-hardis.yml` file using `setInConfigFile` to store org-specific monitoring configurations.
 - **SSL Certificate Generation:** Leverages `generateSSLCertificate` to create the necessary SSL certificates for JWT-based authentication to the Salesforce org.
 - **External Tool Integration:** Requires `openssl` to be installed on the system for SSL certificate generation.
-- **WebSocket Communication:** Uses `WebSocketClient.sendRunSfdxHardisCommandMessage` to restart the command in VS Code if the default org changes, and `WebSocketClient.sendRefreshStatusMessage` to update the status.
+- **Org Switch:** When the selected org differs from the one the command started with, it loads the selected org with `Org.create` and continues with it, instead of restarting the command.
+- **WebSocket Communication:** Uses `WebSocketClient.sendRefreshStatusMessage` to update the status.
 </details>
 
 <!-- training-links:start -->

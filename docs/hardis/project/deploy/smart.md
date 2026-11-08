@@ -1,3 +1,7 @@
+---
+title: "hardis:project:deploy:smart - Smart Deploy sfdx sources to org"
+description: "Smart deploy of SFDX sources to target org, with many useful options."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:deploy:smart
 

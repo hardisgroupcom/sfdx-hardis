@@ -1,3 +1,7 @@
+---
+title: "hardis:git:pull-requests:extract - Extract pull requests"
+description: "Extracts pull request information from your Git server based on specified filtering criteria."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:git:pull-requests:extract
 

@@ -1,3 +1,7 @@
+---
+title: "hardis:project:clean:orgmissingitems - Clean SFDX items using target org definition"
+description: "Cleans Salesforce DX project sources by removing metadata components that are not present in a target Salesforce org or the local package.xml file."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:clean:orgmissingitems
 

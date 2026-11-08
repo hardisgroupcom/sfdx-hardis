@@ -1,3 +1,7 @@
+---
+title: "hardis:ticket:get - Get ticket"
+description: "Fetches a single ticket from JIRA, Azure Boards, ServiceNow or Aha! with everything attached to it, and returns it as structured JSON (and optionally as a markdown extract)."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:ticket:get
 

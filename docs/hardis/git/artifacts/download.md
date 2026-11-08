@@ -1,3 +1,7 @@
+---
+title: "hardis:git:artifacts:download - Download job artifacts"
+description: "Downloads the files a CI job published as artifacts, and lists them."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:git:artifacts:download
 

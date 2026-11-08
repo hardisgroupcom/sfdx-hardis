@@ -1,3 +1,7 @@
+---
+title: "hardis:project:fix:profiletabs - Fix profiles to add tabs that are not retrieved by SF CLI"
+description: "Interactively updates tab visibility settings in Salesforce profiles, addressing a common issue where tab visibilities are not correctly retrieved by sf project retrieve start."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:fix:profiletabs
 

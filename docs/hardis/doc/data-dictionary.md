@@ -1,3 +1,7 @@
+---
+title: "hardis:doc:data-dictionary"
+description: "Generates an Excel (.xlsx) data dictionary for one or more Salesforce objects, read live from the target org, including Data Cloud (Data 360) Data Model Objects and Data Lake Objects."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:doc:data-dictionary
 

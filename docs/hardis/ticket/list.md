@@ -1,3 +1,7 @@
+---
+title: "hardis:ticket:list - List tickets"
+description: "Lists the tickets matching some criteria, so that an agent or a script can process a whole backlog without typing the tickets one by one."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:ticket:list
 

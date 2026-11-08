@@ -1,3 +1,7 @@
+---
+title: "hardis:config:org-init - Get org initialization configuration (Beta)"
+description: "Returns how the project initializes its scratch orgs and sandboxes, without connecting to any org."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:config:org-init
 

@@ -1,3 +1,7 @@
+---
+title: "hardis:project:replacement:list - List replacement rules (Beta)"
+description: "Lists the replacement rules of the project: the rules of every place, the effective rules of every target org, and the built-in rules."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:replacement:list
 

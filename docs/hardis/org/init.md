@@ -1,3 +1,7 @@
+---
+title: "hardis:org:init - Initialize a scratch org or a sandbox (Beta)"
+description: "Runs the initialization steps of the project on an existing scratch org or sandbox."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:init
 

@@ -8,6 +8,31 @@ const SDR_METADATA_REGISTRY_URL =
   "https://raw.githubusercontent.com/forcedotcom/source-deploy-retrieve/refs/heads/main/src/registry/metadataRegistry.json";
 const METADATA_LIST_FILE = "./src/common/metadata-utils/metadataList.ts";
 
+// Title and meta description of each page generated from README.md, for search engines
+const README_PAGES_FRONT_MATTER = {
+  "installation.md": {
+    title: "Install sfdx-hardis",
+    description:
+      "Install sfdx-hardis with the VS Code extension (recommended), as a Salesforce CLI plugin, or run it in CI/CD with a Docker image.",
+  },
+  "events.md": {
+    title: "sfdx-hardis at community events",
+    description: "The Salesforce community events where sfdx-hardis was presented, with the title of each talk.",
+  },
+  "articles-videos.md": {
+    title: "Articles and videos about sfdx-hardis",
+    description: "Web articles, recorded conferences, podcasts and videos about sfdx-hardis and Salesforce DevOps.",
+  },
+  "contributing.md": {
+    title: "Contribute to sfdx-hardis",
+    description: "How to contribute to the sfdx-hardis Salesforce CLI plugin and to its VS Code extension vscode-sfdx-hardis.",
+  },
+  "contributors.md": {
+    title: "sfdx-hardis contributors",
+    description: "The organization behind sfdx-hardis, the authors of its Pull Requests, and the people it thanks.",
+  },
+};
+
 class SfdxHardisBuilder {
   async run() {
     console.log("Start additional building of sfdx-hardis repository...");
@@ -395,7 +420,12 @@ class SfdxHardisBuilder {
       const pageName = match[1].trim();
       const pageContent = match[2].trim();
       const pageFile = `./docs/${pageName}`;
-      fs.writeFileSync(pageFile, pageContent + "\n");
+      const frontMatter = README_PAGES_FRONT_MATTER[pageName];
+      if (!frontMatter) {
+        throw new Error(`Add the title and description of ${pageName} to README_PAGES_FRONT_MATTER in build.cjs`);
+      }
+      const frontMatterBlock = `---\ntitle: ${JSON.stringify(frontMatter.title)}\ndescription: ${JSON.stringify(frontMatter.description)}\n---\n`;
+      fs.writeFileSync(pageFile, frontMatterBlock + pageContent + "\n");
       console.log(`Generated ${pageFile}`);
     }
     console.log("All pages generated from README.md");

@@ -1,3 +1,7 @@
+---
+title: "hardis:doc:metadata-deps - Find metadata dependencies"
+description: "Finds which Salesforce metadata components use one selected component, or which components it uses."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:doc:metadata-deps
 

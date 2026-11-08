@@ -1,3 +1,7 @@
+---
+title: "hardis:ticket:test-cases:init - Initialize the test cases of a ticket"
+description: "Writes the test cases of a ticket into a notebook a tester reviews and fills in: an Excel workbook, a CSV or a markdown table."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:ticket:test-cases:init
 
@@ -29,7 +33,8 @@ The format is read from the file extension:
 ### Output
 
 - Format: `--format` (`xlsx` by default, `both` writes the xlsx and the CSV), or the extension of `--outputfile`.
-- File: `--outputfile`, or `hardis-report/test-cases-<TICKET>-<KIND>-<DATE>.<ext>`.
+- File: `--outputfile`, or `hardis-report/test-cases-<TICKET>-<KIND>-<DATE>.<ext>`. The file always gets the extension of its format: `--outputfile notes.txt` writes `notes.xlsx`.
+- A blank notebook holds at most 999 cases (modules x `--rows`), the most a test case id counter can number.
 - An existing file is never overwritten silently: the command asks first, and refuses in CI and in agent mode.
 
 ### Configuration

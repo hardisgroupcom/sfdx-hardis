@@ -1,3 +1,7 @@
+---
+title: "hardis:org:create - Create sandbox org"
+description: "Creates and initializes a Salesforce sandbox org."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:create
 

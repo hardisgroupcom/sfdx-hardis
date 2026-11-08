@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:unused-connected-apps - Unused Connected Apps in an org"
+description: "Identifies and reports on potentially unused Connected Apps in a Salesforce org, suggesting candidates for deletion or deactivation."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:unused-connected-apps
 
