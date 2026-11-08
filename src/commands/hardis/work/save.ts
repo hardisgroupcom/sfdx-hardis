@@ -38,6 +38,7 @@ import { GitProvider } from '../../../common/gitProvider/index.js';
 import { t } from '../../../common/utils/i18n.js';
 import { getPromotionBranchConfig, isPromotionBranchName } from '../../../common/utils/promotionBranchUtils.js';
 import { isBackpromoteBranchName, parseBackpromoteBranchName } from '../../../common/utils/backpromoteRules.js';
+import { registerDevOrgUsage } from '../../../common/utils/devOrgsRegistry.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -123,6 +124,8 @@ autoRemoveUserPermissions:
   - ViewPlatformEvents
   - WorkCalibrationUser
 \`\`\`
+
+After the push, the org is recorded in the [development orgs](https://sfdx-hardis.cloudity.com/salesforce-devops-dev-orgs/) list of the project with the User Story branch, so its users know when to run a backpromote. Without a git provider token, the command only says it could not record it.
 
 Advanced instructions are available in the [Publish a User Story documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-publish-user-story/).
 
@@ -304,6 +307,8 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 
     // Push new commit(s)
     await this.manageCommitPush(gitStatusWithConfig, gitStatusAfterDeployPlan);
+    // The org stays known in the development orgs list, with this User Story branch
+    await registerDevOrgUsage({ username: flags['target-org'].getUsername(), targetBranch: this.targetBranch, featureBranch: this.currentBranch, commandThis: this });
 
 
     // If a Pull Request is already open from the current branch to its target branch,

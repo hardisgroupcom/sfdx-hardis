@@ -9,6 +9,7 @@
   - [hardis:scratch:create](https://sfdx-hardis.cloudity.com/hardis/scratch/create/): new env var **SCRATCH_ORG_SNAPSHOT** to create the scratch org from a snapshot given by name (with a scratch org pool, only when the pool has no org left). A pool fill ignores it.
   - The [org initialization steps](https://sfdx-hardis.cloudity.com/salesforce-devops-org-initialization/) run as for a pool: the snapshot holds the result of the steps run when filling the pool, and each Pull Request scratch org installs the packages it lacks, gets the delta, then the other steps.
 - Delta deployment with `useDeltaDeploymentWithDependencies`: a command that reads two manifests no longer extends the second delta with the components of the first.
+- New [Development orgs list](https://sfdx-hardis.cloudity.com/salesforce-devops-dev-orgs/): see which dev sandboxes and scratch orgs miss Pull Requests merged into their target branch, so their owners know when to backpromote.
 
 ## [8.23.0] 2026-11-06
 

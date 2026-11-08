@@ -28,6 +28,8 @@ import SandboxCreate from '../org/create.js';
 import ScratchCreate from '../scratch/create.js';
 import { t } from '../../../common/utils/i18n.js';
 import { runAuthHook } from '../../../common/utils/authUtils.js';
+import { getCurrentGitUser, registerDevOrgUsage } from '../../../common/utils/devOrgsRegistry.js';
+import { formatDevOrgPerson } from '../../../common/utils/devOrgsRules.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -57,6 +59,7 @@ Key features include:
 - **Shared Development Sandboxes:** Accounts for scenarios with shared development sandboxes, adjusting prompts to prevent accidental overwrites.
 - **Sandbox initialization:** The command never initializes a selected sandbox. Run [hardis:org:init](${CONSTANTS.DOC_URL_ROOT}/hardis/org/init/) to run the org initialization steps on it. A new scratch org, or one taken from the pool, gets them when it is created.
 
+- **Development orgs list:** The selected or created org is registered in the [development orgs](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-dev-orgs/) list of the project: you become one of its users (its owner when it is new), with the User Story branch and its target branch. When the org is already registered for another target branch, a warning says so and the registered one stays. Without a git provider token, the command only says it could not register the org.
 - **Developer sandbox metadata:** The metadata of an existing sandbox is not updated by this command. To bring into it what the team merged in the target branch, use [hardis:work:backpromote](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-backpromote/) (the Backpromote panel in VS Code).
 
 - **Agent Mode (\`--agent\`):** Enables a fully non-interactive execution path for AI agents and automation. In this mode, all required decisions must be provided as flags and are validated at command start with explicit error messages listing missing inputs and available options.
@@ -388,6 +391,11 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
       selectedOrgInfo = await this.selectOrCreateSandbox(branchName, config, flags, selectedOrgType, agentInputs);
     } else {
       uxLog("action", this, c.cyan(t('noOrgSelectedEnsureYouKnow')));
+    }
+
+    // The org joins the development orgs list, so its users know when to run a backpromote
+    if (selectedOrgInfo?.username) {
+      await registerDevOrgUsage({ username: selectedOrgInfo.username, targetBranch: this.targetBranch, featureBranch: branchName, commandThis: this });
     }
 
     uxLog("action", this, c.cyan(t('readyToWorkInBranch', { branchName: c.green(branchName) })));
@@ -857,7 +865,13 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 
     // Create a new sandbox ( NOT WORKING YET, DO NOT USE)
     else if (sandboxResponse.value === 'newSandbox') {
-      const createResult = await SandboxCreate.run();
+      // The person who creates the sandbox for their User Story owns it: nothing more to ask
+      const currentUser = await getCurrentGitUser();
+      const createResult = await SandboxCreate.run([
+        ...(currentUser ? ['--owner', formatDevOrgPerson(currentUser)] : []),
+        '--target-branch',
+        this.targetBranch,
+      ]);
       if (createResult == null) {
         throw new SfError('Unable to create sandbox org');
       }
