@@ -258,6 +258,7 @@ if step pr; then
   create_action post-run-batch --when post-deploy --type run-batch --label "DA E2E run batch" --class-name E2EBatch --run-mode wait --wait-timeout 10
   create_action post-schedule --when post-deploy --type schedule-batch --label "DA E2E schedule batch" --class-name E2EBatch --cron-expression "0 0 3 * * ?"
   create_action post-uap --when post-deploy --type user-access-policy --label "DA E2E policy apply to all" --policies UAP_Spike_Policy --apply-to-all
+  # shellcheck disable=SC2016 # a literal ${VAR} reference, expanded by Browserforce
   create_action post-browser --when post-deploy --type browser --label "DA E2E browser density" --browser-setting densitySettings --browser-config '{"density":"${DA_E2E_DENSITY}"}'
   create_action post-manual --when post-deploy --type manual --label "DA E2E manual step" --instructions "Check the e2e org"
   # Refusals of the generic checks, against the branch under test
@@ -273,6 +274,7 @@ if step pr; then
   assert_contains YAML-REMOVE "$F" "ApexClass:E2ESkipped" "remove-packagexml-items items stored"
   browser_context=$(action_field "$F" browser context)
   if [ "$browser_context" = "all" ]; then result YAML-BROWSER-CONTEXT OK "the browser action runs in checks too"; else result YAML-BROWSER-CONTEXT FAIL "context of the browser action: $browser_context"; fi
+  # shellcheck disable=SC2016 # a literal ${VAR} reference, expanded by Browserforce
   assert_contains YAML-BROWSER-VARIABLE "$F" 'density: ${DA_E2E_DENSITY}' "the variable reference is stored, not a value"
   assert_contains CREATE-BROWSER-VARIABLES "$LOGS/create-post-browser.json" "DA_E2E_DENSITY_INTEGRATION" "action:create lists the variables to declare per major branch"
   (cd "$WORK" && git add -A && git commit -q -m "Deployment actions" && git push -q)
