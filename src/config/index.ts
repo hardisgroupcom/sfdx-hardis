@@ -132,8 +132,7 @@ export const getConfig = async (layer: "project" | "branch" | "user" = 'user', o
     return defaultConfig;
   }
   let branchConfig = await loadFromConfigFile(await getBranchConfigFiles(options.branch));
-  // A read of another branch merges into a copy: the project layer can be the remote config shared by the process
-  branchConfig = Object.assign(writeCache ? defaultConfig : Object.assign({}, defaultConfig), branchConfig);
+  branchConfig = Object.assign(defaultConfig, branchConfig);
   if (layer === 'branch') {
     if (writeCache) {
       promptTemplateCache['branch'] = branchConfig;
@@ -199,7 +198,8 @@ async function loadFromConfigFile(searchPlaces: string[]): Promise<any> {
     let config = configExplorer != null ? configExplorer.config : {};
     if (config.extends) {
       const remoteConfig = await loadFromRemoteConfigFile(config.extends);
-      config = Object.assign(remoteConfig, config);
+      // A copy: the remote config is cached for the process, and getConfig merges the other layers into this object
+      config = Object.assign({}, remoteConfig, config);
     }
     // A shallow copy: getConfig merges the layers into the object it gets back, and what is
     // memorized here must not collect the keys of the layers above it

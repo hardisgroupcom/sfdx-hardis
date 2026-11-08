@@ -776,6 +776,18 @@ describe('getConfigOfSnapshotBranch with a remote extends', () => {
     fs.rmSync(projectDir, { recursive: true, force: true });
   });
 
+  it('does not carry the job branch keys into the snapshot branch config when the job config is read first', async () => {
+    fs.writeFileSync(path.join(projectDir, 'config', 'branches', '.sfdx-hardis.feature__story.yml'), 'jobOnly: true\n');
+    // A commit, so git can name the job branch
+    execFileSync('git', ['add', '.'], { cwd: projectDir });
+    execFileSync('git', ['-c', 'user.email=t@example.com', '-c', 'user.name=t', 'commit', '-q', '-m', 'init'], { cwd: projectDir });
+    expect((await getConfig('user')).jobOnly).to.equal(true);
+    const snapshotConfig = await getConfigOfSnapshotBranch('main');
+    expect(snapshotConfig.useScratchOrgSnapshot).to.equal(true);
+    expect(snapshotConfig.jobOnly).to.equal(undefined);
+    expect((await getConfig('project')).jobOnly).to.equal(undefined);
+  });
+
   it('does not write the snapshot branch keys into the remote config the project layer shares', async () => {
     expect((await getConfigOfSnapshotBranch('main')).useScratchOrgSnapshot).to.equal(true);
     const project = await getConfig('project');
