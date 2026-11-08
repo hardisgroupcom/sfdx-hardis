@@ -42,6 +42,22 @@ Go to target org, in Setup -> Deployment Settings -> Activate option "Allow depl
 ```
 
 ---
+## [Agent running user has no access to the agent](sf-deployment-assistant/Agent-running-user-has-no-access-to-the-agent.md)
+
+**Detection**
+
+- RegExp: `Error (.*) User doesn't have access to agent`
+
+**Resolution**
+
+```shell
+The running user of agent {1} (botUser in its AiAgentDefinition) exists in the target org, but cannot run agents
+- Assign it the permission sets AgentforceServiceAgentBase, AgentforceServiceAgentUser and EinsteinGPTPromptTemplateUser, with the profile Einstein Agent User
+- Or let sfdx-hardis create a user with sf org create agent-user: keep the built-in replacement rule builtin-agent-running-user on, and remove the replacement rule of your own that writes botUser. See https://sfdx-hardis.cloudity.com/salesforce-ci-cd-agentforce-agents/#the-running-user-of-a-service-agent
+
+```
+
+---
 ## [Can not change field type to a formula field](sf-deployment-assistant/Can-not-change-field-type-to-a-formula-field.md)
 
 **Detection**

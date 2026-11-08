@@ -8,7 +8,7 @@ import picomatch from 'picomatch';
 import * as xmldom from '@xmldom/xmldom';
 import { ConfigAggregator, Connection, Org, OrgConfigProperties } from '@salesforce/core';
 import fs from '../../utils/fsUtils.js';
-import { uxLog } from '../../utils/index.js';
+import { getCurrentGitBranch, uxLog } from '../../utils/index.js';
 import { t } from '../../utils/i18n.js';
 import { listMajorOrgs } from '../../utils/orgConfigUtils.js';
 import { buildActionTargetBranchCandidates, evaluateActionBranchFilter, normalizeBranchName } from '../../utils/actionUtils.js';
@@ -181,8 +181,16 @@ export async function applyReplacementRules(options: ApplyReplacementRulesOption
   }
 
   uxLog('action', commandThis, c.cyan(t('replacementRulesApplying', { target: target.label })));
+  const resolvedRules = resolved.map((item) => item.rule);
   for (const item of resolved) {
-    await item.handler.prepare({ target, conn: options.conn, targetUsername: options.targetUsername, commandThis });
+    await item.handler.prepare({
+      target,
+      conn: options.conn,
+      targetUsername: options.targetUsername,
+      commandThis,
+      packageXmlFiles: options.packageXmlFiles,
+      rules: resolvedRules,
+    });
   }
   const files = await listCandidateFiles(options.packageXmlFiles, commandThis);
   for (const file of files) {
@@ -236,6 +244,70 @@ export async function runWithReplacementRules<T>(options: Omit<ApplyReplacementR
   } finally {
     session?.restore();
   }
+}
+
+/**
+ * Branch whose replacement rules a deployment to the current org uses: an explicit --target-branch
+ * (FORCE_TARGET_BRANCH, which also selects the org through CONFIG_BRANCH), else the branch the caller
+ * already knows, else the target branch of the Pull Request in a check job, else the current branch.
+ * deploy:smart and the deployment actions share it, so they always apply the rules of the same branch.
+ */
+export async function resolveReplacementRulesTargetBranch(knownTargetBranch: string | null = null): Promise<string | null> {
+  if (process.env.FORCE_TARGET_BRANCH) {
+    return process.env.FORCE_TARGET_BRANCH;
+  }
+  if (knownTargetBranch) {
+    return knownTargetBranch;
+  }
+  // Imported here: the git provider imports reach the replacement rules
+  const { GitProvider } = await import('../../gitProvider/index.js');
+  const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
+  return prInfo?.targetBranch || (await getCurrentGitBranch()) || null;
+}
+
+/**
+ * Rules a deployment to the target branch would apply, without reading the org nor the secrets: the
+ * built-in rules that are on, and the rules of the project that pass their branch filter and have a
+ * value for the target (a secret counts as one). skippedBy: the env var or the config file that turns
+ * every rule off for this target.
+ */
+export async function listRulesOfTarget(targetBranch: string | null): Promise<{ skippedBy: string | null; rules: MergedReplacementRule[] }> {
+  if (process.env[SKIP_REPLACEMENT_RULES_ENV] === 'true') {
+    return { skippedBy: SKIP_REPLACEMENT_RULES_ENV, rules: [] };
+  }
+  const target = await resolveTarget(targetBranch, null);
+  const skipFile = await findSkipReplacementRulesFile(target.targetBranch);
+  if (skipFile) {
+    return { skippedBy: skipFile, rules: [] };
+  }
+  const { rules } = await loadEffectiveRules(target.targetBranch, { readIssue: true });
+  const majorBranchNames = (await listMajorOrgs()).map((majorOrg: any) => majorOrg.branchName);
+  const candidates = buildActionTargetBranchCandidates(target.targetBranch || '', majorBranchNames);
+  const secretsProvider = rules.some((rule) => !rule.builtIn && rule.enabled && rule.secret) ? await getSecretsProvider() : null;
+  const applied: MergedReplacementRule[] = [];
+  for (const rule of rules) {
+    if (!rule.enabled) {
+      continue;
+    }
+    if (rule.builtIn) {
+      applied.push(rule);
+      continue;
+    }
+    if (!evaluateActionBranchFilter(rule, candidates).run) {
+      continue;
+    }
+    // As at deployment time: a rule whose secret or value is missing for this target is dropped
+    if (!createReplacementRule(rule).needsValue()) {
+      applied.push(rule);
+    } else if (rule.secret && secretsProvider) {
+      if ((await secretsProvider.getSecret(rule.secret, target.targetBranch)).value != null) {
+        applied.push(rule);
+      }
+    } else if (resolveRuleValue(rule, target.targetBranch) != null) {
+      applied.push(rule);
+    }
+  }
+  return { skippedBy: null, rules: applied };
 }
 
 /** Rules after the merge of the layers, invalid ones removed and reported */
@@ -383,7 +455,7 @@ async function processFile(
   // Text rules work on the raw content, before the XML ones
   for (const item of rulesOfFile.filter((entry) => entry.handler.scope === 'text')) {
     item.matchedFiles++;
-    const outcome = item.handler.applyToText(content, item.value);
+    const outcome = item.handler.applyToText(content, item.value, file);
     item.found += outcome.found;
     pushResult(report, file, item, outcome.status, outcome.changed || outcome.found, outcome.detail);
     content = outcome.content;

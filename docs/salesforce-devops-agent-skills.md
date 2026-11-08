@@ -447,6 +447,7 @@ Ten built-in action types are available, plus the [custom functions](salesforce-
 | `run-batch`               | `--class-name`                                |
 | `remove-packagexml-items` | `--packagexml-items`                          |
 | `user-access-policy`      | `--policies`                                  |
+| `agent-activate`          | `--agent-name`                                |
 | `browser`                 | `--browser-setting`, `--browser-config`       |
 | Id of a custom function   | `--function-input name=value`, once per input |
 

@@ -63,6 +63,9 @@ Activate Smart Deployment tests with:
 Defaut list for **NOT_IMPACTING_METADATA_TYPES** (can be overridden with comma-separated list on env var NOT_IMPACTING_METADATA_TYPES)
 
 - ActionLinkGroupTemplate
+- AiAgentDefinition
+- AiAgentDefinitionVersion
+- AiAuthoringBundle
 - AnalyticSnapshot
 - AppMenu
 - Audience

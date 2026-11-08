@@ -8,6 +8,7 @@
 //
 // The base class of the hardis:project:replacement:* commands is src/commands/hardis/project/replacement/base.ts.
 
+import { AgentRunningUserBuiltInRule } from './agentRunningUserBuiltInRule.js';
 import { BuiltInRemovalRule } from './builtInRemovalRule.js';
 import { FlowEndsBuiltInRule } from './flowEndsBuiltInRule.js';
 import { ReplacementRuleRoot } from './replacementRuleRoot.js';
@@ -25,6 +26,8 @@ export function createReplacementRule(rule: MergedReplacementRule): ReplacementR
         return new FlowEndsBuiltInRule(rule);
       case 'unknownUserPermissions':
         return new UnknownUserPermissionsBuiltInRule(rule);
+      case 'agentRunningUser':
+        return new AgentRunningUserBuiltInRule(rule);
       default:
         return new BuiltInRemovalRule(rule);
     }

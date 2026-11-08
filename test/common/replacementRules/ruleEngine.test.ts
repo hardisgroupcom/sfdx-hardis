@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { applyReplacementRules } from '../../../src/common/replacementRules/engine/ruleEngine.js';
+import { applyReplacementRules, listRulesOfTarget, resolveReplacementRulesTargetBranch } from '../../../src/common/replacementRules/engine/ruleEngine.js';
 import { restoreLeftoverReplacementFiles } from '../../../src/common/replacementRules/engine/fileBackup.js';
 import { buildReplacementRulesMarkdown } from '../../../src/common/replacementRules/engine/replacementReport.js';
 import { findSkipReplacementRulesFile } from '../../../src/common/replacementRules/config/ruleConfig.js';
@@ -190,6 +190,27 @@ replacementRules:
     expect(markdown).to.include('RR_TEST_PASSWORD');
     session.restore();
     expect(read(files.namedCredential)).to.equal(NAMED_CREDENTIAL);
+  });
+
+  it('lists a rule reading a secret only when the secret is set, as the deployment applies it', async () => {
+    const without = await listRulesOfTarget('uat');
+    expect(without.rules.map((rule) => rule.id)).to.include('payment-api-endpoint').and.not.include('payment-api-password');
+    process.env.RR_TEST_PASSWORD_UAT = 'p@ss$word-uat';
+    const withSecret = await listRulesOfTarget('uat');
+    expect(withSecret.rules.map((rule) => rule.id)).to.include('payment-api-password');
+  });
+
+  it('resolves the target branch of the rules with FORCE_TARGET_BRANCH first', async () => {
+    const previous = process.env.FORCE_TARGET_BRANCH;
+    try {
+      process.env.FORCE_TARGET_BRANCH = 'uat';
+      expect(await resolveReplacementRulesTargetBranch('main')).to.equal('uat');
+      delete process.env.FORCE_TARGET_BRANCH;
+      expect(await resolveReplacementRulesTargetBranch('main')).to.equal('main');
+    } finally {
+      if (previous === undefined) delete process.env.FORCE_TARGET_BRANCH;
+      else process.env.FORCE_TARGET_BRANCH = previous;
+    }
   });
 
   it('applies text rules and built-in rules for an older production org', async () => {

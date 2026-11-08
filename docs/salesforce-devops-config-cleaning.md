@@ -39,6 +39,14 @@ autoCleanTypes:
 ```
 ___
 
+### Agentforce agents deployment actions
+
+Property: **autoAddAgentsDeploymentActions**
+
+For each [Agentforce agent](salesforce-ci-cd-agentforce-agents.md) whose authoring bundle changed in the User Story, writes in the deployment actions of the Pull Request an `agent-publish` action, which publishes the agent in each org and activates the new version, and, for an agent that runs as a user, an `agent-running-user` action. See [hardis:project:clean:agents-deployment-actions](hardis/project/clean/agents-deployment-actions.md).
+
+___
+
 ### Dashboards
 
 Property: **dashboards**

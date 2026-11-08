@@ -17,6 +17,10 @@
  * That is the whole point of this file. A learner reading the lab would be stuck
  * on the same question, so the run must stop there too.
  *
+ * walk/panel-node.mjs runs this file with globalThis.PANEL_RUNNER = "node": the command is then
+ * `node <script> ...` with the server address in SFDX_HARDIS_WEBSOCKET, as the Command Runner of
+ * the extension does for the Training menu.
+ *
  * Exit codes: the command's own, 2 when a prompt went unanswered, 3 when the
  * WebSocket server could not start.
  *
@@ -146,13 +150,25 @@ wss.on("connection", (ws) => {
   });
 });
 
-const args = [...command, "--websocket", `localhost:${port}`];
-const child = spawn(isWin ? `sf ${args.map((a) => (/[\s"&|<>^]/.test(a) ? `"${a.replace(/"/g, '\\"')}"` : a)).join(" ")}` : "sf", isWin ? [] : args, {
-  cwd: opts.cwd || process.cwd(),
-  shell: isWin,
-  stdio: ["ignore", "inherit", "inherit"],
-  env: { ...process.env, FORCE_COLOR: "0", NO_COLOR: "1" }
-});
+const env = { ...process.env, FORCE_COLOR: "0", NO_COLOR: "1" };
+const child =
+  globalThis.PANEL_RUNNER === "node"
+    ? spawn(process.execPath, command, {
+        cwd: opts.cwd || process.cwd(),
+        stdio: ["ignore", "inherit", "inherit"],
+        env: { ...env, SFDX_HARDIS_WEBSOCKET: `localhost:${port}` }
+      })
+    : spawnSf([...command, "--websocket", `localhost:${port}`]);
+
+function spawnSf(args) {
+  return spawn(isWin ? `sf ${args.map((a) => (/[\s"&|<>^]/.test(a) ? `"${a.replace(/"/g, '\\"')}"` : a)).join(" ")}` : "sf", isWin ? [] : args, {
+    cwd: opts.cwd || process.cwd(),
+    shell: isWin,
+    stdio: ["ignore", "inherit", "inherit"],
+    env
+  });
+}
+
 child.on("exit", (code) => {
   const unused = rules.filter((r) => !r.used && !r.optional);
   if (unused.length > 0) {

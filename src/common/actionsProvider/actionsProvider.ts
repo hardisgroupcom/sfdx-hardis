@@ -21,6 +21,9 @@ export type BuiltInActionType =
   | 'run-batch'
   | 'remove-packagexml-items'
   | 'user-access-policy'
+  | 'agent-activate'
+  | 'agent-publish'
+  | 'agent-running-user'
   | 'browser'
   // Org initialization steps only (orgInitSteps), never deployment actions
   | 'install-packages'
@@ -60,6 +63,7 @@ export interface PrePostCommand {
     successEvenIfBatchErrors?: boolean; // for 'run-batch' actions in wait mode (optional, defaults to false)
     permissionSets?: string[]; // for 'assign-permission-sets' org initialization steps
     packageXmlItems?: string[] | string; // for 'remove-packagexml-items' actions (each item: "TypeName:Member1,Member2"; a single string is accepted for a single entry)
+    agentName?: string;      // for 'agent-activate', 'agent-publish' and 'agent-running-user' actions
     setting?: string;        // for 'browser' actions: the Browserforce setting key (densitySettings...)
     config?: any;            // for 'browser' actions: the value of that setting
     [key: string]: any;
@@ -200,6 +204,18 @@ export abstract class ActionsProvider {
       const UserAccessPolicyAction = await import('./userAccessPolicyAction.js');
       actionInstance = new UserAccessPolicyAction.UserAccessPolicyAction();
     }
+    else if (type === 'agent-activate') {
+      const AgentActivateAction = await import('./agentActivateAction.js');
+      actionInstance = new AgentActivateAction.AgentActivateAction();
+    }
+    else if (type === 'agent-publish') {
+      const AgentPublishAction = await import('./agentPublishAction.js');
+      actionInstance = new AgentPublishAction.AgentPublishAction();
+    }
+    else if (type === 'agent-running-user') {
+      const AgentRunningUserAction = await import('./agentRunningUserAction.js');
+      actionInstance = new AgentRunningUserAction.AgentRunningUserAction();
+    }
     else if (type === 'browser') {
       const BrowserAction = await import('./browserAction.js');
       actionInstance = new BrowserAction.BrowserAction();
@@ -250,14 +266,14 @@ export abstract class ActionsProvider {
     return null;
   }
 
+  // Context of a new action of this type when none is given, or null for the generic default
+  public getDefaultContext(): PrePostCommand['context'] | null {
+    return null;
+  }
+
   // Flags of hardis:project:action:create and update that only this type accepts
   public getFlagNames(): string[] {
     return [];
-  }
-
-  // Context of a new action of this type, or null for the generic default
-  public getDefaultContext(): PrePostCommand['context'] | null {
-    return null;
   }
 
   /**

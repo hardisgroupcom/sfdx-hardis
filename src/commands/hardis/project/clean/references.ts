@@ -31,6 +31,7 @@ import { t } from '../../../../common/utils/i18n.js';
 // allCleaningTypes below, which carries the label and the command class of each: a test checks both lists
 // stay in sync, as several cleaning types used to be missing here and were not selectable at all
 const CLEANING_TYPES = [
+  'autoAddAgentsDeploymentActions',
   'caseentitlement',
   'checkPermissions',
   'dashboards',
@@ -56,6 +57,8 @@ type CleaningType = {
   value: string;
   title: string;
   commandClass?: CleaningCommandClass;
+  // The command class loaded only when the cleaning runs, for a cleaning few projects use
+  loadCommandClass?: () => Promise<CleaningCommandClass>;
   // Set when the sub-command accepts --flows, so the cleaning can be restricted to a subset of Flows
   scopedByFlows?: boolean;
   // Set when the sub-command accepts --delta-from, so it never deletes a file the next git delta would see as deleted
@@ -103,7 +106,7 @@ The command's technical implementation involves several steps:
 
 - **Configuration Loading:** It reads the project's configuration to determine default cleaning types and user preferences.
 - **Cleaning Type Processing:** For each selected cleaning type, it either executes a dedicated sub-command (e.g., 
-- **Delta scope:** \`--delta-from\` is passed on to the cleanings that delete files (\`emptyItems\`): \`hardis:work:save\` sends the commit its git delta starts from, so a file that already exists there is never deleted (the next delta would turn that deletion into a destructive change).
+- **Delta scope:** \`--delta-from\` is passed on to the cleanings that depend on the git delta: \`hardis:work:save\` sends the commit its git delta starts from. \`emptyItems\` never deletes a file that already exists there (the next delta would turn that deletion into a destructive change), and \`autoAddAgentsDeploymentActions\` only handles the agents changed since that commit.
 - **XML Filtering:** For template-based cleanings, it constructs a temporary JSON configuration file based on predefined templates or user-provided 
 - **Package.xml Cleanup:** It iterates through 
 - **Object Property Removal:** The 
@@ -160,6 +163,12 @@ The command's technical implementation involves several steps:
   protected debugMode = false;
   protected cleaningTypes: any[] = [];
   protected allCleaningTypes: CleaningType[] = [
+    {
+      value: 'autoAddAgentsDeploymentActions',
+      title: t('cleaningTypeAutoAddAgentsDeploymentActions'),
+      loadCommandClass: async () => (await import('./agents-deployment-actions.js')).default,
+      scopedByDeltaFrom: true,
+    },
     {
       value: 'checkPermissions',
       title: t('cleaningTypeCheckPermissions'),
@@ -294,7 +303,8 @@ The command's technical implementation involves several steps:
       const cleaningTypeObj = this.allCleaningTypes.filter(
         (cleaningTypeObj) => cleaningTypeObj.value === cleaningType
       )[0];
-      if (cleaningTypeObj?.commandClass) {
+      const commandClass = cleaningTypeObj?.commandClass || (cleaningTypeObj?.loadCommandClass ? await cleaningTypeObj.loadCommandClass() : null);
+      if (commandClass) {
         // Command based cleaning. The command is called in the current process, not as a `sf` child
         // process: booting the Salesforce CLI again costs seconds, the cleaning itself milliseconds
         const commandArgs: string[] = [];
@@ -313,7 +323,7 @@ The command's technical implementation involves several steps:
           commandArgs.push('--delta-from', this.deltaFrom);
         }
         uxLog("action", this, c.cyan(t('runCleaningCommand', { cleaningType: c.bold(cleaningType), cleaningTypeObj: cleaningTypeObj.title })));
-        await cleaningTypeObj.commandClass.run(commandArgs, this.config);
+        await commandClass.run(commandArgs, this.config);
       } else {
         // Template based cleaning
         uxLog("action", this, c.cyan(t('applyCleaningOfReferencesTo', { cleaningType: c.bold(cleaningType), cleaningTypeObj: cleaningTypeObj.title })));
