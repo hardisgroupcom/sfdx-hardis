@@ -4,8 +4,9 @@ import * as os from 'os';
 import * as path from 'path';
 import { execFileSync } from 'child_process';
 import { pathToFileURL } from 'url';
-import { getExhaustedSnapshotLimit, getSnapshotDescription, getSnapshotLimitError, getSnapshotScope, getSnapshotSignupError, isSnapshotSignupRetryable, getSnapshotName, parsePositiveSetting, pickScratchSnapshot, pickSnapshotTargetBranch, extendSnapshotDeltaWithDependencies, fetchFullHistoryIfShallow, orgInitStepChangedSince, scopeDeltaToDeployManifest, scratchDefChangedSince, selectSnapshotOrgInitStepIds } from '../../../src/common/utils/scratchSnapshotUtils.js';
+import { getExhaustedSnapshotLimit, getSnapshotDescription, getSnapshotLimitError, getSnapshotScope, getSnapshotSignupError, isSnapshotSignupRetryable, getSnapshotName, parsePositiveSetting, pickScratchSnapshot, pickSnapshotTargetBranch, extendSnapshotDeltaWithDependencies, fetchFullHistoryIfShallow, orgInitStepChangedSince, isScratchSnapshotBranch, scopeDeltaToDeployManifest, scratchDefChangedSince, selectSnapshotOrgInitStepIds } from '../../../src/common/utils/scratchSnapshotUtils.js';
 import { parsePackageXmlFile } from '../../../src/common/utils/xmlUtils.js';
+import { clearListMajorOrgsCache } from '../../../src/common/utils/orgConfigUtils.js';
 
 const shaNew = 'a'.repeat(40);
 const shaOld = 'b'.repeat(40);
@@ -617,5 +618,34 @@ describe('selectSnapshotOrgInitStepIds', () => {
       orgInitSteps: config.orgInitSteps.map((step) => (['packages', 'sources'].includes(step.id) ? { ...step, runAtPoolFill: false } : step)),
     };
     expect(selectSnapshotOrgInitStepIds(late, 'source')).to.include.members(['packages', 'sources']);
+  });
+});
+
+describe('isScratchSnapshotBranch', () => {
+  const originalCwd = process.cwd();
+  let projectDir: string;
+
+  beforeEach(() => {
+    projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapshot-branch-'));
+    fs.mkdirSync(path.join(projectDir, 'config', 'branches'), { recursive: true });
+    fs.writeFileSync(path.join(projectDir, 'config', 'branches', '.sfdx-hardis.main.yml'), 'useScratchOrgSnapshot: true\n');
+    process.chdir(projectDir);
+    clearListMajorOrgsCache();
+  });
+
+  afterEach(() => {
+    process.chdir(originalCwd);
+    clearListMajorOrgsCache();
+    fs.rmSync(projectDir, { recursive: true, force: true });
+  });
+
+  it('reads the snapshot setting of the branch', async () => {
+    expect(await isScratchSnapshotBranch('main', null)).to.equal(true);
+    expect(await isScratchSnapshotBranch('uat', null)).to.equal(false);
+  });
+
+  it('answers false instead of throwing when the config of another branch is not valid YAML, so a pool refresh goes on', async () => {
+    fs.writeFileSync(path.join(projectDir, 'config', 'branches', '.sfdx-hardis.uat.yml'), 'key: [unclosed\n  other: : :\n');
+    expect(await isScratchSnapshotBranch('main', null)).to.equal(false);
   });
 });
