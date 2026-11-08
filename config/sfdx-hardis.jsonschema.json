@@ -926,6 +926,7 @@
               "publish-community",
               "manual",
               "remove-packagexml-items",
+              "browser",
               "notifySlack"
             ],
             "anyOf": [
@@ -938,7 +939,8 @@
                   "run-batch",
                   "publish-community",
                   "manual",
-                  "remove-packagexml-items"
+                  "remove-packagexml-items",
+                  "browser"
                 ],
                 "enumNames": [
                   "Command",
@@ -948,7 +950,8 @@
                   "Run Batch",
                   "Publish Community",
                   "Manual Action",
-                  "Remove package.xml Items"
+                  "Remove package.xml Items",
+                  "Browser (Browserforce)"
                 ]
               },
               {
@@ -1070,6 +1073,29 @@
                 "type": [
                   "array",
                   "string"
+                ]
+              },
+              "setting": {
+                "$id": "#/properties/commandsPreDeploy/items/properties/parameters/setting",
+                "description": "For 'browser' actions: key of the Browserforce setting to apply (densitySettings, companyInformation...). List them with sf hardis:project:action:types --type browser",
+                "title": "Browserforce setting",
+                "type": "string",
+                "examples": [
+                  "densitySettings"
+                ]
+              },
+              "config": {
+                "$id": "#/properties/commandsPreDeploy/items/properties/parameters/config",
+                "description": "For 'browser' actions: value of the Browserforce setting. Write \"${VARIABLE}\" for a secret or a value that differs per org",
+                "title": "Browserforce setting value",
+                "type": [
+                  "object",
+                  "array"
+                ],
+                "examples": [
+                  {
+                    "density": "Compact"
+                  }
                 ]
               }
             },
@@ -1238,6 +1264,7 @@
               "publish-community",
               "manual",
               "user-access-policy",
+              "browser",
               "notifySlack"
             ],
             "anyOf": [
@@ -1250,7 +1277,8 @@
                   "run-batch",
                   "publish-community",
                   "manual",
-                  "user-access-policy"
+                  "user-access-policy",
+                  "browser"
                 ],
                 "enumNames": [
                   "Command",
@@ -1260,7 +1288,8 @@
                   "Run Batch",
                   "Publish Community",
                   "Manual Action",
-                  "User Access Policy"
+                  "User Access Policy",
+                  "Browser (Browserforce)"
                 ]
               },
               {
@@ -1383,17 +1412,40 @@
               },
               "activate": {
                 "$id": "#/properties/commandsPostDeploy/items/properties/parameters/activate",
-                "description": "For 'user-access-policy' actions: activate the policies with the Salesforce API. A deployment always leaves them in Design status",
+                "description": "For 'user-access-policy' actions: activate the policies with Browserforce. A deployment always leaves them in Design status",
                 "title": "Activate",
                 "type": "boolean",
                 "default": true
               },
               "applyToAll": {
                 "$id": "#/properties/commandsPostDeploy/items/properties/parameters/applyToAll",
-                "description": "For 'user-access-policy' actions: also run Apply To All for each policy. Salesforce has no API for it, so sfdx-hardis clicks the button of the Setup page in a headless Chrome",
+                "description": "For 'user-access-policy' actions: also run Apply To All for each policy. Salesforce has no API for it, so Browserforce clicks the button of the Setup page in a headless browser",
                 "title": "Apply to all users",
                 "type": "boolean",
                 "default": false
+              },
+              "setting": {
+                "$id": "#/properties/commandsPostDeploy/items/properties/parameters/setting",
+                "description": "For 'browser' actions: key of the Browserforce setting to apply (densitySettings, companyInformation...). List them with sf hardis:project:action:types --type browser",
+                "title": "Browserforce setting",
+                "type": "string",
+                "examples": [
+                  "densitySettings"
+                ]
+              },
+              "config": {
+                "$id": "#/properties/commandsPostDeploy/items/properties/parameters/config",
+                "description": "For 'browser' actions: value of the Browserforce setting. Write \"${VARIABLE}\" for a secret or a value that differs per org",
+                "title": "Browserforce setting value",
+                "type": [
+                  "object",
+                  "array"
+                ],
+                "examples": [
+                  {
+                    "density": "Compact"
+                  }
+                ]
               }
             },
             "additionalProperties": true

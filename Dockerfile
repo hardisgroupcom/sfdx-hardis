@@ -53,6 +53,9 @@ RUN rc-update add docker boot && (rc-service docker start || true)
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
 ENV CHROMIUM_PATH="/usr/bin/chromium-browser"
 ENV PUPPETEER_EXECUTABLE_PATH="${CHROMIUM_PATH}"
+# Browserforce (browser deployment actions) uses the same chromium, never a Playwright download
+ENV CHROME_BIN="${CHROMIUM_PATH}"
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD="1"
 
 # Add node packages to path #
 # hadolint ignore=DL3044
@@ -95,6 +98,7 @@ RUN npm install --no-cache yarn -g && \
         fi && \
     echo 'y' | sf plugins install sfdx-git-delta && \
     echo 'y' | sf plugins install sfdmu && \
+    echo 'y' | sf plugins install sfdx-browserforce-plugin && \
     sf version --verbose --json && \
     # Clean up npm cache and temporary files
     rm -rf /root/.npm/_cacache && \

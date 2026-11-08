@@ -521,8 +521,9 @@ export async function runSingleDeploymentAction(cmd: PrePostCommand, ctx: Single
     if (cmd.result?.statusCode === "failed") {
       logActionFailureDetails(cmd);
     }
-    // The identical actions that come later in this run are done by this one
-    if (cmd.result?.statusCode === "success") {
+    // The identical actions that come later in this run are done by this one, unless it was only a
+    // dry run: a copy marked done by it would be recorded as run in the org
+    if (cmd.result?.statusCode === "success" && cmd.result.dryRun !== true) {
       recordSuccessfulActionRun(identityKey, buildIdenticalActionRun(cmd, ctx));
     }
   }
@@ -673,6 +674,10 @@ async function recordActionOutcomeInState(cmd: PrePostCommand, ctx: SingleAction
   const sourcePrNumber = cmd.pullRequest?.idNumber || ctx.currentPrNumber;
   const trackableStatuses = ['success', 'failed', 'manual', 'skipped'];
   if (!ctx.hasGitProvider || sourcePrNumber <= 0 || !cmd.result?.statusCode || !trackableStatuses.includes(cmd.result.statusCode)) {
+    return;
+  }
+  // A dry run changed nothing in the org: recorded, it would make the deployment skip the action
+  if (cmd.result.dryRun === true) {
     return;
   }
   const identicalCopy = isIdenticalActionCopy(cmd);

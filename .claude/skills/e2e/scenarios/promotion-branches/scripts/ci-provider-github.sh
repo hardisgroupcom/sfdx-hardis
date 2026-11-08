@@ -266,6 +266,18 @@ _gh_wait_run_id() {
   conclusion=$(gh run view "$id" -R "$REPO" --json conclusion --jq .conclusion 2>/dev/null)
   # the latest attempt of the run
   gh run view "$id" -R "$REPO" --log >"$LOGS/$label.log" 2>&1
+  # Right after a run completes, gh run view --log can answer nothing (2026-11-08: an empty
+  # deploy.log failed seven checks of a job that ran every action): read each job log from the API
+  if [ ! -s "$LOGS/$label.log" ]; then
+    local job
+    for _ in 1 2 3 4 5 6; do
+      for job in $(gh api "repos/$REPO/actions/runs/$id/jobs" --jq '.jobs[].id' 2>/dev/null); do
+        gh api "repos/$REPO/actions/jobs/$job/logs" 2>/dev/null | sed -E 's/\x1b\[[0-9;]*[A-Za-z]//g; s/\r//g' >>"$LOGS/$label.log"
+      done
+      [ -s "$LOGS/$label.log" ] && break
+      sleep 20
+    done
+  fi
   if [ "$conclusion" = "success" ]; then echo 0 >"$LOGS/$label.code"; else echo 1 >"$LOGS/$label.code"; fi
   echo "real CI" >"$LOGS/$label.mode"
   # created to started is the queue, started to updated the run (of the latest attempt)

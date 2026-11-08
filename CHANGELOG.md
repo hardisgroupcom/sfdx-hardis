@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- New [hardis:project:action:types](https://sfdx-hardis.cloudity.com/hardis/project/action/types/): describes what each deployment action type expects, for AI agents and scripts.
 - Scratch org snapshots for Pull Requests, off by default ([doc](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-scratch-org-pool/#use-scratch-org-snapshots-for-pull-requests)):
   - Branch config `useScratchOrgSnapshot: true` on a major branch: the scratch orgs of Pull Requests to that branch are created from a Dev Hub org snapshot of the branch, and only what changed since the commit of the snapshot is deployed, instead of the whole project. A shallow clone fetches its full history only when a snapshot may be used. With a scratch org pool, the pool comes first: a snapshot is used only when the pool has no org left, and the pool refresh fills its orgs from the snapshot of its own branch instead of a full deployment. A Pull Request that changes a step run at pool fill, its Apex script or its data gets an empty scratch org, so the change is tested. [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/) with an empty pool starts the scratch org from the snapshot of the branch the User Story started from.
   - New command [hardis:scratch:snapshot:refresh](https://sfdx-hardis.cloudity.com/hardis/scratch/snapshot/refresh/): on a push to the branch, deploys it into an empty scratch org, takes the snapshot and keeps the newest `scratchOrgSnapshotKeep` (default 2). It reads the branch config before logging in to the Dev Hub, so a project or branch that does not use snapshots never logs in.
@@ -10,6 +11,9 @@
   - The [org initialization steps](https://sfdx-hardis.cloudity.com/salesforce-devops-org-initialization/) are split as for a pool: the snapshot holds the result of the steps run when filling the pool, and each Pull Request scratch org installs the packages it lacks, gets the delta, then the other steps, read from the config of the snapshot's branch.
 - Delta deployment with `useDeltaDeploymentWithDependencies`: a command that reads two manifests no longer extends the second delta with the components of the first.
 - New [Development orgs list](https://sfdx-hardis.cloudity.com/salesforce-devops-dev-orgs/): see which dev sandboxes and scratch orgs miss Pull Requests merged into their target branch, so their owners know when to backpromote.
+- [Deployment actions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/):
+  - New [Browser](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#apply-a-setup-setting-in-a-browser) action type: applies with Browserforce a Setup setting the Metadata API cannot deploy.
+  - The [User Access Policy](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#activate-user-access-policies) action now activates User Access Policies and runs Apply To All through Browserforce.
 
 ## [8.23.0] 2026-11-06
 

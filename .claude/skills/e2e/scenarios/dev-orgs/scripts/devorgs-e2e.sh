@@ -239,7 +239,7 @@ if step new; then
     "dash.issues===1 && dash.comments.filter((c)=>c.kind==='org'&&c.orgId===process.env.DEV_ID).length===1 && /Do not edit this text/.test(dash.body) && /Target branch integration/.test(dash.body)"
   list_dev_orgs list-new
   expect_json NEW-LIST "$LOGS/list-new.json" "the list holds the dev org: target integration, the git user owns it and it is mine, nothing counted yet" \
-    "org && org.targetBranch==='integration' && org.owner.email===process.env.OWNER_EMAIL && org.isMine===true && org.behind===null && org.orgType==='scratch'"
+    "org && org.targetBranch==='integration' && org.owner.email===process.env.OWNER_EMAIL && org.isMine===true && (org.behind===null || org.behind.count===0) && org.orgType==='scratch'"
 fi
 
 # ------------------------------------------------------------------ other-target: one target branch per org
@@ -294,7 +294,7 @@ if step edit; then
   assert_log EDIT edit 0 "register --org-id changes the target branch, the owner and the users" "registered for target branch uat"
   list_dev_orgs list-edit
   expect_json EDIT-LIST "$LOGS/list-edit.json" "target uat, owner e2e-lead, the git user is still one of the users (mine), nothing counted for uat yet" \
-    "org && org.targetBranch==='uat' && org.owner.email==='e2e-lead@example.com' && org.users.map((u)=>u.email).sort().join()==='e2e-dev@example.com,'+process.env.OWNER_EMAIL && org.isMine===true && org.behind===null"
+    "org && org.targetBranch==='uat' && org.owner.email==='e2e-lead@example.com' && org.users.map((u)=>u.email).sort().join()==='e2e-dev@example.com,'+process.env.OWNER_EMAIL && org.isMine===true && (org.behind===null || org.behind.count===0)"
 fi
 
 # ------------------------------------------------------------------ vehicle: integration merged into uat

@@ -1,4 +1,4 @@
-import { ActionsProvider, ActionResult, ActionWhen, PrePostCommand } from './actionsProvider.js';
+import { ActionsProvider, ActionResult, ActionWhen, PrePostCommand, ActionParameterDescription } from './actionsProvider.js';
 import { uxLog } from '../utils/index.js';
 import { countPackageXmlItems, isPackageXmlEmpty, removePackageXmlFilesContent } from '../utils/xmlUtils.js';
 import { t } from '../utils/i18n.js';
@@ -55,6 +55,17 @@ export function findInvalidPackageXmlItems(items: string[]): string[] {
 export class RemovePackageXmlItemsAction extends ActionsProvider {
   public getLabel(): string {
     return 'RemovePackageXmlItemsAction';
+  }
+
+  // It only changes what the current deployment sends, so the deployment check must do the same
+  public getDefaultContext(): PrePostCommand['context'] {
+    return 'all';
+  }
+
+  public getParameterDescriptions(): ActionParameterDescription[] {
+    return [
+      { name: 'packageXmlItems', path: 'parameters.packageXmlItems', flag: 'packagexml-items', type: 'string[]', required: true, description: 'package.xml items to remove before the deployment, each as TypeName:Member1,Member2 (the flag separates them with ;)' },
+    ];
   }
 
   // Filtering package.xml only makes sense before the metadata deployment
