@@ -137,11 +137,11 @@ flowchart LR
 
 Each part works alone:
 
-| You use         | Jobs    | The Pull Request scratch org                                |
-|-----------------|---------|-------------------------------------------------------------|
-| The pool only   | 2 and 3 | Taken from the pool, filled with a full deployment as today |
-| Snapshots only  | 1 and 3 | Created from the snapshot                                   |
-| Both            | 1, 2, 3 | Taken from the pool, filled from the snapshot               |
+| You use        | Jobs    | The Pull Request scratch org                                |
+|----------------|---------|-------------------------------------------------------------|
+| The pool only  | 2 and 3 | Taken from the pool, filled with a full deployment as today |
+| Snapshots only | 1 and 3 | Created from the snapshot                                   |
+| Both           | 1, 2, 3 | Taken from the pool, filled from the snapshot               |
 
 Schedule the pool refresh after the snapshot refresh, so new pool orgs start from the newest snapshot. On GitHub Actions, `scratch-snapshot-refresh.yml` already starts `scratch-pool-refresh.yml` once a new snapshot of the default branch is Active, when the repository variable `SCRATCH_ORG_POOL` is `true` and the pool workflow file is in the repository. The pool refresh still runs every night. A project or branch that does not use snapshots never starts it. On GitLab CI, Azure Pipelines, Bitbucket Pipelines and Jenkins, schedule the pool refresh at a time when the snapshot refresh is over.
 
