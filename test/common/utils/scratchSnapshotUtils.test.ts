@@ -4,7 +4,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { execFileSync } from 'child_process';
 import { pathToFileURL } from 'url';
-import { getExhaustedSnapshotLimit, getSnapshotDescription, getSnapshotScope, isSnapshotSignupRetryable, getSnapshotName, parsePositiveSetting, pickScratchSnapshot, pickSnapshotTargetBranch, extendSnapshotDeltaWithDependencies, fetchFullHistoryIfShallow, orgInitStepChangedSince, scopeDeltaToDeployManifest, scratchDefChangedSince, selectSnapshotOrgInitStepIds } from '../../../src/common/utils/scratchSnapshotUtils.js';
+import { getExhaustedSnapshotLimit, getSnapshotDescription, getSnapshotScope, getSnapshotSignupError, isSnapshotSignupRetryable, getSnapshotName, parsePositiveSetting, pickScratchSnapshot, pickSnapshotTargetBranch, extendSnapshotDeltaWithDependencies, fetchFullHistoryIfShallow, orgInitStepChangedSince, scopeDeltaToDeployManifest, scratchDefChangedSince, selectSnapshotOrgInitStepIds } from '../../../src/common/utils/scratchSnapshotUtils.js';
 import { parsePackageXmlFile } from '../../../src/common/utils/xmlUtils.js';
 
 const shaNew = 'a'.repeat(40);
@@ -174,6 +174,19 @@ describe('isSnapshotSignupRetryable', () => {
 
   it('does not retry when no scratch org is left', () => {
     expect(isSnapshotSignupRetryable(failure('LIMIT_EXCEEDED', 'The signup request failed because this organization has reached its daily scratch org signup limit'))).to.equal(false);
+  });
+});
+
+describe('getSnapshotSignupError', () => {
+  it('names the Salesforce error of a signup from a missing snapshot (real Dev Hub output)', () => {
+    const errorMessage = '[sfdx-hardis][ERROR] Error processing command\n{\n  "name": "MULTIPLE_API_ERRORS",\n  "message": "Multiple errors returned.\\n  Check `error.data` for the error details",\n  "exitCode": 1,\n  "context": "OrgCreateScratch"\n}';
+    expect(getSnapshotSignupError({ status: 1, errorMessage })).to.equal('MULTIPLE_API_ERRORS: Multiple errors returned.');
+  });
+
+  it('falls back to the first line of a message that holds no JSON, then to a generic text', () => {
+    expect(getSnapshotSignupError({ status: 1, errorMessage: 'Socket hang up\nat x' })).to.equal('Socket hang up');
+    expect(getSnapshotSignupError({ status: 1, message: 'Plain failure' })).to.equal('Plain failure');
+    expect(getSnapshotSignupError(null)).to.equal('unknown error');
   });
 });
 

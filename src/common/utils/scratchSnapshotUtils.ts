@@ -267,6 +267,21 @@ export function isSnapshotSignupRetryable(createResult: any): boolean {
   return !/ScratchOrgInfoTimeoutError|MyDomainResolverTimeoutError|Socket timeout occurred|LIMIT_EXCEEDED|AuthCodeExchangeError|NamedOrgNotFoundError/.test(message);
 }
 
+// The Salesforce error of a failed signup, as "NAME: first line of the message", from the CLI JSON that execSfdxJson
+// puts after its own first line. Falls back to the first line of the text
+export function getSnapshotSignupError(createResult: any): string {
+  const text = String(createResult?.errorMessage || createResult?.message || '');
+  try {
+    const error = JSON.parse(text.slice(text.indexOf('{')));
+    if (error?.name) {
+      return `${error.name}: ${String(error.message || '').split('\n')[0]}`.trim();
+    }
+  } catch {
+    // Not the CLI JSON: the first line below says what failed
+  }
+  return text.split('\n')[0].trim() || 'unknown error';
+}
+
 // The snapshot limit that has nothing left, read before the refresh builds its source org. Null when both have room
 // or the Dev Hub does not report them.
 export function getExhaustedSnapshotLimit(limits: any): string | null {
