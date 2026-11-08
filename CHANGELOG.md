@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+## [8.24.0] 2026-11-08
+
 - **Browserforce** ([doc](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions-browser/)): apply the Setup settings the Metadata API cannot deploy, with your Pull Request.
   - New [Browser](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions-browser/) deployment action type, for example to change the API name of a picklist value.
   - The [User Access Policy](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions-user-access-policy/) action now activates User Access Policies and runs Apply To All.
