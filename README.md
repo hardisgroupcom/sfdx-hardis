@@ -672,6 +672,7 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 - [Olivier Mulot](https://www.linkedin.com/in/olivier-m-aa6111124/), for the qualification and testing of the [sfdx-hardis DevOps trainings](https://sfdx-hardis-training.cloudity.com/)
 - [fkramer690](https://github.com/fkramer690), for the step template of the [sfdx-hardis training](https://sfdx-hardis-training.cloudity.com/) labs
 - [Dave Renald Saavedra](https://github.com/drsaavedra), for creating Pull Request scratch orgs from a snapshot of the target branch
+- [availomani](https://github.com/availomani), for the retrieve, deployment and activation of Agentforce agents
 
 > Translations have been performed by GitHub Copilot with Claude Sonnet 4.6, then reviewed and arranged by real humans !
 
