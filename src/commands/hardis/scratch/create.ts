@@ -717,7 +717,9 @@ In agent mode:
     }
     try {
       const config = await getConfigOfSnapshotBranch(this.snapshot.branch);
-      await assertOrgInitStepsValid(config, 'scratch');
+      // Only the steps this org runs: the snapshot already holds the result of the others
+      const stepIds = [...selectSnapshotOrgInitStepIds(config, 'child-packages'), ...selectSnapshotOrgInitStepIds(config, this.pool ? 'pool-fill' : 'child')];
+      await assertOrgInitStepsValid(config, 'scratch', stepIds);
       this.snapshotConfig = config;
     } catch (e) {
       uxLog("warning", this, c.yellow(t('scratchSnapshotNotUsed', { reason: (e as Error).message })));

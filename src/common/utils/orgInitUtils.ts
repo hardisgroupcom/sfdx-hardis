@@ -288,8 +288,8 @@ export async function checkOrgInitSteps(steps: PrePostCommand[]): Promise<OrgIni
  * Throws when a step that applies to this org type cannot run (missing Apex script, unknown type...).
  * Called before an org is created, so a typo never costs a scratch org or a sandbox.
  */
-export async function assertOrgInitStepsValid(config: any, orgType: OrgInitOrgType): Promise<void> {
-  const steps = selectOrgInitSteps(getOrgInitSteps(config).steps, { orgType, phase: 'all' });
+export async function assertOrgInitStepsValid(config: any, orgType: OrgInitOrgType, stepIds?: string[]): Promise<void> {
+  const steps = selectOrgInitSteps(getOrgInitSteps(config).steps, { orgType, phase: 'all', stepIds });
   await throwOnDefinitionErrors(steps);
 }
 

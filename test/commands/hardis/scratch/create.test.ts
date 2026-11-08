@@ -177,7 +177,19 @@ describe('hardis:scratch:create init config', () => {
     expect(await command.configForInit()).to.equal((command as any).configInfo);
   });
 
-  it('drops the snapshot before the signup when a step of its branch config cannot run, as the job config can', async () => {
+  it('drops the snapshot before the signup when a step its org will run cannot run, as the job config can', async () => {
+    fs.writeFileSync(
+      path.join(projectDir, 'config', 'branches', '.sfdx-hardis.main.yml'),
+      'orgInitSteps:\n  - id: apex\n    type: apex\n    runAtPoolFill: false\n    parameters:\n      apexScript: scripts/apex/missing.apex\n'
+    );
+    const command = probe(null);
+    (command as any).snapshot = { name: 'SH0000000000001', sha: 'a'.repeat(40), branch: 'main' };
+    await command.loadConfigOfSnapshot();
+    expect((command as any).snapshot).to.equal(null);
+    expect(await command.configForInit()).to.equal((command as any).configInfo);
+  });
+
+  it('keeps the snapshot when only a step it already holds cannot run, as its org does not run that step again', async () => {
     fs.writeFileSync(
       path.join(projectDir, 'config', 'branches', '.sfdx-hardis.main.yml'),
       'orgInitSteps:\n  - id: apex\n    type: apex\n    parameters:\n      apexScript: scripts/apex/missing.apex\n'
@@ -185,8 +197,7 @@ describe('hardis:scratch:create init config', () => {
     const command = probe(null);
     (command as any).snapshot = { name: 'SH0000000000001', sha: 'a'.repeat(40), branch: 'main' };
     await command.loadConfigOfSnapshot();
-    expect((command as any).snapshot).to.equal(null);
-    expect(await command.configForInit()).to.equal((command as any).configInfo);
+    expect((command as any).snapshot?.name).to.equal('SH0000000000001');
   });
 
   it('keeps the config of the job for an empty org and for a snapshot named in SCRATCH_ORG_SNAPSHOT', async () => {
