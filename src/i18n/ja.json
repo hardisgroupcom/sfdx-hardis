@@ -3920,6 +3920,7 @@
   "scratchSnapshotNotUsed": "スナップショットを使用せずにスクラッチ組織を作成します: {{reason}}",
   "scratchSnapshotOrgInitStepChanged": "組織初期化ステップ {{step}}、またはそれが使用する Apex スクリプトやデータがスナップショットのコミット {{sha}} 以降に変更されています。スナップショットには以前の結果が含まれています",
   "scratchSnapshotScratchDefChanged": "スクラッチ組織の定義またはその設定がスナップショットのコミット {{sha}} 以降に変更されています。スナップショットから作成したスクラッチ組織には新しい機能や設定を適用できません",
+  "scratchSnapshotSettingUnread": "ブランチ {{branch}} の useScratchOrgSnapshot を読み取れませんでした。git の履歴は事前に取得されず、プールの新しいスクラッチ組織ごとにスナップショットを再度検索します: {{message}}",
   "scratchSnapshotSignupRetry": "スナップショット {{name}} からの作成に失敗しました ({{error}})。スナップショットなしでスクラッチ組織を作成します",
   "scratchSnapshotSignupRetryNoDetail": "スナップショット {{name}} からの作成に失敗しました。スナップショットなしでスクラッチ組織を作成します",
   "scratchSnapshotSourceOrgFailed": "スナップショットの作成元となるスクラッチ組織を作成できませんでした",

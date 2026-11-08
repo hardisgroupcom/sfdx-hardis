@@ -77,12 +77,12 @@ export async function getConfigOfSnapshotBranch(branch: string): Promise<any> {
 }
 
 // For a caller that only optimizes when snapshots are on: a branch config it cannot read (any branch, as all are
-// listed) answers false and is logged, instead of stopping that caller
+// listed) answers false with a warning, instead of stopping that caller
 export async function isScratchSnapshotBranch(branch: string, commandThis: any): Promise<boolean> {
   try {
     return (await getScratchSnapshotBranchConfig(branch)).enabled;
   } catch (e) {
-    uxLog("other", commandThis, `Snapshot setting of branch ${branch} not read, taken as off: ${(e as Error).message}`);
+    uxLog("warning", commandThis, c.yellow(t('scratchSnapshotSettingUnread', { branch, message: (e as Error).message })));
     return false;
   }
 }

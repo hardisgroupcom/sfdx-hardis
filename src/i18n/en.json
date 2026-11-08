@@ -3927,6 +3927,7 @@
   "scratchSnapshotNotUsed": "Scratch org created without a snapshot: {{reason}}",
   "scratchSnapshotOrgInitStepChanged": "the org init step {{step}}, or the Apex script or data it uses, changed since the snapshot commit {{sha}}: the snapshot holds its previous result",
   "scratchSnapshotScratchDefChanged": "the scratch org definition or its settings changed since the snapshot commit {{sha}}: a scratch org created from a snapshot cannot take new features or settings",
+  "scratchSnapshotSettingUnread": "useScratchOrgSnapshot could not be read for the branch {{branch}}: the git history is not fetched ahead, and each new pool scratch org looks up its snapshot again: {{message}}",
   "scratchSnapshotSignupRetry": "Signup from snapshot {{name}} failed ({{error}}): creating the scratch org without it",
   "scratchSnapshotSignupRetryNoDetail": "Signup from snapshot {{name}} failed: creating the scratch org without it",
   "scratchSnapshotSourceOrgFailed": "The scratch org to take the snapshot from could not be created",

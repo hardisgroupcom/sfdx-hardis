@@ -3923,6 +3923,7 @@
   "scratchSnapshotNotUsed": "Scratch org utworzony bez snapshotu: {{reason}}",
   "scratchSnapshotOrgInitStepChanged": "krok inicjalizacji org {{step}} albo używany przez niego skrypt Apex lub dane zmieniły się od commita snapshotu {{sha}}: snapshot zawiera jego poprzedni wynik",
   "scratchSnapshotScratchDefChanged": "definicja Scratch Org lub jej ustawienia zmieniły się od commita snapshotu {{sha}}: Scratch Org utworzona ze snapshotu nie może otrzymać nowych funkcji ani ustawień",
+  "scratchSnapshotSettingUnread": "Nie udało się odczytać useScratchOrgSnapshot dla brancha {{branch}}: historia git nie jest pobierana z wyprzedzeniem, a każda nowa scratch org z puli ponownie wyszukuje swój snapshot: {{message}}",
   "scratchSnapshotSignupRetry": "Tworzenie ze snapshotu {{name}} nie powiodło się ({{error}}): Scratch Org zostanie utworzony bez snapshotu",
   "scratchSnapshotSignupRetryNoDetail": "Tworzenie ze snapshotu {{name}} nie powiodło się: Scratch Org zostanie utworzony bez snapshotu",
   "scratchSnapshotSourceOrgFailed": "Nie można utworzyć scratch org, z którego ma zostać utworzony snapshot",

@@ -8,6 +8,7 @@ import { getExhaustedSnapshotLimit, getSnapshotDescription, getSnapshotLimitErro
 import { parsePackageXmlFile } from '../../../src/common/utils/xmlUtils.js';
 import { clearListMajorOrgsCache } from '../../../src/common/utils/orgConfigUtils.js';
 import { getConfig } from '../../../src/config/index.js';
+import { t } from '../../../src/common/utils/i18n.js';
 
 const shaNew = 'a'.repeat(40);
 const shaOld = 'b'.repeat(40);
@@ -645,9 +646,12 @@ describe('isScratchSnapshotBranch', () => {
     expect(await isScratchSnapshotBranch('uat', null)).to.equal(false);
   });
 
-  it('answers false instead of throwing when the config of another branch is not valid YAML, so a pool refresh goes on', async () => {
+  it('answers false with a warning instead of throwing when the config of another branch is not valid YAML, so a pool refresh goes on', async () => {
     fs.writeFileSync(path.join(projectDir, 'config', 'branches', '.sfdx-hardis.uat.yml'), 'key: [unclosed\n  other: : :\n');
-    expect(await isScratchSnapshotBranch('main', null)).to.equal(false);
+    const logs: string[] = [];
+    expect(await isScratchSnapshotBranch('main', { ux: { log: (text: string) => logs.push(text) } })).to.equal(false);
+    const expected = t('scratchSnapshotSettingUnread', { branch: 'main', message: '@@' }).split('@@')[0];
+    expect(logs.some((line) => line.includes(expected))).to.equal(true);
   });
 });
 

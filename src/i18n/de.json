@@ -3922,6 +3922,7 @@
   "scratchSnapshotNotUsed": "Scratch Org ohne Snapshot erstellt: {{reason}}",
   "scratchSnapshotOrgInitStepChanged": "der Org-Initialisierungsschritt {{step}} oder das Apex-Skript bzw. die Daten, die er verwendet, haben sich seit dem Snapshot-Commit {{sha}} geändert: der Snapshot enthält sein vorheriges Ergebnis",
   "scratchSnapshotScratchDefChanged": "die Scratch-Org-Definition oder ihre Einstellungen haben sich seit dem Snapshot-Commit {{sha}} geändert: eine aus einem Snapshot erstellte Scratch Org kann keine neuen Features oder Einstellungen übernehmen",
+  "scratchSnapshotSettingUnread": "useScratchOrgSnapshot konnte für den Branch {{branch}} nicht gelesen werden: der Git-Verlauf wird nicht vorab abgerufen, und jede neue Pool-Scratch-Org sucht ihren Snapshot erneut: {{message}}",
   "scratchSnapshotSignupRetry": "Erstellung aus Snapshot {{name}} fehlgeschlagen ({{error}}): Die Scratch Org wird ohne Snapshot erstellt",
   "scratchSnapshotSignupRetryNoDetail": "Erstellung aus Snapshot {{name}} fehlgeschlagen: Die Scratch Org wird ohne Snapshot erstellt",
   "scratchSnapshotSourceOrgFailed": "Die Scratch Org für den Snapshot konnte nicht erstellt werden",
