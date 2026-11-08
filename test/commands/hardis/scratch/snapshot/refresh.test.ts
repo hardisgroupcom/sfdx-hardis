@@ -137,11 +137,14 @@ class OutputProbe extends ScratchSnapshotRefresh {
   public static statuses: string[] = [];
   public static created = true;
   public static pruneFails = false;
+  public static limits: any = {};
+  public static logs: string[] = [];
+  public ux: any = { log: (text: string) => OutputProbe.logs.push(text) };
   protected async getDevHub(): Promise<any> {
     let lookups = 0;
     const conn = {
       instanceUrl: 'https://hub.example.com',
-      limits: async () => ({}),
+      limits: async () => OutputProbe.limits,
       query: async (soql: string) => {
         if (soql.includes('SnapshotName =')) {
           const status = OutputProbe.statuses[Math.min(lookups++, OutputProbe.statuses.length - 1)];
@@ -184,6 +187,8 @@ describe('hardis:scratch:snapshot:refresh GitHub Actions output', () => {
     OutputProbe.statuses = [];
     OutputProbe.created = true;
     OutputProbe.pruneFails = false;
+    OutputProbe.limits = {};
+    OutputProbe.logs = [];
   });
 
   afterEach(() => {
@@ -224,6 +229,15 @@ describe('hardis:scratch:snapshot:refresh GitHub Actions output', () => {
     }
     expect(error?.message).to.contain('Dev Hub session expired');
     expect(fs.readFileSync(outputFile, 'utf8')).to.match(/^snapshot=SH/);
+  });
+
+  it('says no snapshot slot is left, not that the Dev Hub refused, when the limit check stops it first', async () => {
+    OutputProbe.limits = { DailyOrgSnapshots: { Max: 5, Remaining: 5 }, ActiveOrgSnapshots: { Max: 5, Remaining: 0 } };
+    const result: any = await OutputProbe.run([]);
+    expect(result.outputString).to.contain('not taken: limit reached');
+    const warning = OutputProbe.logs.find((line) => line.includes('ActiveOrgSnapshots (0 of 5 left)')) || '';
+    expect(warning).to.not.equal('');
+    expect(warning).to.not.contain('refused');
   });
 
   it('reports nothing when the Dev Hub refused the snapshot', async () => {

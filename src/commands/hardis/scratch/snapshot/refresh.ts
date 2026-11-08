@@ -136,7 +136,7 @@ The command has no prompt.
         }
       }
       if (exhaustedLimit) {
-        uxLog("warning", this, c.yellow(t('scratchSnapshotLimitReached', { message: exhaustedLimit })));
+        uxLog("warning", this, c.yellow(t('scratchSnapshotLimitHasNothingLeft', { message: exhaustedLimit })));
         return { outputString: `Snapshot of branch ${branch} not taken: limit reached` };
       }
       const created = await this.createSnapshot(devHubConn, devHubUsername, branch, scope, sha, name, timeoutMinutes);

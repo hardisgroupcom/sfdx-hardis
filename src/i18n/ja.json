@@ -3869,6 +3869,7 @@
   "scratchSnapshotEnvIgnoredOnPoolFill": "プールの補充では SCRATCH_ORG_SNAPSHOT は無視されます",
   "scratchSnapshotFailed": "スナップショット {{name}} が失敗しました: {{error}}",
   "scratchSnapshotHistoryFetchFailed": "git の全履歴を取得できませんでした。プールの新しいスクラッチ組織ごとに再試行し、失敗したものはスナップショットなしで作成されます: {{message}}",
+  "scratchSnapshotLimitHasNothingLeft": "Dev Hub のスナップショット制限に空きがないため、スナップショットは作成されません。プルリクエストは前のスナップショットを引き続き使用します: {{message}}",
   "scratchSnapshotLimitReached": "制限のため Dev Hub がスナップショットを拒否しました。プルリクエストは前のスナップショットを引き続き使用します: {{message}}",
   "scratchSnapshotLimitsUnread": "Dev Hub のスナップショットの制限を読み取れなかったため、更新を続行します: {{message}}",
   "scratchSnapshotMakingRoom": "Dev Hub のアクティブなスナップショットの枠がすべて使用されています。新しいスナップショットのために、ブランチ {{branch}} の古いスナップショットを削除します",

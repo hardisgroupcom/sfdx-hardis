@@ -3872,6 +3872,7 @@
   "scratchSnapshotEnvIgnoredOnPoolFill": "SCRATCH_ORG_SNAPSHOT wordt genegeerd bij het vullen van de pool",
   "scratchSnapshotFailed": "Snapshot {{name}} is mislukt: {{error}}",
   "scratchSnapshotHistoryFetchFailed": "De volledige git-geschiedenis kon niet worden opgehaald: elke nieuwe scratch org van de pool probeert het opnieuw, en een die mislukt wordt zonder snapshot gemaakt: {{message}}",
+  "scratchSnapshotLimitHasNothingLeft": "Een snapshotlimiet van de Dev Hub is op, dus er wordt geen snapshot gemaakt en pull requests blijven de vorige snapshot gebruiken: {{message}}",
   "scratchSnapshotLimitReached": "De Dev Hub heeft de snapshot geweigerd vanwege een limiet, pull requests blijven de vorige snapshot gebruiken: {{message}}",
   "scratchSnapshotLimitsUnread": "De snapshotlimieten van de Dev Hub konden niet worden gelezen, de vernieuwing gaat door: {{message}}",
   "scratchSnapshotMakingRoom": "Alle actieve snapshotplaatsen van de Dev Hub zijn bezet: de oudste snapshots van branch {{branch}} worden verwijderd om ruimte te maken voor de nieuwe",

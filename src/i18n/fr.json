@@ -3872,6 +3872,7 @@
   "scratchSnapshotEnvIgnoredOnPoolFill": "SCRATCH_ORG_SNAPSHOT est ignorée lors du remplissage du pool",
   "scratchSnapshotFailed": "Le snapshot {{name}} a échoué : {{error}}",
   "scratchSnapshotHistoryFetchFailed": "L'historique git complet n'a pas pu être récupéré : chaque nouvelle scratch org du pool réessaie, et celle qui échoue est créée sans snapshot : {{message}}",
+  "scratchSnapshotLimitHasNothingLeft": "Une limite de snapshots du Dev Hub est épuisée, aucun snapshot n'est donc pris et les Pull Requests gardent le snapshot précédent : {{message}}",
   "scratchSnapshotLimitReached": "Le Dev Hub a refusé le snapshot à cause d'une limite, les Pull Requests gardent le snapshot précédent : {{message}}",
   "scratchSnapshotLimitsUnread": "Les limites de snapshots du Dev Hub n'ont pas pu être lues, le rafraîchissement continue : {{message}}",
   "scratchSnapshotMakingRoom": "Tous les emplacements de snapshots actifs du Dev Hub sont pris : suppression des snapshots les plus anciens de la branche {{branch}} pour faire de la place au nouveau",
