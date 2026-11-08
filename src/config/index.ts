@@ -19,7 +19,7 @@ import * as yaml from 'js-yaml';
 import { parseDocument as parseYamlDocument } from 'yaml';
 import * as os from 'os';
 import * as path from 'path';
-import { getCurrentGitBranch, isCI, isGitRepo, uxLog } from '../common/utils/index.js';
+import { formatBranchForConfig, getCurrentGitBranch, isCI, isGitRepo, uxLog } from '../common/utils/index.js';
 import { prompts } from '../common/utils/prompts.js';
 import { t } from '../common/utils/i18n.js';
 
@@ -104,11 +104,11 @@ export const getPrCommentBannerMarkdown = (bannerKey: PrCommentBannerKey | null 
   return `![${altText || t(banner.altTextKey)}](${CONSTANTS.PR_COMMENT_BANNER_BASE_URL}${banner.file})\n\n`;
 }
 
-async function getBranchConfigFiles() {
+async function getBranchConfigFiles(branch?: string) {
   if (!isGitRepo()) {
     return [];
   }
-  const gitBranchFormatted = process.env.CONFIG_BRANCH || (await getCurrentGitBranch({ formatted: true }));
+  const gitBranchFormatted = branch ? formatBranchForConfig(branch) : process.env.CONFIG_BRANCH || (await getCurrentGitBranch({ formatted: true }));
   const branchConfigFiles = [
     `config/branches/.${moduleName}.${gitBranchFormatted}.yaml`,
     `config/branches/.${moduleName}.${gitBranchFormatted}.yml`,
@@ -118,24 +118,32 @@ async function getBranchConfigFiles() {
 
 const promptTemplateCache: Record<string, any> = {};
 
-export const getConfig = async (layer: "project" | "branch" | "user" = 'user', options: { cache: boolean } = { cache: false }): Promise<any> => {
-  if (options.cache && promptTemplateCache[layer]) {
+// options.branch: the config of that branch instead of the current one, never cached, so cached readers keep the job's
+export const getConfig = async (layer: "project" | "branch" | "user" = 'user', options: { cache?: boolean; branch?: string } = { cache: false }): Promise<any> => {
+  const writeCache = !options.branch;
+  if (options.cache && writeCache && promptTemplateCache[layer]) {
     return promptTemplateCache[layer];
   }
   const defaultConfig = await loadFromConfigFile(projectConfigFiles);
   if (layer === 'project') {
-    promptTemplateCache['project'] = defaultConfig;
+    if (writeCache) {
+      promptTemplateCache['project'] = defaultConfig;
+    }
     return defaultConfig;
   }
-  let branchConfig = await loadFromConfigFile(await getBranchConfigFiles());
+  let branchConfig = await loadFromConfigFile(await getBranchConfigFiles(options.branch));
   branchConfig = Object.assign(defaultConfig, branchConfig);
   if (layer === 'branch') {
-    promptTemplateCache['branch'] = branchConfig;
+    if (writeCache) {
+      promptTemplateCache['branch'] = branchConfig;
+    }
     return branchConfig;
   }
   let userConfig = await loadFromConfigFile(userConfigFiles);
   userConfig = Object.assign(branchConfig, userConfig);
-  promptTemplateCache['user'] = userConfig;
+  if (writeCache) {
+    promptTemplateCache['user'] = userConfig;
+  }
   return userConfig;
 };
 

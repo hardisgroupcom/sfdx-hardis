@@ -7,6 +7,7 @@ import { pathToFileURL } from 'url';
 import { getExhaustedSnapshotLimit, getSnapshotDescription, getSnapshotLimitError, getSnapshotScope, getSnapshotSignupError, isSnapshotSignupRetryable, getSnapshotName, parsePositiveSetting, pickScratchSnapshot, pickSnapshotTargetBranch, extendSnapshotDeltaWithDependencies, fetchFullHistoryIfShallow, orgInitStepChangedSince, getConfigOfSnapshotBranch, resolveScratchSnapshot, isScratchSnapshotBranch, scopeDeltaToDeployManifest, scratchDefChangedSince, selectSnapshotOrgInitStepIds } from '../../../src/common/utils/scratchSnapshotUtils.js';
 import { parsePackageXmlFile } from '../../../src/common/utils/xmlUtils.js';
 import { clearListMajorOrgsCache } from '../../../src/common/utils/orgConfigUtils.js';
+import { getConfig } from '../../../src/config/index.js';
 
 const shaNew = 'a'.repeat(40);
 const shaOld = 'b'.repeat(40);
@@ -685,13 +686,10 @@ describe('getConfigOfSnapshotBranch', () => {
     expect(config.projectName).to.equal('demo');
   });
 
-  it('puts CONFIG_BRANCH back as it was', async () => {
-    process.env.CONFIG_BRANCH = 'uat';
+  it('leaves the cached config of the job as it was, so cached readers do not get the snapshot branch', async () => {
+    await getConfig('user');
     await getConfigOfSnapshotBranch('main');
-    expect(process.env.CONFIG_BRANCH).to.equal('uat');
-    delete process.env.CONFIG_BRANCH;
-    await getConfigOfSnapshotBranch('main');
-    expect(process.env.CONFIG_BRANCH).to.equal(undefined);
+    expect((await getConfig('user', { cache: true })).installedPackages).to.deep.equal([]);
   });
 });
 

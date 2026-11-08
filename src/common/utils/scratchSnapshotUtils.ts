@@ -4,7 +4,7 @@ import { spawnSync } from 'child_process';
 import { createHash } from 'crypto';
 import { isDeepStrictEqual } from 'util';
 import { SfError } from '@salesforce/core';
-import { createTempDir, execSfdxJson, uxLog } from './index.js';
+import { createTempDir, execSfdxJson, formatBranchForConfig, uxLog } from './index.js';
 import { soqlQuery } from './apiUtils.js';
 import { callSfdxGitDelta } from './gitUtils.js';
 import { countPackageXmlItems } from './xmlUtils.js';
@@ -73,17 +73,7 @@ export function pickSnapshotTargetBranch(prTargetBranch?: string | null): string
 // The config a snapshot was built with: project, the branch file of its branch, then user. A Pull Request job loads
 // the branch file of the branch it runs on, so it would otherwise finish the org with other init steps and packages
 export async function getConfigOfSnapshotBranch(branch: string): Promise<any> {
-  const previous = process.env.CONFIG_BRANCH;
-  process.env.CONFIG_BRANCH = branch.replace('/', '__');
-  try {
-    return await getConfig('user');
-  } finally {
-    if (previous === undefined) {
-      delete process.env.CONFIG_BRANCH;
-    } else {
-      process.env.CONFIG_BRANCH = previous;
-    }
-  }
+  return getConfig('user', { branch });
 }
 
 // For a caller that only optimizes when snapshots are on: a branch config it cannot read (any branch, as all are
@@ -100,7 +90,7 @@ export async function isScratchSnapshotBranch(branch: string, commandThis: any):
 // useScratchOrgSnapshot and scratchOrgSnapshotKeep are read from the branch's own config file:
 // a Pull Request job loads the config of its source branch, not of its target branch
 export async function getScratchSnapshotBranchConfig(branch: string): Promise<{ enabled: boolean; keep: number }> {
-  const branchConfig = (await listMajorOrgs()).find((majorOrg) => majorOrg.branchName === branch.replace('/', '__'));
+  const branchConfig = (await listMajorOrgs()).find((majorOrg) => majorOrg.branchName === formatBranchForConfig(branch));
   return {
     enabled: branchConfig?.useScratchOrgSnapshot === true,
     keep: parsePositiveSetting(branchConfig?.scratchOrgSnapshotKeep, 2),
@@ -405,7 +395,7 @@ function readConfigAtCommit(ref: string, branch: string, cwd: string): any {
     }
     return {};
   };
-  const branchName = branch.replace('/', '__');
+  const branchName = formatBranchForConfig(branch);
   return Object.assign(
     read(projectConfigFiles.filter((file) => !file.endsWith('.json'))),
     read([`config/branches/.sfdx-hardis.${branchName}.yaml`, `config/branches/.sfdx-hardis.${branchName}.yml`])
