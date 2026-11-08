@@ -1,3 +1,7 @@
+---
+title: "hardis:org:user:activateinvalid - Reactivate sandbox invalid users"
+description: "Update sandbox users so their email is valid"
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:user:activateinvalid
 

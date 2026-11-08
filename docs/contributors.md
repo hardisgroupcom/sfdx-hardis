@@ -1,3 +1,7 @@
+---
+title: "sfdx-hardis contributors"
+description: "The organization behind sfdx-hardis, the authors of its Pull Requests, and the people it thanks."
+---
 ### Organization
 
 sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudity.com/), but has many external contributors that we cant thank enough !

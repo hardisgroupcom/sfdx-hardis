@@ -1,3 +1,7 @@
+---
+title: "hardis:project:skills:import - Import Skills"
+description: "Imports Claude Code skills, agents, and rules from a remote git repository into the current project."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:skills:import
 

@@ -1,3 +1,7 @@
+---
+title: "hardis:doc:dora-report - DORA Metrics Report"
+description: "Generates a DORA (DevOps Research and Assessment) metrics report for a Salesforce project, for each of its major orgs."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:doc:dora-report
 

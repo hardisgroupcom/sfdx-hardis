@@ -1,3 +1,7 @@
+---
+title: "hardis:org:user:freeze - Freeze user logins"
+description: "Freezes Salesforce user logins, temporarily revoking access for selected users."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:user:freeze
 

@@ -1,3 +1,7 @@
+---
+title: "hardis:project:clean:flowpositions - Clean Flow Positions"
+description: "Replace all positions in Auto-Layout Flows by 0 to simplify conflicts management"
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:clean:flowpositions
 

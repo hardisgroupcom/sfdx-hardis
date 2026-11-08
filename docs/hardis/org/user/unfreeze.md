@@ -1,3 +1,7 @@
+---
+title: "hardis:org:user:unfreeze - Unfreeze user logins"
+description: "Unfreezes Salesforce user logins, restoring access for selected users."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:user:unfreeze
 

@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:storage-stats - Extract Data Storage stats"
+description: "Extracts and analyzes Data Storage usage for a Salesforce org, providing detailed per-object breakdowns with flexible grouping options."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:storage-stats
 

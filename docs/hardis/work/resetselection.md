@@ -1,3 +1,7 @@
+---
+title: "hardis:work:resetselection - Select again"
+description: "Resets the local Git repository to allow for a new selection of files to be included in a merge request."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:work:resetselection
 

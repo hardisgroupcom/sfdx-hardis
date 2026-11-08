@@ -1,3 +1,7 @@
+---
+title: "hardis:package:version:list - Create a new version of a package"
+description: "Lists all Salesforce package versions associated with your Dev Hub."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:package:version:list
 

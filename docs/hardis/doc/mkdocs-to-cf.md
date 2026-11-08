@@ -1,3 +1,7 @@
+---
+title: "hardis:doc:mkdocs-to-cf - MkDocs to Cloudflare"
+description: "Generates MkDocs HTML pages and uploads them to Cloudflare as a static site, secured with Cloudflare Access."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:doc:mkdocs-to-cf
 

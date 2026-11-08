@@ -1,3 +1,7 @@
+---
+title: "hardis:project:function:list - List custom functions"
+description: "Lists the custom functions declared in the project configuration."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:function:list
 

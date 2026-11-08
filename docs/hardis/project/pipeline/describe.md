@@ -1,3 +1,7 @@
+---
+title: "hardis:project:pipeline:describe - Describe the pipeline of the project"
+description: "Describes the pipeline of the project: its major branches, the org behind each of them, and the steps a merge can follow from one major branch to the next."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:pipeline:describe
 

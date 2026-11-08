@@ -6,7 +6,7 @@ validation job, in the deployment job, and again when the deployment job is run 
 About 30 minutes, most of it waiting for the three CI jobs (each one clones, builds and links the
 sfdx-hardis branch under test).
 
-The feature: `docs/salesforce-devops-work-on-user-story-deployment-actions.md`, the provider classes
+The feature: `docs/salesforce-devops-work-on-user-story-deployment-actions.md` and its page per type, the provider classes
 in `src/common/actionsProvider/`, the execution loop in `src/common/utils/prePostCommandUtils.ts`.
 Run it when an action type, the generic action code (`actionUtils.ts`, `action:create`,
 `action:update`, the `ActionsProvider` hooks) or `runOnlyOnceByOrg` changed.

@@ -1,3 +1,7 @@
+---
+title: "hardis:org:list:metadata - List metadata components of an org"
+description: "Lists the metadata components of one type in an org, for scripts, agents and user interfaces."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:list:metadata
 

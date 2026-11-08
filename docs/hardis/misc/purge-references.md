@@ -1,3 +1,7 @@
+---
+title: "hardis:misc:purge-references - Purge References"
+description: "Purges references to specified strings within your Salesforce metadata files before deployment."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:misc:purge-references
 

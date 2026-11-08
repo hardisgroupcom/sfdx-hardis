@@ -1,3 +1,7 @@
+---
+title: "hardis:doc:mkdocs-to-confluence - MkDocs to Confluence"
+description: "Reads MkDocs markdown pages and navigation structure, converts them into Confluence-compatible format, and publishes them to a Confluence space."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:doc:mkdocs-to-confluence
 

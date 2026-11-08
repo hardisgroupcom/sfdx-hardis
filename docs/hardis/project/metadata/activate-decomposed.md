@@ -1,3 +1,7 @@
+---
+title: "hardis:project:metadata:activate-decomposed - Activate Decomposed Metadata (Beta)"
+description: "Activate decomposed metadata types in Salesforce DX projects."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:metadata:activate-decomposed
 

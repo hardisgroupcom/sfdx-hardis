@@ -1,3 +1,7 @@
+---
+title: "hardis:project:metadata:findduplicates - XML duplicate values finder"
+description: "find duplicate values in XML file(s). Find duplicate values in XML file(s). Keys to be checked can be configured in config/sfdx-hardis.yml using property metadataDuplicateFindKeys."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:metadata:findduplicates
 

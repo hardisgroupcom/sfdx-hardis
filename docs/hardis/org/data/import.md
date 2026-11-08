@@ -1,3 +1,7 @@
+---
+title: "hardis:org:data:import - Import data"
+description: "Imports and loads data into a Salesforce org using SFDX Data Loader (sfdmu) projects."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:data:import
 
@@ -15,7 +19,8 @@ Key functionalities:
 - **Data Workspace Selection:** Allows selection of SFDX Data Loader projects either by project name, file path, or through an interactive prompt.
 - **Target Org Selection:** Supports specifying the target org via command flags or interactive prompts, with default org detection.
 - **Production Safeguards:** Implements safety mechanisms to prevent accidental data modifications in production orgs:
-  - Requires explicit configuration via `sfdmuCanModify` in .sfdx-hardis.yml config file
+  - In interactive mode, asks the user to confirm the modification of the production org, then authorizes SFDMU to modify it
+  - In CI or with `--no-prompt`, requires explicit configuration via `sfdmuCanModify` in .sfdx-hardis.yml config file
   - Or via `SFDMU_CAN_MODIFY` environment variable
 - **Interactive Mode:** Provides user-friendly prompts for workspace and org selection when not in CI mode.
 - **Confirmation Before Loading:** Displays a summary of the objects handled by the workspace (object, operation, external id, filter, mocked fields) followed by the full `export.json`, then asks for confirmation before writing anything to the org.

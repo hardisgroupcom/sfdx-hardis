@@ -1,3 +1,7 @@
+---
+title: "hardis:datacloud:extract:agentforce-feedback - Extract Agentforce Feedback Data from Data Cloud"
+description: "Extracts Agentforce feedback data (Good/Bad) from Data Cloud and sends notifications."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:datacloud:extract:agentforce-feedback
 

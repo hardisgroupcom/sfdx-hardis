@@ -1,3 +1,7 @@
+---
+title: "hardis:org:test:apex - Run apex tests"
+description: "Run apex tests in Salesforce org"
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:test:apex
 

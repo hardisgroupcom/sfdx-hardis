@@ -1,3 +1,7 @@
+---
+title: "hardis:package:version:promote - Promote new versions of package(s)"
+description: "Promotes a Salesforce package version from beta to released status in your Dev Hub."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:package:version:promote
 

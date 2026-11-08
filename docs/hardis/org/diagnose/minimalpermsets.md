@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:minimalpermsets - Detect permission sets with minimal permissions"
+description: "Analyzes permission set metadata files in the sfdx project to identify permission sets with very few permissions (configurable threshold, default: 5 or fewer)."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:minimalpermsets
 

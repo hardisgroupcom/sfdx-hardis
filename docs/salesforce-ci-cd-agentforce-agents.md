@@ -75,7 +75,7 @@ A service agent (`agentType` `EinsteinServiceAgent`) runs as a user of its org: 
 
 sfdx-hardis handles it in two steps, both recorded in the Pull Request or the project:
 
-1. An `agent-running-user` [deployment action](salesforce-devops-work-on-user-story-deployment-actions.md#create-the-running-user-of-an-agentforce-agent), run before the deployment, creates the user when the org has none, with the Salesforce CLI command `sf org create agent-user`: profile **Einstein Agent User**, permission sets `AgentforceServiceAgentBase`, `AgentforceServiceAgentUser` and `EinsteinGPTPromptTemplateUser`, after checking that the org has the licenses. Its username is `<agent>.<unique id>@<org id>.ext`. The [cleaning](#automate-it-at-each-user-story) writes this action, in the `all` context: it runs in the deployment check too, so the check validates the agent with its real user.
+1. An `agent-running-user` [deployment action](salesforce-devops-work-on-user-story-deployment-actions-agent-running-user.md), run before the deployment, creates the user when the org has none, with the Salesforce CLI command `sf org create agent-user`: profile **Einstein Agent User**, permission sets `AgentforceServiceAgentBase`, `AgentforceServiceAgentUser` and `EinsteinGPTPromptTemplateUser`, after checking that the org has the licenses. Its username is `<agent>.<unique id>@<org id>.ext`. The [cleaning](#automate-it-at-each-user-story) writes this action, in the `all` context: it runs in the deployment check too, so the check validates the agent with its real user.
 2. The built-in replacement rule `builtin-agent-running-user`, on by default, finds this user by its username, writes it in the bundle while it is deployed and while it is published, and puts the files of git back after each of them. It never creates a user: when the org has none, it logs a warning that names the action to add.
 
 A username of git that the target org has (the org you retrieved from, or a sandbox copy of its users) is kept.
@@ -132,7 +132,7 @@ When activation fails for this reason, the error of the action points to this se
 
 ## 3. Publish and activate the agent
 
-An `agent-publish` [deployment action](salesforce-devops-work-on-user-story-deployment-actions.md#publish-an-agentforce-agent) of the Pull Request runs after the deployment. It publishes the bundle of the agent in the target org with `sf agent publish authoring-bundle`, which creates a new version, then activates this version. The action is stored in the sources, so the Pull Request shows it and reviewers can change it.
+An `agent-publish` [deployment action](salesforce-devops-work-on-user-story-deployment-actions-agent-publish.md) of the Pull Request runs after the deployment. It publishes the bundle of the agent in the target org with `sf agent publish authoring-bundle`, which creates a new version, then activates this version. The action is stored in the sources, so the Pull Request shows it and reviewers can change it.
 
 - The replacement rules of the target org are applied to the bundle while it is published, as for the deployment: the running user of a service agent is the one of that org.
 - The deployment check job deploys nothing and publishes nothing. It lists the publication in the Pull Request comment, with the other post-deployment actions.

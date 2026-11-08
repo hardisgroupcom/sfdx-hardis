@@ -36,6 +36,8 @@ export const ORG_INIT_ACTION_TYPES = [
   'run-batch',
   'schedule-batch',
   'publish-community',
+  'user-access-policy',
+  'browser',
 ] as const;
 
 /**

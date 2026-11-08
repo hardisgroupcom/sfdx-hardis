@@ -1,3 +1,7 @@
+---
+title: "hardis:misc:toml2csv - TOML to CSV"
+description: "Splits a TOML (Tom's Obvious, Minimal Language) file into multiple CSV files, applying transformations and filters based on a JSON configuration."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:misc:toml2csv
 

@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:mfa - Diagnose MFA configuration"
+description: "Audits the org's Multi-Factor Authentication (MFA) configuration and reports gaps that violate the Salesforce MFA requirement."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:mfa
 

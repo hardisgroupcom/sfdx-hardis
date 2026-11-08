@@ -1,3 +1,7 @@
+---
+title: "hardis:ticket:post-comment - Post a comment on tickets"
+description: "Posts a markdown comment on one or several tickets of JIRA, Azure Boards, ServiceNow or Aha!, converted to the format of each ticketing system."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:ticket:post-comment
 

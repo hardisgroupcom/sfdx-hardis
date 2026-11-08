@@ -1,3 +1,7 @@
+---
+title: "hardis:misc:custom-label-translations - Custom Label Translations"
+description: "Extracts selected custom labels, or all custom labels used within a given Lightning Web Component (LWC), from all available language translation files in the project."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:misc:custom-label-translations
 

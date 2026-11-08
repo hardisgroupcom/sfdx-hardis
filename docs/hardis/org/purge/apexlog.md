@@ -1,3 +1,7 @@
+---
+title: "hardis:org:purge:apexlog - Purge Apex Logs"
+description: "Purges Apex debug logs from a Salesforce org."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:purge:apexlog
 

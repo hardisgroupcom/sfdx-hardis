@@ -380,6 +380,7 @@ The table below lists every sfdx-hardis command that supports `--agent`. Click t
 
 ## See Also
 
+- [llms.txt](https://sfdx-hardis.cloudity.com/llms.txt): every page of this documentation, its commands and its settings, with a one-line description each, for a coding agent to read
 - [Using AI Coding Agents (Detailed Guide)](salesforce-devops-agent-skills.md): step-by-step skills for Claude Code, Copilot, and other agents
 - [Coding Agent Auto-Fix](salesforce-deployment-agent-autofix.md): auto-fix deployment errors with AI agents
 - [AI Setup](salesforce-ai-setup.md): configure LLM providers (Claude, OpenAI, Gemini, Ollama) for sfdx-hardis AI features

@@ -1,3 +1,7 @@
+---
+title: "hardis:scratch:pool:reset - Reset scratch org pool"
+description: "Resets the scratch org pool by deleting all existing scratch orgs within it."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:scratch:pool:reset
 

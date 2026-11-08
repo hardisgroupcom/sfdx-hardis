@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:apex-api-version - Check Apex classes and triggers for deprecated API versions"
+description: "Detects Apex classes and triggers deployed with API versions at or below a configurable threshold."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:apex-api-version
 

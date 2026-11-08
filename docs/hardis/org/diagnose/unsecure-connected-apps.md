@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:unsecure-connected-apps - Detect Unsecured Connected Apps"
+description: "Detects unsecured Connected Apps and External Client Apps in a Salesforce org and generates detailed reports for security analysis."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:unsecure-connected-apps
 

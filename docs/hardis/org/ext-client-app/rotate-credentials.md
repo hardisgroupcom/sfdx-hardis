@@ -1,3 +1,7 @@
+---
+title: "hardis:org:ext-client-app:rotate-credentials - Rotate External Client App Credentials"
+description: "Rotates the OAuth consumer key and secret of an External Client App directly in a Salesforce org, without relying on local metadata."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:ext-client-app:rotate-credentials
 

@@ -1,3 +1,7 @@
+---
+title: "hardis:doc:plugin:generate - Generate SF Cli Plugin Documentation"
+description: "Generates Markdown documentation for an SF CLI plugin, ready for conversion into HTML with MkDocs."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:doc:plugin:generate
 
@@ -14,6 +18,7 @@ Key functionalities:
 
 - **Command Documentation:** Generates a dedicated Markdown file for each command, including its description, parameters (flags), and examples.
 - **Index and Commands Pages:** Creates an `index.md` and `commands.md` file that list all available commands, providing an overview and easy navigation.
+- **Search engine metadata:** Every generated page opens with a front matter block holding its title and meta description: the command id and title, and the first paragraph of the command description.
 - **Zensical Integration:** Sets up the basic documentation project structure and updates the `mkdocs.yml` navigation to include the generated command documentation.
 - **Default File Copying:** Copies the documentation configuration files and GitHub Actions workflows to your project, so continuous documentation deployment works out of the box.
 - **Selected commands only:** With `--commands`, only the pages of the commands you name are written. It takes command ids and `*` patterns, separated by commas or by repeating the flag, and stops when one of them matches no command. `index.md`, `commands.md` and the navigation are then rewritten only when a command was added or removed. A new command always gets its page, even when it is not named.
@@ -39,6 +44,7 @@ The command's technical implementation involves:
 - **Plugin Configuration Loading:** It loads the SF CLI plugin's configuration using `@oclif/core`'s `Config.load()`, which provides access to all registered commands and their metadata. Every command is loaded, with or without `--commands`.
 - **Command Selection:** `--commands` values are matched against the command ids. `*` stands for any sequence of characters, `:` included, and an id typed with spaces is read as its colon form.
 - **Markdown File Generation:** For each selected command, it constructs a Markdown file (`.md`) containing:
+  - A front matter block: `title` is the command id followed by its `title`, `description` is its `summary`, else the first paragraph of prose of its `description`, as plain text cut at 300 characters.
   - The command ID as the main heading.
   - The command's `description` property.
   - A table of parameters (flags), including their name, type, description, default value, required status, and available options. It dynamically extracts this information from the command's `flags` property. A default that depends on the machine building the documentation, such as the default org, is left out.

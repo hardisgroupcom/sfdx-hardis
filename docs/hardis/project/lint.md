@@ -1,3 +1,7 @@
+---
+title: "hardis:project:lint - Lint"
+description: "Applies syntactic analysis (linting) to your repository sources using Mega-Linter, ensuring code quality and adherence to coding standards."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:lint
 

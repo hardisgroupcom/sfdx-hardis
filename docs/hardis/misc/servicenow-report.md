@@ -1,3 +1,7 @@
+---
+title: "hardis:misc:servicenow-report - ServiceNow Report"
+description: "This command retrieves user stories from Salesforce and enriches them with data from ServiceNow."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:misc:servicenow-report
 

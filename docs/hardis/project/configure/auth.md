@@ -1,3 +1,7 @@
+---
+title: "hardis:project:configure:auth - Configure authentication"
+description: "Configures authentication between a Git branch and a target Salesforce org for CI/CD deployments."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:configure:auth
 
@@ -16,7 +20,7 @@ It creates an **External Client App** that uses the JWT Bearer flow with SSL cer
 
 Key functionalities include:
 
-- **Org Selection/Login:** Guides the user to select an existing Salesforce org or log in to a new one.
+- **Org Selection/Login:** Guides the user to select an existing Salesforce org or log in to a new one. The selected org becomes the default org, and the command continues with it without asking again.
 - **Config Naming:** Names the auth config after an existing Git branch (default), or derives a name from the org domain with `--name-type org-domain` (or pass an explicit name with `--name`). Org-domain configs are not tied to a Git branch, so the merge targets step is skipped.
 - **Git Branch Association:** Allows associating a specific Git branch with the chosen Salesforce org.
 - **Merge Target Definition:** Enables defining target Git branches into which the configured branch can merge, ensuring controlled deployment flows.
@@ -45,7 +49,8 @@ prompts
 - **Configuration Management:** Leverages internal utilities (`checkConfig`, `getConfig`, `setConfig`, `setInConfigFile`) to read from and write to project-specific configuration files (e.g., `.sfdx-hardis.<branchName>.yml`).
 - **Salesforce CLI Execution:** Executes Salesforce CLI commands programmatically via `execSfdxJson` for org interactions.
 - **SSL Certificate Generation:** Calls `generateSSLCertificate` to create necessary SSL certificates for JWT-based authentication.
-- **WebSocket Communication:** Uses `WebSocketClient` for potential communication with external tools or processes, such as restarting the command in VS Code.
+- **WebSocket Communication:** Uses `WebSocketClient` to communicate with the VS Code extension.
+- **Org Switch:** When the selected org differs from the one the command started with, it loads the selected org with `Org.create` and continues with it, instead of restarting the command.
 - **Dependency Check:** Ensures the presence of `openssl` on the system, which is required for SSL certificate generation.
 
 <!-- training-links:start -->

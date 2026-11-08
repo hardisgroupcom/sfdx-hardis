@@ -1,3 +1,7 @@
+---
+title: "sfdx-hardis commands"
+description: "All the commands of sfdx-hardis, grouped by topic, with a link to the page of each one."
+---
 # Commands
 
 ## hardis:auth

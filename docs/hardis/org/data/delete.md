@@ -1,3 +1,7 @@
+---
+title: "hardis:org:data:delete - Delete data"
+description: "Deletes records in multiple Salesforce objects using an SFDMU (Salesforce Data Migration Utility) workspace."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:data:delete
 
@@ -21,7 +25,7 @@ Before anything is deleted, the command displays a summary of the objects handle
 If you intend to run this command in a production environment, you must:
 
 - Set `runnableInProduction` to `true` in your `export.json` file within the SFDMU workspace.
-- Define `sfdmuCanModify: YOUR_INSTANCE_URL` in your branch-specific configuration file (e.g., `config/branches/.sfdx-hardis.YOUR_BRANCH.yml`) to explicitly authorize data modification for that instance.
+- Confirm the modification of the production org when the command asks for it, or, in CI or with `--no-prompt`, define `sfdmuCanModify: YOUR_INSTANCE_URL` in your branch-specific configuration file (e.g., `config/branches/.sfdx-hardis.YOUR_BRANCH.yml`) (or the `SFDMU_CAN_MODIFY` environment variable) to explicitly authorize data modification for that instance.
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/p4E2DUGZ3bs" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 

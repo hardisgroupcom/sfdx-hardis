@@ -1,3 +1,7 @@
+---
+title: "hardis:project:clean:references - Clean references in dx sources"
+description: "Removes unwanted references and cleans up metadata within your Salesforce DX project sources."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:clean:references
 

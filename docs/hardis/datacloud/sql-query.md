@@ -1,3 +1,7 @@
+---
+title: "hardis:datacloud:sql-query - Execute a SQL query on Data Cloud"
+description: "Executes a SQL query against Salesforce Data Cloud and exports the results."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:datacloud:sql-query
 

@@ -198,6 +198,7 @@
   "scripts": {
     "build": "wireit",
     "build:doc": "sf hardis:doc:plugin:generate",
+    "build:llms-txt": "node build.cjs --llms-txt",
     "clean": "sf-clean",
     "clean-all": "sf-clean all",
     "compile": "wireit",
@@ -289,6 +290,7 @@
       },
       "files": [
         "test/**/*.ts",
+        "test/**/*.mjs",
         "src/**/*.ts",
         "**/tsconfig.json",
         ".mocha*",

@@ -1,3 +1,7 @@
+---
+title: "hardis:org:data:export - Export data"
+description: "Exports data from a Salesforce org using an SFDMU (Salesforce Data Migration Utility) project."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:data:export
 

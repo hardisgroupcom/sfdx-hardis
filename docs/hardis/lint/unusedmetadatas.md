@@ -1,3 +1,7 @@
+---
+title: "hardis:lint:unusedmetadatas - check unused labels and custom permissions"
+description: "Checks for unused custom labels and custom permissions within your Salesforce DX project."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:lint:unusedmetadatas
 

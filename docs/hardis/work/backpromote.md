@@ -1,3 +1,7 @@
+---
+title: "hardis:work:backpromote - Backpromote to a dev sandbox (Beta)"
+description: "Brings into a developer sandbox (or a scratch org) what the team merged in a parent major branch (integration, uat...) since the last backpromote: the metadata, and the deployment actions declared by the merged Pull Requests."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:work:backpromote
 

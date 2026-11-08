@@ -1,3 +1,7 @@
+---
+title: "hardis:org:select - Select org"
+description: "Allows you to select a Salesforce org and set it as your default, optionally filtering by Dev Hub or scratch orgs."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:select
 

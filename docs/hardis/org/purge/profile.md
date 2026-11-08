@@ -1,3 +1,7 @@
+---
+title: "hardis:org:purge:profile - Remove PS attributes from Profile"
+description: "Removes or \"mutes\" Permission Sets attributes from selected Salesforce Profile metadata files and redeploys the cleaned profiles to the target org."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:purge:profile
 

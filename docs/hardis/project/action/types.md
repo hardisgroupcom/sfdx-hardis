@@ -1,3 +1,7 @@
+---
+title: "hardis:project:action:types - Describe deployment action types"
+description: "Describes the deployment action types: what each one takes, in which phase and context it runs, and its defaults."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:action:types
 

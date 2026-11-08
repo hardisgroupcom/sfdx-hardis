@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:flex-queue - Monitor Apex flex queue (AsyncApexJob Holding)"
+description: "Counts AsyncApexJob records with Status = 'Holding' (Apex flex queue), including ApexClass.Name, JobType, and CreatedDate for each job. The org can hold at most 100 such jobs; when the queue is full, new queueable/batch work can fail or stall."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:flex-queue
 

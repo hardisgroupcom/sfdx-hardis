@@ -1,3 +1,7 @@
+---
+title: "hardis:org:retrieve:sources:analytics - Retrieve CRM Analytics configuration from an org"
+description: "Retrieves all CRM Analytics (formerly Tableau CRM or Einstein Analytics) sources from a Salesforce org, including workarounds for known SFDX bugs."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:retrieve:sources:analytics
 

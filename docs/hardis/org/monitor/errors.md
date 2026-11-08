@@ -1,3 +1,7 @@
+---
+title: "hardis:org:monitor:errors - Monitor Apex and Flow errors"
+description: "Collects Apex and Flow crash logs from the last N days, exports CSV/XLSX reports, and posts notifications."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:monitor:errors
 

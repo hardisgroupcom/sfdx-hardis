@@ -1,3 +1,7 @@
+---
+title: "hardis:project:promotion:create - Create a promotion branch (Beta)"
+description: "This feature is in Beta. Promotion branches are switched off by default; their behavior may still change from feedback. Please report any issue or feedback on the sfdx-hardis GitHub repository."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:promotion:create
 

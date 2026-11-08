@@ -1,3 +1,7 @@
+---
+title: "hardis:org:retrieve:sources:dx2 - Retrieve sfdx sources from org (2)"
+description: "Retrieves Salesforce metadata from an org into SFDX source format, offering flexible input options for specifying metadata to retrieve."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:retrieve:sources:dx2
 

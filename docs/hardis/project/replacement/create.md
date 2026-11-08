@@ -1,3 +1,7 @@
+---
+title: "hardis:project:replacement:create - Create replacement rule (Beta)"
+description: "Adds a replacement rule: a change applied to the metadata files right before each deployment, for the org the deployment goes to."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:replacement:create
 

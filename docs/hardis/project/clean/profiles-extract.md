@@ -1,3 +1,7 @@
+---
+title: "hardis:project:clean:profiles-extract"
+description: "Guides administrators through extracting Salesforce profiles, personas, and related metadata into structured CSV/XLSX deliverables."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:clean:profiles-extract
 

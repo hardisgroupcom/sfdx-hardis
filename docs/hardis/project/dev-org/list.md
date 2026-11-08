@@ -1,3 +1,7 @@
+---
+title: "hardis:project:dev-org:list - List the development orgs"
+description: "Lists the developer sandboxes and scratch orgs of the project, the major branch each of them targets, and how many Pull Requests were merged into that branch since the org last received a backpromote."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:dev-org:list
 

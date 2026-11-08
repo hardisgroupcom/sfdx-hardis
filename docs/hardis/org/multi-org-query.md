@@ -1,3 +1,7 @@
+---
+title: "hardis:org:multi-org-query - Multiple Orgs SOQL Query"
+description: "Executes a SOQL query across multiple Salesforce organizations and consolidates the results into a single report."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:multi-org-query
 

@@ -1,3 +1,7 @@
+---
+title: "hardis:deploy:quick"
+description: "sfdx-hardis wrapper for sf project deploy quick that displays tips to solve deployment errors."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:deploy:quick
 

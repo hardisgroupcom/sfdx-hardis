@@ -1,3 +1,7 @@
+---
+title: "hardis:doc:release-notes - Release Notes"
+description: "Generate release notes for a Salesforce project release."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:doc:release-notes
 

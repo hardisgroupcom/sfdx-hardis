@@ -1,3 +1,7 @@
+---
+title: "hardis:org:user:unlink-security-key - Unlink user security keys / MFA methods"
+description: "Disconnects MFA registrations (default: Security Key / U2F + WebAuthn) from selected Salesforce users by driving a real browser session against Salesforce Setup."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:user:unlink-security-key
 

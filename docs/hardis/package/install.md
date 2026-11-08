@@ -1,3 +1,7 @@
+---
+title: "hardis:package:install - Install packages in an org"
+description: "Install a package in an org using its id (starting with 04t)"
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:package:install
 

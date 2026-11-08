@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:usage-entitlements - Check usage-based entitlements"
+description: "Monitors Salesforce usage-based entitlements and warns when consumption is on track to exceed the allowance before the period ends."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:usage-entitlements
 

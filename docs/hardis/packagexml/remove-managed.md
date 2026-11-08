@@ -1,3 +1,7 @@
+---
+title: "hardis:packagexml:remove-managed"
+description: "Removes all managed package items from a package.xml file, while preserving custom metadata created on top of managed objects."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:packagexml:remove-managed
 

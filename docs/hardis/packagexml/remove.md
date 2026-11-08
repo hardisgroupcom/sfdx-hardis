@@ -1,3 +1,7 @@
+---
+title: "hardis:packagexml:remove"
+description: "Removes metadata components from a package.xml file using either another package.xml as a filter or inline metadata type/member specifications."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:packagexml:remove
 

@@ -1,3 +1,7 @@
+---
+title: "hardis:scratch:delete - Delete scratch orgs(s)"
+description: "Provides an assisted menu to delete Salesforce scratch orgs associated with a Dev Hub."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:scratch:delete
 

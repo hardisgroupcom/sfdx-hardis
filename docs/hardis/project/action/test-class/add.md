@@ -1,3 +1,7 @@
+---
+title: "hardis:project:action:test-class:add - Add deployment Apex test class"
+description: "Adds one or more Apex test classes to the deployment test class list for the project configuration."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:action:test-class:add
 

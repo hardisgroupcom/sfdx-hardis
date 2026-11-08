@@ -1,3 +1,7 @@
+---
+title: "hardis:work:refresh - Refresh User Story branch"
+description: "This command is deprecated. Use sf hardis:work:backpromote instead."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:work:refresh
 

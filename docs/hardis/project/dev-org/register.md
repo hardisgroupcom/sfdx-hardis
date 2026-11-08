@@ -1,3 +1,7 @@
+---
+title: "hardis:project:dev-org:register - Register a development org"
+description: "Registers a developer sandbox or a scratch org in the development orgs list of the project, or changes its target branch, owner and users."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:dev-org:register
 

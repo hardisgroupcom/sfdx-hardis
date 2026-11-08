@@ -1,3 +1,7 @@
+---
+title: "hardis:scratch:push - Scratch PUSH"
+description: "Pushes local Salesforce DX source files to a scratch org or source-tracked sandbox."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:scratch:push
 
