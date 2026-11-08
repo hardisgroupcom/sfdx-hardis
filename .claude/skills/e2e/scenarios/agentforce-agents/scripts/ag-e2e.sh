@@ -331,7 +331,8 @@ if step pr1; then
   if [ -f "$SCRIPT_FILE" ]; then
     cp "$SCRIPT_FILE" "$LOGS/agent-script-retrieved.agent"
     result RETRIEVE-SCRIPT OK "the Agent Script is in the project"
-    assert_contains RETRIEVE-USER "$SCRIPT_FILE" "${DEV_AGENT_USER:-<no dev user>}" "the Agent Script runs as the user of the developer org"
+    # The org stores the username with a lowercase org id, the bundle keeps the case it was deployed with
+    if grep -qiF -- "${DEV_AGENT_USER:-<no dev user>}" "$SCRIPT_FILE"; then result RETRIEVE-USER OK "the Agent Script runs as the user of the developer org"; else result RETRIEVE-USER FAIL "the Agent Script runs as the user of the developer org (missing: ${DEV_AGENT_USER:-<no dev user>})"; fi
   else
     result RETRIEVE-SCRIPT FAIL "no $AGENT.agent in force-app/main/default/aiAuthoringBundles"
   fi
