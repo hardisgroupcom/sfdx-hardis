@@ -111,6 +111,8 @@ Exceptions that stay outside the class:
 - The oclif flag declarations of `action:create` and `action:update`: oclif reads them statically.
 - The registries of `actionTypes.ts`, read by synchronous code (forecast, Pull Request comment, developer org runs, backpromote) where no provider class can be loaded: `DEPLOYMENT_ONLY_ACTION_TYPES` (read through `getEffectiveActionContext`) and `RUN_AT_EVERY_DEPLOYMENT_BY_DEFAULT_ACTION_TYPES` (read through `resolveRunOnlyOnceByOrg(def)`, which every reader of `runOnlyOnceByOrg` must use instead of `def.runOnlyOnceByOrg !== false`, so a hand-written action without the key gets the default of its type).
 
+Each type has its own documentation page, `docs/salesforce-devops-work-on-user-story-deployment-actions-<type>.md`, where `<type>` is its YAML `type`. A new type adds that page, a row in the **Action types** table of the overview (`docs/salesforce-devops-work-on-user-story-deployment-actions.md`) and an entry in the Deployment actions folder of the `mkdocs.yml` nav.
+
 Load prompt helpers (`actionPromptUtils.js`) with a dynamic import inside `collectParameters`, so running an action never loads them. A provider class must not be imported statically by `deploymentActionsStateUtils.ts` or by anything `actionsProvider.ts` imports: that creates an import cycle (`Cannot access 'ActionsProvider' before initialization`).
 
 ### Ticketing systems: commands are agnostic, everything specific lives in the provider class

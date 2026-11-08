@@ -1,3 +1,7 @@
+---
+title: "hardis:project:clean:standarditems - Clean retrieved standard items in dx sources"
+description: "Removes unwanted standard Salesforce items from your Salesforce DX project sources."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:clean:standarditems
 

@@ -12,8 +12,11 @@
 - Delta deployment with `useDeltaDeploymentWithDependencies`: a command that reads two manifests no longer extends the second delta with the components of the first.
 - New [Development orgs list](https://sfdx-hardis.cloudity.com/salesforce-devops-dev-orgs/): see which dev sandboxes and scratch orgs miss Pull Requests merged into their target branch, so their owners know when to backpromote.
 - [Deployment actions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/):
-  - New [Browser](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#apply-a-setup-setting-in-a-browser) action type: applies with Browserforce a Setup setting the Metadata API cannot deploy.
-  - The [User Access Policy](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#activate-user-access-policies) action now activates User Access Policies and runs Apply To All through Browserforce.
+  - New [Browser](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions-browser/) action type: applies with Browserforce a Setup setting the Metadata API cannot deploy.
+  - The [User Access Policy](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions-user-access-policy/) action now activates User Access Policies and runs Apply To All through Browserforce.
+  - Documentation: an overview page, and one page per action type.
+- [hardis:doc:plugin:generate](https://sfdx-hardis.cloudity.com/hardis/doc/plugin/generate/): every generated page has a title and a meta description for search engines.
+- Documentation site: new [llms.txt](https://sfdx-hardis.cloudity.com/llms.txt), which lists every page, command and setting for coding agents, with a link to its Markdown source.
 
 ## [8.23.0] 2026-11-06
 

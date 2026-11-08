@@ -1,3 +1,7 @@
+---
+title: "hardis:ticket:set-label - Label a ticket"
+description: "Adds a label to a ticket, without posting anything else, so that a script can flag a ticket it could not process."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:ticket:set-label
 

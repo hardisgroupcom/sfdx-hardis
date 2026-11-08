@@ -1,3 +1,7 @@
+---
+title: "hardis:org:retrieve:sources:retrofit - Retrofit changes from an org"
+description: "This command is deprecated and must not be used. Changing a major org by hand is not a supported way of working."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:retrieve:sources:retrofit
 

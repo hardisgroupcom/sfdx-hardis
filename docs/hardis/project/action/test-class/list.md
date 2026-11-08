@@ -1,3 +1,7 @@
+---
+title: "hardis:project:action:test-class:list - List deployment Apex test classes"
+description: "Lists the Apex test classes configured for deployment in the project configuration."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:action:test-class:list
 

@@ -1,3 +1,7 @@
+---
+title: "hardis:scratch:pool:create - Create and configure scratch org pool"
+description: "Configures a scratch org pool for the project: where the pool is stored, and how many scratch orgs it holds."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:scratch:pool:create
 

@@ -140,7 +140,7 @@ The [`xml-value` example](#set-an-xml-value-xml-value) above gives each org its 
 
 - `value`: the same value for every org.
 - `values`: one value per target branch. `default` applies to developer sandboxes, scratch orgs, and the branches without their own value. An org with no value and no default keeps the file of git.
-- `includeTargetBranches` / `excludeTargetBranches`: limit the rule to some target branches, like [deployment actions](salesforce-devops-deployment-actions.md) (`dev-sandboxes` means any org that is not a major branch).
+- `includeTargetBranches` / `excludeTargetBranches`: limit the rule to some target branches, like [deployment actions](salesforce-devops-work-on-user-story-deployment-actions.md#choose-the-target-orgs) (`dev-sandboxes` means any org that is not a major branch).
 - `required: true`: warns in the Pull Request comment when the files of the rule are deployed but nothing matched.
 
 The target branch is the target of the Pull Request in a deployment check, and the branch being deployed in a deployment job.

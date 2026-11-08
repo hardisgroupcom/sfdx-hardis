@@ -1,3 +1,7 @@
+---
+title: "hardis:org:retrieve:sources:metadata - Retrieve sfdx sources from org"
+description: "Retrieves Salesforce metadata from an org into a local directory, primarily for backup and monitoring purposes."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:retrieve:sources:metadata
 

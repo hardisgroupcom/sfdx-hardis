@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:legacyapi - Check for legacy API use"
+description: "Checks if an org uses retired or someday retired API version"
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:legacyapi
 

@@ -1,3 +1,7 @@
+---
+title: "hardis:config:monitoring-defaults - Get monitoring & notification defaults"
+description: "Returns the hardcoded default monitoring and notification configuration baked into sfdx-hardis."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:config:monitoring-defaults
 

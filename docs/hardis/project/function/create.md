@@ -1,3 +1,7 @@
+---
+title: "hardis:project:function:create - Create custom function"
+description: "Declares a custom function: a script that becomes a deployment action type of your project."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:function:create
 

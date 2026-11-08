@@ -1,3 +1,7 @@
+---
+title: "hardis:org:configure:files - Configure File export project"
+description: "Configures a project for exporting file attachments from a Salesforce org."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:configure:files
 

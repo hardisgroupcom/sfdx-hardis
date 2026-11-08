@@ -1,3 +1,7 @@
+---
+title: "hardis:project:clean:xml - Clean retrieved empty items in dx sources"
+description: "Remove XML elements using Glob patterns and XPath expressions"
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:clean:xml
 

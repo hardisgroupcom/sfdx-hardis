@@ -1,3 +1,7 @@
+---
+title: "hardis:project:action:create - Create deployment action"
+description: "Creates a new deployment action in the project configuration."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:action:create
 
@@ -65,7 +69,7 @@ Some Setup settings cannot be deployed with the Metadata API. A `browser` action
 
 - `setting`: the key of the Browserforce setting (`densitySettings`, `companyInformation`...)
 - `config`: its value. Browserforce only changes what differs from the org.
-- A value can be read from a CI/CD variable, written as a placeholder (its syntax is in the [deployment actions documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#apply-a-setup-setting-in-a-browser)): `VARIABLE_<BRANCH>` first (for example `VARIABLE_UAT` when deploying to `uat`), then `VARIABLE`. Use it for secrets and for values that differ per org. The values are masked in every output.
+- A value can be read from a CI/CD variable, written as a placeholder (its syntax is in the [deployment actions documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions-browser/)): `VARIABLE_<BRANCH>` first (for example `VARIABLE_UAT` when deploying to `uat`), then `VARIABLE`. Use it for secrets and for values that differ per org. The values are masked in every output.
 - During a deployment check (default context `all`), nothing is changed: Browserforce reads the org and the Pull Request comment shows what would change.
 
 ```yaml

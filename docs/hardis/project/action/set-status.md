@@ -1,3 +1,7 @@
+---
+title: "hardis:project:action:set-status - Set the status of a deployment action"
+description: "Records a failed (or stopped) deployment action as done by hand in an org branch."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:action:set-status
 

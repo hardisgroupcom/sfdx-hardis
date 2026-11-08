@@ -8,6 +8,49 @@ const SDR_METADATA_REGISTRY_URL =
   "https://raw.githubusercontent.com/forcedotcom/source-deploy-retrieve/refs/heads/main/src/registry/metadataRegistry.json";
 const METADATA_LIST_FILE = "./src/common/metadata-utils/metadataList.ts";
 
+// docs/llms.txt links the Markdown sources of the pages, which agents read better than the HTML
+const LLMS_TXT_RAW_ROOT = "https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/";
+// docs/llms.txt: the summary and the notes at its top, the menu folders listed last as optional,
+// and the folders whose name is not the best section title
+const LLMS_TXT_SUMMARY =
+  "sfdx-hardis is a Salesforce CLI plugin and a VS Code extension, by Cloudity: CI/CD pipelines for Salesforce (Pull Request checks, smart deployments, deployment actions, promotion branches), org monitoring with daily metadata backups, and project documentation generation.";
+const LLMS_TXT_INTRO = [
+  "Commands run as `sf hardis:<topic>:<action>`. Each command page lists its flags and examples. Most commands accept `--agent`, which runs them without any prompt, for coding agents and scripts.",
+  "",
+  "A project is configured in `config/.sfdx-hardis.yml`, with overrides per branch in `config/branches/.sfdx-hardis.<branch>.yml`: see the Settings section.",
+  "",
+  "Most users run sfdx-hardis from the VS Code extension: the VS Code Extension section describes its panels, and the guides say which button runs which command.",
+  "",
+  "Each link is the Markdown source of a page: `docs/<page>.md` is published at `https://sfdx-hardis.cloudity.com/<page>/`, the URL to give a person.",
+];
+const LLMS_TXT_OPTIONAL_SECTIONS = ["Community & Resources", "About", "Cloudity, Consulting Partner"];
+const LLMS_TXT_SECTION_TITLES = { "Commands Reference": "Commands" };
+
+// Title and meta description of each page generated from README.md, for search engines
+const README_PAGES_FRONT_MATTER = {
+  "installation.md": {
+    title: "Install sfdx-hardis",
+    description:
+      "Install sfdx-hardis with the VS Code extension (recommended), as a Salesforce CLI plugin, or run it in CI/CD with a Docker image.",
+  },
+  "events.md": {
+    title: "sfdx-hardis at community events",
+    description: "The Salesforce community events where sfdx-hardis was presented, with the title of each talk.",
+  },
+  "articles-videos.md": {
+    title: "Articles and videos about sfdx-hardis",
+    description: "Web articles, recorded conferences, podcasts and videos about sfdx-hardis and Salesforce DevOps.",
+  },
+  "contributing.md": {
+    title: "Contribute to sfdx-hardis",
+    description: "How to contribute to the sfdx-hardis Salesforce CLI plugin and to its VS Code extension vscode-sfdx-hardis.",
+  },
+  "contributors.md": {
+    title: "sfdx-hardis contributors",
+    description: "The organization behind sfdx-hardis, the authors of its Pull Requests, and the people it thanks.",
+  },
+};
+
 class SfdxHardisBuilder {
   async run() {
     console.log("Start additional building of sfdx-hardis repository...");
@@ -16,6 +59,7 @@ class SfdxHardisBuilder {
     await this.buildDeployTipsDoc();
     await this.buildPromptTemplatesDocs();
     await this.buildTemplatesSummaries();
+    this.generateLlmsTxt();
     this.truncateReadme();
     // this.fixOnlineIndex();
     console.log("All done.");
@@ -395,7 +439,12 @@ class SfdxHardisBuilder {
       const pageName = match[1].trim();
       const pageContent = match[2].trim();
       const pageFile = `./docs/${pageName}`;
-      fs.writeFileSync(pageFile, pageContent + "\n");
+      const frontMatter = README_PAGES_FRONT_MATTER[pageName];
+      if (!frontMatter) {
+        throw new Error(`Add the title and description of ${pageName} to README_PAGES_FRONT_MATTER in build.cjs`);
+      }
+      const frontMatterBlock = `---\ntitle: ${JSON.stringify(frontMatter.title)}\ndescription: ${JSON.stringify(frontMatter.description)}\n---\n`;
+      fs.writeFileSync(pageFile, frontMatterBlock + pageContent + "\n");
       console.log(`Generated ${pageFile}`);
     }
     console.log("All pages generated from README.md");
@@ -427,6 +476,105 @@ class SfdxHardisBuilder {
       this.writeFileIfChanged(outputFile, summary);
       console.log(`Written templates summary ${outputFile}`);
     }
+  }
+
+  // docs/llms.txt (https://llmstxt.org), served at the root of the site: the pages a coding agent
+  // should read, in the order of the menu of mkdocs.yml, each with the title and the description
+  // of its front matter. The command pages are read as they are in docs/hardis: generate them
+  // first (yarn build:doc) when commands changed.
+  generateLlmsTxt() {
+    console.log("Generating docs/llms.txt...");
+    // The python tags of mkdocs.yml mean nothing here
+    const mkdocsText = fs.readFileSync("./mkdocs.yml", "utf-8").replace(/!!python\/name:\S+/g, '""');
+    const mkdocs = yaml.load(mkdocsText);
+    const listed = new Set();
+    const pageLine = (label, target) => {
+      if (/^https?:\/\//.test(target)) {
+        return `- [${label}](${target})`;
+      }
+      if (listed.has(target)) {
+        return null;
+      }
+      listed.add(target);
+      const { frontMatter, sourcePath } = this.readMarkdownPage(target);
+      const url = LLMS_TXT_RAW_ROOT + sourcePath;
+      const title = frontMatter.title || label;
+      return `- [${title}](${url})` + (frontMatter.description ? `: ${frontMatter.description}` : "");
+    };
+    // A menu entry without a label (- page.md) is a page titled by its own front matter
+    const navEntries = (item) => (typeof item === "string" ? [[item, item]] : Object.entries(item));
+    // The pages of a menu folder; a folder inside it gets a ### heading
+    const flatten = (items, depth = 0) =>
+      items.flatMap((item) =>
+        navEntries(item).flatMap(([label, value]) => {
+          if (!Array.isArray(value)) {
+            return [pageLine(label, value)];
+          }
+          return depth === 0 ? ["", `### ${label}`, "", ...flatten(value, depth + 1)] : flatten(value, depth + 1);
+        }),
+      );
+
+    const sections = [];
+    const startPages = [];
+    const optionalPages = [];
+    for (const item of mkdocs.nav) {
+      const [[label, value]] = navEntries(item);
+      if (!Array.isArray(value)) {
+        if (value === "index.md" || value === "sfdx-hardis-config-file.md") {
+          continue;
+        }
+        (LLMS_TXT_OPTIONAL_SECTIONS.includes(label) ? optionalPages : startPages).push(pageLine(label, value));
+      } else if (LLMS_TXT_OPTIONAL_SECTIONS.includes(label)) {
+        optionalPages.push(...flatten(value));
+      } else {
+        sections.push({ title: LLMS_TXT_SECTION_TITLES[label] || label, lines: flatten(value) });
+      }
+    }
+    const settings = [
+      pageLine("Configuration", "sfdx-hardis-config-file.md"),
+      `- [JSON schema of the configuration](${LLMS_TXT_RAW_ROOT}config/sfdx-hardis.jsonschema.json): every key of \`config/.sfdx-hardis.yml\`, with its type, default value and description`,
+    ];
+    const md = [
+      "# sfdx-hardis",
+      "",
+      `> ${LLMS_TXT_SUMMARY}`,
+      "",
+      ...LLMS_TXT_INTRO,
+      "",
+      "## Get started",
+      "",
+      ...startPages,
+      "",
+      "## Settings",
+      "",
+      ...settings,
+      ...sections.flatMap((section) => ["", `## ${section.title}`, "", ...section.lines]),
+      "",
+      "## Optional",
+      "",
+      ...optionalPages,
+      "",
+    ].filter((line) => line !== null);
+    this.writeFileIfChanged("./docs/llms.txt", md.join("\n"));
+  }
+
+  // A page of the menu, read once: its front matter ({} when it has none), and the path in the
+  // repository of the Markdown it is made of: the page itself, or the file it only includes
+  // (--8<-- "../CHANGELOG.md"), which is what an agent should read
+  readMarkdownPage(target) {
+    const file = `./docs/${target}`;
+    if (!fs.existsSync(file)) {
+      throw new Error(`mkdocs.yml lists ${file}, which does not exist`);
+    }
+    const content = fs.readFileSync(file, "utf-8");
+    const frontMatterMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n/);
+    const frontMatter = frontMatterMatch ? yaml.load(frontMatterMatch[1]) || {} : {};
+    const body = content
+      .substring(frontMatterMatch ? frontMatterMatch[0].length : 0)
+      .replace(/<!--[\s\S]*?-->/g, "")
+      .trim();
+    const include = body.match(/^--8<-- "\.\.\/([^"]+)"$/);
+    return { frontMatter, sourcePath: include ? include[1] : `docs/${target}` };
   }
 
   truncateReadme() {
@@ -467,6 +615,11 @@ class SfdxHardisBuilder {
 }
 
 (async () => {
+  // node build.cjs --llms-txt: only docs/llms.txt (yarn build:llms-txt)
+  if (process.argv.includes("--llms-txt")) {
+    new SfdxHardisBuilder().generateLlmsTxt();
+    return;
+  }
   await new SfdxHardisBuilder().run();
 })();
 

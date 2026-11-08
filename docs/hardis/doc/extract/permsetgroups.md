@@ -1,3 +1,7 @@
+---
+title: "hardis:doc:extract:permsetgroups - Generate project documentation"
+description: "Extracts and documents Salesforce Permission Set Groups and their assigned Permission Sets."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:doc:extract:permsetgroups
 

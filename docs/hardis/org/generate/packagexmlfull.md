@@ -1,3 +1,7 @@
+---
+title: "hardis:org:generate:packagexmlfull - Generate Full Org package.xml"
+description: "Generates a comprehensive package.xml file for a Salesforce org, including all metadata components, even managed ones."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:generate:packagexmlfull
 

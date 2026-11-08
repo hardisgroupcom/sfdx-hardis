@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:unusedusers - Detect unused Users in Salesforce"
+description: "Detects and reports on inactive or unused Salesforce user accounts, helping to optimize license usage and enhance security."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:unusedusers
 

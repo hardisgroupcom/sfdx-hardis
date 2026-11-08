@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:deployments - Analyze metadata deployments and validations"
+description: "Analyzes metadata deployments and validations by querying DeployRequest records via the Tooling API."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:deployments
 

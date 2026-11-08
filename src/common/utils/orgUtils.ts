@@ -872,7 +872,8 @@ export async function openOrgInBrowser(
   if (!url) {
     return;
   }
-  if (isCI || isContainerMode()) {
+  // NO_OPEN=true makes open() do nothing: show the link, or asking to open the org would do nothing
+  if (isCI || isContainerMode() || process.env.NO_OPEN === 'true') {
     // <copy> shows the link with a copy button in the VS Code UI. The line stays out of the log file.
     const displayedUrl = WebSocketClient.isAliveWithLwcUI() ? `<copy>${url}</copy>` : url;
     uxLog("action", commandThis, c.cyan(t('openOrgWithLink', { url: c.green(displayedUrl) })), { sensitive: true });

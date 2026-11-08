@@ -1,3 +1,7 @@
+---
+title: "hardis:project:clean:minimizeprofiles - Clean profiles of Permission Set attributes"
+description: "Removes all profile attributes that exist on Permission Sets"
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:clean:minimizeprofiles
 

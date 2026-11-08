@@ -1,3 +1,7 @@
+---
+title: "hardis:work:ws - WebSocket operations"
+description: "Performs technical operations related to WebSocket communication, primarily for internal use by the sfdx-hardis VS Code extension."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:work:ws
 

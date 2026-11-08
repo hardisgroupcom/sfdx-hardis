@@ -1,3 +1,7 @@
+---
+title: "hardis:doc:flow2markdown - Flow to Markdown"
+description: "Generates comprehensive Markdown documentation from a Salesforce Flow metadata file."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:doc:flow2markdown
 

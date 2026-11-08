@@ -1,3 +1,7 @@
+---
+title: "hardis:project:action:test-class:remove - Remove deployment Apex test class"
+description: "Removes one or more Apex test classes from the deployment test class list for the project configuration."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:action:test-class:remove
 

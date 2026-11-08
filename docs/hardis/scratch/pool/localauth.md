@@ -1,3 +1,7 @@
+---
+title: "hardis:scratch:pool:localauth - Authenticate locally to scratch org pool"
+description: "Authenticates a local user to the configured scratch org pool storage service, enabling them to fetch and manage scratch orgs from the pool."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:scratch:pool:localauth
 

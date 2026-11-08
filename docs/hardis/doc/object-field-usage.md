@@ -1,3 +1,7 @@
+---
+title: "hardis:doc:object-field-usage"
+description: "Analyzes how populated fields are for a specific Salesforce object."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:doc:object-field-usage
 

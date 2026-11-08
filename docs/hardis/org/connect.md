@@ -1,3 +1,7 @@
+---
+title: "hardis:org:connect - Connect to an org"
+description: "Connects to a Salesforce org without setting it as the default username, and optionally opens the org in a web browser."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:connect
 

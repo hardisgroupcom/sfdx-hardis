@@ -1,3 +1,7 @@
+---
+title: "hardis:scratch:snapshot:refresh - Refresh the scratch org snapshot of a branch"
+description: "Takes a Dev Hub org snapshot of a scratch org that holds the current commit of a major branch, so that Pull Request scratch orgs are created from it."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:scratch:snapshot:refresh
 

@@ -1,3 +1,7 @@
+---
+title: "hardis:org:files:export - Export files"
+description: "Exports file attachments (ContentVersion, Attachment) from a Salesforce org based on a predefined configuration."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:files:export
 

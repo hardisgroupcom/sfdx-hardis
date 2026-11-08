@@ -1,3 +1,7 @@
+---
+title: "hardis:project:clean:sensitive-metadatas - Clean Sensitive Metadatas"
+description: "Sensitive data like credentials and certificates are not supposed to be stored in Git, to avoid security breaches."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:clean:sensitive-metadatas
 

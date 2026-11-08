@@ -1,3 +1,7 @@
+---
+title: "hardis:project:replacement:update - Update replacement rule (Beta)"
+description: "Changes a replacement rule in one place (project config, branch config file or git provider issue)."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:replacement:update
 

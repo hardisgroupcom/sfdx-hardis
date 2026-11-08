@@ -1,3 +1,7 @@
+---
+title: "hardis:org:monitor:backup - Backup DX sources"
+description: "Retrieve sfdx sources in the context of a monitoring backup"
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:monitor:backup
 

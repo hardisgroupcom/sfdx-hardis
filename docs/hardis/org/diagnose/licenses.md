@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:licenses - List licenses subscribed and used in a Salesforce org"
+description: "Lists and analyzes User Licenses and Permission Set Licenses subscribed and used in a Salesforce org."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:licenses
 

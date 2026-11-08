@@ -1092,7 +1092,7 @@ Migrate ContentVersion, Attachment, and Note files:
 ## See Also
 
 - [SFDMU Documentation](https://help.sfdmu.com/): complete SFDMU reference
-- [Deployment actions](salesforce-devops-work-on-user-story-deployment-actions.md): all deployment action types
+- [Data deployment action](salesforce-devops-work-on-user-story-deployment-actions-data.md): import a workspace when a Pull Request is deployed
 - [Using sfdx-hardis with AI Coding Agents](salesforce-devops-agent-skills.md): other agent skills
 - [AI Agents Overview](salesforce-agentic-automation.md): all agent-compatible commands
 - [`hardis:org:data:export` command reference](hardis/org/data/export.md)

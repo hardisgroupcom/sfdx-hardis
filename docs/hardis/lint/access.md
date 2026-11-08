@@ -1,3 +1,7 @@
+---
+title: "hardis:lint:access - check permission access"
+description: "Checks if specified Salesforce metadata elements (Apex classes and custom fields) have at least one permission defined in any Permission Set or Profile."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:lint:access
 

@@ -1,3 +1,7 @@
+---
+title: "hardis:mdapi:deploy"
+description: "A wrapper command for Salesforce CLI's sf project deploy start (formerly sfdx force:mdapi:deploy), designed to assist with deployment error resolution."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:mdapi:deploy
 

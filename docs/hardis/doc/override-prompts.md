@@ -1,3 +1,7 @@
+---
+title: "hardis:doc:override-prompts - Override AI Prompt Templates"
+description: "Creates local override files for AI prompt templates and variables, allowing for customization of sfdx-hardis AI interactions."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:doc:override-prompts
 

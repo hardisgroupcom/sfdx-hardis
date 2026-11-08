@@ -1,3 +1,7 @@
+---
+title: "hardis:org:files:import - Import files"
+description: "This command facilitates the mass upload of files into Salesforce, allowing you to populate records with associated documents, images, or other file types. It's a crucial tool for data migration, content seeding, or synchronizing external file repositories with Salesforce."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:files:import
 

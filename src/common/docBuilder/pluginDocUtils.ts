@@ -64,7 +64,7 @@ export function getCommandDocRelativePath(commandId: string): string {
 export function listGeneratedCommandPages(docsRoot: string): GeneratedCommandPage[] {
   const pages: GeneratedCommandPage[] = [];
   for (const file of listMarkdownFiles(docsRoot)) {
-    const content = fs.readFileSync(file, 'utf8');
+    const content = removeFrontMatter(fs.readFileSync(file, 'utf8'));
     if (!content.startsWith(GENERATED_PLUGIN_DOC_HEADER_START)) {
       continue;
     }
@@ -79,7 +79,13 @@ export function listGeneratedCommandPages(docsRoot: string): GeneratedCommandPag
 
 // Markdown page of a single command
 export function buildCommandDocMarkdown(command: any): string {
-  const lines = [GENERATED_PLUGIN_DOC_HEADER];
+  const lines = [
+    buildFrontMatter(
+      command.title ? `${command.id} - ${command.title}` : command.id,
+      command.summary || getFirstParagraph(command.description || '') || command.title || command.id
+    ),
+    GENERATED_PLUGIN_DOC_HEADER,
+  ];
   // Title
   lines.push(`# ${command.id}`, '');
   // Description
@@ -114,7 +120,8 @@ export function buildIndexAndCommandsMarkdown(
   pjson: any,
   readme: string
 ): { indexMarkdown: string; commandsMarkdown: string } {
-  const lines = [GENERATED_PLUGIN_DOC_HEADER];
+  const pluginName = pjson.name || '';
+  const lines = [buildFrontMatter(pluginName, pjson.description || pluginName), GENERATED_PLUGIN_DOC_HEADER];
   let reusableReadmePartFound = false;
   // Try to find README content until auto-generated commands
   const limitStrings = ['## Commands', '## COMMANDS', '# Commands', '<!-- commands -->'];
@@ -131,7 +138,12 @@ export function buildIndexAndCommandsMarkdown(
   }
 
   // Build commands (for index.md and commands.md)
-  const cmdLines: string[] = [];
+  const cmdLines: string[] = [
+    buildFrontMatter(
+      `${pluginName} commands`,
+      `All the commands of ${pluginName}, grouped by topic, with a link to the page of each one.`
+    ),
+  ];
   lines.push('', '## Commands');
   cmdLines.push('# Commands');
   let currentSection = '';
@@ -190,6 +202,19 @@ export function getCommandTitle(command: any): string {
     .map((line: string) => line.trim())
     .find((line: string) => line !== '' && !line.startsWith('#') && !line.startsWith('<'));
   return firstTextLine || '';
+}
+
+/**
+ * Front matter of a generated page: the title and the meta description search engines show.
+ * The values are written as JSON strings, which YAML reads as double-quoted strings.
+ */
+export function buildFrontMatter(title: string, description: string): string {
+  return [
+    '---',
+    `title: ${JSON.stringify(title.replace(/\s+/g, ' ').trim())}`,
+    `description: ${JSON.stringify(toMetaDescription(description))}`,
+    '---',
+  ].join('\n');
 }
 
 // Row of the Parameters table for a flag, as oclif caches it
@@ -251,6 +276,86 @@ export function formatMarkdownTables(markdown: string): string {
     i = end;
   }
   return result.join('\n');
+}
+
+// A page that opens with a front matter block, without it
+function removeFrontMatter(content: string): string {
+  const match = content.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n/);
+  return match ? content.substring(match[0].length) : content;
+}
+
+/**
+ * First paragraph of prose of a command description: no heading, picture, HTML or list.
+ * A paragraph that ends with a colon announces a list: the items of that list follow it.
+ */
+function getFirstParagraph(markdown: string): string {
+  const paragraph: string[] = [];
+  const listItems: string[] = [];
+  let inCodeBlock = false;
+  let paragraphClosed = false;
+  for (const rawLine of markdown.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (/^(```|~~~)/.test(line)) {
+      inCodeBlock = !inCodeBlock;
+      paragraphClosed = paragraph.length > 0;
+      continue;
+    }
+    if (inCodeBlock) {
+      continue;
+    }
+    const listItem = line.match(/^(?:[-*+]|\d+\.) (.*)$/);
+    const announcesList = paragraph.length > 0 && paragraph[paragraph.length - 1].endsWith(':');
+    // Blank lines may separate the items of a list
+    if (announcesList && (listItem || line === '')) {
+      if (listItem) {
+        listItems.push(listItem[1]);
+      }
+      paragraphClosed = true;
+      continue;
+    }
+    if (line === '' || /^(#|<|!\[|\[!\[|[-*+] |\d+\. |\||>)/.test(line)) {
+      if (paragraph.length > 0) {
+        break;
+      }
+      continue;
+    }
+    // Prose after the list, or after a blank line or a code block, is another paragraph
+    if (listItems.length > 0 || paragraphClosed) {
+      break;
+    }
+    paragraph.push(line);
+  }
+  return listItems.length > 0 ? `${paragraph.join(' ')} ${listItems.join(', ')}` : paragraph.join(' ');
+}
+
+/**
+ * Plain text of at most 300 characters, cut at a word: a meta description shows no Markdown.
+ * Inline code keeps its text as it is (`--name <orgName>`, `MyObject__c`).
+ */
+function toMetaDescription(markdown: string): string {
+  const text = markdown
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    // Odd parts are the inline code spans
+    .split(/`([^`]*)`/)
+    .map((part, index) =>
+      index % 2 === 1
+        ? part
+        : part
+            .replace(/<[^>]+>/g, '')
+            .replace(/\*\*/g, '')
+            .replace(/(^|[^\w])__([^_]+)__(?=[^\w]|$)/g, '$1$2')
+            .replace(/(^|\s)_([^_]+)_(?=\s|$|[.,;:)])/g, '$1$2')
+    )
+    .join('')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (text.length <= 300) {
+    return text;
+  }
+  // A text without any space to cut at is cut at the limit
+  const cutIndex = text.lastIndexOf(' ', 297);
+  return text.substring(0, cutIndex > 0 ? cutIndex : 297).replace(/[\s,;:.]+$/, '') + '...';
 }
 
 function escapeRegex(text: string): string {

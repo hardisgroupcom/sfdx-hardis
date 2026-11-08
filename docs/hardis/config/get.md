@@ -1,3 +1,7 @@
+---
+title: "hardis:config:get - Deploy metadata sources to org"
+description: "Retrieves and displays the sfdx-hardis configuration for a specified level."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:config:get
 

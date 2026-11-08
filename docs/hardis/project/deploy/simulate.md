@@ -1,3 +1,7 @@
+---
+title: "hardis:project:deploy:simulate - Simulate the deployment of metadata in an org prompted to the user. Used by VS Code extension."
+description: "Simulates the deployment of Salesforce metadata to a target org, primarily used by the VS Code Extension for quick validation."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:deploy:simulate
 

@@ -1,3 +1,7 @@
+---
+title: "hardis:auth:login - Login"
+description: "Authenticates to a Salesforce org, primarily designed for CI/CD workflows."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:auth:login
 

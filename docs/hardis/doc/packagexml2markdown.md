@@ -1,3 +1,7 @@
+---
+title: "hardis:doc:packagexml2markdown - PackageXml to Markdown"
+description: "Generates a Markdown documentation file from a Salesforce package.xml file."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:doc:packagexml2markdown
 

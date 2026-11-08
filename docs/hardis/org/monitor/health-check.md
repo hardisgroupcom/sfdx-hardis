@@ -1,3 +1,7 @@
+---
+title: "hardis:org:monitor:health-check - Check org security health"
+description: "Retrieves the Salesforce Security Health Check score together with every risk indicator, then exports the dataset for monitoring dashboards."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:monitor:health-check
 

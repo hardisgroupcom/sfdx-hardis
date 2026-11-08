@@ -1,3 +1,7 @@
+---
+title: "hardis:scratch:create - Create and initialize scratch org"
+description: "Creates and fully initializes a Salesforce scratch org with complete development environment setup."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:scratch:create
 

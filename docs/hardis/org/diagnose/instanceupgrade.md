@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:instanceupgrade - Get Instance Upgrade date"
+description: "Retrieves and displays the scheduled upgrade date for a Salesforce org's instance."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:instanceupgrade
 

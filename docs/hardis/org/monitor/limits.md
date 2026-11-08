@@ -1,3 +1,7 @@
+---
+title: "hardis:org:monitor:limits - Check org limits"
+description: "Checks the current usage of various Salesforce org limits and sends notifications if thresholds are exceeded."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:monitor:limits
 

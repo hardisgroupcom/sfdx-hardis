@@ -1,3 +1,7 @@
+---
+title: "hardis:project:generate:bypass"
+description: "Generates custom permissions and permission sets to bypass specified Salesforce automations (Flows, Triggers, and Validation Rules) for specific sObjects, with optional automatic implementation of bypass logic."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:generate:bypass
 

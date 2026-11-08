@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:ai-usage - Check Agentforce and Data 360 credit usage"
+description: "Breaks down Agentforce and Data 360 credit consumption by agent and action."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:ai-usage
 

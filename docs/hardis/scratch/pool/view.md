@@ -1,3 +1,7 @@
+---
+title: "hardis:scratch:pool:view - View scratch org pool info"
+description: "Displays information about the configured scratch org pool, including its current state and available scratch orgs."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:scratch:pool:view
 

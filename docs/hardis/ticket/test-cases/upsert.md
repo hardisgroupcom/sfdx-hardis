@@ -1,3 +1,7 @@
+---
+title: "hardis:ticket:test-cases:upsert - Upsert the test cases of a ticket"
+description: "Sends the test cases of a notebook to Azure DevOps, ServiceNow Test Management or Xray Cloud, creating the missing ones and updating the others."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:ticket:test-cases:upsert
 

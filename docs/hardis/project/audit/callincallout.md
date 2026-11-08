@@ -1,3 +1,7 @@
+---
+title: "hardis:project:audit:callincallout - Audit CallIns and CallOuts"
+description: "Audits Apex classes for inbound (Call-In) and outbound (Call-Out) API calls, providing insights into integration points."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:audit:callincallout
 

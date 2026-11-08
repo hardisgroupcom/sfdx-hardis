@@ -1,3 +1,7 @@
+---
+title: "hardis:scratch:pull - Scratch PULL"
+description: "Pulls metadata changes from your scratch org or source-tracked sandbox into your local project files."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:scratch:pull
 

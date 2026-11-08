@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:releaseupdates - Check Release Updates of an org"
+description: "Export Release Updates into a CSV file with selected criteria, and highlight Release Updates that should be checked."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:releaseupdates
 

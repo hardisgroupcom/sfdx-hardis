@@ -1,3 +1,7 @@
+---
+title: "Install sfdx-hardis"
+description: "Install sfdx-hardis with the VS Code extension (recommended), as a Salesforce CLI plugin, or run it in CI/CD with a Docker image."
+---
 ### Which installation do I need?
 
 There are three ways to install sfdx-hardis, and you only need one of them.

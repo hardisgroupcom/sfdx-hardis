@@ -1,3 +1,7 @@
+---
+title: "hardis:org:purge:flow - Purge Flow versions"
+description: "Purges old or unwanted Flow versions from a Salesforce org, with an option to delete related Flow Interviews."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:purge:flow
 

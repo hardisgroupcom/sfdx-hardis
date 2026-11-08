@@ -1,3 +1,7 @@
+---
+title: "hardis:project:fix:v53flexipages - Fix flexipages for v53"
+description: "Fixes Salesforce FlexiPages for compatibility with API Version 53.0 (Winter '22 release) by adding missing identifiers to component instances."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:fix:v53flexipages
 

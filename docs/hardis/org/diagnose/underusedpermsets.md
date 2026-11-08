@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:underusedpermsets - Detect underused Permission Sets"
+description: "Detects Permission Sets and Permission Set Groups that are assigned to zero users or to a configurable low number of users."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:underusedpermsets
 

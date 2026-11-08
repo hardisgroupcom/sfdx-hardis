@@ -1,3 +1,7 @@
+---
+title: "hardis:org:configure:generic-prompt - Configure Generic Prompt Template"
+description: "Deploys the SfdxHardisGenericPrompt GenAiPromptTemplate metadata to a Salesforce org, enabling AI prompt integration via sfdx-hardis."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:configure:generic-prompt
 
