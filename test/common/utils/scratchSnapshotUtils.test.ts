@@ -10,6 +10,7 @@ import { parsePackageXmlFile } from '../../../src/common/utils/xmlUtils.js';
 import { clearListMajorOrgsCache } from '../../../src/common/utils/orgConfigUtils.js';
 import { getConfig } from '../../../src/config/index.js';
 import { t } from '../../../src/common/utils/i18n.js';
+import { WebSocketClient } from '../../../src/common/websocketClient.js';
 
 const shaNew = 'a'.repeat(40);
 const shaOld = 'b'.repeat(40);
@@ -649,10 +650,21 @@ describe('isScratchSnapshotBranch', () => {
 
   it('answers false with a warning instead of throwing when the config of another branch is not valid YAML, so a pool refresh goes on', async () => {
     fs.writeFileSync(path.join(projectDir, 'config', 'branches', '.sfdx-hardis.uat.yml'), 'key: [unclosed\n  other: : :\n');
-    const logs: string[] = [];
-    expect(await isScratchSnapshotBranch('main', { ux: { log: (text: string) => logs.push(text) } })).to.equal(false);
+    // The level only reaches the VS Code log channel: record what it is sent
+    const sent: Array<{ text: string; logType?: string }> = [];
+    const { isAlive, sendCommandLogLineMessage } = WebSocketClient;
+    WebSocketClient.isAlive = () => true;
+    WebSocketClient.sendCommandLogLineMessage = (text: string, logType?: any) => {
+      sent.push({ text, logType });
+    };
+    try {
+      expect(await isScratchSnapshotBranch('main', { ux: { log: () => undefined } })).to.equal(false);
+    } finally {
+      WebSocketClient.isAlive = isAlive;
+      WebSocketClient.sendCommandLogLineMessage = sendCommandLogLineMessage;
+    }
     const expected = t('scratchSnapshotSettingUnread', { branch: 'main', message: '@@' }).split('@@')[0];
-    expect(logs.some((line) => line.includes(expected))).to.equal(true);
+    expect(sent.filter((line) => line.text.includes(expected)).map((line) => line.logType)).to.deep.equal(['warning']);
   });
 });
 
