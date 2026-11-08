@@ -1,4 +1,4 @@
-import { ActionsProvider, ActionResult, PrePostCommand, buildActionOutput } from './actionsProvider.js';
+import { ActionsProvider, ActionResult, PrePostCommand, buildActionOutput, ActionParameterDescription } from './actionsProvider.js';
 import { execCommand, uxLog } from '../utils/index.js';
 import fs from '../utils/fsUtils.js';
 import c from 'chalk';
@@ -7,6 +7,12 @@ import { normalizeIdentityPath } from '../utils/deploymentActionIdentityUtils.js
 export class ApexAction extends ActionsProvider {
   public getLabel(): string {
     return 'ApexAction';
+  }
+
+  public getParameterDescriptions(): ActionParameterDescription[] {
+    return [
+      { name: 'apexScript', path: 'parameters.apexScript', flag: 'apex-script', type: 'string', required: true, description: 'Path of the anonymous Apex script to run, relative to the root of the repository' },
+    ];
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

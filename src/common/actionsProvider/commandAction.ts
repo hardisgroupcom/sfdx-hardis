@@ -1,4 +1,4 @@
-import { ActionsProvider, ActionResult, PrePostCommand, buildActionOutput } from './actionsProvider.js';
+import { ActionsProvider, ActionResult, PrePostCommand, buildActionOutput, ActionParameterDescription } from './actionsProvider.js';
 import { execCommand, getCurrentGitBranch, isCI, uxLog } from '../utils/index.js';
 import { AuthOrgOptions, authOrg, safeDeleteAuthTempFile } from '../utils/authUtils.js';
 import { GitProvider } from '../gitProvider/index.js';
@@ -19,6 +19,12 @@ export function commandNeedsCertKeepAlive(command: string): boolean {
 export class CommandAction extends ActionsProvider {
   public getLabel(): string {
     return 'CommandAction';
+  }
+
+  public getParameterDescriptions(): ActionParameterDescription[] {
+    return [
+      { name: 'command', path: 'command', flag: 'command', type: 'string', required: true, description: 'Shell command to run, from the root of the repository' },
+    ];
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

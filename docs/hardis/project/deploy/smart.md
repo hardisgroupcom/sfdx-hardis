@@ -45,7 +45,9 @@ If you want to force the delta deployment into major orgs (ex: preprod to prod),
 
 ### Agentforce agents
 
-The running user of a service agent (`botUser`, `default_agent_user`) is a user of the target org: the built-in replacement rule `builtin-agent-running-user` writes it in the deployed files. It never creates a user: an `agent-running-user` deployment action does.
+The authoring bundle of an agent is deployed like any other metadata, which creates no agent version. An `agent-publish` deployment action publishes it after the deployment, and activates the version this creates in the target org.
+
+The running user of a service agent (`default_agent_user`) is a user of the target org: the built-in replacement rule `builtin-agent-running-user` writes it in the deployed files. It never creates a user: an `agent-running-user` deployment action does.
 
 See [Agentforce agents in CI/CD](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-agentforce-agents/).
 
@@ -416,6 +418,10 @@ sf hardis:project:deploy:smart --check --major-branch-check
 - No Pull Request is read: the last merged one is not commented, and its deployment actions are not run. Pre and post deployment actions are skipped, since they already ran when the branch was deployed.
 
 The default CI/CD templates hold this job, ready to be scheduled. With `enableMajorBranchDeploymentCheck: true` in `config/.sfdx-hardis.yml`, the DevOps Pipeline of the VS Code extension colors each major branch with the result of its last check. [More info](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-major-branch-check/)
+
+### Development orgs list
+
+After a deployment that follows a merge, the Pull Requests merged into the branch are listed again for the [development orgs](https://sfdx-hardis.cloudity.com/salesforce-devops-dev-orgs/) that target it, so their owners know when to run a backpromote. When no development org was ever registered, this costs one call to the git provider and nothing else. An error there never fails the deployment.
 
 ### Agent Mode
 

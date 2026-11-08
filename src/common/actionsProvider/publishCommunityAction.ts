@@ -1,10 +1,16 @@
-import { ActionsProvider, ActionResult, PrePostCommand, buildActionOutput } from './actionsProvider.js';
+import { ActionsProvider, ActionResult, PrePostCommand, buildActionOutput, ActionParameterDescription } from './actionsProvider.js';
 import { execCommand, uxLog } from '../utils/index.js';
 import c from 'chalk';
 
 export class PublishCommunityAction extends ActionsProvider {
   public getLabel(): string {
     return 'PublishCommunityAction';
+  }
+
+  public getParameterDescriptions(): ActionParameterDescription[] {
+    return [
+      { name: 'communityName', path: 'parameters.communityName', flag: 'community-name', type: 'string', required: true, description: 'Name of the Experience Cloud site to publish' },
+    ];
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

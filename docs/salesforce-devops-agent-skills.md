@@ -434,7 +434,7 @@ Deployment actions are pre- or post-deployment steps stored in YAML config files
 | `branch`  | `config/branches/.sfdx-hardis.<branch>.yml` |
 | `pr`      | `scripts/actions/.sfdx-hardis.<prId>.yml`   |
 
-Nine built-in action types are available, plus the [custom functions](salesforce-devops-work-on-user-story-custom-functions.md) of the project:
+Ten built-in action types are available, plus the [custom functions](salesforce-devops-work-on-user-story-custom-functions.md) of the project:
 
 | Type                      | Required parameters                           |
 |---------------------------|-----------------------------------------------|
@@ -448,12 +448,16 @@ Nine built-in action types are available, plus the [custom functions](salesforce
 | `remove-packagexml-items` | `--packagexml-items`                          |
 | `user-access-policy`      | `--policies`                                  |
 | `agent-activate`          | `--agent-name`                                |
+| `browser`                 | `--browser-setting`, `--browser-config`       |
 | Id of a custom function   | `--function-input name=value`, once per input |
+
+`sf hardis:project:action:types --json` describes each type: its phases, its default context, and every parameter with its flag, type and default. For a `browser` action, `--type browser` lists the [Browserforce](https://github.com/amtrack/sfdx-browserforce-plugin) settings, and `--type browser --browser-setting <key>` gives the fields, JSON Schema and examples of one setting: read it before writing `--browser-config`.
 
 An agent works with these commands in three ways:
 
 | Need                                                             | Commands                                                            |
 |------------------------------------------------------------------|---------------------------------------------------------------------|
+| Know which types exist and what each one expects                 | `action:types`                                                      |
 | Write the actions of a User Story                                | `action:create`, `update`, `delete`, `reorder`, `link-pull-request` |
 | Know what ran, in which org, and what the next promotion will do | `action:list --with-status`                                         |
 | Try the actions before the merge, or recover a failed one        | `action:run`, `action:set-status`, `action:update --move-to-pr`     |
@@ -585,14 +589,17 @@ Plus the type-specific flags of the table above.
 | `--wait-timeout`                 | `60`                      | For `run-batch` in `wait` mode: minutes to wait for the job                                                                               |
 | `--success-even-if-batch-errors` | `false`                   | For `run-batch` in `wait` mode: keep the action successful when the job completes with batches in error                                   |
 | `--activate`                     | `true`                    | For `user-access-policy`: activate the policies. `--no-activate` to only apply them                                                       |
-| `--apply-to-all`                 | `false`                   | For `user-access-policy`: also run Apply To All for each policy, from the Setup page in a headless Chrome                                 |
+| `--apply-to-all`                 | `false`                   | For `user-access-policy`: also run Apply To All for each policy, with Browserforce                                                        |
 | `--agent-version`                | `latest`                  | For `agent-activate`: version number to activate, or `latest` for the highest version in the target org                                   |
+| `--browser-setting`              |                           | For `browser`: key of the Browserforce setting (`sf hardis:project:action:types --type browser`)                                          |
+| `--browser-config`               |                           | For `browser`: value of the setting, as JSON or the path of a `.json` file. `"${VARIABLE}"` reads a CI/CD variable                        |
 
 Things to know:
 
 - Without `--include-target-branches` or `--exclude-target-branches`, the action runs on every target branch. The virtual name `dev-sandboxes` matches any target that is not a major branch: a developer sandbox reached by a backpromote, or a local deployment from a feature branch.
 - A `run-batch` action only runs in the `process-deployment-only` context, never during a deployment check.
 - A `user-access-policy` action is `post-deploy` only and runs in the `process-deployment-only` context. `--run-only-once-by-org` defaults to `false` for it, because each deployment of a policy turns it off again.
+- A `browser` action defaults to the `all` context: the deployment check only reports what would change, the deployment applies it. An invalid `--browser-config` fails with the fields and an example of the setting in the `data` of the `--json` error. Once saved, `typeDetails.environmentVariables` lists the CI/CD variables to declare for each major branch: tell the user to create them.
 - A `manual` action declared `pre-deploy` is listed by the deployment check whatever its context, since it has to be done before the merge.
 - For `schedule-batch` and `run-batch`, write a global class of a managed package with its namespace: `ns.ClassName`.
 
@@ -850,6 +857,14 @@ user-invocable: true
 Use the commands below to manage deployment actions. Always list first to understand the current state.
 Never write an action id by hand: `action:create` generates it, `action:list --json` returns it.
 
+## Know what each action type expects
+
+```bash
+sf hardis:project:action:types --json
+sf hardis:project:action:types --type browser --json
+sf hardis:project:action:types --type browser --browser-setting <key> --json
+```
+
 ## List actions
 
 ```bash
@@ -868,13 +883,14 @@ sf hardis:project:action:list --agent --with-status --pr-ids <id1,id2|draft> --j
 ```bash
 sf hardis:project:action:create --agent \
   --scope <project|branch|pr> --when <pre-deploy|post-deploy> \
-  --type <command|apex|data|publish-community|manual|schedule-batch|run-batch|remove-packagexml-items|user-access-policy|custom function id> \
+  --type <command|apex|data|publish-community|manual|schedule-batch|run-batch|remove-packagexml-items|user-access-policy|browser|custom function id> \
   --label "<label>" \
   [--command "<cmd>"] [--apex-script <path>] [--sfdmu-project <name>] \
   [--community-name <name>] [--instructions "<text>"] \
   [--class-name <ClassName>] [--cron-expression "<expr>"] [--job-name <name>] \
   [--run-mode wait|no-wait] [--batch-size <n>] [--wait-timeout <minutes>] [--success-even-if-batch-errors] \
   [--policies "<Policy1,Policy2>"] [--no-activate] [--apply-to-all] \
+  [--browser-setting <key>] [--browser-config '<json>' | <file.json>] \
   [--packagexml-items "<Type:Member1,Member2;Type2:Member3>"] \
   [--function-input <name>=<value>] \
   [--pr-id <id>] [--context all|check-deployment-only|process-deployment-only] \

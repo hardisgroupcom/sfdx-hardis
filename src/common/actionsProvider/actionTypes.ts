@@ -15,6 +15,7 @@ export const DEPLOYMENT_ACTION_TYPES = [
   'agent-activate',
   'agent-publish',
   'agent-running-user',
+  'browser',
 ] as const;
 
 /**

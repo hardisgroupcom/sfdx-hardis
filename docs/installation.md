@@ -111,6 +111,7 @@ For advanced use, please also install dependencies
 sf plugins install @salesforce/plugin-packaging
 sf plugins install sfdx-git-delta
 sf plugins install sfdmu
+sf plugins install sfdx-browserforce-plugin
 ```
 
 If you are using CI/CD scripts, use `echo y | sf plugins install ...` to bypass prompt.

@@ -26,8 +26,9 @@ The CI harness comes from the [promotion-branches scenario](../promotion-branche
 
 - `gh auth login` with an account that can create private repositories.
 - A connected Dev Hub (`DEVHUB`, default `DevHub`) with one free scratch org.
-- The branch under test pushed to `hardisgroupcom/sfdx-hardis`, with the `user-access-policy` action
-  type (sfdx-hardis 8.20.0 or later).
+- The branch under test pushed to `hardisgroupcom/sfdx-hardis`, with the `browser` action type, and a
+  released Browserforce (sfdx-browserforce-plugin 7.0.0 or later: `plugins list`, `apply --json` changes,
+  `applyToAll`), which the CI image installs.
 - `node bin/dev.js` works in this working copy (`yarn install` done): the actions are created with it.
 
 ## Run it
@@ -49,16 +50,16 @@ deployment job left it: replay it before `rerun`, never after (the rerun resets 
 
 ## What each step proves
 
-| Step            | Proves                                                                                                                                                                                                                                                                                                                      |
-|-----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `org`           | The scratch org exists with User Access Policies on, the policy and its permission set deployed (the policy lands in Design), a Chatter Free `da-e2e-user` user. Before each deployment: the policy is Active, the users lost the permission set, the test accounts and scheduled job are gone.                             |
-| `repo`          | The sample project, the CI workflows of the branch under test, a private repository with `main integration uat preprod`, the logins.                                                                                                                                                                                        |
-| `pr`            | A Pull Request to `integration`; `action:create --agent` creates `command` and `remove-packagexml-items` before the deployment, `apex`, `run-batch`, `schedule-batch`, `user-access-policy` (Apply To All) and `manual` after it; a policy action before the deployment and a run-batch flag on an apex action are refused. |
-| `check`         | The validation job runs the `context: all` actions (command, package.xml removal), never a deployment-only one (no policy activation, no Apply To All, no project command); every action is in the Pull Request comment.                                                                                                    |
-| `deploy`        | Merge, the deployment job succeeds.                                                                                                                                                                                                                                                                                         |
-| `assert-deploy` | The deployment reset the policy and the action activated it; Apply To All ran in the CI container (new `UserAccessChange`, permission set given back); the Apex script created an account the batch updated; the job is scheduled; the removed class is not in the org; the manual step is in the comments, nothing failed. |
-| `rerun`         | The deployment job run again: the actions with `runOnlyOnceByOrg` are skipped as already run, both policy actions run again (the project one has no `runOnlyOnceByOrg` key: its type runs at every deployment, while the project command without the key is skipped), the Apex script does not run twice.                   |
-| `report`        | `$LOGS/report.md`.                                                                                                                                                                                                                                                                                                          |
+| Step            | Proves                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+|-----------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `org`           | The scratch org exists with User Access Policies on, the policy and its permission set deployed (the policy lands in Design), a Chatter Free `da-e2e-user` user. Before each deployment: the policy is Active, the users lost the permission set, the test accounts and scheduled job are gone.                                                                                                                                                                                                                        |
+| `repo`          | The sample project, the CI workflows of the branch under test (with `DA_E2E_DENSITY_INTEGRATION` in their `env`), a private repository with `main integration uat preprod`, the logins, the secret `DA_E2E_DENSITY_INTEGRATION`.                                                                                                                                                                                                                                                                                       |
+| `pr`            | A Pull Request to `integration`; `action:create --agent` creates `command` and `remove-packagexml-items` before the deployment, `apex`, `run-batch`, `schedule-batch`, `user-access-policy` (Apply To All), `browser` (`densitySettings`, its value read from `${DA_E2E_DENSITY}`) and `manual` after it; a policy action before the deployment and a run-batch flag on an apex action are refused.                                                                                                                    |
+| `check`         | The validation job runs the `context: all` actions (command, package.xml removal, the browser action as a dry run that changes nothing), never a deployment-only one (no policy activation, no Apply To All, no project command); every action is in the Pull Request comment.                                                                                                                                                                                                                                         |
+| `deploy`        | Merge, the deployment job succeeds.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `assert-deploy` | The deployment reset the policy and Browserforce activated it; the browser action applied `densitySettings` with the value of `DA_E2E_DENSITY_INTEGRATION`, although the validation job ran it as a dry run (a dry run never counts as run in the org); Apply To All ran in the CI container (new `UserAccessChange`, permission set given back); the Apex script created an account the batch updated; the job is scheduled; the removed class is not in the org; the manual step is in the comments, nothing failed. |
+| `rerun`         | The deployment job run again: the actions with `runOnlyOnceByOrg` are skipped as already run, both policy actions run again (the project one has no `runOnlyOnceByOrg` key: its type runs at every deployment, while the project command without the key is skipped), the Apex script does not run twice.                                                                                                                                                                                                              |
+| `report`        | `$LOGS/report.md`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 
 Not covered: `data` (SFDMU is not in the CI job) and `publish-community` (needs an Experience site).
 
@@ -69,7 +70,8 @@ Not covered: `data` (SFDMU is not in the CI job) and `publish-community` (needs 
   cancels, and the step then waits on a cancelled run.
 - A `context: all` action with `runOnlyOnceByOrg: true` that the validation job ran counts as done in
   the org branch: the deployment job skips it as already run. That is expected.
-- Apply To All needs Chrome: the `sfdx-hardis-ubuntu` image of the CI job has it.
+- Apply To All and the browser action need Chrome: the `sfdx-hardis-ubuntu` image of the CI job has it, and sets `CHROME_BIN` for Browserforce.
+- A new scratch org may already use the Compact density: the checks accept "already matches the org" as well as a change.
 - The job `E2EBatch_Schedule` holds the class `E2EBatch`: while it waits, Salesforce refuses a new
   deployment of the class ("allowing deployments with Apex jobs"). The reset before each job aborts it.
 - The reset runs two anonymous Apex scripts, data then permission set assignments: in one transaction
@@ -77,6 +79,13 @@ Not covered: `data` (SFDMU is not in the CI job) and `publish-community` (needs 
   A reset that fails stops the run.
 - A Dev Hub at its active scratch org limit fails the `org` step with `LIMIT_EXCEEDED`: delete a
   throwaway scratch org, or pass another `DEVHUB`.
+- A scratch org kept from a previous run has source tracking: the deployments of that run show as
+  conflicts (`SourceConflictError`) when the `org` step deploys the base project again. That deploy
+  passes `--ignore-conflicts`, it only puts the base project back.
+- The browser action and Apply To All need a Browserforce with `apply --json` and `applyToAll`: until
+  that release is published, run with `E2E_BROWSERFORCE_BRANCH` (and `E2E_BROWSERFORCE_REPO` for a
+  fork) so every CI job links that branch, and link it locally too (`sf plugins link <clone>`):
+  `action:create --agent --type browser` checks the value with it.
 - A query that fails makes its check FAIL with the query, never a count of 0: an empty org and an
   unreadable one must not look the same.
 - The validation comment already lists the manual step: the deployment comment is checked by the

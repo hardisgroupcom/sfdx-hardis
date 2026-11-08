@@ -1,5 +1,5 @@
 import { Connection } from '@salesforce/core';
-import { ActionsProvider, ActionResult, PrePostCommand, buildActionOutput } from './actionsProvider.js';
+import { ActionsProvider, ActionResult, PrePostCommand, buildActionOutput, ActionParameterDescription } from './actionsProvider.js';
 import { createTempDir, execCommand, uxLog } from '../utils/index.js';
 import { soqlQuery, soqlQueryTooling } from '../utils/apiUtils.js';
 import { t } from '../utils/i18n.js';
@@ -20,6 +20,14 @@ export { HIDDEN_APEX_BODY, parseApexClassName, pickApexClassToSchedule };
 export class ScheduleBatchAction extends ActionsProvider {
   public getLabel(): string {
     return 'ScheduleBatchAction';
+  }
+
+  public getParameterDescriptions(): ActionParameterDescription[] {
+    return [
+      { name: 'className', path: 'parameters.className', flag: 'class-name', type: 'string', required: true, description: 'Apex class to schedule (implements Schedulable)' },
+      { name: 'cronExpression', path: 'parameters.cronExpression', flag: 'cron-expression', type: 'string', required: true, description: 'Salesforce cron expression of the schedule (ex: 0 0 2 * * ?)' },
+      { name: 'jobName', path: 'parameters.jobName', flag: 'job-name', type: 'string', required: false, description: 'Name of the scheduled job (default: <className>_Schedule)' },
+    ];
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

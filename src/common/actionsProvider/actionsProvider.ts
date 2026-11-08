@@ -24,6 +24,7 @@ export type BuiltInActionType =
   | 'agent-activate'
   | 'agent-publish'
   | 'agent-running-user'
+  | 'browser'
   // Org initialization steps only (orgInitSteps), never deployment actions
   | 'install-packages'
   | 'deploy-sources'
@@ -64,6 +65,8 @@ export interface PrePostCommand {
     packageXmlItems?: string[] | string; // for 'remove-packagexml-items' actions (each item: "TypeName:Member1,Member2"; a single string is accepted for a single entry)
     agentName?: string;      // for 'agent-activate', 'agent-publish' and 'agent-running-user' actions
     agentVersion?: string;   // for 'agent-activate' actions (optional, a version number or latest, defaults to latest)
+    setting?: string;        // for 'browser' actions: the Browserforce setting key (densitySettings...)
+    config?: any;            // for 'browser' actions: the value of that setting
     [key: string]: any;
   };
   command: string;
@@ -94,6 +97,21 @@ export interface PrePostCommand {
   orgInitContext?: OrgInitContext;
 }
 
+/** One field of an action definition, as hardis:project:action:types describes it. */
+export interface ActionParameterDescription {
+  // Name of the field
+  name: string;
+  // Where the field is stored in the action: 'parameters.<name>', or 'command' for a command action
+  path: string;
+  // Flag of hardis:project:action:create and update that sets it
+  flag?: string;
+  type: 'string' | 'string[]' | 'boolean' | 'integer' | 'json';
+  required: boolean;
+  default?: any;
+  enum?: string[];
+  description: string;
+}
+
 export type ActionResult = {
   // "not-run": the metadata deployment failed, so the action was never attempted.
   // Unlike "skipped", it is never persisted in the Deployment Actions PR comment state,
@@ -107,6 +125,10 @@ export type ActionResult = {
     | 'context-validation-only' | 'context-deployment-only' | 'stopped-by-failure' | 'deployment-failed';
   // Label of the failed action that stopped this one (stopped-by-failure)
   stoppedByLabel?: string;
+  // The action only read the org and reported what it would change (a deployment check): it is
+  // shown in the comment of this job, but never recorded as run in the org, so the deployment job
+  // after the merge still runs it
+  dryRun?: boolean;
   // The action of the same run that already did the work of this one (identical-action-already-run)
   identicalTo?: IdenticalActionRef;
   // Values a custom function returned on the last line of its stdout, consumable by later actions
@@ -195,6 +217,10 @@ export abstract class ActionsProvider {
       const AgentRunningUserAction = await import('./agentRunningUserAction.js');
       actionInstance = new AgentRunningUserAction.AgentRunningUserAction();
     }
+    else if (type === 'browser') {
+      const BrowserAction = await import('./browserAction.js');
+      actionInstance = new BrowserAction.BrowserAction();
+    }
     else if (type === 'install-packages') {
       const InstallPackagesAction = await import('./installPackagesAction.js');
       actionInstance = new InstallPackagesAction.InstallPackagesAction();
@@ -252,6 +278,26 @@ export abstract class ActionsProvider {
   }
 
   /**
+   * What an action of this type takes, for hardis:project:action:types: one entry per field the
+   * action definition holds, with the flag of hardis:project:action:create that sets it.
+   */
+  public getParameterDescriptions(): ActionParameterDescription[] {
+    return [];
+  }
+
+  /** Data only this type has, for hardis:project:action:types (flags of that command included) */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async describeTypeDetails(_flags: any): Promise<Record<string, any> | null> {
+    return null;
+  }
+
+  // Shows the details of describeTypeDetails in the terminal and the VS Code command runner
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async logTypeDetails(_details: Record<string, any>, _commandThis: any): Promise<void> {
+    return;
+  }
+
+  /**
    * Parameters of a new or edited action of this type, for hardis:project:action:create and update:
    * from the flags when headless, from prompts seeded with the current values otherwise.
    * null when the type does not collect its parameters itself.
@@ -270,9 +316,28 @@ export abstract class ActionsProvider {
   /**
    * Errors of an action definition of this type, as translated messages (empty when valid), checked
    * when the action is saved. null when the type is checked by the generic validation.
+   * `previous` is the action before an update, when there is one.
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public async getDefinitionErrors(_action: Partial<PrePostCommand>, _when?: ActionWhen): Promise<string[] | null> {
+  public async getDefinitionErrors(_action: Partial<PrePostCommand>, _when?: ActionWhen, _previous?: Partial<PrePostCommand>): Promise<string[] | null> {
+    return null;
+  }
+
+  /**
+   * What helps fixing an invalid definition of this type (expected format, example), returned with
+   * the validation error of hardis:project:action:create and update, so an agent can fix it in one try.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async getDefinitionHelp(_action: Partial<PrePostCommand>): Promise<Record<string, any> | null> {
+    return null;
+  }
+
+  /**
+   * What the user has to know once an action of this type is saved (variables to declare...),
+   * returned as typeDetails by hardis:project:action:create and update.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async getSaveDetails(_action: Partial<PrePostCommand>): Promise<Record<string, any> | null> {
     return null;
   }
 

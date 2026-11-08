@@ -1,6 +1,6 @@
 import { AuthInfo, Connection, SfError } from '@salesforce/core';
 import c from 'chalk';
-import { ActionsProvider, ActionResult, PrePostCommand } from './actionsProvider.js';
+import { ActionsProvider, ActionParameterDescription, ActionResult, PrePostCommand } from './actionsProvider.js';
 import { uxLog } from '../utils/index.js';
 import { t } from '../utils/i18n.js';
 
@@ -15,6 +15,12 @@ const AGENT_API_NAME_REGEX = /^[A-Za-z][A-Za-z0-9_]*$/;
 export abstract class AgentActionBase extends ActionsProvider {
   public getFlagNames(): string[] {
     return ['agent-name'];
+  }
+
+  public getParameterDescriptions(): ActionParameterDescription[] {
+    return [
+      { name: 'agentName', path: 'parameters.agentName', flag: 'agent-name', type: 'string', required: true, description: 'API name of the Agentforce agent' },
+    ];
   }
 
   public async collectParameters(flags: any, headless: boolean, current: PrePostCommand['parameters'] = {}): Promise<Record<string, any>> {

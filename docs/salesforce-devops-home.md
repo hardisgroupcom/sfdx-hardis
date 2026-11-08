@@ -71,7 +71,7 @@ The DevOps Pipeline panel of the VS Code extension guides contributors through t
 
 **Deployment actions**
 
-Deploying a User Story is not always just about metadata. With [deployment actions](salesforce-devops-work-on-user-story-deployment-actions.md), contributors declare on their Pull Request what must happen before or after the deployment: run a command, import data with SFDMU, run an Apex script, publish an Experience Cloud site, schedule an Apex batch, remove items from package.xml, or remind a human to do something in Setup. sfdx-hardis runs them in every org the User Story reaches, once per org, and tracks what has been done in a Pull Request comment.
+Deploying a User Story is not always just about metadata. With [deployment actions](salesforce-devops-work-on-user-story-deployment-actions.md), contributors declare on their Pull Request what must happen before or after the deployment: run a command, import data with SFDMU, run an Apex script, publish an Experience Cloud site, schedule an Apex batch, remove items from package.xml, apply a Setup setting with Browserforce, or remind a human to do something in Setup. sfdx-hardis runs them in every org the User Story reaches, once per org, and tracks what has been done in a Pull Request comment.
 
 ![Deployment actions of a Pull Request](assets/images/screenshot-pr-deployment-actions-list.jpg)
 

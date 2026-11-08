@@ -1,4 +1,4 @@
-import { ActionsProvider, ActionResult, PrePostCommand, buildActionOutput } from './actionsProvider.js';
+import { ActionsProvider, ActionResult, PrePostCommand, buildActionOutput, ActionParameterDescription } from './actionsProvider.js';
 import { uxLog } from '../utils/index.js';
 import c from 'chalk';
 import { normalizeIdentityPath } from '../utils/deploymentActionIdentityUtils.js';
@@ -7,6 +7,12 @@ import { importData, resolveDataWorkspacePath } from '../utils/dataUtils.js';
 export class DataAction extends ActionsProvider {
   public getLabel(): string {
     return 'DataAction';
+  }
+
+  public getParameterDescriptions(): ActionParameterDescription[] {
+    return [
+      { name: 'sfdmuProject', path: 'parameters.sfdmuProject', flag: 'sfdmu-project', type: 'string', required: true, description: 'Name or path of the SFDMU workspace to import (scripts/data/<name>)' },
+    ];
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

@@ -66,7 +66,11 @@ const fs = require('fs');
 const path = require('path');
 const env = require('./env-lib.cjs');
 
-env.loadEnv(['GITLAB_RUNNER_TAG', 'AZURE_E2E_CI_TOKEN', 'SFDX_HARDIS_IMAGE']);
+env.loadEnv(['GITLAB_RUNNER_TAG', 'AZURE_E2E_CI_TOKEN', 'SFDX_HARDIS_IMAGE', 'E2E_BROWSERFORCE_REPO', 'E2E_BROWSERFORCE_BRANCH']);
+// Browserforce built from a branch, linked after sfdx-hardis: a browser deployment action needs
+// features of a Browserforce release that may not be published yet. Both unset: the image's one.
+const BROWSERFORCE_REPO = process.env.E2E_BROWSERFORCE_REPO || 'https://github.com/amtrack/sfdx-browserforce-plugin.git';
+const BROWSERFORCE_BRANCH = process.env.E2E_BROWSERFORCE_BRANCH || '';
 const MAJOR_BRANCHES = ['INTEGRATION', 'UAT', 'PREPROD', 'MAIN'];
 const SFDX_HARDIS_REPO = 'https://github.com/hardisgroupcom/sfdx-hardis.git';
 const BITBUCKET_SCHEMA_URL = 'https://api.bitbucket.org/schemas/pipelines-configuration';
@@ -628,6 +632,17 @@ function linkCommands(sfdxHardisBranch, backTo, options = {}) {
     `${options.tscPrefix || ''}npx tsc -p . --pretty`,
     `${options.linkPrefix || ''}${LINK_MARKER} --no-install`,
     'git log --oneline -1',
+    ...(BROWSERFORCE_BRANCH
+      ? [
+          `git clone --depth 1 -b ${BROWSERFORCE_BRANCH} ${BROWSERFORCE_REPO} /tmp/sfdx-browserforce-plugin`,
+          'cd /tmp/sfdx-browserforce-plugin',
+          // Playwright downloads no browser at install: the jobs use the Chrome of the image
+          'npm ci --ignore-scripts --no-audit --no-fund',
+          'npx tsc -p . --pretty',
+          `${options.linkPrefix || ''}sf plugins link /tmp/sfdx-browserforce-plugin --no-install`,
+          'git log --oneline -1',
+        ]
+      : []),
     ...(backTo ? [`cd "${backTo}"`] : []),
     'sf plugins',
   ];

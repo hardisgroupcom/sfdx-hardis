@@ -347,6 +347,11 @@ export async function getGitRepoRoot() {
   return gitRepoRoot;
 }
 
+// The name of a branch as config files carry it: config/branches/.sfdx-hardis.<name>.yml
+export function formatBranchForConfig(branch: string): string {
+  return branch.replace('/', '__');
+}
+
 // Get local git branch name
 export async function getCurrentGitBranch(options: any = { formatted: false }) {
   if (!isGitRepo()) {
@@ -354,7 +359,7 @@ export async function getCurrentGitBranch(options: any = { formatted: false }) {
   }
   const gitBranch = process.env.FORCE_SOURCE_BRANCH || process.env.CI_COMMIT_REF_NAME || (await git().branchLocal()).current;
   if (options.formatted === true) {
-    return gitBranch.replace('/', '__');
+    return formatBranchForConfig(gitBranch);
   }
   return gitBranch;
 }

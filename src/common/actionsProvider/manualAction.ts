@@ -1,10 +1,16 @@
-import { ActionsProvider, ActionResult, PrePostCommand } from './actionsProvider.js';
+import { ActionsProvider, ActionResult, PrePostCommand, ActionParameterDescription } from './actionsProvider.js';
 import { uxLog } from '../utils/index.js';
 import c from 'chalk';
 
 export class ManualAction extends ActionsProvider {
   public getLabel(): string {
     return 'ManualAction';
+  }
+
+  public getParameterDescriptions(): ActionParameterDescription[] {
+    return [
+      { name: 'instructions', path: 'parameters.instructions', flag: 'instructions', type: 'string', required: true, description: 'What a person has to do by hand, in markdown' },
+    ];
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

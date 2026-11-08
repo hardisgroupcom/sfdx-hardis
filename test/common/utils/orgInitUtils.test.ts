@@ -10,6 +10,7 @@ import { resolveDataWorkspacePath } from '../../../src/common/utils/dataUtils.js
 import {
   assertOrgInitStepsValid,
   buildLegacyOrgInitSteps,
+  buildPoolOrgInit,
   checkOrgInitSteps,
   getOrgInitSteps,
   getScratchOrgDefHints,
@@ -462,6 +463,30 @@ describe('orgInitUtils', () => {
       const outcome = await runSingleDeploymentAction(cmd, ctx);
       expect(outcome).to.equal('definition-error');
       expect(cmd.result?.statusCode).to.equal('failed');
+    });
+  });
+
+  describe('buildPoolOrgInit', () => {
+    const head = { commit: 'c'.repeat(40), branch: 'integration' };
+    const deployed: any = { id: 'sources', type: 'deploy-sources', status: 'success' };
+
+    it('records HEAD for a pool org filled from a snapshot, which runs no deploy-sources step', () => {
+      const info = buildPoolOrgInit([], 'SH0000000000001', head);
+      expect(info.sourcesCommit).to.equal(head.commit);
+      expect(info.sourcesBranch).to.equal('integration');
+      expect(info.snapshotName).to.equal('SH0000000000001');
+    });
+
+    it('records HEAD when the deploy-sources step succeeded', () => {
+      const info = buildPoolOrgInit([deployed], null, head);
+      expect(info.sourcesCommit).to.equal(head.commit);
+      expect(info.snapshotName).to.equal(null);
+    });
+
+    it('records no commit when no sources were deployed', () => {
+      const info = buildPoolOrgInit([{ ...deployed, status: 'failed' }], null, head);
+      expect(info.sourcesCommit).to.equal(null);
+      expect(info.sourcesBranch).to.equal(null);
     });
   });
 });

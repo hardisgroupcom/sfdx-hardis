@@ -21,7 +21,7 @@ See [Agentforce agents in CI/CD](https://sfdx-hardis.cloudity.com/salesforce-ci-
 
 - **Changed agents:** the agents with a file under `aiAuthoringBundles/<Agent>/` in `git diff --name-only <commit>` or not tracked yet. The bundles of versions (`<Agent>_<n>`) are ignored. `<commit>` is `--delta-from` (passed by hardis:work:save), else `HEAD`: run by hand, the cleaning only handles the changes not committed yet.
 - **Actions file:** the Pull Request of the current branch is found with the git provider (`scripts/actions/.sfdx-hardis.<id>.yml`), else the actions go to `scripts/actions/.sfdx-hardis.draft.yml`, to link with [hardis:project:action:link-pull-request](https://sfdx-hardis.cloudity.com/hardis/project/action/link-pull-request/).
-- **Actions:** `agent-publish`, context `process-deployment-only`, `runOnlyOnceByOrg: true`, and `agent-running-user`, context `all`, `runOnlyOnceByOrg: false`: an existing user is found again. An action already there for the agent is kept as it is. The labels are in English, as they are committed.
+- **Actions:** `agent-publish`, context `process-deployment-only`, `runOnlyOnceByOrg: true`, and `agent-running-user`, context `all`, `runOnlyOnceByOrg: false`: an existing user is found again. An action already there for the agent is kept as it is, and a file with nothing to add is not written again. The labels are in English, as they are committed.
 </details>
 
 ### Agent Mode

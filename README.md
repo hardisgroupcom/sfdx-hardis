@@ -184,6 +184,7 @@ For advanced use, please also install dependencies
 sf plugins install @salesforce/plugin-packaging
 sf plugins install sfdx-git-delta
 sf plugins install sfdmu
+sf plugins install sfdx-browserforce-plugin
 ```
 
 If you are using CI/CD scripts, use `echo y | sf plugins install ...` to bypass prompt.
@@ -604,6 +605,7 @@ cd -
 
 - [SFDX Git Delta](https://github.com/scolladon/sfdx-git-delta)
 - [Salesforce Data Move Utility](https://github.com/forcedotcom/SFDX-Data-Move-Utility)
+- [Browserforce](https://github.com/amtrack/sfdx-browserforce-plugin)
 
 ## Contributors
 
@@ -628,6 +630,8 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 - [Taha Basri](https://www.linkedin.com/in/tahabasri/), for his work about generating documentation of LWC
 - [Anush Poudel](https://www.linkedin.com/in/anushpoudel/), for integrating sfdx-hardis with multiple LLMs using langchainJs
 - [Sebastien Colladon](https://www.linkedin.com/in/sebastien-colladon/), for providing sfdx-git-delta which is highly used within sfdx-hardis
+- [Haim Knokh](https://github.com/hknokh), for providing SFDMU (Salesforce Data Move Utility) which runs the data imports and exports of sfdx-hardis
+- [Matthias Rolke](https://github.com/amtrack), for providing Browserforce (sfdx-browserforce-plugin) which applies the Setup settings of browser deployment actions
 - [Stepan Stepanov](https://www.linkedin.com/in/stepan-stepanov-79a48734/), for implementing the deployment mode _delta with dependencies_
 - [Shamina Mossodeean](https://www.linkedin.com/in/shaminam/), for automating SF decomposed metadata
 - [Michael Havrilla](https://www.linkedin.com/in/%F0%9F%92%BB-michael-havrilla-69063036/), for the integration with Vector.dev allowing to provide monitoring logs to external systems like DataDog
@@ -667,6 +671,7 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 - [Hasnioui-Ysf](https://github.com/Hasnioui-Ysf), for the work on Permission Sets management
 - [Olivier Mulot](https://www.linkedin.com/in/olivier-m-aa6111124/), for the qualification and testing of the [sfdx-hardis DevOps trainings](https://sfdx-hardis-training.cloudity.com/)
 - [fkramer690](https://github.com/fkramer690), for the step template of the [sfdx-hardis training](https://sfdx-hardis-training.cloudity.com/) labs
+- [Dave Renald Saavedra](https://github.com/drsaavedra), for creating Pull Request scratch orgs from a snapshot of the target branch
 
 > Translations have been performed by GitHub Copilot with Claude Sonnet 4.6, then reviewed and arranged by real humans !
 

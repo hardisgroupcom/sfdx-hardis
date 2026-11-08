@@ -928,6 +928,7 @@
               "publish-community",
               "manual",
               "remove-packagexml-items",
+              "browser",
               "notifySlack"
             ],
             "anyOf": [
@@ -941,7 +942,8 @@
                   "publish-community",
                   "manual",
                   "remove-packagexml-items",
-                  "agent-running-user"
+                  "agent-running-user",
+                  "browser"
                 ],
                 "enumNames": [
                   "Command",
@@ -952,7 +954,8 @@
                   "Publish Community",
                   "Manual Action",
                   "Remove package.xml Items",
-                  "Create Agentforce Agent Running User"
+                  "Create Agentforce Agent Running User",
+                  "Browser (Browserforce)"
                 ]
               },
               {
@@ -1083,6 +1086,29 @@
                 "type": "string",
                 "examples": [
                   "My_Service_Agent"
+                ]
+              },
+              "setting": {
+                "$id": "#/properties/commandsPreDeploy/items/properties/parameters/setting",
+                "description": "For 'browser' actions: key of the Browserforce setting to apply (densitySettings, companyInformation...). List them with sf hardis:project:action:types --type browser",
+                "title": "Browserforce setting",
+                "type": "string",
+                "examples": [
+                  "densitySettings"
+                ]
+              },
+              "config": {
+                "$id": "#/properties/commandsPreDeploy/items/properties/parameters/config",
+                "description": "For 'browser' actions: value of the Browserforce setting. Write \"${VARIABLE}\" for a secret or a value that differs per org",
+                "title": "Browserforce setting value",
+                "type": [
+                  "object",
+                  "array"
+                ],
+                "examples": [
+                  {
+                    "density": "Compact"
+                  }
                 ]
               }
             },
@@ -1252,6 +1278,7 @@
               "manual",
               "user-access-policy",
               "agent-activate",
+              "browser",
               "notifySlack"
             ],
             "anyOf": [
@@ -1266,7 +1293,8 @@
                   "manual",
                   "user-access-policy",
                   "agent-activate",
-                  "agent-publish"
+                  "agent-publish",
+                  "browser"
                 ],
                 "enumNames": [
                   "Command",
@@ -1278,7 +1306,8 @@
                   "Manual Action",
                   "User Access Policy",
                   "Activate Agentforce Agent",
-                  "Publish Agentforce Agent"
+                  "Publish Agentforce Agent",
+                  "Browser (Browserforce)"
                 ]
               },
               {
@@ -1401,14 +1430,14 @@
               },
               "activate": {
                 "$id": "#/properties/commandsPostDeploy/items/properties/parameters/activate",
-                "description": "For 'user-access-policy' actions: activate the policies with the Salesforce API. A deployment always leaves them in Design status",
+                "description": "For 'user-access-policy' actions: activate the policies with Browserforce. A deployment always leaves them in Design status",
                 "title": "Activate",
                 "type": "boolean",
                 "default": true
               },
               "applyToAll": {
                 "$id": "#/properties/commandsPostDeploy/items/properties/parameters/applyToAll",
-                "description": "For 'user-access-policy' actions: also run Apply To All for each policy. Salesforce has no API for it, so sfdx-hardis clicks the button of the Setup page in a headless Chrome",
+                "description": "For 'user-access-policy' actions: also run Apply To All for each policy. Salesforce has no API for it, so Browserforce clicks the button of the Setup page in a headless browser",
                 "title": "Apply to all users",
                 "type": "boolean",
                 "default": false
@@ -1431,6 +1460,29 @@
                 "examples": [
                   "latest",
                   "3"
+                ]
+              },
+              "setting": {
+                "$id": "#/properties/commandsPostDeploy/items/properties/parameters/setting",
+                "description": "For 'browser' actions: key of the Browserforce setting to apply (densitySettings, companyInformation...). List them with sf hardis:project:action:types --type browser",
+                "title": "Browserforce setting",
+                "type": "string",
+                "examples": [
+                  "densitySettings"
+                ]
+              },
+              "config": {
+                "$id": "#/properties/commandsPostDeploy/items/properties/parameters/config",
+                "description": "For 'browser' actions: value of the Browserforce setting. Write \"${VARIABLE}\" for a secret or a value that differs per org",
+                "title": "Browserforce setting value",
+                "type": [
+                  "object",
+                  "array"
+                ],
+                "examples": [
+                  {
+                    "density": "Compact"
+                  }
                 ]
               }
             },
@@ -2459,6 +2511,18 @@
       "title": "Dev Hub Username",
       "type": "string"
     },
+    "devOrgsStaleDays": {
+      "$id": "#/properties/devOrgsStaleDays",
+      "default": 30,
+      "description": "Number of days without activity (User Story started or saved, backpromote) after which a development org is marked stale in the development orgs list. A stale org is never removed on its own: the release manager removes it.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-dev-orgs/",
+      "examples": [
+        30,
+        60
+      ],
+      "title": "Development orgs: days before stale",
+      "type": "integer"
+    },
     "disableDeploymentActions": {
       "$id": "#/properties/disableDeploymentActions",
       "default": false,
@@ -2520,6 +2584,17 @@
         false
       ],
       "title": "Enable delta deployments between major branches (NOT RECOMMENDED)",
+      "type": "boolean"
+    },
+    "enableDevOrgsRegistry": {
+      "$id": "#/properties/enableDevOrgsRegistry",
+      "default": true,
+      "description": "Keeps the list of the developer sandboxes and scratch orgs of the project in a \"Development Orgs Dashboard\" of the git provider, with the major branch each of them targets, so their owners know when to run a backpromote. sfdx-hardis registers an org when a User Story is started or saved in it, or when it receives a backpromote, and the deployment jobs of major branches count what each org misses. Set it to false to turn it off.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-dev-orgs/",
+      "examples": [
+        false
+      ],
+      "title": "Enable development orgs list",
       "type": "boolean"
     },
     "enableMajorBranchDeploymentCheck": {
@@ -4098,6 +4173,15 @@
       "title": "Scratch org shape",
       "type": "string"
     },
+    "scratchOrgSnapshotKeep": {
+      "$id": "#/properties/scratchOrgSnapshotKeep",
+      "default": 2,
+      "description": "Only in branch scoped config, with useScratchOrgSnapshot. Number of Active scratch org snapshots of the branch to keep. Pull Requests whose branch is behind the target branch can use an older snapshot, but every snapshot counts in the active snapshots allocation of the Dev Hub.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/hardis/scratch/snapshot/refresh/",
+      "title": "Scratch org snapshots to keep",
+      "type": "number",
+      "minimum": 1
+    },
     "sfdmuCanModify": {
       "$id": "#/properties/sfdmuCanModify",
       "default": "",
@@ -4658,6 +4742,14 @@
       "description": "Deploy with the Metadata REST API (default) instead of the SOAP Metadata API used by default by the Salesforce CLI. Set to false to deploy with SOAP. Equivalent of \"sf config set org-metadata-rest-deploy=true|false\", but applied only to the deployments started by sfdx-hardis, without modifying your sf configuration. Can also be set with env variable SFDX_HARDIS_USE_REST_DEPLOY=false.",
       "docUrl": "https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#metadata-rest-api",
       "title": "Deploy with Metadata REST API",
+      "type": "boolean"
+    },
+    "useScratchOrgSnapshot": {
+      "$id": "#/properties/useScratchOrgSnapshot",
+      "default": false,
+      "description": "Only in branch scoped config. Keep a scratch org snapshot of this branch, refreshed on every push by sf hardis:scratch:snapshot:refresh, and create the scratch orgs of Pull Requests to this branch from it: only what changed since the commit of the snapshot is deployed, instead of the full project. Requires Scratch Org Snapshots on the Dev Hub and USE_SCRATCH_ORGS=true in CI.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/hardis/scratch/snapshot/refresh/",
+      "title": "Use scratch org snapshots for Pull Requests",
       "type": "boolean"
     },
     "useSmartDeploymentTests": {
