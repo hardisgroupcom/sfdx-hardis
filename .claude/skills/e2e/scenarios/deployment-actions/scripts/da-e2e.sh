@@ -165,7 +165,7 @@ bootstrap_org() {
   WORK="$boot/project" bash "$HERE/da-build-project.sh" >>"$LOGS/build.log" 2>&1 || return 1
   cp "$boot/project/force-app/main/default/permissionsets/"* "$boot/force-app/main/default/permissionsets/"
   cp "$boot/project/force-app/main/default/useraccesspolicies/"* "$boot/force-app/main/default/useraccesspolicies/"
-  (cd "$boot" && sf project deploy start -d force-app -o "$ORG" -w 20 --json >"$LOGS/bootstrap-deploy.json" 2>&1) || return 1
+  (cd "$boot" && sf project deploy start -d force-app -o "$ORG" -w 20 --ignore-conflicts --json >"$LOGS/bootstrap-deploy.json" 2>&1) || return 1
   local users profile_id
   users=$(soql_count "SELECT COUNT() FROM User WHERE Username LIKE 'da-e2e-user%' AND IsActive = true")
   # A failed count is not "no user": creating one more would leave two

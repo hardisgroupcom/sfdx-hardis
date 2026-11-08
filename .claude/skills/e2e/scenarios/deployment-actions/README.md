@@ -79,6 +79,13 @@ Not covered: `data` (SFDMU is not in the CI job) and `publish-community` (needs 
   A reset that fails stops the run.
 - A Dev Hub at its active scratch org limit fails the `org` step with `LIMIT_EXCEEDED`: delete a
   throwaway scratch org, or pass another `DEVHUB`.
+- A scratch org kept from a previous run has source tracking: the deployments of that run show as
+  conflicts (`SourceConflictError`) when the `org` step deploys the base project again. That deploy
+  passes `--ignore-conflicts`, it only puts the base project back.
+- The browser action and Apply To All need a Browserforce with `apply --json` and `applyToAll`: until
+  that release is published, run with `E2E_BROWSERFORCE_BRANCH` (and `E2E_BROWSERFORCE_REPO` for a
+  fork) so every CI job links that branch, and link it locally too (`sf plugins link <clone>`):
+  `action:create --agent --type browser` checks the value with it.
 - A query that fails makes its check FAIL with the query, never a count of 0: an empty org and an
   unreadable one must not look the same.
 - The validation comment already lists the manual step: the deployment comment is checked by the
