@@ -223,6 +223,7 @@
   "agentRetrieveNoBundle": "Der Abruf hat kein Authoring Bundle für Version {{version}} des Agenten {{agentName}} geliefert: Nur eine aus einem Authoring Bundle veröffentlichte Version kann ausgeliefert werden. {{docUrl}}",
   "agentRunningUserActionWritten": "Der ausführende Benutzer von Agent {{agentName}} wird vor dem Deployment in jeder Org erstellt, die keinen hat: Aktion in {{file}} geschrieben.",
   "agentRunningUserAlreadyThere": "Agent {{agentName}} hat seinen ausführenden Benutzer {{username}} bereits in der Ziel-Org.",
+  "agentRunningUserCheckFailed": "Die ausführenden Benutzer der Agenten konnten nicht geprüft werden ({{message}}): Die Agentendateien behalten die Benutzernamen aus Git, und die anderen Ersetzungsregeln werden weiterhin angewendet.",
   "agentRunningUserCreated": "Ausführender Benutzer {{username}} von Agent {{agentName}} in der Ziel-Org erstellt.",
   "agentRunningUserCreating": "Der ausführende Benutzer von Agent {{agentName}} wird in der Ziel-Org erstellt (sf org create agent-user)...",
   "agentRunningUserCreationFailed": "Der ausführende Benutzer von Agent {{agentName}} konnte nicht erstellt werden: {{message}}",

@@ -35,36 +35,12 @@ export class AgentRunningUserBuiltInRule extends ReplacementRuleRoot {
     if (!this.rule.enabled) {
       return;
     }
-    const agents = await listAgentsWithRunningUser(options.packageXmlFiles);
-    if (agents.length === 0) {
-      return;
-    }
-    // A rule of the project writes the user for this target
-    if (hasOwnRunningUserRule(options.rules || [])) {
-      uxLog('log', options.commandThis, c.grey(t('agentRunningUserOwnRule')));
-      return;
-    }
-    const conn = await resolveConnection(options);
-    if (!conn) {
-      uxLog('log', options.commandThis, c.grey(t('agentRunningUserOrgUnreachable')));
-      return;
-    }
-    this.bundles = await readBundleIndex();
-    for (const agent of agents) {
-      const resolved = await resolveAgentRunningUser(conn, agent, false, options.commandThis);
-      if (resolved.status === 'missing') {
-        uxLog('warning', options.commandThis, c.yellow(t('agentRunningUserMissing', { agentName: agent.agentName, docUrl: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-agentforce-agents/` })));
-        continue;
-      }
-      if (resolved.status !== 'found') {
-        continue;
-      }
-      uxLog('action', options.commandThis, c.cyan(t('agentRunningUserUsed', { agentName: agent.agentName, username: resolved.username })));
-      const agentUsernames = new Map<string, string>();
-      for (const username of agent.usernames) {
-        agentUsernames.set(username.toLowerCase(), resolved.username as string);
-      }
-      this.usernames.set(agent.agentName.toLowerCase(), agentUsernames);
+    // An error here never stops the other rules of the deployment: the agent files keep the usernames of git
+    try {
+      await this.prepareUsernames(options);
+    } catch (e) {
+      this.usernames.clear();
+      uxLog('warning', options.commandThis, c.yellow(t('agentRunningUserCheckFailed', { message: (e as Error)?.message || String(e) })));
     }
   }
 
@@ -91,13 +67,62 @@ export class AgentRunningUserBuiltInRule extends ReplacementRuleRoot {
     }
     return { content: updated, found, changed, status: 'changed', detail: t('agentRunningUserReplaced', { count: changed }) };
   }
+
+  // The user of the target org for each username of git, by agent
+  private async prepareUsernames(options: ReplacementRulePrepareOptions): Promise<void> {
+    // Read once, and only when the deployment holds an agent
+    let bundles: Map<string, { agentName: string; isVersion: boolean }> | null = null;
+    const getBundles = async () => (bundles ??= await readBundleIndex());
+    const agents = await listAgentsWithRunningUser(options.packageXmlFiles, process.cwd(), getBundles);
+    if (agents.length === 0) {
+      return;
+    }
+    // A rule of the project writes the user for this target
+    if (hasOwnRunningUserRule(options.rules || [], agents.flatMap((agent) => agent.usernames))) {
+      uxLog('log', options.commandThis, c.grey(t('agentRunningUserOwnRule')));
+      return;
+    }
+    const conn = await resolveConnection(options);
+    if (!conn) {
+      uxLog('log', options.commandThis, c.grey(t('agentRunningUserOrgUnreachable')));
+      return;
+    }
+    this.bundles = await getBundles();
+    for (const agent of agents) {
+      const resolved = await resolveAgentRunningUser(conn, agent, false, options.commandThis);
+      if (resolved.status === 'missing') {
+        uxLog('warning', options.commandThis, c.yellow(t('agentRunningUserMissing', { agentName: agent.agentName, docUrl: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-agentforce-agents/` })));
+        continue;
+      }
+      if (resolved.status !== 'found') {
+        continue;
+      }
+      uxLog('action', options.commandThis, c.cyan(t('agentRunningUserUsed', { agentName: agent.agentName, username: resolved.username })));
+      const agentUsernames = new Map<string, string>();
+      for (const username of agent.usernames) {
+        agentUsernames.set(username.toLowerCase(), resolved.username as string);
+      }
+      this.usernames.set(agent.agentName.toLowerCase(), agentUsernames);
+    }
+  }
 }
 
-/** Agents of the deployment that run as a user, with every username their files hold */
-export async function listAgentsWithRunningUser(packageXmlFiles?: string[], projectRoot: string = process.cwd()): Promise<Array<{ agentName: string; usernames: string[] }>> {
-  const deployed = await listDeployedAgentNames(packageXmlFiles, projectRoot);
+/**
+ * Agents of the deployment that run as a user, with every username their files hold. getBundles: the
+ * authoring bundles of the project, read once by the caller that needs them too.
+ */
+export async function listAgentsWithRunningUser(
+  packageXmlFiles?: string[],
+  projectRoot: string = process.cwd(),
+  getBundles: () => Promise<Map<string, { agentName: string; isVersion: boolean }>> = () => readBundleIndex(projectRoot)
+): Promise<Array<{ agentName: string; usernames: string[] }>> {
+  const deployed = await listDeployedAgentNames(packageXmlFiles, getBundles);
+  // No agent in the package.xml files: the project files are not read
+  if (deployed && deployed.size === 0) {
+    return [];
+  }
   const byAgent = new Map<string, { agentName: string; usernames: Set<string> }>();
-  for (const entry of await readAgentRunningUsers(projectRoot)) {
+  for (const entry of await readAgentRunningUsers(projectRoot, await getBundles())) {
     const key = entry.agentName.toLowerCase();
     if (deployed && !deployed.has(key)) {
       continue;
@@ -109,9 +134,21 @@ export async function listAgentsWithRunningUser(packageXmlFiles?: string[], proj
   return [...byAgent.values()].map((entry) => ({ agentName: entry.agentName, usernames: [...entry.usernames] }));
 }
 
-/** True when one of the rules is a rule of the project, on, that writes botUser or default_agent_user. */
-export function hasOwnRunningUserRule(rules: Array<Partial<MergedReplacementRule>>): boolean {
-  return rules.some((rule) => rule?.enabled !== false && !rule?.builtIn && /botUser|default_agent_user/.test(`${rule?.xmlPath || ''} ${rule?.find || ''}`));
+/**
+ * True when one of the rules is a rule of the project, on, that writes the running user: it names botUser
+ * or default_agent_user, or its find matches one of the usernames of the agents (a text rule that
+ * replaces the username, or its domain).
+ */
+export function hasOwnRunningUserRule(rules: Array<Partial<MergedReplacementRule>>, usernames: string[] = []): boolean {
+  return rules.some((rule) => {
+    if (rule?.enabled === false || rule?.builtIn) {
+      return false;
+    }
+    if (/botUser|default_agent_user/.test(`${rule?.xmlPath || ''} ${rule?.find || ''}`)) {
+      return true;
+    }
+    return usernames.some((username) => ruleFindMatches(rule, username));
+  });
 }
 
 /** Base username given to "sf org create agent-user", which adds a unique id before the @ */
@@ -154,13 +191,31 @@ export async function resolveAgentRunningUser(
   return createAgentUser(agent.agentName, orgId, conn.getUsername(), commandThis);
 }
 
+// True when the find of a rule matches the text: a regex, or a plain text it contains, in any case
+function ruleFindMatches(rule: Partial<MergedReplacementRule>, text: string): boolean {
+  const find = String(rule?.find || '');
+  if (!find) {
+    return false;
+  }
+  if (rule?.regex) {
+    try {
+      return new RegExp(find, 'i').test(text);
+    } catch {
+      return false;
+    }
+  }
+  return text.toLowerCase().includes(find.toLowerCase());
+}
+
 // Agents of the package.xml files (AiAgentDefinition, or the agent of an AiAgentDefinitionVersion or an
 // AiAuthoringBundle). null: no package.xml, every agent of the project.
-async function listDeployedAgentNames(packageXmlFiles: string[] | undefined, projectRoot: string): Promise<Set<string> | null> {
+async function listDeployedAgentNames(
+  packageXmlFiles: string[] | undefined,
+  getBundles: () => Promise<Map<string, { agentName: string; isVersion: boolean }>>
+): Promise<Set<string> | null> {
   if (!packageXmlFiles || packageXmlFiles.length === 0) {
     return null;
   }
-  const bundles = await readBundleIndex(projectRoot);
   const names = new Set<string>();
   for (const packageXmlFile of packageXmlFiles) {
     if (!packageXmlFile || !fs.existsSync(packageXmlFile)) {
@@ -176,7 +231,7 @@ async function listDeployedAgentNames(packageXmlFiles: string[] | undefined, pro
     for (const member of content['AiAuthoringBundle'] || []) {
       // The bundle of a version belongs to its agent, an agent may be named Support_Agent_2
       const name = String(member);
-      names.add((bundles.get(name.toLowerCase())?.agentName || name).toLowerCase());
+      names.add(((await getBundles()).get(name.toLowerCase())?.agentName || name).toLowerCase());
     }
   }
   // A wildcard deploys every agent of the project

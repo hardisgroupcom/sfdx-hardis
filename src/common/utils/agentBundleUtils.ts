@@ -70,11 +70,15 @@ export async function describeBundleFolder(
 /**
  * Every running user written in the files of the agents of the project: botUser of the definitions
  * (aiAgents), default_agent_user of the Agent Script of the authoring bundles, version bundles
- * included (named after their agent). A service agent runs as a user of its org.
+ * included (named after their agent). A service agent runs as a user of its org. bundleIndex: the
+ * result of readBundleIndex when the caller already has it.
  */
-export async function readAgentRunningUsers(projectRoot: string = process.cwd()): Promise<AgentRunningUserEntry[]> {
+export async function readAgentRunningUsers(
+  projectRoot: string = process.cwd(),
+  bundleIndex?: Map<string, { agentName: string; isVersion: boolean }>
+): Promise<AgentRunningUserEntry[]> {
   const files = await glob(['**/aiAgents/*.aiAgentDefinition-meta.xml', '**/aiAuthoringBundles/*/*.agent'], { cwd: projectRoot, ignore: AGENT_FILES_IGNORE });
-  const bundles = await readBundleIndex(projectRoot);
+  const bundles = bundleIndex || (await readBundleIndex(projectRoot));
   const entries: AgentRunningUserEntry[] = [];
   for (const file of files.sort()) {
     const agentName = agentNameOfFile(file, bundles);

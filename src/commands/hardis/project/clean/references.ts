@@ -18,7 +18,6 @@ import { getConfig, setConfig } from '../../../../config/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
 import { FilterXmlContent } from './filter-xml-content.js';
 import LintAccess from '../../lint/access.js';
-import CleanAgentsDeploymentActions from './agents-deployment-actions.js';
 import CleanEmptyItems from './emptyitems.js';
 import CleanFlowPositions from './flowpositions.js';
 import CleanListViews from './listviews.js';
@@ -58,6 +57,8 @@ type CleaningType = {
   value: string;
   title: string;
   commandClass?: CleaningCommandClass;
+  // The command class loaded only when the cleaning runs, for a cleaning few projects use
+  loadCommandClass?: () => Promise<CleaningCommandClass>;
   // Set when the sub-command accepts --flows, so the cleaning can be restricted to a subset of Flows
   scopedByFlows?: boolean;
   // Set when the sub-command accepts --delta-from, so it never deletes a file the next git delta would see as deleted
@@ -165,7 +166,7 @@ The command's technical implementation involves several steps:
     {
       value: 'autoAddAgentsDeploymentActions',
       title: t('cleaningTypeAutoAddAgentsDeploymentActions'),
-      commandClass: CleanAgentsDeploymentActions,
+      loadCommandClass: async () => (await import('./agents-deployment-actions.js')).default,
       scopedByDeltaFrom: true,
     },
     {
@@ -302,7 +303,8 @@ The command's technical implementation involves several steps:
       const cleaningTypeObj = this.allCleaningTypes.filter(
         (cleaningTypeObj) => cleaningTypeObj.value === cleaningType
       )[0];
-      if (cleaningTypeObj?.commandClass) {
+      const commandClass = cleaningTypeObj?.commandClass || (cleaningTypeObj?.loadCommandClass ? await cleaningTypeObj.loadCommandClass() : null);
+      if (commandClass) {
         // Command based cleaning. The command is called in the current process, not as a `sf` child
         // process: booting the Salesforce CLI again costs seconds, the cleaning itself milliseconds
         const commandArgs: string[] = [];
@@ -321,7 +323,7 @@ The command's technical implementation involves several steps:
           commandArgs.push('--delta-from', this.deltaFrom);
         }
         uxLog("action", this, c.cyan(t('runCleaningCommand', { cleaningType: c.bold(cleaningType), cleaningTypeObj: cleaningTypeObj.title })));
-        await cleaningTypeObj.commandClass.run(commandArgs, this.config);
+        await commandClass.run(commandArgs, this.config);
       } else {
         // Template based cleaning
         uxLog("action", this, c.cyan(t('applyCleaningOfReferencesTo', { cleaningType: c.bold(cleaningType), cleaningTypeObj: cleaningTypeObj.title })));

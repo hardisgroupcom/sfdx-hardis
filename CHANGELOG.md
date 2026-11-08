@@ -26,7 +26,6 @@
 - Delta deployment with `useDeltaDeploymentWithDependencies`: a command that reads two manifests no longer extends the second delta with the components of the first.
 - [hardis:doc:plugin:generate](https://sfdx-hardis.cloudity.com/hardis/doc/plugin/generate/): every generated page has a title and a meta description for search engines.
 - Documentation site: new [llms.txt](https://sfdx-hardis.cloudity.com/llms.txt), which lists every page, command and setting for coding agents, with a link to its Markdown source.
-- Upgrade **follow-redirects** to 1.16.2, which stops custom credential headers from being sent to another site on a redirect (CVE-2026-116689).
 
 ## [8.23.0] 2026-11-06
 

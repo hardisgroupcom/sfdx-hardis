@@ -223,6 +223,7 @@
   "agentRetrieveNoBundle": "La recuperación no devolvió ningún authoring bundle para la versión {{version}} del agente {{agentName}}: solo se puede entregar una versión publicada desde un authoring bundle. {{docUrl}}",
   "agentRunningUserActionWritten": "El usuario de ejecución del agente {{agentName}} se creará antes del despliegue en cada org que no lo tenga: acción escrita en {{file}}.",
   "agentRunningUserAlreadyThere": "El agente {{agentName}} ya tiene su usuario de ejecución {{username}} en la org de destino.",
+  "agentRunningUserCheckFailed": "No se han podido comprobar los usuarios de ejecución de los agentes ({{message}}): los archivos de los agentes conservan los nombres de usuario de git, y las demás reglas de reemplazo se siguen aplicando.",
   "agentRunningUserCreated": "Usuario de ejecución {{username}} del agente {{agentName}} creado en la org de destino.",
   "agentRunningUserCreating": "Creando el usuario de ejecución del agente {{agentName}} en la org de destino (sf org create agent-user)...",
   "agentRunningUserCreationFailed": "No se ha podido crear el usuario de ejecución del agente {{agentName}}: {{message}}",

@@ -223,6 +223,7 @@
   "agentRetrieveNoBundle": "Het ophalen gaf geen authoring bundle terug voor versie {{version}} van agent {{agentName}}: alleen een versie die vanuit een authoring bundle is gepubliceerd, kan worden geleverd. {{docUrl}}",
   "agentRunningUserActionWritten": "De uitvoerende gebruiker van agent {{agentName}} wordt vóór de implementatie aangemaakt in elke org die er geen heeft: actie geschreven in {{file}}.",
   "agentRunningUserAlreadyThere": "Agent {{agentName}} heeft zijn uitvoerende gebruiker {{username}} al in de doel-org.",
+  "agentRunningUserCheckFailed": "De uitvoerende gebruikers van de agents konden niet worden gecontroleerd ({{message}}): de agentbestanden behouden de gebruikersnamen uit git, en de andere vervangingsregels worden nog steeds toegepast.",
   "agentRunningUserCreated": "Uitvoerende gebruiker {{username}} van agent {{agentName}} aangemaakt in de doel-org.",
   "agentRunningUserCreating": "De uitvoerende gebruiker van agent {{agentName}} wordt aangemaakt in de doel-org (sf org create agent-user)...",
   "agentRunningUserCreationFailed": "Kan de uitvoerende gebruiker van agent {{agentName}} niet aanmaken: {{message}}",

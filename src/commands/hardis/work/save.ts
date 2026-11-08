@@ -670,8 +670,10 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
       // Every untracked file, not only its folder: a cleaning may write a file into a new folder
       const gitStatusFilesBeforeClean = (await git().status(['--untracked-files=all'])).files.map((file) => file.path);
       uxLog("other", this, JSON.stringify(gitStatusFilesBeforeClean, null, 2));
-      // A cleaning can write into a file that was already modified (the draft deployment actions for example)
-      const snapshotBeforeClean = await this.snapshotFiles(gitStatusFilesBeforeClean);
+      // The agents cleaning can write into a deployment actions file that was already modified (the draft
+      // file for example): those files are followed. Any other file modified before the cleaning stays out
+      // of the commit, as the developer left it
+      const snapshotBeforeClean = await this.snapshotFiles(gitStatusFilesBeforeClean, config);
       // References cleaning: Flow cleanings are restricted to the Flows of the delta when it is known
       const cleanReferencesArgs = ['--type', 'all'];
       if (this.expertMode) {
@@ -742,22 +744,32 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
     }
   }
 
-  // Size, modification time and content hash of each file, null for a file that does not exist (deleted)
-  private async snapshotFiles(files: string[]): Promise<Map<string, { size: number; mtimeMs: number; hash: string } | null>> {
-    const snapshot = new Map<string, { size: number; mtimeMs: number; hash: string } | null>();
-    for (const file of files) {
-      snapshot.set(file, await this.readFileState(file, null));
+  // State of the Pull Request deployment actions files among the git status paths, keyed by git status
+  // path: size, modification time and content hash, null for a file that does not exist (deleted)
+  private async snapshotFiles(
+    gitStatusPaths: string[],
+    config: any
+  ): Promise<Map<string, { file: string; state: { size: number; mtimeMs: number; hash: string } | null }>> {
+    const snapshot = new Map<string, { file: string; state: { size: number; mtimeMs: number; hash: string } | null }>();
+    for (const gitStatusPath of gitStatusPaths) {
+      // Relative to the project, which may be a subfolder of the git repository
+      const file = normalizeFileStatusPath(gitStatusPath, config);
+      if (/^scripts\/actions\/\.sfdx-hardis\.[^/]+\.yml$/.test(file.replace(/\\/g, '/'))) {
+        snapshot.set(gitStatusPath, { file, state: await this.readFileState(file, null) });
+      }
     }
     return snapshot;
   }
 
-  // Files of the snapshot whose content changed: a file with the same size and time is not read again
-  private async listChangedSinceSnapshot(snapshot: Map<string, { size: number; mtimeMs: number; hash: string } | null>): Promise<string[]> {
+  // Git status paths of the snapshot whose content changed: a file with the same size and time is not read again
+  private async listChangedSinceSnapshot(
+    snapshot: Map<string, { file: string; state: { size: number; mtimeMs: number; hash: string } | null }>
+  ): Promise<string[]> {
     const changed: string[] = [];
-    for (const [file, before] of snapshot) {
-      const after = await this.readFileState(file, before);
-      if (before?.hash !== after?.hash) {
-        changed.push(file);
+    for (const [gitStatusPath, before] of snapshot) {
+      const after = await this.readFileState(before.file, before.state);
+      if (before.state?.hash !== after?.hash) {
+        changed.push(gitStatusPath);
       }
     }
     return changed;

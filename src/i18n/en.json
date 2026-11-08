@@ -223,6 +223,7 @@
   "agentRetrieveNoBundle": "The retrieve returned no authoring bundle for version {{version}} of agent {{agentName}}: only a version published from an authoring bundle can be delivered. {{docUrl}}",
   "agentRunningUserActionWritten": "The running user of agent {{agentName}} will be created before the deployment in each org that has none: action written in {{file}}.",
   "agentRunningUserAlreadyThere": "Agent {{agentName}} already has its running user {{username}} in the target org.",
+  "agentRunningUserCheckFailed": "The running users of the agents could not be checked ({{message}}): the agent files keep the usernames of git, and the other replacement rules still apply.",
   "agentRunningUserCreated": "Running user {{username}} of agent {{agentName}} created in the target org.",
   "agentRunningUserCreating": "Creating the running user of agent {{agentName}} in the target org (sf org create agent-user)...",
   "agentRunningUserCreationFailed": "Could not create the running user of agent {{agentName}}: {{message}}",

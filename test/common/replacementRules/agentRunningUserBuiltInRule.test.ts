@@ -133,6 +133,47 @@ describe('AgentRunningUserBuiltInRule', () => {
     expect(rule.applyToText(`<botUser>${SOURCE_USER}</botUser>`, null, DEFINITION_FILE).status).to.equal('unchanged');
   });
 
+  it('reads no user when a text rule of the project replaces the username itself, or its domain', async () => {
+    for (const ownRule of [
+      { id: 'agent-user', enabled: true, type: 'text', find: SOURCE_USER.toUpperCase(), values: { main: 'agent@prod.example.com' } },
+      { id: 'agent-domain', enabled: true, type: 'text', find: '@00dsource\\.ext$', regex: true, values: { main: '@prod.ext' } },
+    ] as any[]) {
+      const rule = buildRule();
+      const conn = fakeConnection({ users: [], agentUsers: ['my-agent.a1b2c3d4e5f6@00d000000000042.ext'] });
+      // eslint-disable-next-line no-await-in-loop
+      await rule.prepare({ target: { targetBranch: 'main', label: 'main', apiVersion: 68 }, conn, rules: [ownRule] });
+      expect(conn.queries, ownRule.id).to.deep.equal([]);
+      expect(rule.applyToText(`<botUser>${SOURCE_USER}</botUser>`, null, DEFINITION_FILE).status, ownRule.id).to.equal('unchanged');
+    }
+  });
+
+  it('never stops the other rules when the org cannot be read: the files keep the usernames of git', async () => {
+    const rule = buildRule();
+    const conn = {
+      ...fakeConnection({}),
+      query: async () => {
+        throw new Error('INVALID_SESSION_ID');
+      },
+    };
+    await rule.prepare({ target: { targetBranch: 'main', label: 'main', apiVersion: 68 }, conn });
+    expect(rule.applyToText(`<botUser>${SOURCE_USER}</botUser>`, null, DEFINITION_FILE).status).to.equal('unchanged');
+  });
+
+  it('reads no project file when the package.xml holds no agent', async () => {
+    const packageXml = path.join(tmpDir, 'no-agent.xml');
+    await fs.writeFile(
+      packageXml,
+      '<?xml version="1.0" encoding="UTF-8"?><Package xmlns="http://soap.sforce.com/2006/04/metadata"><types><members>MyClass</members><name>ApexClass</name></types><version>68.0</version></Package>'
+    );
+    let bundleReads = 0;
+    const agents = await listAgentsWithRunningUser([packageXml], tmpDir, async () => {
+      bundleReads++;
+      return new Map();
+    });
+    expect(agents).to.deep.equal([]);
+    expect(bundleReads).to.equal(0);
+  });
+
   it('does nothing when turned off', async () => {
     const rule = buildRule(false);
     const conn = fakeConnection({ agentUsers: ['my-agent.a1b2c3d4e5f6@00d000000000042.ext'] });

@@ -40,7 +40,7 @@ export class AgentRunningUserAction extends AgentActionBase {
     // A user nothing writes in the deployed files would only take a license
     const { resolveReplacementRulesTargetBranch } = await import('../replacementRules/engine/ruleEngine.js');
     const targetBranch = await resolveReplacementRulesTargetBranch(cmd.pipelineContext?.targetBranch || null);
-    const ruleUsage = await getRunningUserRuleUsage(targetBranch);
+    const ruleUsage = await getRunningUserRuleUsage(targetBranch, agent.usernames);
     if (ruleUsage !== 'built-in') {
       return this.succeed(t(ruleUsage === 'project' ? 'agentRunningUserProjectRuleNoCreation' : 'agentRunningUserRulesOffNoCreation', { agentName }));
     }

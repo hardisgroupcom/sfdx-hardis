@@ -503,12 +503,13 @@ export async function hasBotUserReplacementRule(targetBranch: string | null = nu
 
 /**
  * Which rule writes the running user of the agents in a deployment to the target branch: the built-in
- * rule, a rule of the project, or none (built-in rule off, or every rule skipped).
+ * rule, a rule of the project, or none (built-in rule off, or every rule skipped). usernames: the
+ * running users of the agents in git, so a rule of the project that replaces them is recognized.
  */
-export async function getRunningUserRuleUsage(targetBranch: string | null): Promise<'built-in' | 'project' | 'none'> {
+export async function getRunningUserRuleUsage(targetBranch: string | null, usernames: string[] = []): Promise<'built-in' | 'project' | 'none'> {
   const { listRulesOfTarget } = await import('../replacementRules/engine/ruleEngine.js');
   const { rules } = await listRulesOfTarget(targetBranch);
-  if (hasOwnRunningUserRule(rules)) {
+  if (hasOwnRunningUserRule(rules, usernames)) {
     return 'project';
   }
   return rules.some((rule) => rule.id === AGENT_RUNNING_USER_RULE_ID && rule.enabled) ? 'built-in' : 'none';

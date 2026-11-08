@@ -223,6 +223,7 @@
   "agentRetrieveNoBundle": "Pobieranie nie zwróciło authoring bundle dla wersji {{version}} agenta {{agentName}}: dostarczyć można tylko wersję opublikowaną z authoring bundle. {{docUrl}}",
   "agentRunningUserActionWritten": "Użytkownik wykonujący agenta {{agentName}} zostanie utworzony przed wdrożeniem w każdym org, który go nie ma: akcja zapisana w {{file}}.",
   "agentRunningUserAlreadyThere": "Agent {{agentName}} ma już użytkownika wykonującego {{username}} w docelowym org.",
+  "agentRunningUserCheckFailed": "Nie można sprawdzić użytkowników uruchomieniowych agentów ({{message}}): pliki agentów zachowują nazwy użytkowników z git, a pozostałe reguły zastępowania są nadal stosowane.",
   "agentRunningUserCreated": "Utworzono użytkownika wykonującego {{username}} agenta {{agentName}} w docelowym org.",
   "agentRunningUserCreating": "Tworzenie użytkownika uruchomieniowego agenta {{agentName}} w docelowej org (sf org create agent-user)...",
   "agentRunningUserCreationFailed": "Nie udało się utworzyć użytkownika wykonującego agenta {{agentName}}: {{message}}",

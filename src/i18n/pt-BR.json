@@ -132,6 +132,7 @@
   "agentRetrieveRequiresApi68": "A org {{org}} está na API {{apiVersion}}. Recuperar um agente com suas dependências exige a API 68.0 ou superior. Para continuar usando Bot, BotVersion e AiAuthoringBundle, use a API 67.0: {{docUrl}}",
   "agentRunningUserActionWritten": "O usuário de execução do agente {{agentName}} será criado antes da implantação em cada org que não o tiver: ação gravada em {{file}}.",
   "agentRunningUserAlreadyThere": "O agente {{agentName}} já tem seu usuário de execução {{username}} na org de destino.",
+  "agentRunningUserCheckFailed": "Não foi possível verificar os usuários de execução dos agentes ({{message}}): os arquivos dos agentes mantêm os nomes de usuário do git, e as demais regras de substituição continuam sendo aplicadas.",
   "agentRunningUserCreated": "Usuário de execução {{username}} do agente {{agentName}} criado na org de destino.",
   "agentRunningUserCreatedAtDeployment": "O agente {{agentName}} ainda não tem usuário de execução nesta org de produção: uma verificação de implantação não o cria, a implantação criará.",
   "agentRunningUserCreating": "Criando o usuário de execução do agente {{agentName}} na org de destino (sf org create agent-user)...",

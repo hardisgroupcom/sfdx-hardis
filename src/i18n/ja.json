@@ -223,6 +223,7 @@
   "agentRetrieveNoBundle": "取得結果にエージェント {{agentName}} のバージョン {{version}} のオーサリングバンドルが含まれていません: オーサリングバンドルから公開されたバージョンのみ配布できます。{{docUrl}}",
   "agentRunningUserActionWritten": "エージェント {{agentName}} の実行ユーザーは、実行ユーザーのない各組織でデプロイ前に作成されます: アクションを {{file}} に書き込みました。",
   "agentRunningUserAlreadyThere": "エージェント {{agentName}} の実行ユーザー {{username}} はターゲット組織にすでにあります。",
+  "agentRunningUserCheckFailed": "エージェントの実行ユーザーを確認できませんでした ({{message}}): エージェントのファイルは git のユーザー名のままで、その他の置換ルールは引き続き適用されます。",
   "agentRunningUserCreated": "エージェント {{agentName}} の実行ユーザー {{username}} をターゲット組織に作成しました。",
   "agentRunningUserCreating": "ターゲット org にエージェント {{agentName}} の実行ユーザーを作成しています (sf org create agent-user)...",
   "agentRunningUserCreationFailed": "エージェント {{agentName}} の実行ユーザーを作成できませんでした: {{message}}",
