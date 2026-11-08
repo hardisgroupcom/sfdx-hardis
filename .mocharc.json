@@ -6,5 +6,8 @@
   "node-option": [
     "import=tsx/esm",
     "no-warnings=ExperimentalWarning"
+  ],
+  "require": [
+    "./test/mocha-setup.mjs"
   ]
 }
