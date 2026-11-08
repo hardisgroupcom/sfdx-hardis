@@ -148,7 +148,7 @@ ensure_org() {
   local alias="$1" label="$2" boot="$LOGS/bootstrap-$2"
   if ! sf org display -o "$alias" --json 2>/dev/null | grep -q '"connectedStatus": "Connected"\|"status": "Active"'; then
     sf org logout -o "$alias" --no-prompt >/dev/null 2>&1
-    rm -rf "$boot" && mkdir -p "$boot/config"
+    rm -rf "$boot" && mkdir -p "$boot/config" "$boot/force-app"
     printf '{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"68.0"}\n' >"$boot/sfdx-project.json"
     write_scratch_def "$boot/config/project-scratch-def.json"
     (cd "$boot" && sf org create scratch --target-dev-hub "$DEVHUB" --alias "$alias" --definition-file config/project-scratch-def.json --duration-days 2 --wait 30 --json >"$LOGS/org-create-$label.json" 2>&1) || {
@@ -285,10 +285,23 @@ if step repo; then
   fi
 fi
 
+# The git provider only finds the merged Pull Request of a branch, not an open one. work:save writes the
+# Pull Request it creates in the user config (mergeRequests), where the cleaning reads it: do the same,
+# else the actions go to the draft file that the CI jobs refuse
+register_pull_request() {
+  local user branch
+  user=$(node -p "require('os').userInfo().username")
+  branch=$(git -C "$WORK" branch --show-current)
+  mkdir -p "$WORK/config/user"
+  printf 'mergeRequests:\n  - branch: %s\n    url: https://github.com/%s/pull/%s\n' "$branch" "$REPO" "$1" >"$WORK/config/user/.sfdx-hardis.$user.yml"
+  grep -q 'config/user' "$WORK/.git/info/exclude" 2>/dev/null || echo 'config/user/' >>"$WORK/.git/info/exclude"
+}
+
 # --------------------------------------------------------------- the cleaning of hardis:work:save, on a Pull Request
 # label, Pull Request number: runs the cleaning twice (the second run adds nothing), checks the actions
 run_cleaning() {
   local label="$1" pr="$2" F="$WORK/scripts/actions/.sfdx-hardis.$2.yml"
+  register_pull_request "$pr"
   hardis hardis:project:clean:agents-deployment-actions --agent --delta-from origin/integration --json >"$LOGS/clean-$label.json" 2>&1
   if grep -q '"status": 0' "$LOGS/clean-$label.json"; then result "CLEAN-$label" OK "the cleaning ran"; else result "CLEAN-$label" FAIL "the cleaning failed, see clean-$label.json"; fi
   if [ ! -f "$F" ]; then

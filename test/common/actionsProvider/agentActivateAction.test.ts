@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { AgentActivateAction } from '../../../src/common/actionsProvider/agentActivateAction.js';
 import { PrePostCommand } from '../../../src/common/actionsProvider/actionsProvider.js';
 import { DEPLOYMENT_ONLY_ACTION_TYPES, resolveRunOnlyOnceByOrg } from '../../../src/common/actionsProvider/actionTypes.js';
-import { validateActionParameters } from '../../../src/common/utils/actionUtils.js';
+import { assertNoFlagsOfOtherTypes, validateActionParameters } from '../../../src/common/utils/actionUtils.js';
 
 function action(parameters: Record<string, any>, extra: Partial<PrePostCommand> = {}): PrePostCommand {
   return {
@@ -116,5 +116,14 @@ describe('AgentActivateAction.run', () => {
     globalThis.jsForceConn = { metadata: { list: async () => { throw new Error('must not be called'); } } };
     const result = await provider.run(action({ agentName: '' }));
     expect(result.statusCode).to.equal('failed');
+  });
+
+  it('accepts --agent-name, which the three agent types share, and still refuses the flags of other types', async () => {
+    for (const type of ['agent-publish', 'agent-activate', 'agent-running-user']) {
+      await assertNoFlagsOfOtherTypes(type, { 'agent-name': 'My_Service_Agent' });
+    }
+    let error: any = null;
+    await assertNoFlagsOfOtherTypes('agent-activate', { 'agent-name': 'My_Service_Agent', 'apply-to-all': true }).catch((e) => (error = e));
+    expect(error).to.not.equal(null);
   });
 });

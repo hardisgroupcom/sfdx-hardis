@@ -98,6 +98,15 @@ Settings, from the environment, else the `.env` of the working copy: `AG_DEV_ORG
   turns on the Einstein GPT and agent platform settings, but a Dev Hub without the matching
   entitlements gives an org where `sf org create agent-user` fails on missing licenses
   (`dev-agent-user.json`). Use orgs that have Agentforce through `AG_DEV_ORG` and `AG_INT_ORG` then.
+- **`sf org create scratch` needs the package directory to exist.** The throwaway project that
+  creates a scratch org declares `force-app`: without the folder the command fails with
+  `MissingPackageDirectoryError` (the `ORG-DEV` check fails with "not created"). The script creates it.
+- **The cleaning finds a Pull Request that is merged, or one recorded in the user config.** On
+  GitHub the provider reads the Pull Request of a commit only once merged. Run from a shell, the
+  cleaning of an open Pull Request writes `scripts/actions/.sfdx-hardis.draft.yml`, and the CI jobs
+  stop on it ("Draft commands file ... found"). `work:save` records the Pull Request it creates in
+  `config/user/.sfdx-hardis.<user>.yml` (`mergeRequests`): the script does the same
+  (`register_pull_request`) before each cleaning.
 - **Below API 68.0 nothing works**: no agent files at retrieve, deployments refused. The `org` step
   stops on an org below 68.0; a scratch org follows the release of the Dev Hub unless
   `AG_SCRATCH_RELEASE` says otherwise.
