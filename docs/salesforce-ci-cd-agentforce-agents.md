@@ -106,12 +106,12 @@ replacementRules:
 
 Then create one variable per major branch of your pipeline in the CI/CD settings: `AGENT_RUNNING_USER_<BRANCH>`, with the name of the branch in upper case (a `/` becomes `__`, any other character that is not a letter or a digit becomes `_`). Each org needs its own user, because a username is unique across all Salesforce orgs. For example, with the branches `integration`, `uat`, `preprod` and `main`:
 
-| Variable                         | Value                                    |
-|----------------------------------|------------------------------------------|
-| `AGENT_RUNNING_USER_INTEGRATION` | the agent user of the integration org    |
-| `AGENT_RUNNING_USER_UAT`         | the agent user of the uat org            |
-| `AGENT_RUNNING_USER_PREPROD`     | the agent user of the preprod org        |
-| `AGENT_RUNNING_USER_MAIN`        | the agent user of the production org     |
+| Variable                         | Value                                 |
+|----------------------------------|---------------------------------------|
+| `AGENT_RUNNING_USER_INTEGRATION` | the agent user of the integration org |
+| `AGENT_RUNNING_USER_UAT`         | the agent user of the uat org         |
+| `AGENT_RUNNING_USER_PREPROD`     | the agent user of the preprod org     |
+| `AGENT_RUNNING_USER_MAIN`        | the agent user of the production org  |
 
 Do not create the variable without a branch suffix (`AGENT_RUNNING_USER`): it is the fallback of every branch that has no variable of its own, and one username can only exist in one org. On GitHub Actions, also add the variables to the `env` of the deployment check and deployment workflows. A missing variable skips the rule for that org, and the Pull Request comment says so.
 

@@ -251,12 +251,14 @@ export async function getBuiltInActionProvider(type: string | undefined | null):
 
 /** Refuses a flag that only another built-in type accepts: it would be silently ignored. */
 export async function assertNoFlagsOfOtherTypes(type: string, flags: any): Promise<void> {
+  // A flag shared with the type itself is valid (--agent-name is on the three agent types)
+  const ownFlags = new Set((await getBuiltInActionProvider(type))?.getFlagNames() || []);
   for (const otherType of DEPLOYMENT_ACTION_TYPES) {
     if (otherType === type) {
       continue;
     }
     const provider = await getBuiltInActionProvider(otherType);
-    const passedFlags = (provider?.getFlagNames() || []).filter((flag) => flags?.[flag] !== undefined);
+    const passedFlags = (provider?.getFlagNames() || []).filter((flag) => !ownFlags.has(flag) && flags?.[flag] !== undefined);
     if (passedFlags.length > 0) {
       throw new SfError(
         t('actionFlagsOnOtherType', { flags: passedFlags.map((flag) => `--${flag}`).join(', '), owner: otherType, type })

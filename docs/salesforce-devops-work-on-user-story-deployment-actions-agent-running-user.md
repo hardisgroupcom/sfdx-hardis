@@ -20,7 +20,7 @@ The action runs before the deployment only. Use the `all` context, so the deploy
 
 | Custom parameter       | Required? | Description            | Example            |
 |------------------------|:---------:|------------------------|--------------------|
-| `parameters.agentName` | Yes       | API name of the agent. | `My_Service_Agent` |
+| `parameters.agentName` |    Yes    | API name of the agent. | `My_Service_Agent` |
 
 ```yaml
 commandsPreDeploy:

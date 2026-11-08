@@ -20,7 +20,7 @@ The target org must be on API 68.0 or above.
 
 | Custom parameter       | Required? | Description            | Example            |
 |------------------------|:---------:|------------------------|--------------------|
-| `parameters.agentName` | Yes       | API name of the agent. | `My_Service_Agent` |
+| `parameters.agentName` |    Yes    | API name of the agent. | `My_Service_Agent` |
 
 ```yaml
 commandsPostDeploy:
