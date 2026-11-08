@@ -50,7 +50,7 @@ This is a Salesforce platform limitation: standard applications can be set as vi
 
 - Make sure at least one application remains set as the default for each Profile (see [Missing profile default application](sf-deployment-assistant/Missing-profile-default-application.md)).
 - This manual step must be repeated in each environment (sandbox, preprod, production).
-- Track this manual step with a [manual deployment action](salesforce-devops-work-on-user-story-deployment-actions.md#manual-step) on your Pull Request, so nobody forgets it.
+- Track this manual step with a [manual deployment action](salesforce-devops-work-on-user-story-deployment-actions-manual.md) on your Pull Request, so nobody forgets it.
 
 <!-- training-links:start -->
 

@@ -130,8 +130,19 @@ nav:
               - Profiles and Permission Sets: salesforce-devops-work-on-user-story-profiles.md
               - Development guidelines: salesforce-devops-work-on-user-story-development.md
               - Install packages: salesforce-devops-work-on-user-story-install-packages.md
-              - Deployment actions: salesforce-devops-work-on-user-story-deployment-actions.md
-              - Custom functions: salesforce-devops-work-on-user-story-custom-functions.md
+              - Deployment actions:
+                  - Overview: salesforce-devops-work-on-user-story-deployment-actions.md
+                  - Run a command: salesforce-devops-work-on-user-story-deployment-actions-command.md
+                  - Import data (SFDMU): salesforce-devops-work-on-user-story-deployment-actions-data.md
+                  - Run an Apex script: salesforce-devops-work-on-user-story-deployment-actions-apex.md
+                  - Publish an Experience Cloud site: salesforce-devops-work-on-user-story-deployment-actions-publish-community.md
+                  - Schedule an Apex batch: salesforce-devops-work-on-user-story-deployment-actions-schedule-batch.md
+                  - Run an Apex batch: salesforce-devops-work-on-user-story-deployment-actions-run-batch.md
+                  - Activate User Access Policies: salesforce-devops-work-on-user-story-deployment-actions-user-access-policy.md
+                  - Apply a Setup setting in a browser: salesforce-devops-work-on-user-story-deployment-actions-browser.md
+                  - Remove items from package.xml: salesforce-devops-work-on-user-story-deployment-actions-remove-packagexml-items.md
+                  - Manual step: salesforce-devops-work-on-user-story-deployment-actions-manual.md
+                  - Custom functions: salesforce-devops-work-on-user-story-custom-functions.md
               - Backpromote (Beta): salesforce-devops-backpromote.md
               - Development orgs list: salesforce-devops-dev-orgs.md
           - 3. Publish your User Story: salesforce-devops-publish-user-story.md
