@@ -256,10 +256,10 @@ export function getSnapshotDescription(scope: string, sha: string): string {
 }
 
 // A failed snapshot signup is retried without the snapshot, except when the retry would fail the same way or sign up
-// a second org: a timeout (the first org may still be created), a scratch org limit, or exit code 68, which
-// sf org create scratch gives to any failure once the org exists (settings deployment, alias, My Domain)
+// a second org: a timeout (exit code 69, the first org may still be created), a scratch org limit, or exit code 68,
+// which sf org create scratch gives to any failure once the org exists (settings deployment, alias, My Domain)
 export function isSnapshotSignupRetryable(createResult: any): boolean {
-  if (createResult?.error?.code === 68) {
+  if (createResult?.error?.code === 68 || createResult?.error?.code === 69) {
     return false;
   }
   // AuthCodeExchangeError: the org was created and only its login failed. NamedOrgNotFoundError: no Dev Hub login

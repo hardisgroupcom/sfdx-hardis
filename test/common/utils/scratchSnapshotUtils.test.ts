@@ -162,6 +162,12 @@ describe('isSnapshotSignupRetryable', () => {
     expect(isSnapshotSignupRetryable({ status: 1, errorMessage: 'Socket timeout occurred while listening for results' })).to.equal(false);
   });
 
+  it('does not retry a signup timeout as sf reports it: a plain Error with exit code 69', () => {
+    // plugin-org rethrows ScratchOrgInfoTimeoutError as this.error(message, { exit: 69 }), so the name is lost
+    const timeout = { ...failure('Error', 'The scratch org did not complete within your wait time. Resume with sf org resume scratch.'), error: { code: 69 } };
+    expect(isSnapshotSignupRetryable(timeout)).to.equal(false);
+  });
+
   it('does not retry a failure after the org was created, as the settings deployment, which sf gives exit code 68', () => {
     const settingsFailure = { ...failure('SfError', 'Failed to deploy the scratch org settings.'), error: { code: 68 } };
     expect(isSnapshotSignupRetryable(settingsFailure)).to.equal(false);
