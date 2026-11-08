@@ -12,15 +12,15 @@ type PackageType = {
   name: string;
 };
 
-let fullPackageTypes = null;
+// Parsed once per manifest: a process that reads two manifests must not get the first one twice
+const fullPackageTypesByFile = new Map<string, any>();
 
 async function getAllTypes(fullPackageFile: string): Promise<Map<string, string[]>> {
-  if (fullPackageTypes) {
-    return fullPackageTypes;
+  const key = path.resolve(fullPackageFile);
+  if (!fullPackageTypesByFile.has(key)) {
+    fullPackageTypesByFile.set(key, await parsePackageXmlFile(fullPackageFile));
   }
-
-  fullPackageTypes = await parsePackageXmlFile(fullPackageFile);
-  return fullPackageTypes ?? new Map();
+  return fullPackageTypesByFile.get(key) ?? new Map();
 }
 
 async function getAllLanguages(fullPackageFile: string): Promise<Array<string>> {

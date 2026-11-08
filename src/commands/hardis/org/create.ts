@@ -9,7 +9,11 @@ import { dateHelper } from '../../../common/utils/dateHelper.js';
 import * as os from 'os';
 import * as path from 'path';
 import { clearCache } from '../../../common/cache/index.js';
-import { elapseEnd, elapseStart, execSfdxJson, getCurrentGitBranch, uxLog } from '../../../common/utils/index.js';
+import { elapseEnd, elapseStart, execSfdxJson, getCurrentGitBranch, isCI, uxLog } from '../../../common/utils/index.js';
+import { selectTargetBranch } from '../../../common/utils/gitUtils.js';
+import { getCurrentGitUser, isDevOrgsRegistryEnabled, registerDevOrgUsage } from '../../../common/utils/devOrgsRegistry.js';
+import { parseDevOrgPersonFlag, promptDevOrgOwner } from '../../../common/utils/devOrgsCommandUtils.js';
+import { DevOrgPerson } from '../../../common/utils/devOrgsRules.js';
 import { openOrgInBrowser, promptUserEmail } from '../../../common/utils/orgUtils.js';
 import { assertOrgInitStepsValid, runOrgInitSteps } from '../../../common/utils/orgInitUtils.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
@@ -37,6 +41,7 @@ Key functionalities:
 - **User Update:** Updates the main sandbox user's details (e.g., Last Name, First Name) and can fix country values or marketing user permissions if needed.
 - **Initialization Steps:** Runs the org initialization steps of the project that apply to sandboxes, in their order (\`orgInitSteps\`, edited from the Org Initialization panel of the VS Code extension). Without that key, the steps are built from the older keys \`initPermissionSets\`, \`sandboxOrgInitApexScripts\`, \`dataPackages\` and the \`scripts/data/SandboxInit\` folder. Run [hardis:org:init](https://sfdx-hardis.cloudity.com/hardis/org/init/) to run them again later.
 - **Error Handling:** Provides detailed error messages for common sandbox creation issues, including Salesforce-specific errors.
+- **Development orgs list:** Registers the new sandbox in the [development orgs](https://sfdx-hardis.cloudity.com/salesforce-devops-dev-orgs/) list of the project, with its owner and target branch (\`--owner\` and \`--target-branch\`, asked before the creation when omitted), so its owner knows when to run a backpromote.
 
 <details markdown="1">
 <summary>Technical explanations</summary>
@@ -52,6 +57,7 @@ The command's technical implementation involves:
 - **Error Assertions:** Uses \`assert\` to check the success of Salesforce CLI commands and provides custom error messages for better debugging.
 - **WebSocket Communication:** Uses \`WebSocketClient.sendRefreshStatusMessage\` to notify connected VS Code clients about the new sandbox.
 - **Required Plugin Check:** Explicitly lists \`sfdmu\` as a required plugin, indicating its role in data initialization.
+- **Development orgs list:** Calls \`registerDevOrgUsage\` (\`src/common/utils/devOrgsRegistry.ts\`) once the sandbox is initialized. Without a git provider token, or with \`enableDevOrgsRegistry: false\`, nothing is registered and the creation goes on.
 </details>
 
 ### Agent Mode
@@ -66,6 +72,7 @@ In agent mode:
 
 - The user email prompt is skipped; \`USER_EMAIL\` env var or \`userEmail\` config property is required.
 - If no email is available, an error is thrown.
+- The owner of the sandbox in the development orgs list is \`--owner\`, else the git user; its target branch is \`--target-branch\`, else \`developmentBranch\`.
 `;
 
   public static examples = ['$ sf hardis:org:create', '$ sf hardis:org:create --agent'];
@@ -87,6 +94,12 @@ In agent mode:
     }),
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
+    }),
+    owner: Flags.string({
+      description: 'Owner of the sandbox in the development orgs list: "Name <email>" or an email',
+    }),
+    'target-branch': Flags.string({
+      description: 'Major branch the sandbox targets, in the development orgs list',
     }),
   };
   protected static supportsDevhubUsername = true;
@@ -114,6 +127,8 @@ In agent mode:
   protected authFileJson: any;
   protected projectName: string;
   protected sandboxOrgFromPool: any;
+  protected devOrgOwner: DevOrgPerson | null = null;
+  protected devOrgTargetBranch: string | null = null;
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(SandboxCreate);
@@ -123,6 +138,8 @@ In agent mode:
     await this.initConfig();
     // A mistake in the steps is found before the sandbox is created, not after
     await assertOrgInitStepsValid(this.configInfo, 'sandbox');
+    // Asked before the creation, which takes a while: nobody waits for it to answer a question
+    await this.collectDevOrgRegistration(flags);
     await this.createSandboxOrg();
     try {
       await this.updateSandboxOrgUser();
@@ -140,6 +157,14 @@ In agent mode:
       throw e;
     }
     elapseEnd(`Create and initialize sandbox org`);
+    await registerDevOrgUsage({
+      username: this.sandboxOrgUsername,
+      alias: this.sandboxOrgAlias,
+      targetBranch: this.devOrgTargetBranch,
+      owner: this.devOrgOwner,
+      addCurrentUser: false,
+      commandThis: this,
+    });
     // Return an object to be displayed with --json
     return {
       status: 0,
@@ -286,5 +311,24 @@ In agent mode:
     const userUpdateCommand = `sf data update record --sobject User --record-id ${userQueryRes.result.Id} --values "${updatedUserValues}" --target-org ${this.sandboxOrgAlias}`;
     await execSfdxJson(userUpdateCommand, this, { fail: false, output: true, debug: this.debugMode });
     /* jscpd:ignore-end */
+  }
+
+  // Owner and target branch of the sandbox in the development orgs list
+  protected async collectDevOrgRegistration(flags: any) {
+    if (!(await isDevOrgsRegistryEnabled())) {
+      return;
+    }
+    const interactive = !this.agentMode && !isCI;
+    this.devOrgOwner = parseDevOrgPersonFlag(flags.owner);
+    if (!this.devOrgOwner) {
+      const currentUser = await getCurrentGitUser();
+      this.devOrgOwner = interactive ? await promptDevOrgOwner(this, currentUser) : currentUser;
+    }
+    this.devOrgTargetBranch = flags['target-branch'] || null;
+    if (!this.devOrgTargetBranch) {
+      this.devOrgTargetBranch = interactive
+        ? await selectTargetBranch({ message: t('devOrgTargetBranchPrompt', { name: this.sandboxOrgAlias }) })
+        : this.configInfo.developmentBranch || null;
+    }
   }
 }

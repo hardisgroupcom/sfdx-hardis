@@ -229,6 +229,9 @@
 | [**hardis:project:deploy:sources:metadata**](hardis/project/deploy/sources/metadata.md)                 | Deploy metadata sources to org                                                                                                                                                                                         |
 | [**hardis:project:deploy:start**](hardis/project/deploy/start.md)                                       | sfdx-hardis wrapper for **sf project deploy start** that displays tips to solve deployment errors.                                                                                                                     |
 | [**hardis:project:deploy:validate**](hardis/project/deploy/validate.md)                                 | sfdx-hardis wrapper for **sf project deploy validate** that displays tips to solve deployment errors.                                                                                                                  |
+| [**hardis:project:dev-org:list**](hardis/project/dev-org/list.md)                                       | List the development orgs                                                                                                                                                                                              |
+| [**hardis:project:dev-org:register**](hardis/project/dev-org/register.md)                               | Register a development org                                                                                                                                                                                             |
+| [**hardis:project:dev-org:remove**](hardis/project/dev-org/remove.md)                                   | Remove a development org                                                                                                                                                                                               |
 | [**hardis:project:fix:profiletabs**](hardis/project/fix/profiletabs.md)                                 | Fix profiles to add tabs that are not retrieved by SF CLI                                                                                                                                                              |
 | [**hardis:project:fix:v53flexipages**](hardis/project/fix/v53flexipages.md)                             | Fix flexipages for v53                                                                                                                                                                                                 |
 | [**hardis:project:function:create**](hardis/project/function/create.md)                                 | Create custom function                                                                                                                                                                                                 |
@@ -253,17 +256,18 @@
 
 ## hardis:scratch
 
-| Command                                                               | Title                                    |
-|:----------------------------------------------------------------------|:-----------------------------------------|
-| [**hardis:scratch:create**](hardis/scratch/create.md)                 | Create and initialize scratch org        |
-| [**hardis:scratch:delete**](hardis/scratch/delete.md)                 | Delete scratch orgs(s)                   |
-| [**hardis:scratch:pool:create**](hardis/scratch/pool/create.md)       | Create and configure scratch org pool    |
-| [**hardis:scratch:pool:localauth**](hardis/scratch/pool/localauth.md) | Authenticate locally to scratch org pool |
-| [**hardis:scratch:pool:refresh**](hardis/scratch/pool/refresh.md)     | Refresh scratch org pool                 |
-| [**hardis:scratch:pool:reset**](hardis/scratch/pool/reset.md)         | Reset scratch org pool                   |
-| [**hardis:scratch:pool:view**](hardis/scratch/pool/view.md)           | View scratch org pool info               |
-| [**hardis:scratch:pull**](hardis/scratch/pull.md)                     | Scratch PULL                             |
-| [**hardis:scratch:push**](hardis/scratch/push.md)                     | Scratch PUSH                             |
+| Command                                                                   | Title                                        |
+|:--------------------------------------------------------------------------|:---------------------------------------------|
+| [**hardis:scratch:create**](hardis/scratch/create.md)                     | Create and initialize scratch org            |
+| [**hardis:scratch:delete**](hardis/scratch/delete.md)                     | Delete scratch orgs(s)                       |
+| [**hardis:scratch:pool:create**](hardis/scratch/pool/create.md)           | Create and configure scratch org pool        |
+| [**hardis:scratch:pool:localauth**](hardis/scratch/pool/localauth.md)     | Authenticate locally to scratch org pool     |
+| [**hardis:scratch:pool:refresh**](hardis/scratch/pool/refresh.md)         | Refresh scratch org pool                     |
+| [**hardis:scratch:pool:reset**](hardis/scratch/pool/reset.md)             | Reset scratch org pool                       |
+| [**hardis:scratch:pool:view**](hardis/scratch/pool/view.md)               | View scratch org pool info                   |
+| [**hardis:scratch:pull**](hardis/scratch/pull.md)                         | Scratch PULL                                 |
+| [**hardis:scratch:push**](hardis/scratch/push.md)                         | Scratch PUSH                                 |
+| [**hardis:scratch:snapshot:refresh**](hardis/scratch/snapshot/refresh.md) | Refresh the scratch org snapshot of a branch |
 
 ## hardis:source
 

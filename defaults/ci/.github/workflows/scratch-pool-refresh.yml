@@ -17,6 +17,7 @@
 on:
   schedule:
     - cron: "0 3 * * *" # Every night. Scheduled workflows run on the default branch only
+  # Also started by scratch-snapshot-refresh.yml once a new snapshot of the default branch is Active
   workflow_dispatch:
 permissions: read-all
 name: Refresh scratch org pool (sfdx-hardis)
