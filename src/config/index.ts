@@ -132,7 +132,8 @@ export const getConfig = async (layer: "project" | "branch" | "user" = 'user', o
     return defaultConfig;
   }
   let branchConfig = await loadFromConfigFile(await getBranchConfigFiles(options.branch));
-  branchConfig = Object.assign(defaultConfig, branchConfig);
+  // A read of another branch merges into a copy: the project layer can be the remote config shared by the process
+  branchConfig = Object.assign(writeCache ? defaultConfig : Object.assign({}, defaultConfig), branchConfig);
   if (layer === 'branch') {
     if (writeCache) {
       promptTemplateCache['branch'] = branchConfig;

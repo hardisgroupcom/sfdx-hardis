@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import * as fs from 'fs';
+import * as http from 'http';
 import * as os from 'os';
 import * as path from 'path';
 import { execFileSync } from 'child_process';
@@ -730,5 +731,37 @@ describe('resolveScratchSnapshot', () => {
     const { snapshot, reason } = await resolveScratchSnapshot(devHubConn, 'main');
     expect(reason).to.equal(undefined);
     expect(snapshot).to.deep.equal({ name: 'SH0000000000001', sha, branch: 'main' });
+  });
+});
+
+describe('getConfigOfSnapshotBranch with a remote extends', () => {
+  const originalCwd = process.cwd();
+  let projectDir: string;
+  let server: http.Server;
+
+  beforeEach(async () => {
+    server = http.createServer((_req, res) => res.end('baseKey: base\n'));
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()));
+    const port = (server.address() as any).port;
+    projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapshot-extends-'));
+    execFileSync('git', ['init', '-q', '-b', 'feature/story'], { cwd: projectDir });
+    fs.mkdirSync(path.join(projectDir, 'config', 'branches'), { recursive: true });
+    // A unique URL per run: remote configs are cached by URL for the whole process
+    fs.writeFileSync(path.join(projectDir, 'config', '.sfdx-hardis.yml'), `extends: http://127.0.0.1:${port}/base-${path.basename(projectDir)}.yml\n`);
+    fs.writeFileSync(path.join(projectDir, 'config', 'branches', '.sfdx-hardis.main.yml'), 'useScratchOrgSnapshot: true\n');
+    process.chdir(projectDir);
+  });
+
+  afterEach(async () => {
+    process.chdir(originalCwd);
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+    fs.rmSync(projectDir, { recursive: true, force: true });
+  });
+
+  it('does not write the snapshot branch keys into the remote config the project layer shares', async () => {
+    expect((await getConfigOfSnapshotBranch('main')).useScratchOrgSnapshot).to.equal(true);
+    const project = await getConfig('project');
+    expect(project.baseKey).to.equal('base');
+    expect(project.useScratchOrgSnapshot).to.equal(undefined);
   });
 });
