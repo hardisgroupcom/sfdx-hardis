@@ -178,15 +178,29 @@ describe('isSnapshotSignupRetryable', () => {
 });
 
 describe('getSnapshotSignupError', () => {
+  // The shape execSfdxJson returns: errorMessage is header + stdout + stderr, error is the child process error
+  const HEADER = '[sfdx-hardis][ERROR] Error processing command';
+  const failed = (stdout: string, stderr = '') => ({ status: 1, errorMessage: `${HEADER}\n${stdout}\n${stderr}`, error: { code: 1, stdout, stderr } });
+  const missingSnapshot = '{\n  "name": "MULTIPLE_API_ERRORS",\n  "message": "Multiple errors returned.\\n  Check `error.data` for the error details",\n  "exitCode": 1,\n  "context": "OrgCreateScratch",\n  "data": null\n}';
+
   it('names the Salesforce error of a signup from a missing snapshot (real Dev Hub output)', () => {
-    const errorMessage = '[sfdx-hardis][ERROR] Error processing command\n{\n  "name": "MULTIPLE_API_ERRORS",\n  "message": "Multiple errors returned.\\n  Check `error.data` for the error details",\n  "exitCode": 1,\n  "context": "OrgCreateScratch"\n}';
-    expect(getSnapshotSignupError({ status: 1, errorMessage })).to.equal('MULTIPLE_API_ERRORS: Multiple errors returned.');
+    expect(getSnapshotSignupError(failed(missingSnapshot))).to.equal('MULTIPLE_API_ERRORS: Multiple errors returned.');
   });
 
-  it('falls back to the first line of a message that holds no JSON, then to a generic text', () => {
-    expect(getSnapshotSignupError({ status: 1, errorMessage: 'Socket hang up\nat x' })).to.equal('Socket hang up');
+  it('still names it when stderr carries a warning after the JSON', () => {
+    expect(getSnapshotSignupError(failed(missingSnapshot, '(node:123) Warning: something deprecated\n'))).to.equal('MULTIPLE_API_ERRORS: Multiple errors returned.');
+  });
+
+  it('adds the first Salesforce error of data when the CLI gives one', () => {
+    const withData = JSON.stringify({ name: 'MULTIPLE_API_ERRORS', message: 'Multiple errors returned.', data: [{ errorCode: 'NOT_FOUND', message: 'Snapshot SHx not found' }] });
+    expect(getSnapshotSignupError(failed(withData))).to.equal('MULTIPLE_API_ERRORS: Multiple errors returned. NOT_FOUND: Snapshot SHx not found');
+  });
+
+  it('falls back to the first line after the sfdx-hardis header, and gives null when there is nothing', () => {
+    expect(getSnapshotSignupError(failed('', 'Socket hang up\nat x'))).to.equal('Socket hang up');
     expect(getSnapshotSignupError({ status: 1, message: 'Plain failure' })).to.equal('Plain failure');
-    expect(getSnapshotSignupError(null)).to.equal('unknown error');
+    expect(getSnapshotSignupError(failed('undefined', 'undefined'))).to.equal(null);
+    expect(getSnapshotSignupError(null)).to.equal(null);
   });
 });
 

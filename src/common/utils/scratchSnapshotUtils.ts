@@ -267,19 +267,21 @@ export function isSnapshotSignupRetryable(createResult: any): boolean {
   return !/ScratchOrgInfoTimeoutError|MyDomainResolverTimeoutError|Socket timeout occurred|LIMIT_EXCEEDED|AuthCodeExchangeError|NamedOrgNotFoundError/.test(message);
 }
 
-// The Salesforce error of a failed signup, as "NAME: first line of the message", from the CLI JSON that execSfdxJson
-// puts after its own first line. Falls back to the first line of the text
-export function getSnapshotSignupError(createResult: any): string {
-  const text = String(createResult?.errorMessage || createResult?.message || '');
+// The Salesforce error of a failed signup: "NAME: message" plus the first entry of data, read from the CLI JSON on the
+// child process stdout. Else the first line after the sfdx-hardis header, else null
+export function getSnapshotSignupError(createResult: any): string | null {
   try {
-    const error = JSON.parse(text.slice(text.indexOf('{')));
+    const error = JSON.parse(String(createResult?.error?.stdout ?? ''));
     if (error?.name) {
-      return `${error.name}: ${String(error.message || '').split('\n')[0]}`.trim();
+      const first = Array.isArray(error.data) ? error.data[0] : null;
+      const detail = first ? ` ${[first.errorCode, first.message].filter(Boolean).join(': ')}` : '';
+      return `${error.name}: ${String(error.message || '').split('\n')[0]}${detail}`.trim();
     }
   } catch {
-    // Not the CLI JSON: the first line below says what failed
+    // No CLI JSON on stdout: the text below says what failed
   }
-  return text.split('\n')[0].trim() || 'unknown error';
+  const lines = String(createResult?.errorMessage || createResult?.message || '').split('\n').map((line) => line.trim());
+  return lines.find((line) => line && line !== 'undefined' && !line.startsWith('[sfdx-hardis][ERROR]')) ?? null;
 }
 
 // The snapshot limit that has nothing left, read before the refresh builds its source org. Null when both have room
