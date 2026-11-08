@@ -4,7 +4,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { execFileSync } from 'child_process';
 import { pathToFileURL } from 'url';
-import { getExhaustedSnapshotLimit, getSnapshotDescription, getSnapshotLimitError, getSnapshotScope, getSnapshotSignupError, isSnapshotSignupRetryable, getSnapshotName, parsePositiveSetting, pickScratchSnapshot, pickSnapshotTargetBranch, extendSnapshotDeltaWithDependencies, fetchFullHistoryIfShallow, orgInitStepChangedSince, isScratchSnapshotBranch, scopeDeltaToDeployManifest, scratchDefChangedSince, selectSnapshotOrgInitStepIds } from '../../../src/common/utils/scratchSnapshotUtils.js';
+import { getExhaustedSnapshotLimit, getSnapshotDescription, getSnapshotLimitError, getSnapshotScope, getSnapshotSignupError, isSnapshotSignupRetryable, getSnapshotName, parsePositiveSetting, pickScratchSnapshot, pickSnapshotTargetBranch, extendSnapshotDeltaWithDependencies, fetchFullHistoryIfShallow, orgInitStepChangedSince, getConfigOfSnapshotBranch, resolveScratchSnapshot, isScratchSnapshotBranch, scopeDeltaToDeployManifest, scratchDefChangedSince, selectSnapshotOrgInitStepIds } from '../../../src/common/utils/scratchSnapshotUtils.js';
 import { parsePackageXmlFile } from '../../../src/common/utils/xmlUtils.js';
 import { clearListMajorOrgsCache } from '../../../src/common/utils/orgConfigUtils.js';
 
@@ -647,5 +647,86 @@ describe('isScratchSnapshotBranch', () => {
   it('answers false instead of throwing when the config of another branch is not valid YAML, so a pool refresh goes on', async () => {
     fs.writeFileSync(path.join(projectDir, 'config', 'branches', '.sfdx-hardis.uat.yml'), 'key: [unclosed\n  other: : :\n');
     expect(await isScratchSnapshotBranch('main', null)).to.equal(false);
+  });
+});
+
+describe('getConfigOfSnapshotBranch', () => {
+  const originalCwd = process.cwd();
+  const originalConfigBranch = process.env.CONFIG_BRANCH;
+  let projectDir: string;
+
+  beforeEach(() => {
+    projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapshot-config-'));
+    execFileSync('git', ['init', '-q', '-b', 'feature/story'], { cwd: projectDir });
+    fs.mkdirSync(path.join(projectDir, 'config', 'branches'), { recursive: true });
+    fs.writeFileSync(path.join(projectDir, 'config', '.sfdx-hardis.yml'), 'projectName: demo\ninstalledPackages: []\n');
+    // The refresh of main built the snapshot with this package, the PR job runs on another branch
+    fs.writeFileSync(
+      path.join(projectDir, 'config', 'branches', '.sfdx-hardis.main.yml'),
+      'useScratchOrgSnapshot: true\ninstalledPackages:\n  - SubscriberPackageName: MainOnly\n    SubscriberPackageVersionId: 04t000000000001\n'
+    );
+    process.chdir(projectDir);
+    delete process.env.CONFIG_BRANCH;
+  });
+
+  afterEach(() => {
+    process.chdir(originalCwd);
+    if (originalConfigBranch === undefined) {
+      delete process.env.CONFIG_BRANCH;
+    } else {
+      process.env.CONFIG_BRANCH = originalConfigBranch;
+    }
+    fs.rmSync(projectDir, { recursive: true, force: true });
+  });
+
+  it('loads the branch file of the snapshot branch, not of the branch the job runs on', async () => {
+    const config = await getConfigOfSnapshotBranch('main');
+    expect(config.installedPackages.map((p: any) => p.SubscriberPackageName)).to.deep.equal(['MainOnly']);
+    expect(config.projectName).to.equal('demo');
+  });
+
+  it('puts CONFIG_BRANCH back as it was', async () => {
+    process.env.CONFIG_BRANCH = 'uat';
+    await getConfigOfSnapshotBranch('main');
+    expect(process.env.CONFIG_BRANCH).to.equal('uat');
+    delete process.env.CONFIG_BRANCH;
+    await getConfigOfSnapshotBranch('main');
+    expect(process.env.CONFIG_BRANCH).to.equal(undefined);
+  });
+});
+
+describe('resolveScratchSnapshot', () => {
+  const originalCwd = process.cwd();
+  let projectDir: string;
+
+  beforeEach(() => {
+    projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapshot-resolve-'));
+    const git = (...args: string[]) => execFileSync('git', args, { cwd: projectDir });
+    git('init', '-q', '-b', 'main');
+    fs.mkdirSync(path.join(projectDir, 'config', 'branches'), { recursive: true });
+    fs.writeFileSync(path.join(projectDir, 'config', '.sfdx-hardis.yml'), 'projectName: demo\n');
+    fs.writeFileSync(path.join(projectDir, 'config', 'branches', '.sfdx-hardis.main.yml'), 'useScratchOrgSnapshot: true\n');
+    git('add', '.');
+    git('-c', 'user.email=t@example.com', '-c', 'user.name=t', 'commit', '-q', '-m', 'init');
+    process.chdir(projectDir);
+    clearListMajorOrgsCache();
+  });
+
+  afterEach(() => {
+    process.chdir(originalCwd);
+    clearListMajorOrgsCache();
+    fs.rmSync(projectDir, { recursive: true, force: true });
+  });
+
+  it('returns the branch the snapshot was taken on, so the org is finished with its config', async () => {
+    const sha = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: projectDir, encoding: 'utf8' }).trim();
+    const description = getSnapshotDescription(await getSnapshotScope('main'), sha);
+    const devHubConn = {
+      instanceUrl: 'https://hub.example.com',
+      query: async () => ({ done: true, records: [{ SnapshotName: 'SH0000000000001', Description: description }] }),
+    };
+    const { snapshot, reason } = await resolveScratchSnapshot(devHubConn, 'main');
+    expect(reason).to.equal(undefined);
+    expect(snapshot).to.deep.equal({ name: 'SH0000000000001', sha, branch: 'main' });
   });
 });

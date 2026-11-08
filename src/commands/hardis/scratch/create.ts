@@ -47,6 +47,7 @@ import {
   SCRATCH_SNAPSHOT_DISABLED_ENV,
   ScratchSnapshot,
   selectSnapshotOrgInitStepIds,
+  getConfigOfSnapshotBranch,
 } from '../../../common/utils/scratchSnapshotUtils.js';
 import { getOrgSfdxAuthUrl } from '../../../common/utils/credentialUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
@@ -86,7 +87,7 @@ The command configuration can be customized using:
 - Environment variable **SCRATCH_ORG_SHAPE** with shape org id, if you want to use org shapes
 - Branch config \`useScratchOrgSnapshot: true\` on a major branch: in CI, the scratch org of a Pull Request to that branch is created from the newest Active snapshot of the branch whose commit is in the history of the Pull Request (taken by [hardis:scratch:snapshot:refresh](https://sfdx-hardis.cloudity.com/hardis/scratch/snapshot/refresh/)), and only what changed since that commit is deployed. The target branch is the one of the Pull Request the git provider gives; without a Pull Request (no token, local run), it is read from **FORCE_TARGET_BRANCH**, then from the CI tool's own variable (\`GITHUB_BASE_REF\`, \`CI_MERGE_REQUEST_TARGET_BRANCH_NAME\`, \`SYSTEM_PULLREQUEST_TARGETBRANCH\`, \`BITBUCKET_PR_DESTINATION_BRANCH\`, \`CHANGE_TARGET\`). Without a usable snapshot, or when the Pull Request changed the scratch org definition or a step run at pool fill (its definition, its Apex script or its data workspace), the scratch org is created empty and the log says why. These checks apply to the snapshot route only: a scratch org taken from the pool keeps what its pool fill deployed and ran. Outside CI, as in [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/) when the pool has no org left, the scratch org starts from the snapshot of the major branch the User Story started from. More info in [Use scratch org snapshots for Pull Requests](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-scratch-org-pool/#use-scratch-org-snapshots-for-pull-requests).
 - Environment variable **SCRATCH_ORG_SNAPSHOT** with the name of a Dev Hub org snapshot, to create the scratch org from that snapshot. The commit of the snapshot is not known, so the sources are pushed in full. With a scratch org pool, a pool org is still taken first, as it is already there: the named snapshot is used only when the pool has no org left. A pool fill (\`--pool\`) ignores it.
-- With a snapshot, the definition file leaves out the keys a snapshot does not accept (\`features\`, \`edition\`, \`sourceOrg\`...) and the scratch org pool comes first: a Pull Request scratch org is created from the snapshot only when the pool has no org left. A pool fill (\`--pool\`) creates its org from the newest usable snapshot of its own branch: it installs the packages the snapshot lacks, deploys the changes since the snapshot commit and assigns the permission sets, and the steps with \`runAtPoolFill: false\` still run when a job takes the org. The org initialization steps run as for a pool: the snapshot holds the result of the steps run when filling the pool (\`runAtPoolFill\`), and the scratch org installs the packages it lacks, gets the delta, then the other steps and the permission set assignments.
+- With a snapshot, the definition file leaves out the keys a snapshot does not accept (\`features\`, \`edition\`, \`sourceOrg\`...) and the scratch org pool comes first: a Pull Request scratch org is created from the snapshot only when the pool has no org left. A pool fill (\`--pool\`) creates its org from the newest usable snapshot of its own branch: it installs the packages the snapshot lacks, deploys the changes since the snapshot commit and assigns the permission sets, and the steps with \`runAtPoolFill: false\` still run when a job takes the org. The org initialization steps run as for a pool: the snapshot holds the result of the steps run when filling the pool (\`runAtPoolFill\`), and the scratch org installs the packages it lacks, gets the delta, then the other steps and the permission set assignments. Those steps and packages are read from the config of the snapshot's branch, the one the snapshot was built with, not from the branch the job runs on.
 - Environment variables **SF_SCRATCH_SIGNUP_CONNECTED_APP** and **SF_SCRATCH_SIGNUP_CALLBACK_URL**: by default the new org is signed up with the Salesforce CLI built-in app (\`PlatformCLI\`), so a Dev Hub authenticated through an External Client App works (Salesforce CLI 2.147.7 or later). Not applied when you set **SF_SCRATCH_SIGNUP_CONNECTED_APP** or **SFDX_CLIENT_SECRET**.
 
 <details markdown="1">
@@ -206,9 +207,10 @@ In agent mode:
       if (this.scratchOrgFromPool && !poolOrgInit) {
         uxLog('action', this, c.cyan(t('orgInitPoolOrgFromOlderVersion')));
       }
+      const initConfig = await this.stepsConfig();
       // A snapshot child installs the packages it lacks before its delta, which can depend on them, then gets the
       // delta before the other steps, so a permission set it adds exists when they assign it
-      const snapshotPackageStepIds = this.snapshot ? selectSnapshotOrgInitStepIds(this.configInfo, 'child-packages') : [];
+      const snapshotPackageStepIds = this.snapshot ? selectSnapshotOrgInitStepIds(initConfig, 'child-packages') : [];
       if (snapshotPackageStepIds.length > 0) {
         await runOrgInitSteps({
           orgUsername: this.scratchOrgUsername,
@@ -218,7 +220,7 @@ In agent mode:
           stepIds: snapshotPackageStepIds,
           projectScratchDef: this.projectScratchDef,
           debugMode: this.debugMode,
-          config: this.configInfo,
+          config: initConfig,
         });
       }
       // A named snapshot has no known commit: full deployment
@@ -236,13 +238,13 @@ In agent mode:
         orgType: 'scratch',
         phase: this.pool ? 'pool-fill' : this.scratchOrgFromPool && poolOrgInit ? 'after-pool-fetch' : 'all',
         stepIds: this.snapshot
-          ? selectSnapshotOrgInitStepIds(this.configInfo, this.pool ? 'pool-fill' : 'child')
+          ? selectSnapshotOrgInitStepIds(initConfig, this.pool ? 'pool-fill' : 'child')
           : buildingSnapshotSource
             ? selectSnapshotOrgInitStepIds(this.configInfo, 'source')
             : undefined,
         projectScratchDef: this.projectScratchDef,
         debugMode: this.debugMode,
-        config: this.configInfo,
+        config: initConfig,
       });
       if (this.pool) {
         // Stored with the org in the pool
@@ -702,6 +704,11 @@ In agent mode:
       uxLog("warning", this, c.yellow(t('scratchSnapshotNotUsed', { reason: (e as Error).message })));
       return null;
     }
+  }
+
+  // An org from a snapshot is finished with the config the snapshot was built with, not the one of this job's branch
+  protected async stepsConfig(): Promise<any> {
+    return this.snapshot?.branch ? getConfigOfSnapshotBranch(this.snapshot.branch) : this.configInfo;
   }
 
   // The branch whose snapshot is looked up: the given one (pool fill); in CI, the Pull Request target (undefined);

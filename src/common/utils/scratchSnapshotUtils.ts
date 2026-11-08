@@ -24,7 +24,8 @@ import { t } from './i18n.js';
 // Set by hardis:scratch:snapshot:refresh on its own scratch org, which must be built from empty
 export const SCRATCH_SNAPSHOT_DISABLED_ENV = 'SFDX_HARDIS_SCRATCH_SNAPSHOT_DISABLED';
 
-export type ScratchSnapshot = { name: string; sha: string };
+// branch: the major branch whose refresh built it, unknown for a snapshot named in SCRATCH_ORG_SNAPSHOT
+export type ScratchSnapshot = { name: string; sha: string; branch?: string };
 
 // The newest Active snapshot of the target branch (the given branch for a pool fill) whose commit is in the history
 // of HEAD, or the reason why the scratch org must be created empty. No reason when no branch uses snapshots
@@ -55,7 +56,7 @@ export async function resolveScratchSnapshot(devHubConn: any, branch?: string): 
   if (changedStep) {
     return { reason: t('scratchSnapshotOrgInitStepChanged', { step: changedStep, sha: snapshot.sha.slice(0, 8) }) };
   }
-  return { snapshot };
+  return { snapshot: { ...snapshot, branch: targetBranch } };
 }
 
 // The Pull Request of the git provider first, as deploy:smart and the PR comments use it. FORCE_TARGET_BRANCH, then
@@ -67,6 +68,22 @@ export function pickSnapshotTargetBranch(prTargetBranch?: string | null): string
       .map((name) => getEnvVar(name))
       .find(Boolean);
   return targetBranch ? targetBranch.replace(/^refs\/heads\//, '') : undefined;
+}
+
+// The config a snapshot was built with: project, the branch file of its branch, then user. A Pull Request job loads
+// the branch file of the branch it runs on, so it would otherwise finish the org with other init steps and packages
+export async function getConfigOfSnapshotBranch(branch: string): Promise<any> {
+  const previous = process.env.CONFIG_BRANCH;
+  process.env.CONFIG_BRANCH = branch.replace('/', '__');
+  try {
+    return await getConfig('user');
+  } finally {
+    if (previous === undefined) {
+      delete process.env.CONFIG_BRANCH;
+    } else {
+      process.env.CONFIG_BRANCH = previous;
+    }
+  }
 }
 
 // For a caller that only optimizes when snapshots are on: a branch config it cannot read (any branch, as all are

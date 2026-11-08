@@ -1,4 +1,8 @@
 import { expect } from 'chai';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+import { execFileSync } from 'child_process';
 import ScratchCreate from '../../../../src/commands/hardis/scratch/create.js';
 import { SCRATCH_SNAPSHOT_DISABLED_ENV } from '../../../../src/common/utils/scratchSnapshotUtils.js';
 import { getCurrentGitBranch } from '../../../../src/common/utils/index.js';
@@ -13,6 +17,9 @@ class CreateProbe extends ScratchCreate {
   }
   public async branchFor(branch: string | undefined, ci: boolean) {
     return this.snapshotBranch(branch, ci);
+  }
+  public async configForInit() {
+    return this.stepsConfig();
   }
   protected async fetchFromPool(): Promise<any> {
     this.calls.push('pool');
@@ -127,5 +134,39 @@ describe('hardis:scratch:create pool or snapshot', () => {
     (command as any).configInfo = { developmentBranch: 'integration' };
     expect(await command.branchFor(undefined, true)).to.equal(undefined);
     expect(await command.branchFor('main', false)).to.equal('main');
+  });
+});
+
+describe('hardis:scratch:create init config', () => {
+  const originalCwd = process.cwd();
+  let projectDir: string;
+
+  beforeEach(() => {
+    projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'create-init-config-'));
+    execFileSync('git', ['init', '-q', '-b', 'feature/story'], { cwd: projectDir });
+    fs.mkdirSync(path.join(projectDir, 'config', 'branches'), { recursive: true });
+    fs.writeFileSync(path.join(projectDir, 'config', '.sfdx-hardis.yml'), 'installedPackages: []\n');
+    fs.writeFileSync(path.join(projectDir, 'config', 'branches', '.sfdx-hardis.main.yml'), 'installedPackages:\n  - SubscriberPackageName: MainOnly\n');
+    process.chdir(projectDir);
+  });
+
+  afterEach(() => {
+    process.chdir(originalCwd);
+    fs.rmSync(projectDir, { recursive: true, force: true });
+  });
+
+  it('finishes an org from a snapshot with the config of the snapshot branch', async () => {
+    const command = probe(null);
+    (command as any).snapshot = { name: 'SH0000000000001', sha: 'a'.repeat(40), branch: 'main' };
+    const config = await command.configForInit();
+    expect(config.installedPackages.map((p: any) => p.SubscriberPackageName)).to.deep.equal(['MainOnly']);
+  });
+
+  it('keeps the config of the job for an empty org and for a snapshot named in SCRATCH_ORG_SNAPSHOT', async () => {
+    const command = probe(null);
+    const jobConfig = (command as any).configInfo;
+    expect(await command.configForInit()).to.equal(jobConfig);
+    (command as any).snapshot = { name: 'SHnamed00000001', sha: '' };
+    expect(await command.configForInit()).to.equal(jobConfig);
   });
 });
