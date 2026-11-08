@@ -483,7 +483,10 @@ In agent mode:
     // A resolved snapshot can be pruned or expire between its lookup and the signup: then create an empty scratch org
     if ((!createResult || createResult.status !== 0 || !createResult.result) && this.snapshot?.sha && isSnapshotSignupRetryable(createResult)) {
       const error = getSnapshotSignupError(createResult);
-      uxLog("warning", this, c.yellow(t('scratchSnapshotNotUsed', { reason: t('scratchSnapshotFailed', { name: this.snapshot.name, error }) })));
+      uxLog("log", this, c.grey(JSON.stringify(createResult, null, 2)));
+      uxLog("warning", this, c.yellow(error
+        ? t('scratchSnapshotSignupRetry', { name: this.snapshot.name, error })
+        : t('scratchSnapshotSignupRetryNoDetail', { name: this.snapshot.name })));
       this.snapshot = null;
       await fs.writeFile(projectScratchDefLocal, JSON.stringify(this.projectScratchDef, null, 2));
       createResult = await runCreateCommand();

@@ -3785,6 +3785,8 @@
   "scratchSnapshotNotUsed": "Scratch org criada sem snapshot: {{reason}}",
   "scratchSnapshotOrgInitStepChanged": "a etapa de inicialização da org {{step}}, ou o script Apex ou os dados que ela usa, mudaram desde o commit {{sha}} do snapshot: o snapshot contém o resultado anterior",
   "scratchSnapshotScratchDefChanged": "a definição da scratch org ou suas configurações mudaram desde o commit {{sha}} do snapshot: uma scratch org criada a partir de um snapshot não pode receber novas funcionalidades nem configurações",
+  "scratchSnapshotSignupRetry": "A criação a partir do snapshot {{name}} falhou ({{error}}): a scratch org será criada sem snapshot",
+  "scratchSnapshotSignupRetryNoDetail": "A criação a partir do snapshot {{name}} falhou: a scratch org será criada sem snapshot",
   "scratchSnapshotSourceOrgFailed": "Não foi possível criar a scratch org da qual tirar o snapshot",
   "scratchSnapshotTaking": "Tirando o snapshot {{name}} da branch {{branch}} no commit {{sha}}...",
   "scratchSnapshotTimeout": "O snapshot {{name}} não estava ativo após {{minutes}} minutos (defina SCRATCH_ORG_SNAPSHOT_WAIT para esperar mais)",
