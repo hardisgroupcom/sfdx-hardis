@@ -227,7 +227,7 @@ In agent mode:
       }
       // A named snapshot has no known commit: full deployment
       if (this.snapshot?.sha) {
-        await deploySnapshotDelta(this.snapshot, this.configInfo, this.scratchOrgUsername, this, this.debugMode);
+        await deploySnapshotDelta(this.snapshot, initConfig, this.scratchOrgUsername, this, this.debugMode);
       } else if (this.snapshot) {
         await initOrgMetadatas(this.configInfo, this.scratchOrgUsername, this.scratchOrgAlias, this.projectScratchDef, this.debugMode, {
           scratch: true,
