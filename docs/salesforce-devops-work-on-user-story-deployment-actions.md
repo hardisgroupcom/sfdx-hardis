@@ -484,11 +484,11 @@ The action runs after the deployment only, and only in the `process-deployment-o
 
 User Access Policies must be enabled in the org: **Setup > User Management Settings > User Access Policies**, or the `userAccessPoliciesEnabled` field of the `UserManagement` settings.
 
-| Custom parameter        | Required? | Description                                                                  | Example              |
-|-------------------------|:---------:|------------------------------------------------------------------------------|----------------------|
-| `parameters.policies`   |    Yes    | Developer names of the policies.                                             | `[Sales_Rep_Access]` |
-| `parameters.activate`   |    No     | Activates the policies. Defaults to `true`.                                  | `true`               |
-| `parameters.applyToAll` |    No     | Runs Apply To All for each policy. Defaults to `false`.                      | `true`               |
+| Custom parameter        | Required? | Description                                             | Example              |
+|-------------------------|:---------:|---------------------------------------------------------|----------------------|
+| `parameters.policies`   |    Yes    | Developer names of the policies.                        | `[Sales_Rep_Access]` |
+| `parameters.activate`   |    No     | Activates the policies. Defaults to `true`.             | `true`               |
+| `parameters.applyToAll` |    No     | Runs Apply To All for each policy. Defaults to `false`. | `true`               |
 
 ```yaml
 commandsPostDeploy:
