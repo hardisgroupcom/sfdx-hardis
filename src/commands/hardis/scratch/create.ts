@@ -184,6 +184,8 @@ In agent mode:
   protected scratchOrgFromPool: any;
   protected poolOrgInit: PoolOrgInitInfo | undefined;
   protected snapshot: ScratchSnapshot | null = null;
+  // The config the snapshot was built with, read before the signup
+  protected snapshotConfig: any = null;
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(ScratchCreate);
@@ -418,6 +420,7 @@ In agent mode:
     }
     // After the reuse check: a reused scratch org was not created from a snapshot and gets the full initialization
     await this.takeOrgSource(flags);
+    await this.loadSnapshotConfig();
     if (this.snapshot) {
       const { scratchDef, droppedKeys } = buildSnapshotScratchDef(this.projectScratchDef, this.snapshot.name);
       uxLog("action", this, c.cyan(t('creatingScratchOrgFromSnapshot', { snapshot: c.green(this.snapshot.name), droppedKeys: droppedKeys.join(', ') || '-' })));
@@ -456,6 +459,9 @@ In agent mode:
     // definition, and a mistake found now does not cost a scratch org
     await this.checkScratchOrgDefinition();
     await assertOrgInitStepsValid(this.configInfo, 'scratch');
+    if (this.snapshotConfig) {
+      await assertOrgInitStepsValid(this.snapshotConfig, 'scratch');
+    }
 
     // Fix @salesforce/cli bug: remove shape.zip if found
     const tmpShapeFolder = path.join(os.tmpdir(), 'shape');
@@ -706,9 +712,23 @@ In agent mode:
     }
   }
 
-  // An org from a snapshot is finished with the config the snapshot was built with, not the one of this job's branch
+  // An org from a snapshot is finished with the config it was built with. Read before the signup, so a config that
+  // cannot be read costs no scratch org: the snapshot is dropped and the org is created empty
+  protected async loadSnapshotConfig(): Promise<void> {
+    if (!this.snapshot?.branch) {
+      return;
+    }
+    try {
+      this.snapshotConfig = await getConfigOfSnapshotBranch(this.snapshot.branch);
+    } catch (e) {
+      uxLog("warning", this, c.yellow(t('scratchSnapshotNotUsed', { reason: (e as Error).message })));
+      this.snapshot = null;
+    }
+  }
+
+  // A signup retried without its snapshot, or a named one with no branch, keeps the config of this job
   protected async stepsConfig(): Promise<any> {
-    return this.snapshot?.branch ? getConfigOfSnapshotBranch(this.snapshot.branch) : this.configInfo;
+    return this.snapshot && this.snapshotConfig ? this.snapshotConfig : this.configInfo;
   }
 
   // The branch whose snapshot is looked up: the given one (pool fill); in CI, the Pull Request target (undefined);

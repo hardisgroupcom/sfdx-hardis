@@ -21,6 +21,9 @@ class CreateProbe extends ScratchCreate {
   public async configForInit() {
     return this.stepsConfig();
   }
+  public async loadConfigOfSnapshot() {
+    return this.loadSnapshotConfig();
+  }
   protected async fetchFromPool(): Promise<any> {
     this.calls.push('pool');
     return this.poolOrg;
@@ -155,11 +158,22 @@ describe('hardis:scratch:create init config', () => {
     fs.rmSync(projectDir, { recursive: true, force: true });
   });
 
-  it('finishes an org from a snapshot with the config of the snapshot branch', async () => {
+  it('finishes an org from a snapshot with the config of the snapshot branch, read before the signup', async () => {
     const command = probe(null);
     (command as any).snapshot = { name: 'SH0000000000001', sha: 'a'.repeat(40), branch: 'main' };
+    await command.loadConfigOfSnapshot();
     const config = await command.configForInit();
     expect(config.installedPackages.map((p: any) => p.SubscriberPackageName)).to.deep.equal(['MainOnly']);
+  });
+
+  it('drops the snapshot before the signup when the config of its branch cannot be read', async () => {
+    // Its own branch: the config loader falls back to a file it read well before in the same process
+    fs.writeFileSync(path.join(projectDir, 'config', 'branches', '.sfdx-hardis.uat.yml'), 'key: [unclosed\n  other: : :\n');
+    const command = probe(null);
+    (command as any).snapshot = { name: 'SH0000000000001', sha: 'a'.repeat(40), branch: 'uat' };
+    await command.loadConfigOfSnapshot();
+    expect((command as any).snapshot).to.equal(null);
+    expect(await command.configForInit()).to.equal((command as any).configInfo);
   });
 
   it('keeps the config of the job for an empty org and for a snapshot named in SCRATCH_ORG_SNAPSHOT', async () => {
