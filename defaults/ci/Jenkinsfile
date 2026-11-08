@@ -196,6 +196,11 @@ pipeline {
                 ///////////////////////////////////////////////////////////////////////////////
                 stage('Scratch Org Tests') {
                     when { environment name: 'USE_SCRATCH_ORGS', value: 'true' }
+                    environment {
+                        // Jenkins does not set CI: without it, sfdx-hardis runs as on a workstation and
+                        // skips the lookup of the scratch org snapshot of the target branch
+                        CI = 'true'
+                    }
                     steps {
                         script {
                             def currentBranch = env.GIT_BRANCH?.replaceAll('^(refs/heads/|origin/)', '') ?: ''
@@ -222,7 +227,8 @@ pipeline {
                                     sh 'sf hardis:scratch:create'
                                     // A scratch org that was just created can be not ready yet
                                     sh 'sleep 120'
-                                    sh 'sf hardis:org:test:apex'
+                                    // ORG_ALIAS (set for the whole pipeline) is PR-<number> here: without it, the tests run in the scratch org
+                                    sh 'ORG_ALIAS= sf hardis:org:test:apex'
                                     // Not reached when a command above failed, so the scratch org can be investigated until it expires.
                                     // Set CI_DELETE_SCRATCH_ORG to "false" only to investigate issues
                                     sh '''
@@ -392,6 +398,41 @@ pipeline {
                             sh 'sf hardis:project:deploy:smart'
                         }
                     }
+                }
+            }
+            post {
+                always {
+                    archiveArtifacts allowEmptyArchive: true, artifacts: 'hardis-report/**', defaultExcludes: false, followSymlinks: false
+                }
+            }
+        }
+
+        /////////////////////////////////////////////////////////////////////////////////
+        // Refresh the scratch org snapshot of a deployment branch whose branch config //
+        // sets useScratchOrgSnapshot: true, so that the scratch orgs of Pull Requests //
+        // to that branch are created from it. Runs only when USE_SCRATCH_ORGS is true //
+        /////////////////////////////////////////////////////////////////////////////////
+        stage('Scratch Org Snapshot Refresh') {
+            when {
+                allOf {
+                    expression { DEPLOYMENT_BRANCHES.contains(env.BRANCH_NAME_CLEAN) }
+                    not { changeRequest() }
+                    not { environment name: 'SCRATCH_ORG_POOL', value: 'true' }
+                    environment name: 'USE_SCRATCH_ORGS', value: 'true'
+                }
+            }
+            environment {
+                // Jenkins does not set CI: without it, the refresh logs in and cleans up as on a workstation
+                CI = 'true'
+            }
+            steps {
+                withCredentials([
+                    string(credentialsId: 'SFDX_AUTH_URL_DEV_HUB',  variable: 'SFDX_AUTH_URL_DEV_HUB',  optional: true),
+                    string(credentialsId: 'SFDX_CLIENT_ID_DEVHUB',  variable: 'SFDX_CLIENT_ID_DEVHUB',  optional: true),
+                    string(credentialsId: 'SFDX_CLIENT_KEY_DEVHUB', variable: 'SFDX_CLIENT_KEY_DEVHUB', optional: true),
+                ]) {
+                    // ORG_ALIAS (set for the whole pipeline) names the branch org: the refresh must not target it
+                    sh 'ORG_ALIAS= sf hardis:scratch:snapshot:refresh'
                 }
             }
             post {
