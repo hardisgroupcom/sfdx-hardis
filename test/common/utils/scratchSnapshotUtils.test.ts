@@ -4,7 +4,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { execFileSync } from 'child_process';
 import { pathToFileURL } from 'url';
-import { getExhaustedSnapshotLimit, getSnapshotDescription, getSnapshotScope, getSnapshotSignupError, isSnapshotSignupRetryable, getSnapshotName, parsePositiveSetting, pickScratchSnapshot, pickSnapshotTargetBranch, extendSnapshotDeltaWithDependencies, fetchFullHistoryIfShallow, orgInitStepChangedSince, scopeDeltaToDeployManifest, scratchDefChangedSince, selectSnapshotOrgInitStepIds } from '../../../src/common/utils/scratchSnapshotUtils.js';
+import { getExhaustedSnapshotLimit, getSnapshotDescription, getSnapshotLimitError, getSnapshotScope, getSnapshotSignupError, isSnapshotSignupRetryable, getSnapshotName, parsePositiveSetting, pickScratchSnapshot, pickSnapshotTargetBranch, extendSnapshotDeltaWithDependencies, fetchFullHistoryIfShallow, orgInitStepChangedSince, scopeDeltaToDeployManifest, scratchDefChangedSince, selectSnapshotOrgInitStepIds } from '../../../src/common/utils/scratchSnapshotUtils.js';
 import { parsePackageXmlFile } from '../../../src/common/utils/xmlUtils.js';
 
 const shaNew = 'a'.repeat(40);
@@ -220,6 +220,21 @@ describe('getSnapshotSignupError', () => {
     expect(getSnapshotSignupError({ status: 1, message: 'Plain failure' })).to.equal('Plain failure');
     expect(getSnapshotSignupError(failed('undefined', 'undefined'))).to.equal(null);
     expect(getSnapshotSignupError(null)).to.equal(null);
+  });
+});
+
+describe('getSnapshotLimitError', () => {
+  const failed = (stdout: string) => ({ status: 1, errorMessage: `[sfdx-hardis][ERROR] Error processing command\n${stdout}\n`, error: { code: 1, stdout, stderr: '' } });
+  // Keys and values of the real refusal, hub 3, 2026-11-08 (stack and cause left out)
+  const limitExceeded = JSON.stringify({ name: 'LIMIT_EXCEEDED', message: 'Unable to create snapshot: active org snapshots 6 exceed limit 5', exitCode: 1, context: 'SnapshotCreate', data: { message: 'Unable to create snapshot: active org snapshots 6 exceed limit 5', errorCode: 'LIMIT_EXCEEDED', fields: [] }, warnings: [], code: '1', status: 1, commandName: 'SnapshotCreate' }, null, 2);
+
+  it('names the Salesforce error of a snapshot the Dev Hub refused for a limit (real Dev Hub output)', () => {
+    expect(getSnapshotLimitError(failed(limitExceeded))).to.equal('LIMIT_EXCEEDED: Unable to create snapshot: active org snapshots 6 exceed limit 5');
+  });
+
+  it('gives null for any other failure, which must stop the refresh', () => {
+    expect(getSnapshotLimitError(failed(JSON.stringify({ name: 'INVALID_INPUT', message: 'Bad source org' })))).to.equal(null);
+    expect(getSnapshotLimitError(null)).to.equal(null);
   });
 });
 

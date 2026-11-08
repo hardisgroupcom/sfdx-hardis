@@ -9,6 +9,7 @@ import {
   getExhaustedSnapshotLimit,
   getScratchSnapshotBranchConfig,
   getSnapshotDescription,
+  getSnapshotLimitError,
   getSnapshotName,
   getSnapshotRecord,
   getSnapshotScope,
@@ -204,9 +205,11 @@ The command has no prompt.
       );
       if (snapshotResult?.status !== 0) {
         const message = String(snapshotResult?.message || snapshotResult?.errorMessage || '');
-        // LIMIT_EXCEEDED is the Salesforce error code of org limits; a broader match would hide real failures
-        if (/LIMIT_EXCEEDED/.test(message)) {
-          uxLog("warning", this, c.yellow(t('scratchSnapshotLimitReached', { message })));
+        const limitError = getSnapshotLimitError(snapshotResult);
+        if (limitError) {
+          // The whole CLI output stays in the log; the warning names only the Salesforce error
+          uxLog("log", this, c.grey(message));
+          uxLog("warning", this, c.yellow(t('scratchSnapshotLimitReached', { message: limitError })));
           return false;
         }
         throw new SfError(t('scratchSnapshotFailed', { name, error: message }));

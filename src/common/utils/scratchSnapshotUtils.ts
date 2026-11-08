@@ -284,6 +284,13 @@ export function getSnapshotSignupError(createResult: any): string | null {
   return lines[0] ?? null;
 }
 
+// The Salesforce error of a snapshot the Dev Hub refused for a limit, null for any other failure. LIMIT_EXCEEDED is
+// the Salesforce error code of org limits; a broader match would hide real failures
+export function getSnapshotLimitError(snapshotResult: any): string | null {
+  const message = String(snapshotResult?.message || snapshotResult?.errorMessage || '');
+  return /LIMIT_EXCEEDED/.test(message) ? (getSnapshotSignupError(snapshotResult) ?? message) : null;
+}
+
 // The snapshot limit that has nothing left, read before the refresh builds its source org. Null when both have room
 // or the Dev Hub does not report them.
 export function getExhaustedSnapshotLimit(limits: any): string | null {
