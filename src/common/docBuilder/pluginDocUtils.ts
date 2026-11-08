@@ -209,9 +209,12 @@ export function getCommandTitle(command: any): string {
  * The values are written as JSON strings, which YAML reads as double-quoted strings.
  */
 export function buildFrontMatter(title: string, description: string): string {
-  return ['---', `title: ${JSON.stringify(title)}`, `description: ${JSON.stringify(toMetaDescription(description))}`, '---'].join(
-    '\n'
-  );
+  return [
+    '---',
+    `title: ${JSON.stringify(title.replace(/\s+/g, ' ').trim())}`,
+    `description: ${JSON.stringify(toMetaDescription(description))}`,
+    '---',
+  ].join('\n');
 }
 
 // Row of the Parameters table for a flag, as oclif caches it
@@ -281,9 +284,13 @@ function removeFrontMatter(content: string): string {
   return match ? content.substring(match[0].length) : content;
 }
 
-// First paragraph of prose of a command description: no heading, picture, HTML or list
+/**
+ * First paragraph of prose of a command description: no heading, picture, HTML or list.
+ * A paragraph that ends with a colon announces a list: the items of that list follow it.
+ */
 function getFirstParagraph(markdown: string): string {
   const paragraph: string[] = [];
+  const listItems: string[] = [];
   let inCodeBlock = false;
   for (const rawLine of markdown.split(/\r?\n/)) {
     const line = rawLine.trim();
@@ -294,21 +301,27 @@ function getFirstParagraph(markdown: string): string {
     if (inCodeBlock) {
       continue;
     }
-    if (line === '') {
+    const listItem = line.match(/^(?:[-*+]|\d+\.) (.*)$/);
+    const announcesList = paragraph.length > 0 && paragraph[paragraph.length - 1].endsWith(':');
+    // Blank lines may separate the items of a list
+    if (announcesList && (listItem || line === '')) {
+      if (listItem) {
+        listItems.push(listItem[1]);
+      }
+      continue;
+    }
+    if (line === '' || /^(#|<|!\[|\[!\[|[-*+] |\d+\. |\||>)/.test(line)) {
       if (paragraph.length > 0) {
         break;
       }
       continue;
     }
-    if (/^(#|<|!\[|\[!\[|[-*+] |\d+\. |\||>)/.test(line)) {
-      if (paragraph.length > 0) {
-        break;
-      }
-      continue;
+    if (listItems.length > 0) {
+      break;
     }
     paragraph.push(line);
   }
-  return paragraph.join(' ');
+  return listItems.length > 0 ? `${paragraph.join(' ')} ${listItems.join(', ')}` : paragraph.join(' ');
 }
 
 // Plain text of at most 300 characters, cut at a word: a meta description shows no Markdown
@@ -318,6 +331,7 @@ function toMetaDescription(markdown: string): string {
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
     .replace(/<[^>]+>/g, '')
     .replace(/(\*\*|__|`)/g, '')
+    .replace(/(^|\s)_([^_]+)_(?=\s|$|[.,;:)])/g, '$1$2')
     .replace(/\s+/g, ' ')
     .trim();
   if (text.length <= 300) {

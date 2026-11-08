@@ -1,6 +1,6 @@
 ---
 title: "hardis:project:deploy:notify - Deployment Notifications"
-description: "Post notifications related to:"
+description: "Post notifications related to: Deployment simulation (use with --check-only), Deployment process (to call only if your deployment is successful)"
 ---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:deploy:notify

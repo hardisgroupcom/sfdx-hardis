@@ -1,5 +1,5 @@
 ---
-title: "hardis:org:fix:listviewmine - Fix listviews with "
+title: "hardis:org:fix:listviewmine - Fix listviews with"
 description: "Fix listviews whose scope Mine has been replaced by Everything"
 ---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->

@@ -143,6 +143,19 @@ describe('plugin doc: pages', () => {
     assert.ok(markdown.startsWith('---\ntitle: "hardis:org:thing"\ndescription: "Does the thing in the org. Second line."\n---\n'));
   });
 
+  it('keeps the list a first paragraph announces, and writes a title on one line', () => {
+    const markdown = buildCommandDocMarkdown({
+      id: 'hardis:project:deploy:notify',
+      title: 'Deployment\nNotifications',
+      description: 'Post notifications related to:\n\n- **Deployment simulation** _(check only)_\n\n- Deployment process\n\n### More\n\nMore text.',
+    });
+    assert.ok(
+      markdown.startsWith(
+        '---\ntitle: "hardis:project:deploy:notify - Deployment Notifications"\ndescription: "Post notifications related to: Deployment simulation (check only), Deployment process"\n---\n'
+      )
+    );
+  });
+
   it('cuts a long meta description at a word, and escapes quotes', () => {
     const frontMatter = buildFrontMatter('A "quoted" title', 'word '.repeat(100));
     assert.ok(frontMatter.startsWith('---\ntitle: "A \\"quoted\\" title"\ndescription: "word word'));

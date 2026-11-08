@@ -16,6 +16,7 @@
   - The [User Access Policy](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions-user-access-policy/) action now activates User Access Policies and runs Apply To All through Browserforce.
   - Documentation: an overview page, and one page per action type.
 - [hardis:doc:plugin:generate](https://sfdx-hardis.cloudity.com/hardis/doc/plugin/generate/): every generated page has a title and a meta description for search engines.
+- Documentation site: new [llms.txt](https://sfdx-hardis.cloudity.com/llms.txt), which lists every page, command and setting for coding agents, with a link to its Markdown source.
 
 ## [8.23.0] 2026-11-06
 
