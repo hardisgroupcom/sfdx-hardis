@@ -420,6 +420,11 @@ In agent mode:
     }
     // After the reuse check: a reused scratch org was not created from a snapshot and gets the full initialization
     await this.takeOrgSource(flags);
+    // The steps of this job's own config first: on a pool fill the snapshot branch is this branch, and a step that
+    // cannot run must fail the job here, not first drop the snapshot. An org taken from the pool runs no new step
+    if (!this.scratchOrgFromPool) {
+      await assertOrgInitStepsValid(this.configInfo, 'scratch');
+    }
     await this.loadSnapshotConfig();
     if (this.snapshot) {
       const { scratchDef, droppedKeys } = buildSnapshotScratchDef(this.projectScratchDef, this.snapshot.name);
@@ -458,7 +463,6 @@ In agent mode:
     // Checked only when a new org is requested: a reused org or one taken from the pool needs no
     // definition, and a mistake found now does not cost a scratch org
     await this.checkScratchOrgDefinition();
-    await assertOrgInitStepsValid(this.configInfo, 'scratch');
 
     // Fix @salesforce/cli bug: remove shape.zip if found
     const tmpShapeFolder = path.join(os.tmpdir(), 'shape');
