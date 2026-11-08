@@ -459,9 +459,6 @@ In agent mode:
     // definition, and a mistake found now does not cost a scratch org
     await this.checkScratchOrgDefinition();
     await assertOrgInitStepsValid(this.configInfo, 'scratch');
-    if (this.snapshotConfig) {
-      await assertOrgInitStepsValid(this.snapshotConfig, 'scratch');
-    }
 
     // Fix @salesforce/cli bug: remove shape.zip if found
     const tmpShapeFolder = path.join(os.tmpdir(), 'shape');
@@ -712,14 +709,16 @@ In agent mode:
     }
   }
 
-  // An org from a snapshot is finished with the config it was built with. Read before the signup, so a config that
-  // cannot be read costs no scratch org: the snapshot is dropped and the org is created empty
+  // An org from a snapshot is finished with the config it was built with. Read and checked before the signup: one
+  // that cannot be read or has a step that cannot run drops the snapshot, and the org is created empty
   protected async loadSnapshotConfig(): Promise<void> {
     if (!this.snapshot?.branch) {
       return;
     }
     try {
-      this.snapshotConfig = await getConfigOfSnapshotBranch(this.snapshot.branch);
+      const config = await getConfigOfSnapshotBranch(this.snapshot.branch);
+      await assertOrgInitStepsValid(config, 'scratch');
+      this.snapshotConfig = config;
     } catch (e) {
       uxLog("warning", this, c.yellow(t('scratchSnapshotNotUsed', { reason: (e as Error).message })));
       this.snapshot = null;

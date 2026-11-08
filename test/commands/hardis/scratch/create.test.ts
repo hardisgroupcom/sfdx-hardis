@@ -167,10 +167,23 @@ describe('hardis:scratch:create init config', () => {
   });
 
   it('drops the snapshot before the signup when the config of its branch cannot be read', async () => {
-    // Its own branch: the config loader falls back to a file it read well before in the same process
-    fs.writeFileSync(path.join(projectDir, 'config', 'branches', '.sfdx-hardis.uat.yml'), 'key: [unclosed\n  other: : :\n');
+    // A branch name no other test reads: the config loader falls back to a good copy of a file it read before
+    const branch = `bad-${path.basename(projectDir)}`;
+    fs.writeFileSync(path.join(projectDir, 'config', 'branches', `.sfdx-hardis.${branch}.yml`), 'key: [unclosed\n  other: : :\n');
     const command = probe(null);
-    (command as any).snapshot = { name: 'SH0000000000001', sha: 'a'.repeat(40), branch: 'uat' };
+    (command as any).snapshot = { name: 'SH0000000000001', sha: 'a'.repeat(40), branch };
+    await command.loadConfigOfSnapshot();
+    expect((command as any).snapshot).to.equal(null);
+    expect(await command.configForInit()).to.equal((command as any).configInfo);
+  });
+
+  it('drops the snapshot before the signup when a step of its branch config cannot run, as the job config can', async () => {
+    fs.writeFileSync(
+      path.join(projectDir, 'config', 'branches', '.sfdx-hardis.main.yml'),
+      'orgInitSteps:\n  - id: apex\n    type: apex\n    parameters:\n      apexScript: scripts/apex/missing.apex\n'
+    );
+    const command = probe(null);
+    (command as any).snapshot = { name: 'SH0000000000001', sha: 'a'.repeat(40), branch: 'main' };
     await command.loadConfigOfSnapshot();
     expect((command as any).snapshot).to.equal(null);
     expect(await command.configForInit()).to.equal((command as any).configInfo);
