@@ -6,14 +6,14 @@ site and a real VS Code (the lab driver), unattended. The user deleted the fork 
 
 ## Versions under test
 
-| What                       | Value                                                                          |
-|----------------------------|--------------------------------------------------------------------------------|
-| sfdx-hardis                | `main` at v8.24.0 (`2f0aebffe`), linked in the extension host                  |
-| vscode-sfdx-hardis         | `main` at v8.19.0 (`b4659ac8`), built `yarn compile && yarn dev`               |
-| sfdx-hardis-training       | `main` at `b8e7ea81` (#367), the published site was on the same commit         |
-| Fork                       | `nvuillam/sfdx-hardis-training`, created by `init` (new, Pull Requests from #1) |
-| Orgs                       | `helios-prod` (Dev Hub), `helios-preprod`, scratch orgs `helios-dev`, `-integration`, `-uat` of an earlier walk, put back with the course teardown |
-| Course images in CI        | released (`latest`), no override                                               |
+| What                 | Value                                                                                                                                              |
+|----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
+| sfdx-hardis          | `main` at v8.24.0 (`2f0aebffe`), linked in the extension host                                                                                      |
+| vscode-sfdx-hardis   | `main` at v8.19.0 (`b4659ac8`), built `yarn compile && yarn dev`                                                                                   |
+| sfdx-hardis-training | `main` at `b8e7ea81` (#367), the published site was on the same commit                                                                             |
+| Fork                 | `nvuillam/sfdx-hardis-training`, created by `init` (new, Pull Requests from #1)                                                                    |
+| Orgs                 | `helios-prod` (Dev Hub), `helios-preprod`, scratch orgs `helios-dev`, `-integration`, `-uat` of an earlier walk, put back with the course teardown |
+| Course images in CI  | released (`latest`), no override                                                                                                                   |
 
 ## Cheap checks before the walk
 
@@ -23,15 +23,15 @@ site and a real VS Code (the lab driver), unattended. The user deleted the fork 
 
 ## Level 1
 
-| Lab | Fidelity                                                                                              | A    | B  | C                          | Findings |
-|-----|-------------------------------------------------------------------------------------------------------|------|----|----------------------------|----------|
-| 1.1 | Not walked (installs tools already installed)                                                         | read | -  | -                          |          |
-| 1.2 | 1, real VS Code: `init`, the Actions banner clicked over CDP                                          | read | ok | -                          | F1       |
-| 1.3 | 1, real VS Code: `work:new`                                                                           | -    | ok | -                          |          |
-| 1.4 | 3 for the Setup steps, in the real Salesforce Setup over CDP (field, grants, record page, 3 values)   | read | ok | record page opened         | F3       |
-| 1.5 | 3 for steps 1 to 4 (retrieve, stage file by file, commit), 1 for Save / Publish                       | read | ok | -                          |          |
-| 1.6 | 3 for the Pull Request (browser), the checks and the squash merge through `prflow.sh`                 | read | ok | -                          |          |
-| 1.7 | Own driver specs for `work:new` and `work:save`, Setup over CDP for the field, grant and list view    | read | ok | list view picture opened   |          |
+| Lab | Fidelity                                                                                            | A    | B  | C                        | Findings |
+|-----|-----------------------------------------------------------------------------------------------------|------|----|--------------------------|----------|
+| 1.1 | Not walked (installs tools already installed)                                                       | read | -  | -                        |          |
+| 1.2 | 1, real VS Code: `init`, the Actions banner clicked over CDP                                        | read | ok | -                        | F1       |
+| 1.3 | 1, real VS Code: `work:new`                                                                         | -    | ok | -                        |          |
+| 1.4 | 3 for the Setup steps, in the real Salesforce Setup over CDP (field, grants, record page, 3 values) | read | ok | record page opened       | F3       |
+| 1.5 | 3 for steps 1 to 4 (retrieve, stage file by file, commit), 1 for Save / Publish                     | read | ok | -                        |          |
+| 1.6 | 3 for the Pull Request (browser), the checks and the squash merge through `prflow.sh`               | read | ok | -                        |          |
+| 1.7 | Own driver specs for `work:new` and `work:save`, Setup over CDP for the field, grant and list view  | read | ok | list view picture opened |          |
 
 What was observed, in the lab's own terms: the FLS screen arrived with 19 of 23 profiles ticked and two
 header clicks cleared them; `INST-00001` adds up to 39; `FieldPermissions`: crew Read, planners Read and
@@ -55,11 +55,11 @@ entry of its level and leaves the others alone.
 
 ## Findings
 
-| Id | What                                                                                                                                                                                                                                      | Where fixed                                                                                                                       |
-|----|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
-| F1 | The lab driver stopped at *Fork the course into the GitHub account nvuillam?*, which Lab 1.2 describes for a computer already signed in to GitHub. `lab-drivers.json` had no rule for it. The question is right and the lab covers it.     | `labs/_assets/lab-drivers.json` of the course, optional rule `^Yes, use`, branch `fix/lab-driver-fork-account-answer`, no PR yet  |
-| F2 | `sf commands` failed with *VAR is not defined* and `check-commands.mjs` with it. Cause: the linked `sfdx-browserforce-plugin` (branch `feat/docs-site`) had `\${VAR}` in the description of `plugins validate`, which oclif evaluates. Also a stale git-ignored `oclif.manifest.json`. Not in Browserforce `main`, not in sfdx-hardis. | `../sfdx-browserforce-plugin`, commit `5171c0e` on `feat/docs-site`, not pushed (the manifest regenerated with `oclif manifest`)   |
-| F3 | `helios-dev` holds metadata that is not the course's (the *Helios Energy* app: Meters, Meter Readings, Energy Contracts tabs). Same as the 2026-10-31 run. The course teardown does not remove it, so the Recent Changes list of Lab 1.5 is longer than the lab says. | Not fixed: environment, not course                                                                                                |
+| Id | What                                                                                                                                                                                                                                                                                                                                   | Where fixed                                                                                                                      |
+|----|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------|
+| F1 | The lab driver stopped at *Fork the course into the GitHub account nvuillam?*, which Lab 1.2 describes for a computer already signed in to GitHub. `lab-drivers.json` had no rule for it. The question is right and the lab covers it.                                                                                                 | `labs/_assets/lab-drivers.json` of the course, optional rule `^Yes, use`, branch `fix/lab-driver-fork-account-answer`, no PR yet |
+| F2 | `sf commands` failed with *VAR is not defined* and `check-commands.mjs` with it. Cause: the linked `sfdx-browserforce-plugin` (branch `feat/docs-site`) had `\${VAR}` in the description of `plugins validate`, which oclif evaluates. Also a stale git-ignored `oclif.manifest.json`. Not in Browserforce `main`, not in sfdx-hardis. | `../sfdx-browserforce-plugin`, commit `5171c0e` on `feat/docs-site`, not pushed (the manifest regenerated with `oclif manifest`) |
+| F3 | `helios-dev` holds metadata that is not the course's (the *Helios Energy* app: Meters, Meter Readings, Energy Contracts tabs). Same as the 2026-10-31 run. The course teardown does not remove it, so the Recent Changes list of Lab 1.5 is longer than the lab says.                                                                  | Not fixed: environment, not course                                                                                               |
 
 ## Traps found (also for the runbook)
 
@@ -92,17 +92,17 @@ Setup wizard or Flow Builder does was done at fidelity 3 (metadata deployed from
 Level 3 start state, then retrieved as the lab says), except the Setup steps with a helper in
 `scripts/walk/`, which ran in the real Salesforce Setup over CDP (Labs 2.2, 2.3, 2.6 and the grants).
 
-| Lab | Fidelity | A | B | C | Findings |
-|-----|----------|---|---|---|----------|
-| 2.1 | 1 for `simulate`; backpromote as the CLI plan and run (the panel is not promptable) | read | ok | - | |
-| 2.2 | 1 for `work:new` and publish; Setup field over CDP; flow as XML | read | ok | - | |
-| 2.3 | 1; Setup `Required` over CDP, refused save in the browser; action by CLI | read | ok | - | |
-| 2.4 | 1 for the story, records and export; object, fields, tab, app, grants as metadata; tick over CDP | read | ok | - | F4 |
-| 2.5 | 1 for publish; the lab's code blocks pasted from the published page; tests run with `sf hardis:org:test:apex` | read | ok | - | |
-| 2.6 | 1; Setup FLS over CDP; whole Profile retrieve as `mdapi read --active-only` | read | ok after the lab's own "If it goes wrong" | - | F3 |
-| 2.7 | 1 for `simulate` and publish; merge by git, `merge-file --theirs`; flow as XML | read | ok | - | |
-| 2.8 | 1 for `resetselection` and publish | read | ok | - | |
-| 2.9 | 1; object, fields, flow, grants as metadata, ten records by bulk upsert | read | ok | - | |
+| Lab | Fidelity                                                                                                      | A    | B                                         | C | Findings |
+|-----|---------------------------------------------------------------------------------------------------------------|------|-------------------------------------------|---|----------|
+| 2.1 | 1 for `simulate`; backpromote as the CLI plan and run (the panel is not promptable)                           | read | ok                                        | - |          |
+| 2.2 | 1 for `work:new` and publish; Setup field over CDP; flow as XML                                               | read | ok                                        | - |          |
+| 2.3 | 1; Setup `Required` over CDP, refused save in the browser; action by CLI                                      | read | ok                                        | - |          |
+| 2.4 | 1 for the story, records and export; object, fields, tab, app, grants as metadata; tick over CDP              | read | ok                                        | - | F4       |
+| 2.5 | 1 for publish; the lab's code blocks pasted from the published page; tests run with `sf hardis:org:test:apex` | read | ok                                        | - |          |
+| 2.6 | 1; Setup FLS over CDP; whole Profile retrieve as `mdapi read --active-only`                                   | read | ok after the lab's own "If it goes wrong" | - | F3       |
+| 2.7 | 1 for `simulate` and publish; merge by git, `merge-file --theirs`; flow as XML                                | read | ok                                        | - |          |
+| 2.8 | 1 for `resetselection` and publish                                                                            | read | ok                                        | - |          |
+| 2.9 | 1; object, fields, flow, grants as metadata, ten records by bulk upsert                                       | read | ok                                        | - |          |
 
 Against the lab text, in numbers: 2.2 red on `Installation_Crew_Warning field integrity exception: unknown (The
 field "Crew_Warning_Sent__c" ... doesn't exist.)` word for word, one task after two saves; 2.3 red on the
@@ -123,10 +123,10 @@ checks passed*, **sfdx-hardis Contributor Advanced** awarded, the claim also re-
 
 ### Findings of Level 2
 
-| Id | What | Where fixed |
-|----|------|-------------|
+| Id | What                                                                                                                                                                                                                                                                      | Where fixed                                                                                |
+|----|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|
 | F4 | The data export of Labs 2.4 and 2.9 asks *Do you want to use org ...?* and *Do you confirm you want to export the data of ...?*: both are the two questions the lab describes. No lab-driver spec records them yet (the specs of 2.4 and 2.9 say "answers not recorded"). | Not fixed: the answers are in `badges/spec-24-exp.json` and `spec-29-exp.json` of this run |
-| F5 | `resetselection` asks one question, *This command will git reset (soft) your branch ... Are you sure ?*, as the lab says. | Not a defect |
+| F5 | `resetselection` asks one question, *This command will git reset (soft) your branch ... Are you sure ?*, as the lab says.                                                                                                                                                 | Not a defect                                                                               |
 
 ## Level 3
 
@@ -138,28 +138,28 @@ Major Org** for `preprod` and `main` with the course helper `auth.mjs` (panel at
 deployed into both orgs, the four secrets set), the settings of steps 8 to 10 written as the lab's YAML,
 published through PR #17 and squash merged. Findings of the first labs:
 
-| Id | What | Where fixed |
-|----|------|-------------|
-| F6 | The first seed of `helios-preprod` failed: the whole `Helios Crew` Profile of Lab 2.6 names `ContactPointOttSvc-Contact Point OTT Service Layout` and `SecurityDefenseActionEventStore-...`, which a Developer Edition org does not have (runbook, 2026-10-31). The error message points at Lab 2.6's *If it goes wrong*. Fixed as that lab says, with a **Fix** story (`fix/US-033-profile-layouts-new-orgs`, PR #16) deleting the two `<layoutAssignments>` blocks, validated with a dry-run of the whole package on `helios-preprod` first. | Not a defect: documented, but a learner meets it at Lab 3.1 after hours of work |
-| F7 | `helios-preprod` and `DevHub` are one org with two aliases on this workstation, so the org list of Add/Configure Org shows `DevHub`. `auth.mjs` was given that alias. | Environment |
-| F8 | A lab driver run with two `node scripts/training.mjs` steps in one lab spec times out opening the panel of the second one (120 s). One step per run works. | Not fixed: `../vscode-sfdx-hardis/src/test/ui/labDriver.ts` |
-| F9 | The lab driver's VS Code host holds no GitHub session, so `sf hardis:project:action:run` (the **Retry** button of Lab 3.3) ends as an error there with no question asked: the command refuses to run without a provider token, as the lab says. Run headless with `GITHUB_TOKEN` (fidelity 2) it behaves as the lab describes word for word: action 1 green, *2 action(s) were stopped by this failure. What do you want to do?* answered *Run the next action only*, action 2 failing on `CrewCapacityBach`. | Not a defect of the course; a limit of the lab driver |
-| - | Labs 3.2 and 3.3 matched the text throughout: US-052 comment *Ready to merge*, 4 components updated, no deletion, the removed `Total_Capacity_kW__c` line, the review comment on that line; the deployment log of PR #18 reads *Deployment mode: FULL + Quick Deploy* and *Components: 61 deployed*; US-056 red on `Crew_Workload__c` with the wildcard `Crew_W*` in `.forceignore`; US-062 red with `List has no rows for assignment to SObject`, *In integration: ❌ 1 failed · ⏸️ 2 waiting*, then *↪️ moved to #21*. Pull Requests #18 to #21. | |
+| Id | What                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Where fixed                                                                     |
+|----|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
+| F6 | The first seed of `helios-preprod` failed: the whole `Helios Crew` Profile of Lab 2.6 names `ContactPointOttSvc-Contact Point OTT Service Layout` and `SecurityDefenseActionEventStore-...`, which a Developer Edition org does not have (runbook, 2026-10-31). The error message points at Lab 2.6's *If it goes wrong*. Fixed as that lab says, with a **Fix** story (`fix/US-033-profile-layouts-new-orgs`, PR #16) deleting the two `<layoutAssignments>` blocks, validated with a dry-run of the whole package on `helios-preprod` first.    | Not a defect: documented, but a learner meets it at Lab 3.1 after hours of work |
+| F7 | `helios-preprod` and `DevHub` are one org with two aliases on this workstation, so the org list of Add/Configure Org shows `DevHub`. `auth.mjs` was given that alias.                                                                                                                                                                                                                                                                                                                                                                             | Environment                                                                     |
+| F8 | A lab driver run with two `node scripts/training.mjs` steps in one lab spec times out opening the panel of the second one (120 s). One step per run works.                                                                                                                                                                                                                                                                                                                                                                                        | Not fixed: `../vscode-sfdx-hardis/src/test/ui/labDriver.ts`                     |
+| F9 | The lab driver's VS Code host holds no GitHub session, so `sf hardis:project:action:run` (the **Retry** button of Lab 3.3) ends as an error there with no question asked: the command refuses to run without a provider token, as the lab says. Run headless with `GITHUB_TOKEN` (fidelity 2) it behaves as the lab describes word for word: action 1 green, *2 action(s) were stopped by this failure. What do you want to do?* answered *Run the next action only*, action 2 failing on `CrewCapacityBach`.                                     | Not a defect of the course; a limit of the lab driver                           |
+| -  | Labs 3.2 and 3.3 matched the text throughout: US-052 comment *Ready to merge*, 4 components updated, no deletion, the removed `Total_Capacity_kW__c` line, the review comment on that line; the deployment log of PR #18 reads *Deployment mode: FULL + Quick Deploy* and *Components: 61 deployed*; US-056 red on `Crew_Workload__c` with the wildcard `Crew_W*` in `.forceignore`; US-062 red with `List has no rows for assignment to SObject`, *In integration: ❌ 1 failed · ⏸️ 2 waiting*, then *↪️ moved to #21*. Pull Requests #18 to #21. |                                                                                 |
 
 ### Labs 3.2 to 3.11, in numbers
 
-| Lab  | Fidelity                                                                                                 | A    | B  | Notes against the lab text                                                                                                                                                                                                                                           |
-|------|----------------------------------------------------------------------------------------------------------|------|----|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 3.2  | 1 for both `simulate`; review comment by API                                                             | read | ok | PR #18: *Ready to merge*, 4 components updated, nothing deleted; the removed `Total_Capacity_kW__c` line; after the fix the diff removes nothing                                                                                                                      |
-| 3.3  | 1 for the simulations; Retry and `set-status` at fidelity 2 (F9); the group by API                       | read | ok | log: *FULL + Quick Deploy*, 61 components; US-056 red on `Crew_Workload__c` and the `Crew_W*` wildcard; US-062 red on `List has no rows`, then *Run the next action only*, then `CrewCapacityBach`, then PR #21 and *moved to #21*                                    |
-| 3.4  | 1 for the simulation; review by API                                                                      | read | ok | US-020 (#22) red on *Illegal assignment from Datetime to Date* twice, left open with the comment; both grants present in the file and in the org                                                                                                                      |
-| 3.5  | 1 for publish and the simulations; remote site by deploy; promotion PR through the browser helper        | read | ok | tick then green; *Type RemoteSiteSetting: 1 item(s) skipped because they already exist in the target org (protected)*; UAT keeps `warehouse-test.helios.invalid`; crew 3 and Scheduled in UAT; 23 PRs and 17 tickets in the notes                                    |
-| 3.6  | Promotions through the browser helper and `promo.sh`                                                     | read | ok | preprod and main logins by JWT, red then green on the deliverability step; Release: *7 components (2 created, 5 updated), 62 validated*, no deletion; DORA read                                                                                                       |
-| 3.7  | 1 for the simulation, the retrofit story and the publishes                                               | read | ok | incident reproduced in production by API (*The install date cannot be moved into the past*); hotfix #27, Hotfix PR #28, back-dated cancelled save accepted in production; retrofit #29 merged without a squash                                                       |
-| 3.8  | `mon.mjs` (panel at fidelity 2) in a new repository                                                      | read | ok | all four jobs green; `ActiveScratchOrgs` 3/3; `[EmailProvider] Sent email to ***` (the address is a `.invalid` one: the mailbox was not read); the backup holds the hotfixed rule; `AGENTS.md` and `CLAUDE.md` written                                                |
-| 3.9  | 1 for the generation (`--with-history`)                                                                  | read | ok | object pages, flow pages with Mermaid, the history page; the paragraph and `DO_NOT_OVERWRITE_DOC=TRUE`                                                                                                                                                              |
-| 3.10 | 1 for five simulations, the retrofit story and the publishes; `promotion:create` at fidelity 2 (token)   | read | ok | three stories to preprod, two left in uat; the two conflicting files and the answer *commit with conflict markers*; Supplier kept, Warranty Years dropped; only the three reached `helios-preprod`; retrofit PR #38 with no file changed                              |
-| 3.11 | 1 for the simulation and the publishes; promotions through `promo.sh`                                    | read | ok | US-055 #39, UAT #40, preprod #41 (no conflict, Warranty Years arrives), Release #42 (*13 components, 4 created, 9 updated*), the notes in the PR description, the second DORA report                                                                                  |
+| Lab  | Fidelity                                                                                               | A    | B  | Notes against the lab text                                                                                                                                                                                                               |
+|------|--------------------------------------------------------------------------------------------------------|------|----|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 3.2  | 1 for both `simulate`; review comment by API                                                           | read | ok | PR #18: *Ready to merge*, 4 components updated, nothing deleted; the removed `Total_Capacity_kW__c` line; after the fix the diff removes nothing                                                                                         |
+| 3.3  | 1 for the simulations; Retry and `set-status` at fidelity 2 (F9); the group by API                     | read | ok | log: *FULL + Quick Deploy*, 61 components; US-056 red on `Crew_Workload__c` and the `Crew_W*` wildcard; US-062 red on `List has no rows`, then *Run the next action only*, then `CrewCapacityBach`, then PR #21 and *moved to #21*       |
+| 3.4  | 1 for the simulation; review by API                                                                    | read | ok | US-020 (#22) red on *Illegal assignment from Datetime to Date* twice, left open with the comment; both grants present in the file and in the org                                                                                         |
+| 3.5  | 1 for publish and the simulations; remote site by deploy; promotion PR through the browser helper      | read | ok | tick then green; *Type RemoteSiteSetting: 1 item(s) skipped because they already exist in the target org (protected)*; UAT keeps `warehouse-test.helios.invalid`; crew 3 and Scheduled in UAT; 23 PRs and 17 tickets in the notes        |
+| 3.6  | Promotions through the browser helper and `promo.sh`                                                   | read | ok | preprod and main logins by JWT, red then green on the deliverability step; Release: *7 components (2 created, 5 updated), 62 validated*, no deletion; DORA read                                                                          |
+| 3.7  | 1 for the simulation, the retrofit story and the publishes                                             | read | ok | incident reproduced in production by API (*The install date cannot be moved into the past*); hotfix #27, Hotfix PR #28, back-dated cancelled save accepted in production; retrofit #29 merged without a squash                           |
+| 3.8  | `mon.mjs` (panel at fidelity 2) in a new repository                                                    | read | ok | all four jobs green; `ActiveScratchOrgs` 3/3; `[EmailProvider] Sent email to ***` (the address is a `.invalid` one: the mailbox was not read); the backup holds the hotfixed rule; `AGENTS.md` and `CLAUDE.md` written                   |
+| 3.9  | 1 for the generation (`--with-history`)                                                                | read | ok | object pages, flow pages with Mermaid, the history page; the paragraph and `DO_NOT_OVERWRITE_DOC=TRUE`                                                                                                                                   |
+| 3.10 | 1 for five simulations, the retrofit story and the publishes; `promotion:create` at fidelity 2 (token) | read | ok | three stories to preprod, two left in uat; the two conflicting files and the answer *commit with conflict markers*; Supplier kept, Warranty Years dropped; only the three reached `helios-preprod`; retrofit PR #38 with no file changed |
+| 3.11 | 1 for the simulation and the publishes; promotions through `promo.sh`                                  | read | ok | US-055 #39, UAT #40, preprod #41 (no conflict, Warranty Years arrives), Release #42 (*13 components, 4 created, 9 updated*), the notes in the PR description, the second DORA report                                                     |
 
 Whole level: `Check my work` 11 of 11.
 
@@ -172,19 +172,19 @@ reads Level 1 6/6, Level 2 14/14, Level 3 24/24 (superbadge), all dated 2026-11-
 
 ### More findings of Level 3
 
-| Id  | What                                                                                                                                                                                                                                              | Where fixed                                                                      |
-|-----|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
-| F10 | At Level 3 `Simulate my teammates` never asks *Merge it for you?*: every run ends after creating the Pull Request, and the Level 3 labs say to merge it yourself. At Level 2 the question was asked and my answer was used. Matches the lab text. | Not a defect                                                                     |
-| F11 | The claim form (new GitHub issue UI) has a React Level dropdown, a fourth *Create more* checkbox and a header *Create new* button that matches before the green one. My first three scripts tripped on them.                                      | `scripts/walk/claim-submit.mjs` of this skill                                    |
-| F12 | Eight monitoring repositories of earlier runs (`-run2` to `-run5`, the unsuffixed one, `-0925`, `-0926`) still had an active nightly workflow against `helios-prod`.                                                                              | Disabled (`gh workflow disable`), reversible with `gh workflow enable`           |
+| Id  | What                                                                                                                                                                                                                                              | Where fixed                                                            |
+|-----|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------|
+| F10 | At Level 3 `Simulate my teammates` never asks *Merge it for you?*: every run ends after creating the Pull Request, and the Level 3 labs say to merge it yourself. At Level 2 the question was asked and my answer was used. Matches the lab text. | Not a defect                                                           |
+| F11 | The claim form (new GitHub issue UI) has a React Level dropdown, a fourth *Create more* checkbox and a header *Create new* button that matches before the green one. My first three scripts tripped on them.                                      | `scripts/walk/claim-submit.mjs` of this skill                          |
+| F12 | Eight monitoring repositories of earlier runs (`-run2` to `-run5`, the unsuffixed one, `-0925`, `-0926`) still had an active nightly workflow against `helios-prod`.                                                                              | Disabled (`gh workflow disable`), reversible with `gh workflow enable` |
 
 ### Pull Requests and local commits of this run
 
-| Repository                | What                                                                                                         | State                                |
-|---------------------------|--------------------------------------------------------------------------------------------------------------|--------------------------------------|
-| sfdx-hardis-training      | #383 `fix/lab-driver-fork-account-answer`: one optional rule in `lab-drivers.json` (F1) and a changelog line | open, mergeable, checks running      |
-| sfdx-browserforce-plugin  | commit `5171c0e` on `feat/docs-site`: the description of `plugins validate` without a dollar-brace (F2)      | local, not pushed                    |
-| sfdx-hardis, extension    | nothing: no product defect found                                                                             | -                                    |
+| Repository               | What                                                                                                         | State                           |
+|--------------------------|--------------------------------------------------------------------------------------------------------------|---------------------------------|
+| sfdx-hardis-training     | #383 `fix/lab-driver-fork-account-answer`: one optional rule in `lab-drivers.json` (F1) and a changelog line | open, mergeable, checks running |
+| sfdx-browserforce-plugin | commit `5171c0e` on `feat/docs-site`: the description of `plugins validate` without a dollar-brace (F2)      | local, not pushed               |
+| sfdx-hardis, extension   | nothing: no product defect found                                                                             | -                               |
 
 ### What this run did not cover
 
