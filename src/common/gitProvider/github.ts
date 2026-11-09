@@ -210,10 +210,12 @@ export class GithubProvider extends GitProviderRoot {
     return Array.isArray(response.data) ? response.data : [];
   }
 
-  // GET /repos/{owner}/{repo}/issues/{issue_number}/comments (first page, like octokit listComments)
+  // GET /repos/{owner}/{repo}/issues/{issue_number}/comments, every page: the deployment-id comment
+  // or the comment of a previous run can sit past the first 30
   private async listIssueComments(issueNumber: number, owner?: string | null, repo?: string | null): Promise<any[]> {
-    const response = await this.api.get<any[]>(`${this.repoPath(owner, repo)}/issues/${issueNumber}/comments`);
-    return Array.isArray(response.data) ? response.data : [];
+    return this.api.paginate<any>(`${this.repoPath(owner, repo)}/issues/${issueNumber}/comments`, {
+      params: { per_page: 100 },
+    });
   }
 
   // POST /repos/{owner}/{repo}/issues/{issue_number}/comments
@@ -282,10 +284,12 @@ export class GithubProvider extends GitProviderRoot {
   public async getBranchDeploymentCheckId(gitBranch: string): Promise<string | null> {
     let deploymentCheckId: string | null = null;
     uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubListingClosedPullRequests')));
+    // Sort by update date (as the Bitbucket provider does): a PR merged long after its creation must still be found
     const latestPullRequestsOnBranch = await this.listPulls({
       state: "closed",
+      sort: "updated",
       direction: "desc",
-      per_page: 10,
+      per_page: 50,
       base: gitBranch,
     }, this.repoOwner || "", this.repoName || "");
     if (latestPullRequestsOnBranch.length > 0) {
