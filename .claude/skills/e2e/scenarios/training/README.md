@@ -25,7 +25,7 @@ defects nobody predicted.
 | `scripts/mon.mjs`                              | Lab 3.8: Install Org Monitoring in the monitoring repository, then its secrets.                               |
 | `scripts/setsecrets.mjs`, `setsecrets-mon.mjs` | Read the secret values out of a command's log and store them.                                                 |
 | `scripts/sync.sh`                              | Mid-walk only: brings a course fix into the fork's major branches.                                            |
-| `scripts/walk/`                                | Stand-ins for clicks at browser fidelity, over CDP. Syntax-checked when moved, last run on 2026-10-12.        |
+| `scripts/walk/`                                | Stand-ins for clicks at browser fidelity, over CDP. Syntax-checked when moved, last run on 2026-10-12. `claim-submit.mjs` submits a badge claim form, `mkspec.mjs` writes a one-lab driver spec (2026-11-09). |
 | `reports/`                                     | One report per run.                                                                                           |
 
 ## Before starting
