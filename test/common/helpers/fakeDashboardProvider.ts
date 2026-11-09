@@ -45,7 +45,10 @@ export class FakeDashboardProvider {
     this.get(ref).body = body;
   }
 
+  public listDashboardCommentsCalls = 0;
+
   async listDashboardComments(ref: DashboardRef) {
+    this.listDashboardCommentsCalls++;
     await this.networkDelay();
     return this.get(ref).comments.map((comment) => ({ ...comment }));
   }

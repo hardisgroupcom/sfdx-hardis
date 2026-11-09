@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- Doc: the DevOps Pipeline pictures show the **Major branches | Feature branches | Dev orgs** switch, and the settings menu lists Replacement Rules and Register a development org.
+
 ## [8.24.0] 2026-11-08
 
 - **Browserforce** ([doc](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions-browser/)): apply the Setup settings the Metadata API cannot deploy, with your Pull Request.

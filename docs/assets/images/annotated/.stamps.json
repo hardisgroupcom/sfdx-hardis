@@ -8,28 +8,28 @@
     "out": "92dd62a15517f603"
   },
   "vscode-guide/devops-pipeline.png": {
-    "spec": "fa398d9bd95e6f0e",
-    "out": "be52ddf84cdf1adb"
+    "spec": "4499c9065fb51e5a",
+    "out": "5d05b07f3c65726d"
   },
   "vscode-guide/pipeline-settings-menu.png": {
-    "spec": "7793bfea561e5185",
-    "out": "d2a2856f8d6e8f80"
+    "spec": "f3b909792c184f65",
+    "out": "e9b32571ab05ee87"
   },
   "vscode-guide/pipeline-packages-menu.png": {
-    "spec": "5b4c03f6eb125e8f",
-    "out": "e248151e7e366d92"
+    "spec": "163e5f79bb0cd2e4",
+    "out": "1ae0fba76f26952a"
   },
   "vscode-guide/pipeline-workflow-cards.png": {
     "spec": "cda9c550806d50b1",
     "out": "c94f45557d2cbfa6"
   },
   "vscode-guide/pipeline-pr-actions-list.png": {
-    "spec": "b9a58b1e8e494880",
-    "out": "75909392ab7baee8"
+    "spec": "4de269cdcddc8f2e",
+    "out": "fd4fd65abf45fafd"
   },
   "vscode-guide/pipeline-branch-modal-actions.png": {
-    "spec": "9cb24fbafe1a68de",
-    "out": "2a96ffbcd6a23511"
+    "spec": "fd9a67944c93dedd",
+    "out": "bf084277795a9028"
   },
   "vscode-guide/org-monitoring.png": {
     "spec": "6a78e31354b0e958",
@@ -120,12 +120,12 @@
     "out": "260cbca9d3c59899"
   },
   "vscode-guide/pipeline-pr-explorer.png": {
-    "spec": "22c19f468f1a9a0e",
-    "out": "b5ab5c6fe3bdebbc"
+    "spec": "a6ed8860b8f1166f",
+    "out": "3690d1a8a48478f8"
   },
   "vscode-guide/pipeline-pr-view-validation.png": {
-    "spec": "17f63b379a0f1185",
-    "out": "4c4a3b47928ff304"
+    "spec": "0d75c73d79e0cc77",
+    "out": "9e85d7affe1f2b51"
   },
   "vscode-guide/pipeline-settings-ref-global-deployment.png": {
     "spec": "dfa02ab6d097464a",

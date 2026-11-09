@@ -103,8 +103,10 @@ The gear menu gathers the settings of the project:
 
 - **(1)** **Configure Pipeline Settings** opens the editor of `.sfdx-hardis.yml`: branches, deployment options, tickets, notifications. [Pipeline Settings](vscode-extension-pipeline-settings.md) lists every setting, tab by tab.
 - **(2)** **Add or Reconnect a Major Org** connects a major branch to its org, so the CI/CD pipeline can deploy there, or renews the authentication of an org already connected.
-- **(3)** **Configure Org Initialization** opens the [steps that set up every new scratch org or sandbox](salesforce-devops-org-initialization.md), and the scratch org definition.
-- **(4)** **Generate DORA Metrics** opens the [DORA metrics](hardis/doc/salesforce-devops-dora-report.md) of the pipeline: deployment frequency, lead time, failure rate and recovery time of each major org, read from the deployment jobs and the Pull Requests of the git provider.
+- **(3)** **Configure Org Initialization (Beta)** opens the [steps that set up every new scratch org or sandbox](salesforce-devops-org-initialization.md), and the scratch org definition.
+- **(4)** **Configure Replacement Rules (Beta)** opens the [Replacement Rules panel](salesforce-devops-config-replacement-rules.md), where the values, secrets and XML removals applied to the metadata before each deployment are edited.
+- **(5)** **Generate DORA Metrics** opens the [DORA metrics](hardis/doc/salesforce-devops-dora-report.md) of the pipeline: deployment frequency, lead time, failure rate and recovery time of each major org, read from the deployment jobs and the Pull Requests of the git provider.
+- **(6)** **Register a development org** registers a sandbox or a scratch org in the [development orgs list](salesforce-devops-dev-orgs.md), or changes its target branch, owner and users.
 
 ## Edit the package files
 
