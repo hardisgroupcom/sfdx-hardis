@@ -136,7 +136,7 @@ export async function updateDevOrgsAfterMerge(branch: string, commandThis: any):
     if (!loaded.state.orgs.some((org) => org.data.targetBranch === branch)) {
       return;
     }
-    await registry.refreshBranches({ branches: [branch], jobUrl: await getJobUrl(), carried: await currentMergeCarried(branch), fullCleanup: true });
+    await registry.refreshBranches({ branches: [branch], jobUrl: await getJobUrl(), carried: await currentMergeCarried(branch), fullCleanup: true, loaded });
     uxLog("log", commandThis, c.grey(t('devOrgsDashboardUpdated', { url: registry.dashboardUrl() })));
   } catch (e) {
     uxLog("log", commandThis, c.grey(t('devOrgsDashboardNotUpdated', { message: (e as Error).message })));
@@ -293,8 +293,10 @@ export class DevOrgsRegistry {
     carried?: { number: number; pullRequests: DevOrgCarriedPullRequest[] } | null;
     fullCleanup?: boolean;
     commandThis?: any;
+    // The dashboard the caller has just read, with no write since: saves reading it again
+    loaded?: LoadedDevOrgs;
   }): Promise<string[]> {
-    const loaded = await this.load(false);
+    const loaded = options.loaded || (await this.load(false));
     if (!loaded) {
       return [];
     }

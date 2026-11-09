@@ -116,6 +116,20 @@ describe('DevOrgsRegistry', function () {
     expect((await newRegistry(provider).summary({ currentUser: null, staleDays: 30 })).orgs).to.have.length(0);
   });
 
+  it('refreshBranches does not read the dashboard again when the caller has just read it', async () => {
+    const provider = new FakeDashboardProvider(false);
+    const registry = newRegistry(provider);
+    await registry.register({ org: identity(), targetBranch: 'integration', currentUser: jane });
+    provider.listDashboardCommentsCalls = 0;
+    await registry.refreshBranches({ jobUrl: null });
+    const readsWithoutLoaded = provider.listDashboardCommentsCalls;
+    expect(readsWithoutLoaded).to.be.greaterThan(0);
+    const loaded = (await registry.load(false))!;
+    provider.listDashboardCommentsCalls = 0;
+    await registry.refreshBranches({ jobUrl: null, loaded });
+    expect(provider.listDashboardCommentsCalls).to.equal(readsWithoutLoaded - 1);
+  });
+
   it('lists the merged Pull Requests of the target branches, and counts what each org misses', async () => {
     const provider = new FakeDashboardProvider(false);
     const registry = newRegistry(provider);
