@@ -282,8 +282,10 @@ export class GithubProvider extends GitProviderRoot {
   public async getBranchDeploymentCheckId(gitBranch: string): Promise<string | null> {
     let deploymentCheckId: string | null = null;
     uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubListingClosedPullRequests')));
+    // Sort by update date (as the Bitbucket provider does): a PR merged long after its creation must still be found
     const latestPullRequestsOnBranch = await this.listPulls({
       state: "closed",
+      sort: "updated",
       direction: "desc",
       per_page: 10,
       base: gitBranch,
