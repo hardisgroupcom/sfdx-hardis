@@ -1001,6 +1001,60 @@ issue form asks for when the repository has no such label, and from the learner'
 indistinguishable from waiting. That was finding 12 of the 2026-09-21 run, and it meant no claim had
 ever been audited.
 
+**Claiming the three badges in one walk** (2026-11-09, all three awarded, audits of 6, 14 and 24
+checks, issues #380 to #382). Everything from `Check my work` to the published page ran:
+
+- `claim --level N` is run headless through `scripts/walk/panel-node.mjs`, answering only the
+  Trailblazer question. It opens the default browser with `cmd /c start`: put a one-line guard
+  (`if (process.env.NO_OPEN === "true") return false;`) at the top of `openUrl` in the clone, run
+  with `NO_OPEN=true`, and `git checkout --` the file afterwards. The full form URL is the last
+  `https://github.com/.../issues/new?...` line of the output.
+- `scripts/walk/claim-submit.mjs <urlFile> "<N - level name>"` fills the form in the e2e Chrome. The
+  new issue UI has a React Level dropdown (a `button` reading *None*, then `menuitemradio`), a
+  fourth checkbox *Create more* that must stay unticked, and a header *Create new* button that
+  matches `^Create` before the green one: use the **last** button named `^Create(?! more| new)`.
+- A re-claim over an older badge replaces the entry of its level and leaves the others alone.
+- `?lang=en` pins the language preference of that browser: a `/fr/` page opened afterwards in it
+  lands on English. Read the French page with `curl`.
+
+**Lab driver limits met on 2026-11-09** (run them as `yarn test:ui:labs` with
+`SFDX_HARDIS_LAB_SPECS` pointing at a one-lab file, `scripts/walk/mkspec.mjs` writes one):
+
+- A spec with two `node scripts/training.mjs ...` steps fails on the second (*Timeout waiting for:
+  command execution panel ... to open*). One Training command per run; a loop of runs in a `.cmd`
+  works (`for %%N in (...) do call yarn test:ui:labs`).
+- The driver's VS Code holds no GitHub session, so `hardis:project:action:run` ends as an error with no
+  question asked, and `hardis:project:promotion:create` refuses to run. Run those headless through
+  `panel.mjs` with `GITHUB_TOKEN=$(gh auth token)`.
+- **At Level 3 `Simulate my teammates` never asks *Merge it for you?*** The Pull Request is created and
+  left open: merge it with `prflow.sh <pr> squash`. A rule for a question that is never asked makes the
+  driver fail with *the lab expects questions the command never asked*, which is the driver doing its job.
+- Labs 2.4 and 2.9 have no entry in `labs/_assets/lab-drivers.json`. The data export asks *Do you want to
+  use org ...?* then *Do you confirm you want to export the data of ...?* (rule `use org`, then `confirm`).
+- `resetselection` asks one question, *This command will git reset (soft) your branch ... Are you sure ?*.
+
+**Other traps of the run:**
+
+- A hook of the workstation (*Skills-first enforcement*) refuses a raw `sf data query` and `sf project
+  retrieve start` until the matching `salesforce-development` skill has been loaded in the session.
+- A linked sibling plugin can break the whole walk: a description holding a dollar-brace made `sf
+  commands` fail with `VAR is not defined` (oclif evaluates it), and so did the stale git-ignored
+  `oclif.manifest.json` of that plugin. `check-commands.mjs` is what shows it.
+- **Lab 3.1 after Lab 2.6: the seed of a Developer Edition org fails on `ContactPointOttSvc-...` and
+  `SecurityDefenseActionEventStore-...`** (layouts only scratch orgs carry). Fix story, delete the two
+  `<layoutAssignments>`; keep the layouts of the course's own objects (`Crew_Capacity__c-`,
+  `Handover_Item__c-`), which Salesforce creates when the object deploys. Two Developer Edition orgs can
+  differ by a few layouts (162 and 165), so keep only the ones both have.
+- The first red check of a promotion between major branches is the deliverability step, in `uat`,
+  `preprod` and `main` alike: `promo.sh <pr> <branch> tick` ticks and re-runs. It prints a transient *base
+  branch policy prohibits the merge* when a required check had not registered yet, and still ends with
+  the Pull Request merged: read `gh pr view <pr> --json state`, not the line.
+- `lab.sh`-style reading: the published English lab as text is enough for Pass A (strip the page with a
+  few regexes, `PYTHONIOENCODING=utf-8`), and the code blocks of Lab 2.5 can be cut out of it after each
+  *Edit this file* line so the pasted code is the one a learner pastes.
+- Eight monitoring repositories of earlier runs kept an active nightly workflow against `helios-prod`:
+  `gh workflow disable "Org Monitoring sfdx-hardis" -R <login>/<repo>` for each, at the end of Lab 3.8.
+
 ## 8. Fixing what you find, inside the run
 
 | The defect is                                            | Fix it in              | How                                                     |
