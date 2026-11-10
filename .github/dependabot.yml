@@ -4,12 +4,12 @@ updates:
     directory: '/'
     schedule:
       interval: 'daily'
-    # Wait for a new version to have been public for a week before proposing it: a compromised
+    # Wait for a new version to have been public for two weeks before proposing it: a compromised
     # release published through a supply chain attack is usually detected and pulled within days.
     # Cooldown applies to version updates only: Dependabot security updates (CVE) are exempt and
     # are still proposed as soon as the advisory is published.
     cooldown:
-      default-days: 7
+      default-days: 14
       include:
         - '*'
     versioning-strategy: 'increase'
