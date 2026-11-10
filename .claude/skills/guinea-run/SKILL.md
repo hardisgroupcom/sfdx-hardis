@@ -181,10 +181,17 @@ and **nothing personal stored but the nickname**.
   event, after a won world or a bonus game once its result is signed, and after
   a profile change. A rename inserts a new `guinea_names` row: the boards show
   the newest nickname on every past score, nothing is sent again.
-- **The join box**: on the end card of the first won world (or bonus game) of a
-  player who never answered it, a nickname, six guinea pigs (`COATS`, tinted
-  from `guinea-pig-small.webp` by `COAT_FILTERS`), Join and No thanks. Either
-  way it never shows again (`asked`); the profile box of the Hall of Fame card
+- **The join modal** (`joinOffer(view, score)`, `.gr-join`): over the end card
+  of the first won world (or bonus game) of a player who never answered it,
+  "Your first score!" and the score, a nickname, six guinea pigs (`COATS`,
+  tinted from `guinea-pig-small.webp` by `COAT_FILTERS`), a full-width "Join
+  the Hall of Fame" button (the call to action, asked by the author on
+  2026-11-10) and a No thanks link. While it shows, it holds the keys
+  (`hud.joinOpen()` in `onAction`): Escape is No thanks, Enter in the nickname
+  box joins (`profileForm` is a `<form>`, so the browser submits it even though
+  `core/input.js` stops the key). Once answered it closes and the end card says
+  "Welcome to the Hall of Fame" or "Waiting for the network". Either way it
+  never shows again (`asked`); the profile box of the Hall of Fame card
   joins, renames, changes the guinea pig, and "Remove me from the Hall of
   Fame" calls `guinea_forget` (every row of that id deleted, the profile
   emptied). After a won world of a player who joined, the end card says
