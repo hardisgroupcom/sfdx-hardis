@@ -17,7 +17,14 @@ ARG NODE_MAJOR=24
 ARG NODE_MIN_VERSION=24.22.1
 
 # Update package list and install required packages
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# When archive.ubuntu.com or security.ubuntu.com cannot be reached (GitHub runners sometimes fail
+# to resolve them), fall back to the kernel.org mirror. Packages stay checked with the Ubuntu
+# archive key shipped in the base image. --error-on=any makes apt-get update fail on a missing index.
+RUN { apt-get update --error-on=any -o Acquire::Retries=3 || \
+      { echo "Ubuntu archive unreachable, using the mirrors.edge.kernel.org mirror" && \
+        sed -i -E 's#http://(archive|security)\.ubuntu\.com/#http://mirrors.edge.kernel.org/#g' /etc/apt/sources.list.d/ubuntu.sources && \
+        apt-get update --error-on=any -o Acquire::Retries=3; }; } && \
+    apt-get install -y --no-install-recommends \
     git \
     curl \
     gnupg \
