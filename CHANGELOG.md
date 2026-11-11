@@ -4,6 +4,7 @@
 
 - GitHub: QuickDeploy finds the validation of Pull Requests merged long after they were created (closed Pull Requests are now searched by update date instead of creation date).
 - Doc: the DevOps Pipeline pictures show the **Major branches | Feature branches | Dev orgs** switch, and the settings menu lists Replacement Rules and Register a development org.
+- Upgrade **fast-xml-parser** to 5.12.0 to fix security advisory GHSA-474x-hrwr-fgx4.
 
 ## [8.24.0] 2026-11-08
 
