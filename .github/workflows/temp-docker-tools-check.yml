@@ -147,41 +147,53 @@ jobs:
           node --input-type=module -e "const m = await import('file://$DOC_UTILS'); await m.generateMkDocsHTML();"
           EOF
 
-          # The mermaid-cli and zensical images may run as another user than the runner: open the folders
+          cat > "$W/tools.sh" <<'EOF'
+          set -euo pipefail
+          docker --version
+          java -version
+          command -v keytool
+          docker info --format "Host daemon: {{.ServerVersion}}"
+          echo "MERMAID_MODES=${MERMAID_MODES:-}"
+          EOF
+
+          # The mermaid-cli and zensical images run as another user than the sfdx-hardis container (root)
+          # and the runner: open the folders, and create files with umask 000 so they can overwrite them
           chmod -R a+rwX "$W"
 
+          # Usage: in_image [docker run options] -- command...
           in_image() {
-            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$W:$W" -w "$W" "$@"
+            local opts=()
+            while [ "$1" != "--" ]; do opts+=("$1"); shift; done
+            shift
+            # shellcheck disable=SC2016 # expanded by the bash of the container
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$W:$W" -w "$W" "${opts[@]}" "$IMAGE" bash -c 'umask 000; exec "$@"' _ "$@"
           }
 
-          echo "::group::Tools in the image"
-          in_image "$IMAGE" bash -c 'docker --version && java -version && command -v keytool && docker info --format "Host daemon: {{.ServerVersion}}" && echo "MERMAID_MODES=$MERMAID_MODES"'
-          echo "::endgroup::"
+          echo "== Tools in the image =="
+          in_image -- bash "$W/tools.sh"
 
-          echo "::group::Mermaid with MERMAID_MODES=docker"
-          in_image -e MERMAID_MODES=docker "$IMAGE" sf hardis:doc:flow2markdown --inputfile flows/Tools_Check.flow-meta.xml --outputfile out-docker/Tools_Check.md --agent
+          echo "== Mermaid with MERMAID_MODES=docker =="
+          in_image -e MERMAID_MODES=docker -- sf hardis:doc:flow2markdown --inputfile flows/Tools_Check.flow-meta.xml --outputfile out-docker/Tools_Check.md --agent
           ls -la "$W/out-docker"
           ls "$W"/out-docker/*.svg
-          echo "::endgroup::"
+          grep -q "Tools_Check-1.svg" "$W/out-docker/Tools_Check.md"
 
           if [ "$MERMAID_CLI" = "true" ]; then
-            echo "::group::Mermaid with MERMAID_MODES=cli"
-            in_image -e MERMAID_MODES=cli "$IMAGE" sf hardis:doc:flow2markdown --inputfile flows/Tools_Check.flow-meta.xml --outputfile out-cli/Tools_Check.md --agent
+            echo "== Mermaid with MERMAID_MODES=cli =="
+            in_image -e MERMAID_MODES=cli -- sf hardis:doc:flow2markdown --inputfile flows/Tools_Check.flow-meta.xml --outputfile out-cli/Tools_Check.md --agent
             ls -la "$W/out-cli"
             ls "$W"/out-cli/*.svg
-            echo "::endgroup::"
+            grep -q "Tools_Check-1.svg" "$W/out-cli/Tools_Check.md"
           fi
 
-          echo "::group::Zensical (default: local pip install, docker when it fails)"
-          in_image -w "$W/site-local" "$IMAGE" bash "$W/zensical-build.sh" 2>&1 | tee "$W/zensical-local.log"
+          echo "== Zensical (default: local pip install, docker when it fails) =="
+          in_image -w "$W/site-local" -- bash "$W/zensical-build.sh" 2>&1 | tee "$W/zensical-local.log"
           test -f "$W/site-local/site/index.html"
-          echo "::endgroup::"
 
-          echo "::group::Zensical forced to docker (pip cannot reach an index)"
-          in_image -w "$W/site-docker" -e PIP_INDEX_URL=http://127.0.0.1:9/simple -e PIP_RETRIES=0 -e PIP_TIMEOUT=2 "$IMAGE" bash "$W/zensical-build.sh" 2>&1 | tee "$W/zensical-docker.log"
+          echo "== Zensical forced to docker (pip cannot reach an index) =="
+          in_image -w "$W/site-docker" -e PIP_INDEX_URL=http://127.0.0.1:9/simple -e PIP_RETRIES=0 -e PIP_TIMEOUT=2 -- bash "$W/zensical-build.sh" 2>&1 | tee "$W/zensical-docker.log"
           grep -q "Generating HTML pages with Docker" "$W/zensical-docker.log"
           test -f "$W/site-docker/site/index.html"
-          echo "::endgroup::"
 
       - name: Compare the image size with the published one
         env:
