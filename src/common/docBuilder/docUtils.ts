@@ -598,31 +598,28 @@ export async function generateMkDocsHTML() {
     // Generate HTML pages with local Zensical
     uxLog("action", this, c.cyan(t('generatingHtmlPagesWithZensical')));
     const buildCommands = ["zensical build", "python -m zensical build", "py -m zensical build"];
-    const zensicalBuildRes = await execCommand(buildCommands.join(" || "), this, { fail: false, output: true, debug: false });
-    if (zensicalBuildRes.status !== 0) {
-      throw new SfError('Zensical build failed:\n' + zensicalBuildRes.stderr + "\n" + zensicalBuildRes.stdout);
+    const zensicalBuildRes = await runZensicalCommand(buildCommands.join(" || "));
+    if (!zensicalBuildRes.ok) {
+      throw new SfError('Zensical build failed:\n' + zensicalBuildRes.output);
     }
   }
   else {
     // Generate HTML pages with Docker
     uxLog("action", this, c.cyan(t('generatingHtmlPagesWithDocker')));
-    const zensicalBuildRes = await execCommand(`docker run --rm -v $(pwd):/docs ${ZENSICAL_DOCKER_IMAGE} build`, this, { fail: false, output: true, debug: false });
-    if (zensicalBuildRes.status !== 0) {
-      throw new SfError('Zensical build with docker failed:\n' + zensicalBuildRes.stderr + "\n" + zensicalBuildRes.stdout);
+    const zensicalBuildRes = await runZensicalCommand(`docker run --rm -v $(pwd):/docs ${ZENSICAL_DOCKER_IMAGE} build`);
+    if (!zensicalBuildRes.ok) {
+      throw new SfError('Zensical build with docker failed:\n' + zensicalBuildRes.output);
     }
   }
 }
 
 export async function installMkDocs() {
   uxLog("action", this, c.cyan(t('managingZensicalLocalInstallation')));
-  let zensicalLocalOk = false;
   const pipCommands = ["pip", "python -m pip", "py -m pip", "python3 -m pip", "py3 -m pip"]
     .map((pipCmd) => `${pipCmd} install ${ZENSICAL_PIP_PACKAGES}`);
-  const installZensicalRes = await execCommand(pipCommands.join(" || "), this, { fail: false, output: true, debug: false });
-  if (installZensicalRes.status === 0) {
-    zensicalLocalOk = true;
-  }
-  return zensicalLocalOk;
+  // A refused install (no pip, PEP 668 externally managed Python...) falls back to the Zensical Docker image
+  const installZensicalRes = await runZensicalCommand(pipCommands.join(" || "));
+  return installZensicalRes.ok;
 }
 
 // Index tables used to be rendered in the order the metadata files happened to be walked in:
@@ -759,4 +756,14 @@ ${content}
 <!-- Cache file end: ${cacheFilePath} -->`
   }
 
+}
+
+// execCommand throws when a command fails, whatever its fail option: return the outcome instead
+async function runZensicalCommand(command: string): Promise<{ ok: boolean; output: string }> {
+  try {
+    const res = await execCommand(command, this, { fail: false, output: true, debug: false });
+    return { ok: res.status === 0, output: `${res.stderr || ""}\n${res.stdout || ""}` };
+  } catch (e) {
+    return { ok: false, output: (e as Error).message };
+  }
 }

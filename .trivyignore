@@ -260,13 +260,6 @@ CVE-2026-27145
 # Go stdlib v1.26.3 in the pebble binary of the Ubuntu base image (usr/bin/pebble): os.Root symlink-following vulnerability, fixed in Go 1.25.12 / 1.26.5 / 1.27.0-rc.2. Exploiting it needs the binary to sandbox untrusted filesystem paths with os.Root; pebble is Canonical's service manager and is never invoked by sfdx-hardis (one-shot CI/CD CLI), so the code path is unreachable. Depends on the upstream base image rebuild. Added 2026-07-11.
 CVE-2026-39822
 
-# https://avd.aquasec.com/nvd/cve-2026-50195
-# containerd 2.2.2-0ubuntu1 (from the docker.io apt package in the Ubuntu image): CRI checkpoint import image-cache poisoning on shared Kubernetes nodes (CVSS 8.8). The attack requires a multi-tenant k8s node, pod-creation rights, and CRIU checkpoint/restore enabled. sfdx-hardis runs containerd as a one-shot CI/CD CLI with no CRI plugin and no shared-node tenancy, so it is not exploitable. No fixed version published for Ubuntu 26.04 yet (fix lands in containerd 2.2.4-3). Added 2026-06-24.
-CVE-2026-50195
-CVE-2026-53488
-CVE-2026-53489
-CVE-2026-53492
-
 # https://avd.aquasec.com/nvd/cve-2026-54466
 # websocket-driver 0.7.4 (message corruption via abuse of protocol length headers, CRITICAL). sfdx-hardis own tree is already pinned to 0.7.5 in yarn.lock; the residual 0.7.4 comes from the globally npm-installed Salesforce CLI (usr/lib/node_modules/@salesforce/cli/node_modules/websocket-driver), which our yarn resolutions cannot reach, so it is not remediable from this repo; the Salesforce CLI team will pick up the upgrade. websocket-driver is used as a streaming client, not a server parsing untrusted frames, so harmless for sfdx-hardis usage. Added 2026-07-17.
 CVE-2026-54466

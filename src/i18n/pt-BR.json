@@ -746,6 +746,7 @@
   "cloudflareSetupInstructions": "Consulte https://sfdx-hardis.cloudity.com/salesforce-project-doc-cloudflare/ para instruções de publicação da sua documentação no Cloudflare Pages",
   "cloudityProfessionalServicesCanHelpYouHost": "Os Serviços Profissionais da Cloudity podem ajudá-lo a hospedá-la em outro lugar.",
   "codeCoverageHasBeenCalculatedManuallyIf": "A cobertura de código foi calculada manualmente. Se o número parecer estranho, é melhor usar a opção \\",
+  "codexCliNotFound": "Codex CLI não encontrado: instale-o com \"npm install -g @openai/codex\" ou defina CODEX_CLI_PATH com o local dele.",
   "codexReceivedResponse": "Resposta do prompt recebida de {{modelName}}",
   "codexReceivedResponseDebug": "Resposta do prompt recebida de {{modelName}}\n{{response}}",
   "codexRequestingPrompt": "Solicitando prompt a {{modelName}}{{template}} (defina DEBUG_PROMPTS=true para ver detalhes)",

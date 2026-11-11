@@ -30,10 +30,11 @@ RUN apk add --update --no-cache \
             bash \
             # Required for the copied Node.js binary (musl C++ runtime)
             libstdc++ \
-            # Required for docker
-            docker \
-            openrc \
-            openjdk17 \
+            # Docker client only, for MERMAID_MODES=docker and the Zensical fallback
+            # (needs the docker socket of the CI host, no engine runs in this image)
+            docker-cli \
+            # Java runtime for PMD / code-analyzer, no JDK tools needed
+            openjdk17-jre-headless \
             # Required for puppeteer
             chromium \
             nss \
@@ -45,9 +46,6 @@ RUN apk add --update --no-cache \
     apk upgrade --no-cache && \
     # Clean up package cache
     rm -rf /var/cache/apk/*
-
-# Start docker daemon in case mermaid-cli image is used
-RUN rc-update add docker boot && (rc-service docker start || true)
 
 # Do not use puppeteer embedded chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
@@ -73,6 +71,8 @@ ARG NODE_MIN_VERSION=24.22.1
 RUN --mount=type=bind,source=ref/docker/distrust-ca-roots.sh,target=/tmp/distrust-ca-roots.sh \
     { [ "$(apk version -t "$(node -p process.versions.node)" "${NODE_MIN_VERSION}")" != "<" ] || \
         { echo "Node.js $(node --version) is older than ${NODE_MIN_VERSION}" >&2; exit 1; }; } && \
+    # distrust-ca-roots.sh skips the Java store when keytool is missing: fail instead
+    java -version && command -v keytool && docker --version && \
     sh /tmp/distrust-ca-roots.sh
 ENV REQUESTS_CA_BUNDLE="/etc/ssl/certs/ca-certificates.crt"
 

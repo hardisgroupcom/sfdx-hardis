@@ -178,7 +178,7 @@ export async function generateMarkdownFileWithMermaidDocker(outputFlowMdFileIn: 
   const fileDir = path.resolve(path.dirname(outputFlowMdFileIn));
   const fileName = path.basename(outputFlowMdFileIn);
   const fileOut = path.basename(outputFlowMdFileOut);
-  const dockerCommand = `docker run --rm -v "${fileDir}:/data" ghcr.io/mermaid-js/mermaid-cli/mermaid-cli -i "${fileName}" -o "${fileOut}"`;
+  const dockerCommand = buildMermaidDockerCommand(fileDir, fileName, fileOut);
   try {
     await execCommand(dockerCommand, this, { output: false, fail: true, debug: false });
     return true;
@@ -190,6 +190,22 @@ export async function generateMarkdownFileWithMermaidDocker(outputFlowMdFileIn: 
     }
     return false;
   }
+}
+
+/**
+ * The mermaid-cli image runs as its own user, which cannot overwrite a markdown file written by
+ * another user in the mounted folder (EACCES, for example when sfdx-hardis runs as root in a CI image).
+ * The container runs as the user of this process, who wrote the files (no uid on Windows).
+ */
+export function buildMermaidDockerCommand(
+  fileDir: string,
+  fileName: string,
+  fileOut: string,
+  uid: number | undefined = process.getuid?.(),
+  gid: number | undefined = process.getgid?.(),
+): string {
+  const userOption = uid !== undefined && gid !== undefined ? `--user ${uid}:${gid} ` : "";
+  return `docker run --rm ${userOption}-v "${fileDir}:/data" ghcr.io/mermaid-js/mermaid-cli/mermaid-cli -i "${fileName}" -o "${fileOut}"`;
 }
 
 export async function generateMarkdownFileWithMermaidCli(outputFlowMdFileIn: string, outputFlowMdFileOut: string): Promise<boolean> {

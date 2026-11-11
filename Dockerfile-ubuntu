@@ -1,5 +1,10 @@
 # Docker image to run sfdx-hardis
 
+# Ubuntu has no client-only docker package (docker.io brings the engine, containerd and iptables),
+# so the static docker client is copied from the official docker CLI image.
+ARG DOCKER_CLI_IMAGE=docker:29-cli
+FROM ${DOCKER_CLI_IMAGE} AS dockercli
+
 FROM ubuntu:latest
 
 LABEL maintainer="Nicolas VUILLAMY <nicolas.vuillamy@cloudity.com>"
@@ -22,10 +27,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-pip \
     python3-venv \
-    # Required for docker
-    docker.io \
     fonts-liberation \
-    openjdk-17-jdk \
+    # Java runtime for PMD / code-analyzer, no JDK tools needed
+    openjdk-17-jre-headless \
     # Required for mermaid cli
     libglib2.0-0 \
     libnss3 \
@@ -72,6 +76,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+# Docker client only, for the Zensical fallback and MERMAID_MODES=docker
+# (needs the docker socket of the CI host, no engine runs in this image)
+COPY --from=dockercli /usr/local/bin/docker /usr/local/bin/docker
+
 # Add node packages to path
 ENV PATH="/node_modules/.bin:${PATH}"
 
@@ -83,6 +91,8 @@ ENV PATH="${JAVA_HOME}/bin:${PATH}"
 # Turn the same roots off in the system and Java trust stores, and point Python tools that use
 # certifi (requests...) at the system bundle.
 RUN --mount=type=bind,source=ref/docker/distrust-ca-roots.sh,target=/tmp/distrust-ca-roots.sh \
+    # distrust-ca-roots.sh skips the Java store when keytool is missing: fail instead
+    java -version && command -v keytool && docker --version && \
     sh /tmp/distrust-ca-roots.sh
 ENV REQUESTS_CA_BUNDLE="/etc/ssl/certs/ca-certificates.crt"
 
