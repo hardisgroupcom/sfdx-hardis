@@ -5,6 +5,7 @@ import { buildPromptFromTemplate } from "../aiProvider/promptTemplates.js";
 import { GitProvider } from "../gitProvider/index.js";
 import { buildConventionalCommitMessage } from "./gitUtils.js";
 import { t } from "./i18n.js";
+import { formatDeploymentActionHint } from "./deployTipActions.js";
 
 export interface AutoFixResult {
   success: boolean;
@@ -235,6 +236,9 @@ function formatErrorsForPrompt(errorsAndTips: any[]): string {
     if (item.tip?.message) {
       lines.push(`Tip: ${item.tip.message}`);
     }
+    if (item.tip?.deploymentAction) {
+      lines.push(`Deployment action: ${formatDeploymentActionHint(item.tip.deploymentAction, "text").join("\n")}`);
+    }
     if (item.tipFromAi?.promptResponse) {
       lines.push(`AI Suggestion: ${item.tipFromAi.promptResponse}`);
     }
@@ -291,6 +295,9 @@ function buildErrorsDescription(errorsAndTips: any[], failedTests: any[]): strin
       lines.push(`- **Error**: ${item.error?.message || "Unknown error"}`);
       if (item.tip?.message) {
         lines.push(`  - **Tip**: ${item.tip.message}`);
+      }
+      if (item.tip?.deploymentAction) {
+        lines.push(`  - **Deployment action**: \`${item.tip.deploymentAction.command}\``);
       }
     }
     lines.push("");

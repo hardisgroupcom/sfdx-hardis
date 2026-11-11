@@ -9,7 +9,7 @@ import path from 'path';
 import { SfError } from '@salesforce/core';
 import { createTempDir, removeTempDir, uxLog } from '../../utils/index.js';
 import { t } from '../../utils/i18n.js';
-import { ensureBrowserforce, execBrowserforceJson, InstalledBrowserforce } from './browserforcePlugin.js';
+import { ensureBrowserforce, execBrowserforceJson, findInstalledBrowserforce, InstalledBrowserforce } from './browserforcePlugin.js';
 
 // Version of the catalog format this sfdx-hardis reads. Browserforce only increments it when it
 // removes or renames a field, so a higher one may lack what sfdx-hardis reads.
@@ -40,6 +40,8 @@ export interface BrowserforceSetting {
   key: string;
   title?: string;
   description?: string;
+  // Documentation page of the setting, given since Browserforce 7.1.0
+  docUrl?: string;
   jsonSchema: Record<string, unknown>;
   groups: BrowserforceFieldGroup[];
   fields: BrowserforceField[];
@@ -154,6 +156,26 @@ export async function validateBrowserforceConfig(setting: string, config: any): 
 /** Folder of the catalog cache files, shared with the VS Code extension */
 export function getCatalogCacheDir(): string {
   return process.env.SFDX_HARDIS_BROWSERFORCE_CACHE_DIR || path.join(os.homedir(), '.sfdx', 'sfdx-hardis-cache', 'browserforce');
+}
+
+/**
+ * The catalog already in the cache, without installing Browserforce nor running it: the one of the
+ * installed version, else any cached one. null when none was ever written.
+ */
+export function readCachedBrowserforceCatalog(): BrowserforceCatalog | null {
+  const installed = findInstalledBrowserforce();
+  if (installed && !installed.linked) {
+    const catalog = readCatalogFile(installed.version);
+    if (catalog) {
+      return catalog;
+    }
+  }
+  try {
+    const cachedFile = fs.readdirSync(getCatalogCacheDir()).filter((file) => /^catalog-.+\.json$/.test(file)).sort().pop();
+    return cachedFile ? readCatalogFile(cachedFile.replace(/^catalog-/, '').replace(/\.json$/, '')) : null;
+  } catch {
+    return null;
+  }
 }
 
 async function runBrowserforceValidate(setting: string, config: any): Promise<BrowserforceValidationResult> {

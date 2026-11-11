@@ -8,6 +8,7 @@ import { updatePullRequestResult } from "./deployTips.js";
 import { shortenLogLines } from "./deployUtils.js";
 import { buildDeployResultSummaryLines, isFullDeployJsonLogRequested } from "./deployResultSummary.js";
 import { t } from './i18n.js';
+import { buildTipDeploymentAction, formatDeploymentActionHint, getSolveDeploymentErrorPromptVariables } from "./deployTipActions.js";
 
 
 export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, includeInLog = true, options: any): Promise<any> {
@@ -127,7 +128,8 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
           detailedErrorLines.push(...[
             c.yellow(c.italic("✏️ Error " + c.bold(errorTip.tip.label)) + ":"),
             c.yellow(errorTip.tip.messageConsole),
-            c.yellow(`Documentation: ${errorTip.tip.docUrl}`)
+            c.yellow(`Documentation: ${errorTip.tip.docUrl}`),
+            ...(errorTip.tip.deploymentAction ? formatDeploymentActionHint(errorTip.tip.deploymentAction, "console") : []),
           ])
         }
         if (errorTip.tipFromAi) {
@@ -223,16 +225,17 @@ export function extractShortNetworkCause(message: string, cause: string): string
 }
 
 async function matchesTip(tipDefinition: any, error: any) {
-  matchStringBasedTip(tipDefinition, error);
-  matchRegExpBasedTip(tipDefinition, error);
+  await matchStringBasedTip(tipDefinition, error);
+  await matchRegExpBasedTip(tipDefinition, error);
 }
 
-function matchStringBasedTip(tipDefinition: any, error: any) {
+async function matchStringBasedTip(tipDefinition: any, error: any) {
   if (tipDefinition.expressionString &&
     tipDefinition.expressionString.filter((expressionString: any) => error.messageInitial.includes(expressionString)).length > 0) {
     error.message = stripAnsi(error.messageInitial);
     const errorBase = Object.assign({}, error);
     delete errorBase.tips;
+    const deploymentAction = await buildTipDeploymentAction(tipDefinition, []);
     error.tips.push({
       error: errorBase,
       tip: {
@@ -240,12 +243,13 @@ function matchStringBasedTip(tipDefinition: any, error: any) {
         docUrl: tipDefinition.docUrl,
         message: tipDefinition.tip,
         messageConsole: tipDefinition.tip,
+        ...(deploymentAction ? { deploymentAction } : {}),
       },
     });
   }
 }
 
-function matchRegExpBasedTip(tipDefinition: any, error: any) {
+async function matchRegExpBasedTip(tipDefinition: any, error: any) {
   if (
     tipDefinition.expressionRegex &&
     tipDefinition.expressionRegex.filter((expressionRegex: any) => {
@@ -265,13 +269,15 @@ function matchRegExpBasedTip(tipDefinition: any, error: any) {
       error.message = stripAnsi(format(error.messageInitial, replacementsMarkdown)).replace(/\*\*.\*\*/gm, ".")
       const errorBase = Object.assign({}, error);
       delete errorBase.tips;
+      const deploymentAction = await buildTipDeploymentAction(tipDefinition, [...m]);
       error.tips.push({
         error: errorBase,
         tip: {
           label: tipDefinition.label,
           docUrl: tipDefinition.docUrl,
           message: stripAnsi(format(tipDefinition.tip, replacementsMarkdown).replace(/\*\*.\*\*/gm, ".")),
-          messageConsole: tipDefinition.tip.split(/\r?\n/).map((str: string) => format(str, replacements)).join("\n")
+          messageConsole: tipDefinition.tip.split(/\r?\n/).map((str: string) => format(str, replacements)).join("\n"),
+          ...(deploymentAction ? { deploymentAction } : {}),
         },
       });
     }
@@ -305,7 +311,7 @@ async function findAiTip(error: any, alreadyProcessedErrors: string[]): Promise<
       uxLog("warning", this, c.yellow(`[AI] Maximum number of AI calls for deployment tips reached. Increase with env var MAX_DEPLOYMENT_TIPS_AI_CALLS`));
       return null;
     }
-    const prompt = buildPrompt(error);
+    const prompt = await AiProvider.buildPrompt("PROMPT_SOLVE_DEPLOYMENT_ERROR", await getSolveDeploymentErrorPromptVariables(JSON.stringify(error, null, 2)));
     try {
       const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_SOLVE_DEPLOYMENT_ERROR");
       return aiResponse;
@@ -316,13 +322,3 @@ async function findAiTip(error: any, alreadyProcessedErrors: string[]): Promise<
   return null;
 }
 
-function buildPrompt(error: any) {
-  const prompt =
-    `You are a Salesforce release manager using Salesforce CLI commands to perform deployments \n` +
-    `How to solve the following Salesforce deployment error ?\n` +
-    "- Please answer using sfdx source format, not metadata format. \n" +
-    "- Please provide XML example if applicable. \n" +
-    "- Please skip the part of the response about how to retrieve or deploy the changes with Salesforce CLI.\n" +
-    `The error is: \n${JSON.stringify(error, null, 2)}`;
-  return prompt;
-}

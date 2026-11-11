@@ -6,6 +6,7 @@ import { uxLog } from "../../utils/index.js";
 import { generateFlowVisualGitDiff } from "../../utils/mermaidUtils.js";
 import { GitProvider, PrCommentFlowChange } from "../index.js";
 import { t } from '../../utils/i18n.js';
+import { formatDeploymentActionHint } from '../../utils/deployTipActions.js';
 
 export function deployErrorsToMarkdown(errorsAndTips: Array<any>) {
   let md = "## Deployment errors\n\n";
@@ -22,12 +23,15 @@ export function deployErrorsToMarkdown(errorsAndTips: Array<any>) {
         : err?.tipFromAi?.promptText
           ? getAiPromptTextMarkdown("Get prompt for AI", err.tipFromAi.promptText)
           : "";
+      const actionText = err.tip.deploymentAction
+        ? "\n" + formatDeploymentActionHint(err.tip.deploymentAction, "markdown").join("\n") + "\n"
+        : "";
       md += `<details><summary>⛔ ${errorMessage}</summary>
 
 _[**✏️ ${err.tip.label}**](${err.tip.docUrl || "https://sfdx-hardis.cloudity.com/salesforce-deployment-agent-home/"})_
 
 ${err.tip.message.replace(/:\n-/gm, `:\n\n-`)}
-${aiText}
+${actionText}${aiText}
 </details>
 <br/>
 `;

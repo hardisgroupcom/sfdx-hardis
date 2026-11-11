@@ -35,6 +35,7 @@ const template: PromptTemplateDefinition = {
 - Focus on fixing the root cause in the local metadata files
 - If a fix requires removing a reference to something that does not exist in the target org, remove it from the local file
 - If a fix requires adding a missing dependency, add it to the local metadata files
+- When an error comes with a "Deployment action" command (\`sf hardis:project:action:create ...\`), the error is solved by a deployment action, not by a metadata change: run that command (it only writes a local configuration file), adapt its values when the tip asks for it, and report it in the summary with the notes that come with it
 
 ## DEPLOYMENT ERRORS TO FIX
 

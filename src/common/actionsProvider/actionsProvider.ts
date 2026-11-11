@@ -284,6 +284,29 @@ export abstract class ActionsProvider {
     return [];
   }
 
+  /**
+   * Documentation page of an action of this type with these parameters, for the deployment error
+   * tips that suggest one. null: the sfdx-hardis page of the type.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public getDocumentationUrl(_parameters: PrePostCommand['parameters']): string | null {
+    return null;
+  }
+
+  /** What a user must know before creating the action a deployment error tip suggests */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public getDeployTipNotes(_parameters: PrePostCommand['parameters']): string[] {
+    return [];
+  }
+
+  /**
+   * What this type can do that a metadata deployment cannot, for the AI prompt that solves a
+   * deployment error no tip matched. null: nothing worth telling. Never installs anything.
+   */
+  public async describeForDeployErrorAi(): Promise<string | null> {
+    return null;
+  }
+
   /** Data only this type has, for hardis:project:action:types (flags of that command included) */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async describeTypeDetails(_flags: any): Promise<Record<string, any> | null> {

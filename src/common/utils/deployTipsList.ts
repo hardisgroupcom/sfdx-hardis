@@ -89,6 +89,12 @@ THIS MAY BE A FALSE POSITIVE if you are just testing the deployment, as destruct
       tip: `You need to manually delete record type {1} in target org
 - Edit record type {1}, uncheck "Active"
 - Delete record type {1}`,
+      deploymentAction: {
+        type: "browser",
+        when: "pre-deploy",
+        label: "Delete record type {1}",
+        parameters: { setting: "recordTypes", config: { deletions: [{ fullName: "{1}" }] } },
+      },
     },
     {
       name: "can-not-find-folder",
@@ -432,6 +438,12 @@ If it is already done, you may manually check "MarketingUser" field on the scrat
 - Help: https://help.salesforce.com/articleView?id=sf.shared_contacts_set_up.htm&type=5
 - Scratch org setting:
 "features": ["ContactsToMultipleAccounts"]`,
+      deploymentAction: {
+        type: "browser",
+        when: "pre-deploy",
+        label: "Enable Contacts to Multiple Accounts",
+        parameters: { setting: "relateContactToMultipleAccounts", config: { enabled: true } },
+      },
     },
     {
       name: "missing-feature-chatter-collaboration-groups",
@@ -617,7 +629,17 @@ Go manually make the change in the target org, so the deployment will pass
       tip: `Sources have references to value {1} of picklist {2}
 - If picklist {2} is standard, add the picklist to sfdx sources by using "sf project retrieve start -m StandardValueSet:{2}", then save again
 - Else, perform a search in all code of {1}, then remove XML tags referring to {1} (for example in record types metadatas)
+- If value {1} exists but is inactive in the target org, a deployment action can activate it: replace OBJECT_NAME by the object of picklist {2} (or, for a standard value set, use "metadataType":"StandardValueSet" and "metadataFullName":"{2}")
 `,
+      deploymentAction: {
+        type: "browser",
+        when: "pre-deploy",
+        label: "Activate value {1} of picklist {2}",
+        parameters: {
+          setting: "picklists",
+          config: { picklistValues: [{ metadataType: "CustomField", metadataFullName: "OBJECT_NAME.{2}", value: "{1}", active: true }] },
+        },
+      },
     },
     {
       name: "please-choose-a-different-name",
@@ -698,6 +720,55 @@ If you already did that, please try again to run the job`,
       label: "Send email is disabled",
       expressionString: ["Send Email is disabled or activities are not allowed", "Unknown user permission: SendExternalEmailAvailable"],
       tip: `Go to Email -> Deliverability -> Select value "All emails"`,
+      deploymentAction: {
+        type: "browser",
+        when: "pre-deploy",
+        label: "Allow all emails in Deliverability",
+        parameters: { setting: "emailDeliverability", config: { accessLevel: "All email" } },
+      },
+    },
+    {
+      name: "shared-activities-not-deployable",
+      label: "Shared Activities can not be deployed",
+      expressionString: ["You can't use the Tooling API or Metadata API to enable or disable Shared Activities"],
+      tip: `The Metadata API can not change Shared Activities (Allow Users to Relate Multiple Contacts to Tasks and Events)
+- Remove allowUsersToRelateMultipleContactsToTasksAndEvents from Activities.settings-meta.xml in your sources
+- To enable it, go to Setup -> Activity Settings in the target org, or use a deployment action
+- Once enabled, it can not be disabled (only Salesforce support can)`,
+      deploymentAction: {
+        type: "browser",
+        when: "pre-deploy",
+        label: "Enable Shared Activities",
+        parameters: { setting: "activitySettings", config: { allowUsersToRelateMultipleContactsToTasksAndEvents: true } },
+      },
+    },
+    {
+      name: "lightning-experience-theme-not-found",
+      label: "Lightning Experience theme not found",
+      expressionRegex: [/no LightningExperienceTheme named (.*) found/gm],
+      tip: `Lightning Experience theme {1} is not in the target org
+- If {1} is a custom theme, add LightningExperienceTheme:{1} to your sources
+- If {1} is a standard theme (Lightning, LightningBlue...), the Metadata API can not activate it: remove activeThemeName from LightningExperience.settings-meta.xml in your sources, then activate the theme in Setup -> Themes and Branding, or with a deployment action`,
+      deploymentAction: {
+        type: "browser",
+        when: "pre-deploy",
+        label: "Activate Lightning Experience theme {1}",
+        parameters: { setting: "lightningExperienceSettings", config: { activeThemeName: "{1}" } },
+      },
+    },
+    {
+      name: "history-tracking-not-enabled",
+      label: "History tracking not enabled on object",
+      expressionRegex: [/The entity: (.*) does not have history tracking enabled/gm],
+      tip: `A field tracks its history, but history tracking is not enabled on object {1} in the target org
+- Enable it in the sources: add <enableHistory>true</enableHistory> to the object {1} metadata and deploy it with the field
+- For a Person Account field, the Metadata API can not enable it: use Setup -> Object Manager -> {1} -> Fields & Relationships -> Set History Tracking, or a deployment action`,
+      deploymentAction: {
+        type: "browser",
+        when: "pre-deploy",
+        label: "Enable history tracking on {1}",
+        parameters: { setting: "historyTracking", config: [{ objectApiName: "{1}", enableHistoryTracking: true }] },
+      },
     },
     {
       name: "sort-order-error",

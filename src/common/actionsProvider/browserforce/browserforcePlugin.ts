@@ -14,6 +14,17 @@ export const BROWSERFORCE_PLUGIN_NAME = 'sfdx-browserforce-plugin';
 // First release with plugins list / validate, the changes in the --json result of apply,
 // and applyToAll in userAccessPolicies
 export const BROWSERFORCE_MIN_VERSION = '7.0.0';
+// The Browserforce documentation site, with one page per setting
+export const BROWSERFORCE_DOCS_URL = 'https://amtrack.github.io/sfdx-browserforce-plugin/';
+export const BROWSERFORCE_SETTINGS_DOC_URL = `${BROWSERFORCE_DOCS_URL}settings/`;
+
+/**
+ * Documentation page of a setting, without asking the installed Browserforce: a deployment error
+ * tip must not install it. The catalog of Browserforce 7.1.0 and later gives the same URL (docUrl).
+ */
+export function browserforceSettingDocUrl(key: string): string {
+  return `${BROWSERFORCE_SETTINGS_DOC_URL}${encodeURIComponent(key)}/`;
+}
 
 export interface InstalledBrowserforce {
   version: string;

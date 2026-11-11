@@ -607,7 +607,8 @@ export function logActionSummary(commandThis: any, action: PrePostCommand): void
   }
   if (action.parameters) {
     for (const [key, value] of Object.entries(action.parameters)) {
-      uxLog("log", commandThis, c.grey(`  ${key}: ${value}`));
+      // An object value (the config of a browser action...) would print as [object Object]
+      uxLog("log", commandThis, c.grey(`  ${key}: ${value !== null && typeof value === 'object' ? JSON.stringify(value) : value}`));
     }
   }
 }
