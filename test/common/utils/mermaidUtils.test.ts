@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { getMermaidExtraClasses } from '../../../src/common/utils/mermaidUtils.js';
+import { buildMermaidDockerCommand, getMermaidExtraClasses } from '../../../src/common/utils/mermaidUtils.js';
 
 describe('Mermaid Utils - Theme Overrides', () => {
     it('Should keep default diff highlight classes when mermaidTheme is absent', () => {
@@ -30,5 +30,17 @@ describe('Mermaid Utils - Theme Overrides', () => {
         });
 
         expect(result).to.include('classDef actionCallsAdded fill:#445566,color:black,stroke-width:4px,text-decoration:none,max-height:100px');
+    });
+});
+
+describe('Mermaid Utils - Docker command', () => {
+    it('Should run the mermaid-cli container as the user who wrote the files', () => {
+        const result = buildMermaidDockerCommand('/work/docs', 'Flow.md', 'Flow.md', 0, 0);
+        expect(result).to.equal('docker run --rm --user 0:0 -v "/work/docs:/data" ghcr.io/mermaid-js/mermaid-cli/mermaid-cli -i "Flow.md" -o "Flow.md"');
+    });
+
+    it('Should keep the image user when there is no uid (Windows)', () => {
+        const result = buildMermaidDockerCommand('C:/work/docs', 'Flow.md', 'Flow.svg', undefined, undefined);
+        expect(result).to.equal('docker run --rm -v "C:/work/docs:/data" ghcr.io/mermaid-js/mermaid-cli/mermaid-cli -i "Flow.md" -o "Flow.svg"');
     });
 });

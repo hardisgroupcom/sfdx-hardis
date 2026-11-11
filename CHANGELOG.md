@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- [hardis:doc:flow2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/flow2markdown/) and [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Flow diagrams drawn with Docker no longer fail with a permission error in the sfdx-hardis Docker images.
 - GitHub: QuickDeploy finds the validation of Pull Requests merged long after they were created (closed Pull Requests are now searched by update date instead of creation date).
 - Docker images: lighter, with the Docker client and a Java runtime instead of the full Docker engine and JDK, and no bundled Codex.
 - [Codex AI provider](https://sfdx-hardis.cloudity.com/salesforce-ai-setup/#with-codex-directly): sfdx-hardis no longer bundles Codex, install the Codex CLI or use a with-agents Docker image.

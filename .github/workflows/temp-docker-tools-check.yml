@@ -156,8 +156,9 @@ jobs:
           echo "MERMAID_MODES=${MERMAID_MODES:-}"
           EOF
 
-          # The mermaid-cli and zensical images run as another user than the sfdx-hardis container (root)
-          # and the runner: open the folders, and create files with umask 000 so they can overwrite them
+          # The folders belong to the runner user: let the containers (root, zensical) write in them.
+          # No umask workaround: the mermaid-cli container must overwrite the markdown file written by
+          # root in the sfdx-hardis container on its own, thanks to the --user option sfdx-hardis passes.
           chmod -R a+rwX "$W"
 
           # Usage: in_image [docker run options] -- command...
@@ -165,8 +166,7 @@ jobs:
             local opts=()
             while [ "$1" != "--" ]; do opts+=("$1"); shift; done
             shift
-            # shellcheck disable=SC2016 # expanded by the bash of the container
-            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$W:$W" -w "$W" "${opts[@]}" "$IMAGE" bash -c 'umask 000; exec "$@"' _ "$@"
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$W:$W" -w "$W" "${opts[@]}" "$IMAGE" "$@"
           }
 
           echo "== Tools in the image =="
