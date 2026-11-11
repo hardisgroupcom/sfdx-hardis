@@ -21,7 +21,7 @@ jobs:
           # Ubuntu archive as usual (fallback only if the runner cannot reach it)
           - mode: default
             add-hosts: ""
-          # Ubuntu archive hosts pointed at an unroutable address: the fallback mirror must be used
+          # Ubuntu archive hosts pointed at an address that does not answer: the fallback mirror must be used
           - mode: forced-fallback
             add-hosts: |
               archive.ubuntu.com:0.0.0.0
