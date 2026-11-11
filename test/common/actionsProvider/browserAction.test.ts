@@ -9,6 +9,8 @@ import { resolveRunOnlyOnceByOrg } from '../../../src/common/actionsProvider/act
 import { assertNoFlagsOfOtherTypes, throwActionValidationErrors } from '../../../src/common/utils/actionUtils.js';
 import { buildActionTypesDescription } from '../../../src/common/utils/actionTypesUtils.js';
 import { FIXTURE_CATALOG, installBrowserforceFixture } from './browserforceFixture.js';
+import { readCachedBrowserforceCatalog } from '../../../src/common/actionsProvider/browserforce/browserforceCatalog.js';
+import { describeDeploymentActionsForAi } from '../../../src/common/utils/deployTipActions.js';
 
 // Browserforce cannot run in the tests: the calls are recorded and answered with the given outcome
 class TestBrowserAction extends BrowserAction {
@@ -155,10 +157,29 @@ describe('BrowserAction documentation links and deployment error hints', () => {
     expect(settings.find((setting: any) => setting.key === 'authProviders')).to.not.have.property('docUrl');
   });
 
-  it('tells the AI the settings of the cached catalog', async () => {
+  it('tells the AI the settings of the cached catalog in one line, with the command built from its flags', async () => {
     const description = await new BrowserAction().describeForDeployErrorAi();
-    expect(description).to.contain('densitySettings: Density Settings');
-    expect(description).to.contain('--type browser');
+    expect(description).to.contain('Its settings: densitySettings, authProviders.');
+    expect(description!.split('\n')).to.have.length(1);
+    const all = await describeDeploymentActionsForAi();
+    expect(all).to.contain(`--type browser --label "<label>" --browser-setting <setting> --browser-config '<config as JSON>'`);
+  });
+
+  it('uses the highest cached catalog that this version can read when the installed one has none', async () => {
+    const cache = installBrowserforceFixture({ version: '7.10.0', withCache: false });
+    try {
+      const write = (version: string, catalog: any) =>
+        fs.writeFileSync(path.join(cache.cacheDir, `catalog-${version}.json`), JSON.stringify(catalog));
+      fs.mkdirSync(cache.cacheDir, { recursive: true });
+      write('7.9.0', { ...FIXTURE_CATALOG, browserforceVersion: '7.9.0' });
+      write('7.11.0', { ...FIXTURE_CATALOG, browserforceVersion: '7.11.0', formatVersion: 99 });
+      write('7.10.1', { ...FIXTURE_CATALOG, browserforceVersion: '7.10.1' });
+      expect(readCachedBrowserforceCatalog()?.browserforceVersion).to.equal('7.10.1');
+    } finally {
+      cache.restore();
+      process.env.SF_DATA_DIR = fixture.dataDir;
+      process.env.SFDX_HARDIS_BROWSERFORCE_CACHE_DIR = fixture.cacheDir;
+    }
   });
 
   it('points the AI to the settings page when no catalog was ever cached', async () => {

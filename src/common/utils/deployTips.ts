@@ -189,6 +189,8 @@ async function matchesTip(tipDefinition: any, includeInLog = true): Promise<bool
   ) {
     if (includeInLog) {
       const logLines = returnErrorLines(logRes);
+      // A string tip has no placeholder to fill: its action is the same for every line
+      const deploymentAction = await buildTipDeploymentAction(tipDefinition, []);
       for (const line of logLines) {
         newLogLines.push(line);
         let found = false;
@@ -197,7 +199,6 @@ async function matchesTip(tipDefinition: any, includeInLog = true): Promise<bool
             found = true;
             newLogLines.push(c.yellow(c.italic("Tip for " + tipDefinition.label + ":")));
             newLogLines.push(...tipDefinition.tip.split(/\r?\n/).map((str: string) => c.yellow(str)));
-            const deploymentAction = await buildTipDeploymentAction(tipDefinition, []);
             if (deploymentAction) {
               newLogLines.push(...formatDeploymentActionHint(deploymentAction, "console"));
             }

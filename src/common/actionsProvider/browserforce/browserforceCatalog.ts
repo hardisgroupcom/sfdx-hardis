@@ -6,6 +6,7 @@ import { randomUUID } from 'crypto';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import semver from 'semver';
 import { SfError } from '@salesforce/core';
 import { createTempDir, removeTempDir, uxLog } from '../../utils/index.js';
 import { t } from '../../utils/i18n.js';
@@ -164,18 +165,29 @@ export function getCatalogCacheDir(): string {
  */
 export function readCachedBrowserforceCatalog(): BrowserforceCatalog | null {
   const installed = findInstalledBrowserforce();
+  const isReadable = (catalog: BrowserforceCatalog | null): boolean => !!catalog && Number(catalog.formatVersion) <= SUPPORTED_CATALOG_FORMAT_VERSION;
   if (installed && !installed.linked) {
     const catalog = readCatalogFile(installed.version);
-    if (catalog) {
+    if (isReadable(catalog)) {
       return catalog;
     }
   }
   try {
-    const cachedFile = fs.readdirSync(getCatalogCacheDir()).filter((file) => /^catalog-.+\.json$/.test(file)).sort().pop();
-    return cachedFile ? readCatalogFile(cachedFile.replace(/^catalog-/, '').replace(/\.json$/, '')) : null;
+    // The highest version first: 7.10.0 comes after 7.9.0
+    const versions = fs.readdirSync(getCatalogCacheDir())
+      .map((file) => /^catalog-(.+)\.json$/.exec(file)?.[1])
+      .filter((version): version is string => !!version)
+      .sort((a, b) => semver.rcompare(semver.coerce(a) || '0.0.0', semver.coerce(b) || '0.0.0'));
+    for (const version of versions) {
+      const catalog = readCatalogFile(version);
+      if (isReadable(catalog)) {
+        return catalog;
+      }
+    }
   } catch {
-    return null;
+    // No cache folder yet
   }
+  return null;
 }
 
 async function runBrowserforceValidate(setting: string, config: any): Promise<BrowserforceValidationResult> {

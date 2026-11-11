@@ -3,6 +3,9 @@
 // an action type comes from its provider class, through the hooks of ActionsProvider.
 import c from 'chalk';
 import { t } from './i18n.js';
+import { quoteShellArgument } from './stringUtils.js';
+import { shellEscape } from '../aiProvider/utils/providerConfigUtils.js';
+import type { ActionParameterDescription } from '../actionsProvider/actionsProvider.js';
 
 /** The action a tip of deployTipsList.ts suggests. {1}, {2}... are the groups of its regex. */
 export interface DeployTipActionDefinition {
@@ -10,6 +13,8 @@ export interface DeployTipActionDefinition {
   when: 'pre-deploy' | 'post-deploy';
   label: string;
   parameters: Record<string, any>;
+  // Values of the parameters the user must replace before creating the action (OBJECT_NAME...)
+  toComplete?: string[];
 }
 
 /** The suggested action once the placeholders are filled, ready to show */
@@ -22,6 +27,7 @@ export interface DeployTipActionHint {
   command: string;
   docUrl: string;
   notes: string[];
+  toComplete: string[];
 }
 
 export type DeployTipActionFormat = 'console' | 'markdown' | 'text';
@@ -53,15 +59,20 @@ export async function buildDeploymentActionHint(definition: DeployTipActionDefin
   }
   const label = fillPlaceholders(definition.label, groups);
   const parameters = fillPlaceholders(definition.parameters, groups);
+  const toComplete = definition.toComplete || [];
   const { CONSTANTS } = await import('../../config/index.js');
   return {
     type: definition.type,
     when: definition.when,
     label,
     parameters,
-    command: buildCreateCommand(definition, label, parameters, provider.getParameterDescriptions()),
+    command: buildCreateCommand(definition.type, definition.when, label, parameters, provider.getParameterDescriptions()),
     docUrl: provider.getDocumentationUrl(parameters) || `${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-work-on-user-story-deployment-actions-${definition.type}/`,
-    notes: provider.getDeployTipNotes(parameters),
+    notes: [
+      ...(toComplete.length > 0 ? [t('deployTipActionToComplete', { values: toComplete.join(', ') })] : []),
+      ...provider.getDeployTipNotes(parameters),
+    ],
+    toComplete,
   };
 }
 
@@ -79,30 +90,37 @@ export function formatDeploymentActionHint(hint: DeployTipActionHint, format: De
 
 /** Variables of the PROMPT_SOLVE_DEPLOYMENT_ERROR prompt for one deployment error */
 export async function getSolveDeploymentErrorPromptVariables(error: string): Promise<{ ERROR: string; DEPLOYMENT_ACTION_HINTS: string }> {
-  deploymentActionsForAi ??= describeDeploymentActionsForAi();
+  // Computed once per process: every deployment error of a job asks for it. An empty answer is
+  // asked again, as Browserforce may have written its catalog since.
+  if (!deploymentActionsForAi) {
+    deploymentActionsForAi = await describeDeploymentActionsForAi();
+  }
   // The prompt refuses an empty variable
-  return { ERROR: error, DEPLOYMENT_ACTION_HINTS: (await deploymentActionsForAi) || 'None.' };
+  return { ERROR: error, DEPLOYMENT_ACTION_HINTS: deploymentActionsForAi || 'None.' };
 }
 
-// Computed once per process: every deployment error of a job asks for it
-let deploymentActionsForAi: Promise<string> | null = null;
+let deploymentActionsForAi = '';
 
-/** What the built-in action types can do that a metadata deployment cannot, for the AI prompt */
+/**
+ * What the built-in action types can do that a metadata deployment cannot, for the AI prompt: a
+ * short line per type that describes itself, and the command that creates such an action.
+ */
 export async function describeDeploymentActionsForAi(): Promise<string> {
   const { DEPLOYMENT_ACTION_TYPES } = await import('../actionsProvider/actionTypes.js');
   const { getBuiltInActionProvider } = await import('./actionUtils.js');
   const descriptions: string[] = [];
   for (const type of DEPLOYMENT_ACTION_TYPES) {
     try {
-      const description = await (await getBuiltInActionProvider(type))?.describeForDeployErrorAi();
-      if (description) {
-        descriptions.push(description);
+      const provider = await getBuiltInActionProvider(type);
+      const description = await provider?.describeForDeployErrorAi();
+      if (provider && description) {
+        descriptions.push(`- ${description}\n  Command: ${buildCreateCommandTemplate(type, provider.getParameterDescriptions())}`);
       }
     } catch {
       // A type that cannot describe itself is left out of the prompt: the prompt still works
     }
   }
-  return descriptions.join('\n\n');
+  return descriptions.join('\n');
 }
 
 // A string, or the strings inside an object or an array
@@ -122,24 +140,17 @@ function fillPlaceholders<T>(value: T, groups: string[]): T {
   return value;
 }
 
-// A placeholder of an action is one metadata name. In the text log of a deployment the group may
-// also hold the path of the file before it: the name is its last word.
+// In the text log of a deployment, a group may start with the path of the metadata file before its
+// name: the path is dropped. A value with spaces (a picklist value...) is kept whole.
 function placeholderValue(group: string): string {
   const words = group.trim().replace(/'/g, '').split(/\s+/);
-  return words[words.length - 1];
+  const withoutPaths = words.filter((word) => !/[/\\]|-meta\.xml$/.test(word));
+  return (withoutPaths.length > 0 ? withoutPaths : words.slice(-1)).join(' ');
 }
 
 // The flags come from what the type describes: no code specific to a type here
-function buildCreateCommand(definition: DeployTipActionDefinition, label: string, parameters: Record<string, any>, descriptions: { name: string; path: string; flag?: string; type: string }[]): string {
-  const args = [
-    'sf hardis:project:action:create',
-    '--agent',
-    '--scope pr',
-    '--pr-id current',
-    `--when ${definition.when}`,
-    `--type ${definition.type}`,
-    `--label ${doubleQuote(label)}`,
-  ];
+function buildCreateCommand(type: string, when: string, label: string, parameters: Record<string, any>, descriptions: ActionParameterDescription[]): string {
+  const args = createCommandStart(type, when, quoteShellArgument(label));
   for (const description of descriptions) {
     const value = description.path === `parameters.${description.name}` ? parameters[description.name] : undefined;
     if (!description.flag || value === undefined || value === null) {
@@ -156,24 +167,26 @@ function buildCreateCommand(definition: DeployTipActionDefinition, label: string
   return args.join(' ');
 }
 
+// The command with a placeholder per flag, for the AI to fill
+function buildCreateCommandTemplate(type: string, descriptions: ActionParameterDescription[]): string {
+  const args = createCommandStart(type, '<pre-deploy|post-deploy>', '"<label>"');
+  for (const description of descriptions.filter((item) => item.flag && item.path === `parameters.${item.name}`)) {
+    args.push(description.type === 'boolean' ? `[--${description.flag}]` : `--${description.flag} ${description.type === 'json' ? `'<${description.name} as JSON>'` : `<${description.name}>`}`);
+  }
+  return args.join(' ');
+}
+
+function createCommandStart(type: string, when: string, quotedLabel: string): string[] {
+  return ['sf hardis:project:action:create', '--agent', '--scope pr', '--pr-id current', `--when ${when}`, `--type ${type}`, `--label ${quotedLabel}`];
+}
+
 function formatFlagValue(type: string, value: any): string {
   if (type === 'json') {
-    return singleQuote(JSON.stringify(value));
+    // Single quotes: bash and PowerShell 7.3+ pass the JSON as it is
+    return shellEscape(JSON.stringify(value));
   }
   if (type === 'string[]' && Array.isArray(value)) {
-    return doubleQuote(value.join(','));
+    return quoteShellArgument(value.join(','));
   }
-  if (type === 'integer') {
-    return String(value);
-  }
-  return doubleQuote(String(value));
-}
-
-// A value made only of name characters needs no quotes
-function doubleQuote(value: string): string {
-  return /^[\w.:/@-]+$/.test(value) ? value : `"${value.replace(/(["\\$`])/g, '\\$1')}"`;
-}
-
-function singleQuote(value: string): string {
-  return `'${value.replace(/'/g, `'\\''`)}'`;
+  return quoteShellArgument(String(value));
 }

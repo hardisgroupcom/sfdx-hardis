@@ -1152,6 +1152,7 @@
   "deploySelectedSamlSsoConfigs": "Esto desplegará las configuraciones SAML SSO seleccionadas en la org",
   "deployTipActionDocumentation": "Documentación: {{url}}",
   "deployTipActionIntro": "Una acción de despliegue puede resolver este error. Créala en la Pull Request de la branch actual:",
+  "deployTipActionToComplete": "Antes de ejecutarlo, sustituye {{values}} en el comando por el valor real.",
   "deployTipBrowserCheckOnly": "Una comprobación de despliegue solo simula una acción browser. Si esta comprobación sigue fallando con este error una vez creada la acción, aplica el ajuste una vez en la org de destino con el botón Run in another org de la pestaña Deployment Actions de VS Code, o con sf hardis:project:action:run --select-org, y luego vuelve a ejecutar la comprobación.",
   "deployingCertificatesInOrgUsingMetadataApi": "Desplegando certificados en la org {{instanceUrl}} mediante Metadata API (Source API no lo soporta)...",
   "deployingConnectedAppsToOrg": "Desplegando {{count}} Connected App(s) en la org {{orgUsername}}...",

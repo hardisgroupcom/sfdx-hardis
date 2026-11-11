@@ -63,15 +63,9 @@ export class BrowserAction extends BrowserforceActionsProvider {
   public async describeForDeployErrorAi(): Promise<string | null> {
     const { readCachedBrowserforceCatalog } = await import('./browserforce/browserforceCatalog.js');
     const catalog = readCachedBrowserforceCatalog();
-    const settings = catalog
-      ? catalog.plugins.map((setting) => `  - ${setting.key}: ${setting.title || setting.key}${setting.description ? ` - ${setting.description.split(/\r?\n/)[0]}` : ''}`).join('\n')
-      : `  - See ${BROWSERFORCE_SETTINGS_DOC_URL}`;
-    return [
-      'A sfdx-hardis deployment action of type "browser" applies, with Browserforce in a headless browser, Salesforce Setup settings that the Metadata API cannot deploy. Its settings:',
-      settings,
-      'When this error comes from one of them, suggest a pre-deploy browser action on the Pull Request: sf hardis:project:action:create --agent --scope pr --pr-id current --when pre-deploy --type browser --label "<label>" --browser-setting <key> --browser-config \'<JSON value>\'',
-      `The JSON value of each setting is documented on ${BROWSERFORCE_SETTINGS_DOC_URL}<key>/`,
-    ].join('\n');
+    // One short line: the prompt goes into the log and the Pull Request comment of every unmatched error
+    const settings = catalog ? `Its settings: ${catalog.plugins.map((setting) => setting.key).join(', ')}. ` : '';
+    return `Type "browser": applies with Browserforce, in a headless browser, Salesforce Setup settings the Metadata API cannot deploy. ${settings}Value of a setting: ${BROWSERFORCE_SETTINGS_DOC_URL}<setting>/`;
   }
 
   public async describeTypeDetails(flags: any): Promise<Record<string, any>> {

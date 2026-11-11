@@ -33,9 +33,21 @@ describe('Deployment actions suggested by deployment error tips', () => {
     expect(hint!.notes).to.deep.equal([t('deployTipBrowserCheckOnly')]);
   });
 
-  it('Keeps the last word of a group that also holds the path of the file', async () => {
+  it('Drops the path of the file before the name, and keeps a value with spaces whole', async () => {
     const hint = await buildDeploymentActionHint(RECORD_TYPE_ACTION, ['', ' force-app/main/default/objects/Account/recordTypes/Old.recordType-meta.xml  Account.Old ']);
     expect(hint!.parameters.config.deletions[0].fullName).to.equal('Account.Old');
+    const picklistTip: any = getAllTips().find((tip: any) => tip.name === 'picklist-value-not-found');
+    const picklistHint = await buildTipDeploymentAction(picklistTip, ['', 'Closed Won', 'StageName']);
+    expect(picklistHint!.label).to.equal('Activate value Closed Won of picklist StageName');
+    expect(picklistHint!.parameters.config.picklistValues[0].value).to.equal('Closed Won');
+  });
+
+  it('Asks to replace the values the tip cannot know before running the command', async () => {
+    const picklistTip: any = getAllTips().find((tip: any) => tip.name === 'picklist-value-not-found');
+    const hint = await buildTipDeploymentAction(picklistTip, ['', 'Gold', 'Tier__c']);
+    expect(hint!.toComplete).to.deep.equal(['OBJECT_NAME']);
+    expect(hint!.notes[0]).to.equal(t('deployTipActionToComplete', { values: 'OBJECT_NAME' }));
+    expect(hint!.command).to.contain('"metadataFullName":"OBJECT_NAME.Tier__c"');
   });
 
   it('Leaves a placeholder without a group as it is, for the documentation pages', async () => {
@@ -51,7 +63,8 @@ describe('Deployment actions suggested by deployment error tips', () => {
       label: 'Say "hello" for $HOME',
       parameters: { setting: 'companyInformation', config: { name: "O'Brien" } },
     });
-    expect(hint!.command).to.contain('--label "Say \\"hello\\" for \\$HOME"');
+    // Single quotes keep the dollar sign literal in bash and in PowerShell
+    expect(hint!.command).to.contain(`--label 'Say "hello" for $HOME'`);
     expect(hint!.command).to.contain(`--browser-config '{"name":"O'\\''Brien"}'`);
   });
 

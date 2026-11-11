@@ -639,6 +639,7 @@ Go manually make the change in the target org, so the deployment will pass
           setting: "picklists",
           config: { picklistValues: [{ metadataType: "CustomField", metadataFullName: "OBJECT_NAME.{2}", value: "{1}", active: true }] },
         },
+        toComplete: ["OBJECT_NAME"],
       },
     },
     {

@@ -257,6 +257,11 @@ class SfdxHardisBuilder {
       "If you see a deployment error which is not here yet, please [add it in this file](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/utils/deployTipsList.ts) :)",
       ""
     ];
+    // The committed doc pages are in English, whatever SFDX_HARDIS_LANG the maintainer has set
+    const previousLang = process.env.SFDX_HARDIS_LANG;
+    process.env.SFDX_HARDIS_LANG = "en";
+    const { reinitI18n } = await import("./lib/common/utils/i18n.js");
+    reinitI18n();
     const { buildTipDeploymentAction, formatDeploymentActionHint } = await import("./lib/common/utils/deployTipActions.js");
     for (const tip of deployTips) {
       const linkName = `sf-deployment-assistant/${tip.label.replace(/[^a-zA-Z0-9 -]|\s/g, '-')}.md`
@@ -267,6 +272,12 @@ class SfdxHardisBuilder {
       this.buildIndividualMarkdownPageForTip(tip, tipFile, actionMd);
       this.buildMainDeployFixesMarkdown(tip, deployTipsMd, linkName, actionMd);
     }
+    if (previousLang === undefined) {
+      delete process.env.SFDX_HARDIS_LANG;
+    } else {
+      process.env.SFDX_HARDIS_LANG = previousLang;
+    }
+    reinitI18n();
     this.writeFileIfChanged(deployTipsDocFile, deployTipsMd.join("\n") + "\n");
     console.log("Written doc file " + deployTipsDocFile);
   }
