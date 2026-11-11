@@ -35,7 +35,7 @@ The custom functions declared in the project (\`customFunctions\`) are listed to
 
 ### Browser actions
 
-A \`browser\` action applies one setting of [Browserforce](https://github.com/amtrack/sfdx-browserforce-plugin) (sfdx-browserforce-plugin), installed when missing. With \`--type browser\`, the result lists the settings Browserforce can apply. With \`--type browser --browser-setting <key>\`, it describes that setting: its fields, its JSON Schema, examples and warnings, which is what \`--browser-config\` of \`action:create\` must follow.
+A \`browser\` action applies one setting of [Browserforce](https://github.com/amtrack/sfdx-browserforce-plugin) (sfdx-browserforce-plugin), installed when missing. With \`--type browser\`, the result lists the settings Browserforce can apply, each with its documentation page (\`docUrl\`, given by Browserforce 7.1.0 and later). With \`--type browser --browser-setting <key>\`, it describes that setting: its fields, its JSON Schema, examples, warnings and documentation page, which is what \`--browser-config\` of \`action:create\` must follow.
 
 Both also describe the names of the CI/CD variables a value can be read from, for each major branch (\`secretsLookup\`).
 

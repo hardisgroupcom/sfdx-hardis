@@ -10,13 +10,23 @@ One of the types of [deployment actions](salesforce-devops-work-on-user-story-de
 
 Some Setup settings cannot be deployed with the Metadata API: the density of Lightning Experience, the company currency, the secret of an auth provider, the record types of a picklist value, and many more. A browser action applies one of them with [Browserforce](https://github.com/amtrack/sfdx-browserforce-plugin), which clicks through the Setup pages in a headless browser. It only changes what differs from the org, so running it again does nothing.
 
-In VS Code, pick the setting in the list: its fields show as a form, with the example of Browserforce already filled in, and its warnings (a value that cannot be changed back, a feature that only exists in Salesforce Classic, what the org needs first). **Edit as JSON** shows the whole value, and **Check with Browserforce** validates it before saving.
+In VS Code, pick the setting in the list: its fields show as a form, with the example of Browserforce already filled in, and its warnings (a value that cannot be changed back, a feature that only exists in Salesforce Classic, what the org needs first). **Documentation** opens the page of the setting on the [Browserforce documentation site](https://amtrack.github.io/sfdx-browserforce-plugin/settings/), with its screenshots and examples. **Edit as JSON** shows the whole value, and **Check with Browserforce** validates it before saving.
 
 ![Browser deployment action](assets/images/screenshot-deployment-action-browser.jpg)
 
 During a deployment check, nothing is changed: Browserforce reads the org and the Pull Request comment shows what the deployment will change.
 
 A browser action can also be an [org initialization step](salesforce-devops-org-initialization.md), to set up each new scratch org or refreshed sandbox the same way.
+
+### Deployment errors a browser action solves
+
+When a deployment fails on an error a browser action can solve (a record type the API cannot delete, Contacts to Multiple Accounts not enabled, emails blocked by Deliverability, Shared Activities, a standard Lightning theme, history tracking of an object...), the [deployment assistant](salesforce-deployment-agent-error-list.md) gives, under its tip, the command that creates the action on the Pull Request of the current branch, and the documentation page of the setting:
+
+```shell
+sf hardis:project:action:create --agent --scope pr --pr-id current --when pre-deploy --type browser --label "Delete record type Account.Old" --browser-setting recordTypes --browser-config '{"deletions":[{"fullName":"Account.Old"}]}'
+```
+
+Some of these tips also ask to remove an element from your sources: the Metadata API refuses it whatever the org. A deployment check only simulates the action: if the check still fails on the error once the action is created, apply the setting once in the target org with **Run in another org** in the VS Code Deployment Actions tab, or with [hardis:project:action:run](hardis/project/action/run.md) `--select-org`, then run the check again. The deployment of the Pull Request then applies it in each next org of the pipeline. On Windows PowerShell, save the JSON in a file and give its path to `--browser-config`.
 
 ### Examples
 

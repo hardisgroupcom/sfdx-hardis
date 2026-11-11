@@ -22,6 +22,23 @@ export function formatTemplate(str: string, replacements: any): string {
 }
 
 /**
+ * One argument of a command line shown to a user: as it is when it only holds name characters,
+ * else quoted for bash and PowerShell, the two shells the VS Code extension opens.
+ */
+export function quoteShellArgument(value: string): string {
+  if (/^[A-Za-z0-9_.@:/=-]+$/.test(value)) {
+    return value;
+  }
+  // Reports, Dashboards and Email Templates of the default folder are named unfiled$public: inside
+  // double quotes a shell would expand that dollar sign. Single quotes are literal in bash and in
+  // PowerShell.
+  if (value.includes('$') && !value.includes("'")) {
+    return `'${value}'`;
+  }
+  return `"${value.replace(/"/g, '\\"')}"`;
+}
+
+/**
  * Decode common HTML entities in a string.
  *
  * @example

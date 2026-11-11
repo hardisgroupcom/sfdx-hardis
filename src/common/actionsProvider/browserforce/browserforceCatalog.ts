@@ -6,10 +6,11 @@ import { randomUUID } from 'crypto';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import semver from 'semver';
 import { SfError } from '@salesforce/core';
 import { createTempDir, removeTempDir, uxLog } from '../../utils/index.js';
 import { t } from '../../utils/i18n.js';
-import { ensureBrowserforce, execBrowserforceJson, InstalledBrowserforce } from './browserforcePlugin.js';
+import { ensureBrowserforce, execBrowserforceJson, findInstalledBrowserforce, InstalledBrowserforce } from './browserforcePlugin.js';
 
 // Version of the catalog format this sfdx-hardis reads. Browserforce only increments it when it
 // removes or renames a field, so a higher one may lack what sfdx-hardis reads.
@@ -40,6 +41,8 @@ export interface BrowserforceSetting {
   key: string;
   title?: string;
   description?: string;
+  // Documentation page of the setting, given since Browserforce 7.1.0
+  docUrl?: string;
   jsonSchema: Record<string, unknown>;
   groups: BrowserforceFieldGroup[];
   fields: BrowserforceField[];
@@ -154,6 +157,37 @@ export async function validateBrowserforceConfig(setting: string, config: any): 
 /** Folder of the catalog cache files, shared with the VS Code extension */
 export function getCatalogCacheDir(): string {
   return process.env.SFDX_HARDIS_BROWSERFORCE_CACHE_DIR || path.join(os.homedir(), '.sfdx', 'sfdx-hardis-cache', 'browserforce');
+}
+
+/**
+ * The catalog already in the cache, without installing Browserforce nor running it: the one of the
+ * installed version, else any cached one. null when none was ever written.
+ */
+export function readCachedBrowserforceCatalog(): BrowserforceCatalog | null {
+  const installed = findInstalledBrowserforce();
+  const isReadable = (catalog: BrowserforceCatalog | null): boolean => !!catalog && Number(catalog.formatVersion) <= SUPPORTED_CATALOG_FORMAT_VERSION;
+  if (installed && !installed.linked) {
+    const catalog = readCatalogFile(installed.version);
+    if (isReadable(catalog)) {
+      return catalog;
+    }
+  }
+  try {
+    // The highest version first: 7.10.0 comes after 7.9.0
+    const versions = fs.readdirSync(getCatalogCacheDir())
+      .map((file) => /^catalog-(.+)\.json$/.exec(file)?.[1])
+      .filter((version): version is string => !!version)
+      .sort((a, b) => semver.rcompare(semver.coerce(a) || '0.0.0', semver.coerce(b) || '0.0.0'));
+    for (const version of versions) {
+      const catalog = readCatalogFile(version);
+      if (isReadable(catalog)) {
+        return catalog;
+      }
+    }
+  } catch {
+    // No cache folder yet
+  }
+  return null;
 }
 
 async function runBrowserforceValidate(setting: string, config: any): Promise<BrowserforceValidationResult> {

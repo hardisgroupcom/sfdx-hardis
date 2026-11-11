@@ -9,6 +9,7 @@ import { analyzeDeployErrorLogsJson, buildNetworkErrorAndTip, extractShortNetwor
 import { PullRequestData } from "../gitProvider/index.js";
 import { setPullRequestData } from "./gitUtils.js";
 import { t } from './i18n.js';
+import { buildTipDeploymentAction, formatDeploymentActionHint, getSolveDeploymentErrorPromptVariables } from "./deployTipActions.js";
 
 let logRes: string | null = null;
 let errorsAndTips: any[] = [];
@@ -61,7 +62,7 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
           },
         });
       } else {
-        const promptText = await AiProvider.buildPrompt("PROMPT_SOLVE_DEPLOYMENT_ERROR", { "ERROR": logLine.trim() });
+        const promptText = await AiProvider.buildPrompt("PROMPT_SOLVE_DEPLOYMENT_ERROR", await getSolveDeploymentErrorPromptVariables(logLine.trim()));
         // No tip found, give the user an AI prompt
         logResLines.push(c.yellow("No sfdx-hardis tip to solve this error. You can try the following prompt:"));
         logResLines.push(c.yellow(promptText));
@@ -188,6 +189,8 @@ async function matchesTip(tipDefinition: any, includeInLog = true): Promise<bool
   ) {
     if (includeInLog) {
       const logLines = returnErrorLines(logRes);
+      // A string tip has no placeholder to fill: its action is the same for every line
+      const deploymentAction = await buildTipDeploymentAction(tipDefinition, []);
       for (const line of logLines) {
         newLogLines.push(line);
         let found = false;
@@ -196,6 +199,9 @@ async function matchesTip(tipDefinition: any, includeInLog = true): Promise<bool
             found = true;
             newLogLines.push(c.yellow(c.italic("Tip for " + tipDefinition.label + ":")));
             newLogLines.push(...tipDefinition.tip.split(/\r?\n/).map((str: string) => c.yellow(str)));
+            if (deploymentAction) {
+              newLogLines.push(...formatDeploymentActionHint(deploymentAction, "console"));
+            }
             newLogLines.push(c.yellow(" "));
             // Update output list
             errorsAndTips.push({
@@ -203,7 +209,8 @@ async function matchesTip(tipDefinition: any, includeInLog = true): Promise<bool
               tip: {
                 label: tipDefinition.label,
                 message: tipDefinition.tip,
-                docUrl: tipDefinition.docUrl
+                docUrl: tipDefinition.docUrl,
+                ...(deploymentAction ? { deploymentAction } : {}),
               },
             });
           }
@@ -253,6 +260,10 @@ async function matchesTip(tipDefinition: any, includeInLog = true): Promise<bool
             newLogLines.push(c.yellow(c.italic(format(tipDefinition.label, replacements))));
             const tip = tipDefinition.tip;
             newLogLines.push(...tip.split(/\r?\n/).map((str: string) => c.yellow(format(str, replacements))));
+            const deploymentAction = await buildTipDeploymentAction(tipDefinition, [...m]);
+            if (deploymentAction) {
+              newLogLines.push(...formatDeploymentActionHint(deploymentAction, "console"));
+            }
             newLogLines.push(c.yellow(" "));
             // Update output list
             errorsAndTips.push({
@@ -261,6 +272,7 @@ async function matchesTip(tipDefinition: any, includeInLog = true): Promise<bool
                 label: tipDefinition.label,
                 docUrl: tipDefinition.docUrl,
                 message: stripAnsi(format(tipDefinition.tip, replacementsMarkdown).replace(/\*\*.\*\*/gm, ".")),
+                ...(deploymentAction ? { deploymentAction } : {}),
               },
             });
           }
@@ -333,7 +345,7 @@ async function findAiTip(errorLine: any): Promise<AiResponse | null> {
       uxLog("warning", this, c.yellow(`[AI] Maximum number of AI calls for deployment tips reached. Increase with env var MAX_DEPLOYMENT_TIPS_AI_CALLS`));
       return null;
     }
-    const prompt = await AiProvider.buildPrompt("PROMPT_SOLVE_DEPLOYMENT_ERROR", { "ERROR": errorLine });
+    const prompt = await AiProvider.buildPrompt("PROMPT_SOLVE_DEPLOYMENT_ERROR", await getSolveDeploymentErrorPromptVariables(errorLine));
     try {
       const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_SOLVE_DEPLOYMENT_ERROR");
       return aiResponse;

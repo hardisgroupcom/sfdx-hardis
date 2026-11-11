@@ -5,6 +5,7 @@ import { ActionParameterDescription, ActionResult, ActionWhen, PrePostCommand } 
 import { uxLog } from '../utils/index.js';
 import { t } from '../utils/i18n.js';
 import { BrowserforceActionsProvider } from './browserforce/browserforceActionsProvider.js';
+import { BROWSERFORCE_SETTINGS_DOC_URL, browserforceSettingDocUrl } from './browserforce/browserforcePlugin.js';
 
 const BROWSER_FLAGS = ['browser-setting', 'browser-config'];
 
@@ -48,6 +49,25 @@ export class BrowserAction extends BrowserforceActionsProvider {
     ];
   }
 
+  public getDocumentationUrl(parameters: PrePostCommand['parameters']): string | null {
+    return typeof parameters?.setting === 'string' && parameters.setting ? browserforceSettingDocUrl(parameters.setting) : null;
+  }
+
+  // A deployment check runs the action as a dry run: the check that showed the error fails again
+  // until the setting is applied once in its org
+  public getDeployTipNotes(): string[] {
+    return [t('deployTipBrowserCheckOnly')];
+  }
+
+  // Read from the cached catalog only: analyzing a deployment error must not install Browserforce
+  public async describeForDeployErrorAi(): Promise<string | null> {
+    const { readCachedBrowserforceCatalog } = await import('./browserforce/browserforceCatalog.js');
+    const catalog = readCachedBrowserforceCatalog();
+    // One short line: the prompt goes into the log and the Pull Request comment of every unmatched error
+    const settings = catalog ? `Its settings: ${catalog.plugins.map((setting) => setting.key).join(', ')}. ` : '';
+    return `Type "browser": applies with Browserforce, in a headless browser, Salesforce Setup settings the Metadata API cannot deploy. ${settings}Value of a setting: ${BROWSERFORCE_SETTINGS_DOC_URL}<setting>/`;
+  }
+
   public async describeTypeDetails(flags: any): Promise<Record<string, any>> {
     const { getBrowserforceCatalog, findBrowserforceSetting, describeMissingBrowserforceSetting } = await import('./browserforce/browserforceCatalog.js');
     const { describeSecretsLookup } = await import('./browserforce/browserforceVariables.js');
@@ -61,6 +81,7 @@ export class BrowserAction extends BrowserforceActionsProvider {
           key: setting.key,
           title: setting.title,
           description: setting.description,
+          ...(setting.docUrl ? { docUrl: setting.docUrl } : {}),
           warnings: setting.warnings,
         })),
         deprecatedSettings: catalog.deprecatedSettings,
@@ -87,6 +108,9 @@ export class BrowserAction extends BrowserforceActionsProvider {
       uxLog('action', commandThis, c.cyan(`${details.setting.title || details.setting.key} (${details.setting.key})`));
       for (const warning of (await import('./browserforce/browserforceCatalog.js')).describeSettingWarnings(details.setting)) {
         uxLog('warning', commandThis, c.yellow(warning));
+      }
+      if (details.setting.docUrl) {
+        uxLog('log', commandThis, c.grey(t('deployTipActionDocumentation', { url: details.setting.docUrl })));
       }
       uxLog('log', commandThis, c.grey(JSON.stringify(details.setting.examples?.[0] ?? {}, null, 2)));
     }
@@ -217,7 +241,11 @@ export class BrowserAction extends BrowserforceActionsProvider {
       const choices = catalog.plugins.map((setting) => ({
         title: setting.title ? `${setting.title} (${setting.key})` : setting.key,
         value: setting.key,
-        description: [setting.description, ...describeSettingWarnings(setting)].filter(Boolean).join('\n'),
+        description: [
+          setting.description,
+          ...describeSettingWarnings(setting),
+          setting.docUrl ? t('deployTipActionDocumentation', { url: setting.docUrl }) : '',
+        ].filter(Boolean).join('\n'),
       }));
       const selected = await promptActionSelect(t('selectBrowserforceSetting'), choices, collected.setting);
       if (!selected) {

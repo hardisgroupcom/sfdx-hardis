@@ -257,17 +257,32 @@ class SfdxHardisBuilder {
       "If you see a deployment error which is not here yet, please [add it in this file](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/utils/deployTipsList.ts) :)",
       ""
     ];
+    // The committed doc pages are in English, whatever SFDX_HARDIS_LANG the maintainer has set
+    const previousLang = process.env.SFDX_HARDIS_LANG;
+    process.env.SFDX_HARDIS_LANG = "en";
+    const { reinitI18n } = await import("./lib/common/utils/i18n.js");
+    reinitI18n();
+    const { buildTipDeploymentAction, formatDeploymentActionHint } = await import("./lib/common/utils/deployTipActions.js");
     for (const tip of deployTips) {
       const linkName = `sf-deployment-assistant/${tip.label.replace(/[^a-zA-Z0-9 -]|\s/g, '-')}.md`
       const tipFile = `./docs/` + linkName;
-      this.buildIndividualMarkdownPageForTip(tip, tipFile);
-      this.buildMainDeployFixesMarkdown(tip, deployTipsMd, linkName);
+      // The placeholders ({1}...) stay as they are: the page describes every occurrence of the error
+      const deploymentAction = await buildTipDeploymentAction(tip, []);
+      const actionMd = deploymentAction ? formatDeploymentActionHint(deploymentAction, "markdown") : [];
+      this.buildIndividualMarkdownPageForTip(tip, tipFile, actionMd);
+      this.buildMainDeployFixesMarkdown(tip, deployTipsMd, linkName, actionMd);
     }
+    if (previousLang === undefined) {
+      delete process.env.SFDX_HARDIS_LANG;
+    } else {
+      process.env.SFDX_HARDIS_LANG = previousLang;
+    }
+    reinitI18n();
     this.writeFileIfChanged(deployTipsDocFile, deployTipsMd.join("\n") + "\n");
     console.log("Written doc file " + deployTipsDocFile);
   }
 
-  buildMainDeployFixesMarkdown(tip, deployTipsMd, linkName) {
+  buildMainDeployFixesMarkdown(tip, deployTipsMd, linkName, actionMd = []) {
     if (!tip.label) {
       throw new Error(`Missing label for ${JSON.stringify(tip)}`);
     }
@@ -290,11 +305,14 @@ class SfdxHardisBuilder {
     deployTipsMd.push("```shell");
     deployTipsMd.push(...tip.tip.split("\n"));
     deployTipsMd.push("```");
+    if (actionMd.length > 0) {
+      deployTipsMd.push(...["", "**Deployment action**", "", ...actionMd]);
+    }
     deployTipsMd.push("");
     deployTipsMd.push("---");
   }
 
-  buildIndividualMarkdownPageForTip(tip, tipFile) {
+  buildIndividualMarkdownPageForTip(tip, tipFile, actionMd = []) {
     const errorDescription = tip?.examples?.length > 0 ? tip.examples[0] :
       tip?.expressionString?.length > 0 ? tip?.expressionString[0] :
         tip.expressionRegex[0].toString().replace("/Error", "Error").replace("/gm", "");
@@ -324,6 +342,9 @@ class SfdxHardisBuilder {
     tipFileMd.push("```shell");
     tipFileMd.push(...tip.tip.split("\n"));
     tipFileMd.push("```");
+    if (actionMd.length > 0) {
+      tipFileMd.push(...["", "## Deployment action", "", ...actionMd]);
+    }
     this.writeFileIfChanged(tipFile, tipFileMd.join("\n") + "\n");
   }
 

@@ -8,7 +8,9 @@ import { PrePostCommand } from '../../../src/common/actionsProvider/actionsProvi
 import { resolveRunOnlyOnceByOrg } from '../../../src/common/actionsProvider/actionTypes.js';
 import { assertNoFlagsOfOtherTypes, throwActionValidationErrors } from '../../../src/common/utils/actionUtils.js';
 import { buildActionTypesDescription } from '../../../src/common/utils/actionTypesUtils.js';
-import { installBrowserforceFixture } from './browserforceFixture.js';
+import { FIXTURE_CATALOG, installBrowserforceFixture } from './browserforceFixture.js';
+import { readCachedBrowserforceCatalog } from '../../../src/common/actionsProvider/browserforce/browserforceCatalog.js';
+import { describeDeploymentActionsForAi } from '../../../src/common/utils/deployTipActions.js';
 
 // Browserforce cannot run in the tests: the calls are recorded and answered with the given outcome
 class TestBrowserAction extends BrowserAction {
@@ -124,6 +126,74 @@ describe('BrowserAction.getDefinitionErrors and help', () => {
     const details = await new BrowserAction().getSaveDetails(action({ setting: 'authProviders', config: { P: { consumerSecret: '${P_SECRET}' } } }));
     expect(details?.environmentVariables?.[0]?.name).to.equal('P_SECRET');
     expect(await new BrowserAction().getSaveDetails(action({ setting: 'densitySettings', config: { density: 'Compact' } }))).to.equal(null);
+  });
+});
+
+describe('BrowserAction documentation links and deployment error hints', () => {
+  const DOC_URL = 'https://amtrack.github.io/sfdx-browserforce-plugin/settings/densitySettings/';
+  let fixture: ReturnType<typeof installBrowserforceFixture>;
+  before(() => {
+    // Browserforce 7.1.0 and later give a docUrl per setting: here densitySettings only
+    const catalog = {
+      ...FIXTURE_CATALOG,
+      browserforceVersion: '7.1.0',
+      plugins: FIXTURE_CATALOG.plugins.map((plugin) => (plugin.key === 'densitySettings' ? { ...plugin, docUrl: DOC_URL } : plugin)),
+    };
+    fixture = installBrowserforceFixture({ version: '7.1.0', catalog });
+  });
+  after(() => fixture.restore());
+
+  it('links a setting to its page of the Browserforce documentation, without asking Browserforce', () => {
+    const provider = new BrowserAction();
+    expect(provider.getDocumentationUrl({ setting: 'recordTypes', config: {} })).to.equal('https://amtrack.github.io/sfdx-browserforce-plugin/settings/recordTypes/');
+    expect(provider.getDocumentationUrl({})).to.equal(null);
+    expect(provider.getDeployTipNotes()).to.have.length(1);
+  });
+
+  it('gives the documentation page of a setting in action:types only when the catalog has it', async () => {
+    const all = await buildActionTypesDescription({ type: 'browser', flags: {} });
+    const settings = all.types[0].details?.settings;
+    expect(settings.find((setting: any) => setting.key === 'densitySettings').docUrl).to.equal(DOC_URL);
+    expect(settings.find((setting: any) => setting.key === 'authProviders')).to.not.have.property('docUrl');
+  });
+
+  it('tells the AI the settings of the cached catalog in one line, with the command built from its flags', async () => {
+    const description = await new BrowserAction().describeForDeployErrorAi();
+    expect(description).to.contain('Its settings: densitySettings, authProviders.');
+    expect(description!.split('\n')).to.have.length(1);
+    const all = await describeDeploymentActionsForAi();
+    expect(all).to.contain(`--type browser --label "<label>" --browser-setting <setting> --browser-config '<config as JSON>'`);
+  });
+
+  it('uses the highest cached catalog that this version can read when the installed one has none', async () => {
+    const cache = installBrowserforceFixture({ version: '7.10.0', withCache: false });
+    try {
+      const write = (version: string, catalog: any) =>
+        fs.writeFileSync(path.join(cache.cacheDir, `catalog-${version}.json`), JSON.stringify(catalog));
+      fs.mkdirSync(cache.cacheDir, { recursive: true });
+      write('7.9.0', { ...FIXTURE_CATALOG, browserforceVersion: '7.9.0' });
+      write('7.11.0', { ...FIXTURE_CATALOG, browserforceVersion: '7.11.0', formatVersion: 99 });
+      write('7.10.1', { ...FIXTURE_CATALOG, browserforceVersion: '7.10.1' });
+      expect(readCachedBrowserforceCatalog()?.browserforceVersion).to.equal('7.10.1');
+    } finally {
+      cache.restore();
+      process.env.SF_DATA_DIR = fixture.dataDir;
+      process.env.SFDX_HARDIS_BROWSERFORCE_CACHE_DIR = fixture.cacheDir;
+    }
+  });
+
+  it('points the AI to the settings page when no catalog was ever cached', async () => {
+    const empty = installBrowserforceFixture({ version: '7.1.0', withCache: false });
+    try {
+      const description = await new BrowserAction().describeForDeployErrorAi();
+      expect(description).to.contain('https://amtrack.github.io/sfdx-browserforce-plugin/settings/');
+      expect(description).to.not.contain('densitySettings');
+    } finally {
+      empty.restore();
+      // The outer fixture is back for the next tests
+      process.env.SF_DATA_DIR = fixture.dataDir;
+      process.env.SFDX_HARDIS_BROWSERFORCE_CACHE_DIR = fixture.cacheDir;
+    }
   });
 });
 
