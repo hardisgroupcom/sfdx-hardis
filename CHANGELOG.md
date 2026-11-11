@@ -6,6 +6,7 @@
 - [hardis:doc:mkdocs-to-cf](https://sfdx-hardis.cloudity.com/hardis/doc/mkdocs-to-cf/) and [hardis:doc:mkdocs-to-salesforce](https://sfdx-hardis.cloudity.com/hardis/doc/mkdocs-to-salesforce/): the site is built with the Zensical Docker image when Zensical cannot be installed with pip, as in the Ubuntu Docker image.
 - GitHub: QuickDeploy finds the validation of Pull Requests merged long after they were created (closed Pull Requests are now searched by update date instead of creation date).
 - Docker images: lighter, with the Docker client and a Java runtime instead of the full Docker engine and JDK, and no bundled Codex.
+- Ubuntu Docker image: the build falls back to the kernel.org Ubuntu mirror when archive.ubuntu.com cannot be reached.
 - [Codex AI provider](https://sfdx-hardis.cloudity.com/salesforce-ai-setup/#with-codex-directly): sfdx-hardis no longer bundles Codex, install the Codex CLI or use a with-agents Docker image.
 - Doc: the DevOps Pipeline pictures show the **Major branches | Feature branches | Dev orgs** switch, and the settings menu lists Replacement Rules and Register a development org.
 - Upgrade **fast-xml-parser** to 5.12.0 to fix security advisory GHSA-474x-hrwr-fgx4.
