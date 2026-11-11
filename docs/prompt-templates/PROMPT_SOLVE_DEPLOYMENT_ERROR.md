@@ -6,9 +6,9 @@ description: Prompt template for PROMPT_SOLVE_DEPLOYMENT_ERROR
 # PROMPT_SOLVE_DEPLOYMENT_ERROR
 
 ## Variables
-| Name | Description | Example |
-| :------|:-------------|:---------|
-| **ERROR** | The Salesforce deployment error message to analyze and solve. | `Cannot deploy component: missing field 'X' on object 'Y'` |
+| Name                        | Description                                                                                                                     | Example                                                                                                                                                                                                    |
+|:----------------------------|:--------------------------------------------------------------------------------------------------------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **ERROR**                   | The Salesforce deployment error message to analyze and solve.                                                                   | `Cannot deploy component: missing field 'X' on object 'Y'`                                                                                                                                                 |
 | **DEPLOYMENT_ACTION_HINTS** | What sfdx-hardis deployment actions can do that a metadata deployment cannot (Setup settings applied in a browser...), or None. | `A sfdx-hardis deployment action of type "browser" applies Salesforce Setup settings that the Metadata API cannot deploy. Its settings:`<br>`  - recordTypes: RecordTypes - Deletes inactive record types` |
 
 ## Prompt
