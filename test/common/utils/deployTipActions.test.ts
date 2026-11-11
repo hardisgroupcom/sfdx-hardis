@@ -162,11 +162,13 @@ describe('Deployment actions suggested by deployment error tips', () => {
     <valueSet><valueSetDefinition><value><fullName>Satnav</fullName><default>false</default><label>Navigation</label></value></valueSetDefinition></valueSet>
 </CustomField>`
       );
-      process.chdir(projectDir);
     });
 
+    // Before each test: a root hook of another test file may put the working directory back
+    beforeEach(() => process.chdir(projectDir));
+    afterEach(() => process.chdir(initialCwd));
+
     after(() => {
-      process.chdir(initialCwd);
       fs.rmSync(projectDir, { recursive: true, force: true });
     });
 
