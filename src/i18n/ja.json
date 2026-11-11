@@ -750,6 +750,7 @@
   "cloudflareSetupInstructions": "Cloudflare Pages にドキュメントを公開する手順については https://sfdx-hardis.cloudity.com/salesforce-project-doc-cloudflare/ を参照してください",
   "cloudityProfessionalServicesCanHelpYouHost": "Cloudity プロフェッショナルサービスが他の場所でのホスティングをサポートいたします。",
   "codeCoverageHasBeenCalculatedManuallyIf": "コードカバレッジが手動で計算されました。数値に違和感がある場合は、オプション \\",
+  "codexCliNotFound": "Codex CLI が見つかりません。\"npm install -g @openai/codex\" でインストールするか、CODEX_CLI_PATH にその場所を設定してください。",
   "codexReceivedResponse": "{{modelName}} からプロンプトの応答を受信しました",
   "codexReceivedResponseDebug": "{{modelName}} からプロンプトの応答を受信しました\n{{response}}",
   "codexRequestingPrompt": "{{modelName}} にプロンプトを要求しています{{template}}（詳細を表示するには DEBUG_PROMPTS=true を設定してください）",
