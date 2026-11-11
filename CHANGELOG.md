@@ -6,6 +6,7 @@
   - The deployment assistant suggests it for the errors it can solve, with the command that adds it to your Pull Request.
   - The AI deployment assistant and the coding agent that fixes deployment errors suggest it too.
   - Each Browserforce setting links to its documentation page.
+  - New with Browserforce 7.2.0: rename in the target org a picklist value renamed in the sources, and turn on Einstein Conversation Insights before deploying Call Summaries.
 - [hardis:doc:flow2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/flow2markdown/) and [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Flow diagrams drawn with Docker no longer fail with a permission error in the sfdx-hardis Docker images.
 - [hardis:doc:mkdocs-to-cf](https://sfdx-hardis.cloudity.com/hardis/doc/mkdocs-to-cf/) and [hardis:doc:mkdocs-to-salesforce](https://sfdx-hardis.cloudity.com/hardis/doc/mkdocs-to-salesforce/): the site is built with the Zensical Docker image when Zensical cannot be installed with pip, as in the Ubuntu Docker image.
 - GitHub: QuickDeploy finds the validation of Pull Requests merged long after they were created (closed Pull Requests are now searched by update date instead of creation date).

@@ -15,6 +15,17 @@ export interface DeployTipActionDefinition {
   parameters: Record<string, any>;
   // Values of the parameters the user must replace before creating the action (OBJECT_NAME...)
   toComplete?: string[];
+  // Completes the action with what the error message does not give (read from the sources...).
+  // Called with the placeholders filled, the values that filled them ({1} is values[1]) and the raw
+  // groups of the regex, only when the error gave its groups.
+  resolve?: (filled: DeployTipActionResolved, values: string[], groups: string[]) => Promise<Partial<DeployTipActionResolved> | null>;
+}
+
+/** What the resolve function of a suggested action can complete */
+export interface DeployTipActionResolved {
+  label: string;
+  parameters: Record<string, any>;
+  toComplete: string[];
 }
 
 /** The suggested action once the placeholders are filled, ready to show */
@@ -57,9 +68,7 @@ export async function buildDeploymentActionHint(definition: DeployTipActionDefin
   if (!provider) {
     return null;
   }
-  const label = fillPlaceholders(definition.label, groups);
-  const parameters = fillPlaceholders(definition.parameters, groups);
-  const toComplete = definition.toComplete || [];
+  const { label, parameters, toComplete } = await resolveAction(definition, groups);
   const { CONSTANTS } = await import('../../config/index.js');
   return {
     type: definition.type,
@@ -121,6 +130,28 @@ export async function describeDeploymentActionsForAi(): Promise<string> {
     }
   }
   return descriptions.join('\n');
+}
+
+// The placeholders filled with the groups of the error, then completed by the resolve function of
+// the tip. Without groups (documentation pages), the placeholders are kept to show the template.
+async function resolveAction(definition: DeployTipActionDefinition, groups: string[]): Promise<DeployTipActionResolved> {
+  const filled: DeployTipActionResolved = {
+    label: fillPlaceholders(definition.label, groups),
+    parameters: fillPlaceholders(definition.parameters, groups),
+    toComplete: definition.toComplete || [],
+  };
+  if (!definition.resolve || groups.length === 0) {
+    return filled;
+  }
+  try {
+    const values = groups.map((group) => (group != null ? placeholderValue(group) : group));
+    const resolved = await definition.resolve(filled, values, groups);
+    const completed = Object.fromEntries(Object.entries(resolved || {}).filter(([, value]) => value != null));
+    return { ...filled, ...completed };
+  } catch {
+    // Not completed: the user replaces the values the tip names
+    return filled;
+  }
 }
 
 // A string, or the strings inside an object or an array

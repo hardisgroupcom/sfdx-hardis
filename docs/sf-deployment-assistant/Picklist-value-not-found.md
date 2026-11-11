@@ -16,6 +16,7 @@ Sources have references to value {1} of picklist {2}
 - If picklist {2} is standard, add the picklist to sfdx sources by using "sf project retrieve start -m StandardValueSet:{2}", then save again
 - Else, perform a search in all code of {1}, then remove XML tags referring to {1} (for example in record types metadatas)
 - If value {1} exists but is inactive in the target org, a deployment action can activate it: replace OBJECT_NAME by the object of picklist {2} (or, for a standard value set, use "metadataType":"StandardValueSet" and "metadataFullName":"{2}")
+- If value {1} was renamed in the sources, rename it in the target org instead: the same picklists setting does it with "newApiName" (https://amtrack.github.io/sfdx-browserforce-plugin/settings/picklists/)
 
 ```
 

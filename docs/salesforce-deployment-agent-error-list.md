@@ -426,8 +426,24 @@ There are probably issue with conflict management. Open the XML of the source it
 **Resolution**
 
 ```shell
-You probably renamed the picklist API name for {2}. Please update manually the picklist {1} in the target org to avoid to have a duplicate label
+You probably renamed the API name of the picklist value with label {2} in {1}: the target org still has the value with its old API name, and the same label.
+- A deployment action can rename the value in the target org before the deployment: replace OLD_API_NAME with its API name in the target org (Setup, the values of {1})
+- Or rename it manually in the target org, then deploy again
 ```
+
+**Deployment action**
+
+A deployment action can solve this error. Create it on the Pull Request of the current branch:
+
+```shell
+sf hardis:project:action:create --agent --scope pr --pr-id current --when pre-deploy --type browser --label "Rename picklist value {2} of {1}" --browser-setting picklists --browser-config '{"picklistValues":[{"metadataType":"METADATA_TYPE","metadataFullName":"{1}","value":"OLD_API_NAME","newApiName":"NEW_API_NAME"}]}'
+```
+
+Before running it, replace OLD_API_NAME, NEW_API_NAME, METADATA_TYPE in the command with the real value.
+
+A deployment check only simulates a browser action. If this check still fails on this error once the action is created, apply the setting once in the target org with the Run in another org button of the VS Code Deployment Actions tab, or with sf hardis:project:action:run --select-org, then run the check again.
+
+Documentation: https://amtrack.github.io/sfdx-browserforce-plugin/settings/picklists/
 
 ---
 ## [Missing e-mail template](sf-deployment-assistant/Missing-e-mail-template.md)
@@ -1098,6 +1114,7 @@ Sources have references to value {1} of picklist {2}
 - If picklist {2} is standard, add the picklist to sfdx sources by using "sf project retrieve start -m StandardValueSet:{2}", then save again
 - Else, perform a search in all code of {1}, then remove XML tags referring to {1} (for example in record types metadatas)
 - If value {1} exists but is inactive in the target org, a deployment action can activate it: replace OBJECT_NAME by the object of picklist {2} (or, for a standard value set, use "metadataType":"StandardValueSet" and "metadataFullName":"{2}")
+- If value {1} was renamed in the sources, rename it in the target org instead: the same picklists setting does it with "newApiName" (https://amtrack.github.io/sfdx-browserforce-plugin/settings/picklists/)
 
 ```
 
@@ -1295,6 +1312,35 @@ sf hardis:project:action:create --agent --scope pr --pr-id current --when pre-de
 A deployment check only simulates a browser action. If this check still fails on this error once the action is created, apply the setting once in the target org with the Run in another org button of the VS Code Deployment Actions tab, or with sf hardis:project:action:run --select-org, then run the check again.
 
 Documentation: https://amtrack.github.io/sfdx-browserforce-plugin/settings/activitySettings/
+
+---
+## [Einstein Conversation Insights not enabled](sf-deployment-assistant/Einstein-Conversation-Insights-not-enabled.md)
+
+**Detection**
+
+- RegExp: `There was an error enabling or disabling a setting: OrgPreferences\.(CallSummarization|GenECI)`
+- RegExp: `Error ConversationalIntelligence (enableECICallScoring)\s*$`
+
+**Resolution**
+
+```shell
+The ConversationalIntelligence settings of your sources turn on {1}, that needs Einstein Conversation Insights already turned on in the target org: turning it on in the same deployment is not enough
+- Turn on Einstein Conversation Insights in the target org (Setup -> Einstein Conversation Insights), or use a deployment action that waits until it is completely on
+- Once turned on, it can not be turned off with Browserforce
+- If Call Summaries still fails to turn on with the Metadata API, remove enableCallSummarization from ConversationalIntelligence.settings-meta.xml and use the callSummaries setting of Browserforce instead (https://amtrack.github.io/sfdx-browserforce-plugin/settings/callSummaries/)
+```
+
+**Deployment action**
+
+A deployment action can solve this error. Create it on the Pull Request of the current branch:
+
+```shell
+sf hardis:project:action:create --agent --scope pr --pr-id current --when pre-deploy --type browser --label "Turn on Einstein Conversation Insights" --browser-setting einsteinConversationInsights --browser-config '{"enabled":true}'
+```
+
+A deployment check only simulates a browser action. If this check still fails on this error once the action is created, apply the setting once in the target org with the Run in another org button of the VS Code Deployment Actions tab, or with sf hardis:project:action:run --select-org, then run the check again.
+
+Documentation: https://amtrack.github.io/sfdx-browserforce-plugin/settings/einsteinConversationInsights/
 
 ---
 ## [Lightning Experience theme not found](sf-deployment-assistant/Lightning-Experience-theme-not-found.md)

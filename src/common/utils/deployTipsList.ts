@@ -247,7 +247,20 @@ Example of element to delete:
       name: "duplicate-label",
       label: "Duplicate label",
       expressionRegex: [/Error (.*) Duplicate label: (.*)/gm],
-      tip: `You probably renamed the picklist API name for {2}. Please update manually the picklist {1} in the target org to avoid to have a duplicate label`,
+      tip: `You probably renamed the API name of the picklist value with label {2} in {1}: the target org still has the value with its old API name, and the same label.
+- A deployment action can rename the value in the target org before the deployment: replace OLD_API_NAME with its API name in the target org (Setup, the values of {1})
+- Or rename it manually in the target org, then deploy again`,
+      deploymentAction: {
+        type: "browser",
+        when: "pre-deploy",
+        label: "Rename picklist value {2} of {1}",
+        parameters: {
+          setting: "picklists",
+          config: { picklistValues: [{ metadataType: "METADATA_TYPE", metadataFullName: "{1}", value: "OLD_API_NAME", newApiName: "NEW_API_NAME" }] },
+        },
+        toComplete: ["OLD_API_NAME", "NEW_API_NAME", "METADATA_TYPE"],
+        resolve: resolvePicklistValueRename,
+      },
     },
     {
       name: "email-template-missing",
@@ -630,6 +643,7 @@ Go manually make the change in the target org, so the deployment will pass
 - If picklist {2} is standard, add the picklist to sfdx sources by using "sf project retrieve start -m StandardValueSet:{2}", then save again
 - Else, perform a search in all code of {1}, then remove XML tags referring to {1} (for example in record types metadatas)
 - If value {1} exists but is inactive in the target org, a deployment action can activate it: replace OBJECT_NAME by the object of picklist {2} (or, for a standard value set, use "metadataType":"StandardValueSet" and "metadataFullName":"{2}")
+- If value {1} was renamed in the sources, rename it in the target org instead: the same picklists setting does it with "newApiName" (https://amtrack.github.io/sfdx-browserforce-plugin/settings/picklists/)
 `,
       deploymentAction: {
         type: "browser",
@@ -744,6 +758,24 @@ If you already did that, please try again to run the job`,
       },
     },
     {
+      name: "einstein-conversation-insights-not-enabled",
+      label: "Einstein Conversation Insights not enabled",
+      expressionRegex: [
+        /There was an error enabling or disabling a setting: OrgPreferences\.(CallSummarization|GenECI)/gm,
+        /Error ConversationalIntelligence (enableECICallScoring)\s*$/gm,
+      ],
+      tip: `The ConversationalIntelligence settings of your sources turn on {1}, that needs Einstein Conversation Insights already turned on in the target org: turning it on in the same deployment is not enough
+- Turn on Einstein Conversation Insights in the target org (Setup -> Einstein Conversation Insights), or use a deployment action that waits until it is completely on
+- Once turned on, it can not be turned off with Browserforce
+- If Call Summaries still fails to turn on with the Metadata API, remove enableCallSummarization from ConversationalIntelligence.settings-meta.xml and use the callSummaries setting of Browserforce instead (https://amtrack.github.io/sfdx-browserforce-plugin/settings/callSummaries/)`,
+      deploymentAction: {
+        type: "browser",
+        when: "pre-deploy",
+        label: "Turn on Einstein Conversation Insights",
+        parameters: { setting: "einsteinConversationInsights", config: { enabled: true } },
+      },
+    },
+    {
       name: "lightning-experience-theme-not-found",
       label: "Lightning Experience theme not found",
       expressionRegex: [/no LightningExperienceTheme named (.*) found/gm],
@@ -847,4 +879,35 @@ Look for {3} in the XML of {1}
 If you see two {2} XML blocks with {3}, please decide which one you keep and remove the other one`,
     },
   ];
+}
+
+// Duplicate label: the sources hold the value with its new API name and the label of the error.
+// The old API name exists only in the target org, so the user still replaces OLD_API_NAME.
+async function resolvePicklistValueRename(filled: any, values: string[], groups: string[]) {
+  const componentName = values[1];
+  // The raw group: a label may hold quotes, that the placeholders drop. The text log can add the
+  // position of the error (3:13) and the border of its table after the label.
+  const label = (groups[2] || "").replace(/\s*│.*$/, "").replace(/\s*\(\d+:\d+\)\s*$/, "").trim();
+  const { findPicklistValueByLabel } = await import("./picklistSourceUtils.js");
+  const found = await findPicklistValueByLabel(componentName, label);
+  if (found) {
+    return {
+      label: `Rename picklist value ${found.label} of ${found.metadataFullName} to ${found.apiName}`,
+      parameters: renamedParameters(filled.parameters, { metadataType: found.metadataType, metadataFullName: found.metadataFullName, newApiName: found.apiName }),
+      toComplete: ["OLD_API_NAME"],
+    };
+  }
+  if (componentName.includes(".")) {
+    // Object.Field: a field, whose value set the sources do not have
+    return {
+      parameters: renamedParameters(filled.parameters, { metadataType: "CustomField" }),
+      toComplete: ["OLD_API_NAME", "NEW_API_NAME"],
+    };
+  }
+  return null;
+}
+
+function renamedParameters(parameters: any, values: Record<string, string>) {
+  const picklistValue = { ...parameters.config.picklistValues[0], ...values };
+  return { ...parameters, config: { ...parameters.config, picklistValues: [picklistValue] } };
 }

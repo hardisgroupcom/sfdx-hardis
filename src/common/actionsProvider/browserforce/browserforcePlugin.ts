@@ -11,9 +11,9 @@ import { execCommand, uxLog } from '../../utils/index.js';
 import { t } from '../../utils/i18n.js';
 
 export const BROWSERFORCE_PLUGIN_NAME = 'sfdx-browserforce-plugin';
-// First release with plugins list / validate, the changes in the --json result of apply,
-// and applyToAll in userAccessPolicies
-export const BROWSERFORCE_MIN_VERSION = '7.0.0';
+// Needed for plugins list / validate, the --json result of apply and applyToAll in
+// userAccessPolicies (7.0.0), and the rename of picklist values that deploy tips suggest (7.2.0)
+export const BROWSERFORCE_MIN_VERSION = '7.2.0';
 // The Browserforce documentation site, with one page per setting
 export const BROWSERFORCE_DOCS_URL = 'https://amtrack.github.io/sfdx-browserforce-plugin/';
 export const BROWSERFORCE_SETTINGS_DOC_URL = `${BROWSERFORCE_DOCS_URL}settings/`;

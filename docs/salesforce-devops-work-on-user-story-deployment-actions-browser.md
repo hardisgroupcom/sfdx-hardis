@@ -20,11 +20,13 @@ A browser action can also be an [org initialization step](salesforce-devops-org-
 
 ### Deployment errors a browser action solves
 
-When a deployment fails on an error a browser action can solve (a record type the API cannot delete, Contacts to Multiple Accounts not enabled, emails blocked by Deliverability, Shared Activities, a standard Lightning theme, history tracking of an object...), the [deployment assistant](salesforce-deployment-agent-error-list.md) gives, under its tip, the command that creates the action on the Pull Request of the current branch, and the documentation page of the setting:
+When a deployment fails on an error a browser action can solve (a record type the API cannot delete, a picklist value renamed in the sources, Contacts to Multiple Accounts not enabled, emails blocked by Deliverability, Shared Activities, a standard Lightning theme, history tracking of an object, Call Summaries without Einstein Conversation Insights...), the [deployment assistant](salesforce-deployment-agent-error-list.md) gives, under its tip, the command that creates the action on the Pull Request of the current branch, and the documentation page of the setting:
 
 ```shell
 sf hardis:project:action:create --agent --scope pr --pr-id current --when pre-deploy --type browser --label "Delete record type Account.Old" --browser-setting recordTypes --browser-config '{"deletions":[{"fullName":"Account.Old"}]}'
 ```
+
+When the API name of a picklist value was renamed in the sources, the deployment fails on a duplicate label: the target org still has the value under its old API name. The tip reads the new API name from your sources, and the action renames the value in the target org before the deployment, and Salesforce updates the records that hold it. Replace `OLD_API_NAME` with the API name the value has in the target org before you run the command.
 
 Some of these tips also ask to remove an element from your sources: the Metadata API refuses it whatever the org. A deployment check only simulates the action: if the check still fails on the error once the action is created, apply the setting once in the target org with **Run in another org** in the VS Code Deployment Actions tab, or with [hardis:project:action:run](hardis/project/action/run.md) `--select-org`, then run the check again. The deployment of the Pull Request then applies it in each next org of the pipeline. On Windows PowerShell, save the JSON in a file and give its path to `--browser-config`.
 
@@ -119,6 +121,6 @@ On GitHub Actions, a workflow only passes to its jobs the secrets it lists: add 
 
 The action runs in both phases. Its default context is `all`: the check job shows the planned changes, the deployment job applies them. It runs once per org by default, like most types: set `runOnlyOnceByOrg: false` to apply the setting at each deployment, for a setting that a deployment can change back.
 
-Browserforce (`sfdx-browserforce-plugin`) is installed when missing. It is in the sfdx-hardis Docker images, which also set its browser. On another machine, Browserforce uses `CHROME_BIN`, or the local Chrome sfdx-hardis finds; otherwise run `sf browserforce playwright -- install chromium`.
+Browserforce (`sfdx-browserforce-plugin`) is installed when missing or older than 7.2.0. It is in the sfdx-hardis Docker images, which also set its browser. On another machine, Browserforce uses `CHROME_BIN`, or the local Chrome sfdx-hardis finds; otherwise run `sf browserforce playwright -- install chromium`.
 
 </details>

@@ -27,11 +27,11 @@ describe('Browserforce plugin detection', () => {
   });
 
   it('reads the version of a linked plugin from its own folder', () => {
-    const fixture = installBrowserforceFixture({ type: 'link', version: '7.0.0-dev' });
+    const fixture = installBrowserforceFixture({ type: 'link', version: '7.2.0-dev' });
     try {
       const installed = findInstalledBrowserforce();
       expect(installed?.linked).to.equal(true);
-      expect(installed?.version).to.equal('7.0.0-dev');
+      expect(installed?.version).to.equal('7.2.0-dev');
     } finally {
       fixture.restore();
     }
@@ -50,10 +50,10 @@ describe('Browserforce plugin detection', () => {
 
 describe('Browserforce catalog', () => {
   it('is read from the cache file of the installed version', async () => {
-    const fixture = installBrowserforceFixture({ version: '7.0.5' });
+    const fixture = installBrowserforceFixture({ version: '7.2.5' });
     try {
       const catalog = await getBrowserforceCatalog();
-      expect(catalog.browserforceVersion).to.equal('7.0.5');
+      expect(catalog.browserforceVersion).to.equal('7.2.5');
       expect(findBrowserforceSetting(catalog, 'densitySettings')?.title).to.equal('Density Settings');
       expect(findBrowserforceSetting(catalog, 'unknown')).to.equal(null);
       expect(findDeprecatedBrowserforceSetting(catalog, 'salesforceToSalesforce')?.message).to.contain('retired');
@@ -63,7 +63,7 @@ describe('Browserforce catalog', () => {
   });
 
   it('refuses a catalog format this version cannot read', async () => {
-    const fixture = installBrowserforceFixture({ version: '7.0.6', catalog: { ...FIXTURE_CATALOG, formatVersion: 2 } });
+    const fixture = installBrowserforceFixture({ version: '7.2.6', catalog: { ...FIXTURE_CATALOG, formatVersion: 2 } });
     try {
       let error: Error | null = null;
       await getBrowserforceCatalog().catch((e) => (error = e));
