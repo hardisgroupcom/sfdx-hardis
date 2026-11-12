@@ -11,7 +11,7 @@ import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/i
 import { generateApexCoverageOutputFile } from '../../../../common/utils/deployUtils.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
-import { ApexTestNoResultReason, extractErrorSummary, parseWaitMinutes, runApexTestsResilient } from '../../../../common/utils/apexTestUtils.js';
+import { ApexTestNoResultReason, extractErrorSummary, extractTestRunOutcome, parseWaitMinutes, runApexTestsResilient } from '../../../../common/utils/apexTestUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -216,11 +216,11 @@ In agent mode, all interactive prompts are skipped and default values are used.
       this.testRunCompleted = false;
       return;
     }
-    // Parse outcome value from logs with Regex
-    const outcomeMatch = /Outcome *(.*) */.exec(testRunRes.outputString);
-    this.testRunOutcome = outcomeMatch ? outcomeMatch[1].trim() : 'Failed';
+    // Parse outcome value from the summary of the test run
+    const outcome = extractTestRunOutcome(testRunRes.outputString);
+    this.testRunOutcome = outcome ?? 'Failed';
     // A run that could not give a result prints no outcome
-    this.testRunCompleted = outcomeMatch !== null;
+    this.testRunCompleted = outcome !== null;
     if (testRunRes.commandFailed && this.testRunOutcome === 'Passed') {
       this.testRunOutcome = 'Failed';
     }
