@@ -68,6 +68,9 @@ regexes = ['''NOTIF_API_METRICS_BASIC_AUTH_USERNAME=\d+''']
 # Same case for "backpromoteTargetOrgIsProduction" (32 characters), preceded by
 # "backpromoteTargetOrgIsMajorOrg", whose value ends with "sandbox or a scratch org."
 # within the rule window.
+# Same case in src/i18n/nl.json for "sourcesHaveBeenPulledNowStageAndCommit", whose first
+# 32 characters follow "sourceTrackedSandboxesOnly" and its value ending with "sandboxen".
+# It only shows up once lines move in that file, as the scanner reads it in chunks.
 #
 # This entry is deliberately secret-scoped only, with no "paths": adding a "paths"
 # key here makes betterleaks skip the matching files wholesale (verified with
@@ -76,4 +79,4 @@ regexes = ['''NOTIF_API_METRICS_BASIC_AUTH_USERNAME=\d+''']
 # the locale files scanned while suppressing just these false positives.
 [[allowlists]]
 description = "32-character i18n keys that match the Box token shape"
-regexes = ['''(sandboxRefreshPostChecksReminder|backpromoteTargetOrgIsProduction)''']
+regexes = ['''(sandboxRefreshPostChecksReminder|backpromoteTargetOrgIsProduction|sourcesHaveBeenPulledNowStageAnd)''']
