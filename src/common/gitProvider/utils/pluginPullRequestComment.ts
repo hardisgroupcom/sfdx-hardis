@@ -6,10 +6,10 @@
  * it, as it does for the Flow diff comments.
  */
 import c from 'chalk';
-import { uxLog } from '../utils/index.js';
-import { t } from '../utils/i18n.js';
-import { isMajorBranchCheckMode } from '../utils/majorBranchCheckUtils.js';
-import { GitProvider } from './index.js';
+import { uxLog } from '../../utils/index.js';
+import { t } from '../../utils/i18n.js';
+import { isMajorBranchCheckMode } from '../../utils/majorBranchCheckUtils.js';
+import { GitProvider } from '../index.js';
 
 export type PluginPullRequestCommentRequest = {
   // npm name of the plugin, part of the message key of the comment

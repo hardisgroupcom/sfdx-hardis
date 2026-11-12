@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { expect } from 'chai';
-import { GitProvider } from '../../../src/common/gitProvider/index.js';
-import { buildPluginMessageKey, postPullRequestComment } from '../../../src/common/gitProvider/pluginPullRequestComment.js';
-import { getPrCommentKind, getPrCommentKindFromMessageKey } from '../../../src/common/gitProvider/utils/prCommentNav.js';
-import { enableMajorBranchCheckMode, resetMajorBranchCheckMode } from '../../../src/common/utils/majorBranchCheckUtils.js';
+import { GitProvider } from '../../../../src/common/gitProvider/index.js';
+import { buildPluginMessageKey, postPullRequestComment } from '../../../../src/common/gitProvider/utils/pluginPullRequestComment.js';
+import { getPrCommentKind, getPrCommentKindFromMessageKey } from '../../../../src/common/gitProvider/utils/prCommentNav.js';
+import { enableMajorBranchCheckMode, resetMajorBranchCheckMode } from '../../../../src/common/utils/majorBranchCheckUtils.js';
 
 describe('postPullRequestComment() for plugins', () => {
   const originalGetInstance = GitProvider.getInstance;

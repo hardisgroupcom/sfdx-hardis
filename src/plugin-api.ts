@@ -55,5 +55,5 @@ export type {
 } from './common/utils/pluginEventUtils.js';
 
 // Pull Request comment of a plugin, posted through the git provider sfdx-hardis already set up
-export { postPullRequestComment } from './common/gitProvider/pluginPullRequestComment.js';
-export type { PluginPullRequestCommentRequest, PluginPullRequestCommentResult } from './common/gitProvider/pluginPullRequestComment.js';
+export { postPullRequestComment } from './common/gitProvider/utils/pluginPullRequestComment.js';
+export type { PluginPullRequestCommentRequest, PluginPullRequestCommentResult } from './common/gitProvider/utils/pluginPullRequestComment.js';
