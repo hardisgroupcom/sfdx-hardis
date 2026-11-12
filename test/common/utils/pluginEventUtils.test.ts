@@ -145,6 +145,15 @@ describe('Plugin events', () => {
     expect(throwing.calls).to.have.length(1);
   });
 
+  it('still sends the events to the plugins during a major branch check, without Pull Request', async () => {
+    GitProvider.getPullRequestInfo = originalGetPullRequestInfo;
+    enableMajorBranchCheckMode();
+    const { config, calls } = fakeOclifConfig([['sfdx-hardis:validation-done']]);
+    await emitSalesforceRunEvent({ id: 'hardis:project:deploy:smart', config }, { event: 'sfdx-hardis:validation-done', checkOnly: true, status: 'success' });
+    expect(calls).to.have.length(1);
+    expect(calls[0].payload.pullRequest).to.be.null;
+  });
+
   it('has no Pull Request in a major branch check', async () => {
     // The real lookup: it is the one that knows a major branch check has no Pull Request
     GitProvider.getPullRequestInfo = originalGetPullRequestInfo;

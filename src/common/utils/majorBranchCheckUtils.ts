@@ -5,8 +5,10 @@
 import { SfError } from '@salesforce/core';
 import { t } from './i18n.js';
 
-// Kept on globalThis: a plugin calls the sfdx-hardis/plugin-api of its own copy of sfdx-hardis, in the
-// same process, and its comments must also be skipped during a major branch check
+// Kept on globalThis, not in a module variable: a plugin posts its Pull Request comment through the
+// sfdx-hardis/plugin-api of its own copy of sfdx-hardis (in its node_modules), whose module variables
+// are not the ones of the running sfdx-hardis. During a major branch check the plugins still get their
+// events, but their comment is skipped like the sfdx-hardis ones: there is no Pull Request to comment
 declare global {
   // eslint-disable-next-line no-var
   var sfdxHardisMajorBranchCheckMode: boolean | undefined;
