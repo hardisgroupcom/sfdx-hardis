@@ -18,7 +18,7 @@ Key functionalities:
 
 - **Connected App Data Collection:** Gathers information about all Connected Apps in the org, including creation and last modified dates, and associated users.
 - **Usage Analysis:** Analyzes `LoginHistory` and `OAuthToken` records to determine the last usage date of each Connected App.
-- **Inactivity Detection:** Flags Connected Apps as potentially unused if they have no recent login history or OAuth token usage.
+- **Inactivity Detection:** Flags Connected Apps as potentially unused if they have no recent login history or OAuth token usage. An OAuth token is recent when it was used in the last 6 months: change it with `--months` or the `UNUSED_CONNECTED_APPS_MONTHS` environment variable (ex: 3, 9 or 12).
 - **Accessibility Check:** Examines Connected App metadata to identify if they are accessible (e.g., if they require admin approval and have no profiles or permission sets assigned).
 - **Ignored Apps:** Automatically ignores a predefined list of common Salesforce Connected Apps (e.g., `Salesforce CLI`, `Salesforce Mobile Dashboards`). You can extend this list by defining the `ALLOWED_INACTIVE_CONNECTED_APPS` environment variable.
 - **CSV Report Generation:** Generates a CSV file containing details of all analyzed Connected Apps, including their usage status, last usage date, and reasons for being flagged as potentially unused.
@@ -78,16 +78,17 @@ In agent mode, the command runs fully automatically with no interactive prompts.
 
 ## Parameters
 
-| Name              |  Type   | Description                                                                                                  | Default | Required | Options |
-|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation. Uses default values and skips prompts.                |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
-| flags-dir         | option  | Import flag values from a directory.                                                                         |         |          |         |
-| json              | boolean | Format output as json.                                                                                       |         |          |         |
-| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                                            |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required                                                |         |          |         |
-| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
+| Name              |  Type   | Description                                                                                                                                                             | Default | Required | Options |
+|:------------------|:-------:|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation. Uses default values and skips prompts.                                                                           |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                                                                                         |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                                                                                                    |         |          |         |
+| json              | boolean | Format output as json.                                                                                                                                                  |         |          |         |
+| months            | option  | A Connected App whose last OAuth token use is older than this number of months is reported as unused (default: UNUSED_CONNECTED_APPS_MONTHS environment variable, or 6) |         |          |         |
+| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                                                                                                       |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                                                                           |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set.                                                            |         |   true   |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                               |         |          |         |
 
 ## Examples
 
@@ -97,6 +98,10 @@ $ sf hardis:org:diagnose:unused-connected-apps
 
 ```shell
 $ sf hardis:org:diagnose:unused-connected-apps --agent
+```
+
+```shell
+$ sf hardis:org:diagnose:unused-connected-apps --months 12
 ```
 
 

@@ -14,6 +14,13 @@ Sfdx-hardis command: [sf hardis:org:diagnose:unused-connected-apps](https://sfdx
 
 Key: **CONNECTED_APPS**
 
+### Settings
+
+| Environment variable | Description | Default |
+|---|---|---|
+| UNUSED_CONNECTED_APPS_MONTHS | A Connected App whose last OAuth token use is older than this number of months is reported (ex: 3, 9 or 12) | 6 |
+| ALLOWED_INACTIVE_CONNECTED_APPS | Comma-separated names of Connected Apps that are never reported | |
+
 ### Grafana example
 
 TODO
