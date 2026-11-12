@@ -44,6 +44,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 - Downloads results with `sf apex get test --test-run-id <id> --code-coverage --result-format human --output-dir <reportDir>`.
 - Transient network errors (`fetch failed`, `ECONNRESET`, `ETIMEDOUT`, `socket hang up`...) are retried on every call to the org.
 - The download of the results is retried up to 4 times, 30 seconds apart, as long as it returns no test outcome.
+- **Plugin events:** once the test run is over, before the notifications, the installed sf plugins that listen to `sfdx-hardis:apex-tests-done` receive its result, with the path of the Apex code coverage file. [More info](https://sfdx-hardis.cloudity.com/sfdx-hardis-plugins/#react-to-sfdx-hardis-events)
 
 </details>
 

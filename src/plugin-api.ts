@@ -3,7 +3,8 @@
  *
  * This module exposes the public API for sfdx-hardis plugins.
  * Plugins can import these utilities to integrate with the sfdx-hardis VS Code extension
- * via the shared WebSocket connection.
+ * via the shared WebSocket connection, to react to the events sfdx-hardis sends (a validation,
+ * a deployment or an Apex test run is done), and to post their own Pull Request comments.
  *
  * Usage from a plugin:
  *   import { uxLog, prompts, WebSocketClient } from 'sfdx-hardis/plugin-api';
@@ -40,3 +41,19 @@ export {
   bulkDeleteTooling,
 } from './common/utils/apiUtils.js';
 export { generateCsvFile } from './common/utils/filesUtils.js';
+
+// Events sent by sfdx-hardis to the plugins that declare them under oclif.hooks in their package.json
+export type {
+  SfdxHardisEvent,
+  SfdxHardisEventName,
+  SfdxHardisEventDataMap,
+  SfdxHardisEventHookOptions,
+  SfdxHardisEventPullRequest,
+  SfdxHardisRunEvent,
+  SfdxHardisRunEventName,
+  SalesforceRunEventData,
+} from './common/utils/pluginEventUtils.js';
+
+// Pull Request comment of a plugin, posted through the git provider sfdx-hardis already set up
+export { postPullRequestComment } from './common/gitProvider/pluginPullRequestComment.js';
+export type { PluginPullRequestCommentRequest, PluginPullRequestCommentResult } from './common/gitProvider/pluginPullRequestComment.js';

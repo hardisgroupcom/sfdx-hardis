@@ -42,6 +42,7 @@ import { resetExecutedDeploymentActions } from './deploymentActionsRegistry.js';
 import { finalizeDeploymentComponentsReport, recordDeployResult, recordNoOverwriteFiltering, resetDeploymentComponentsReport } from './deploymentComponentsReport.js';
 import { t } from './i18n.js';
 import { autoFixDeployErrors } from './deployErrorAutoFix.js';
+import { emitSalesforceRunEvent, getDeployRunEventName } from './pluginEventUtils.js';
 import { countDeployComponentChanges, isComponentChangeDetailComplete, logDeployResultSummary, summarizeDeployErrorMessage, writeDeployResultReportFile } from './deployResultSummary.js';
 
 // Push sources to org
@@ -769,6 +770,16 @@ export async function smartDeploy(
           setPullRequestData({ checkTestLevel: testlevel });
         }
 
+        // The plugins get the result of this deployment as soon as Salesforce answered, before the
+        // code coverage check that can throw an error
+        await emitSalesforceRunEvent(commandThis, {
+          event: getDeployRunEventName(check),
+          checkOnly: check,
+          status: deployRes.status === 0 ? 'success' : 'failed',
+          deploymentLabel: deployment.label,
+          targetUsername: options.targetUsername,
+        });
+
         // Check org coverage if found in logs
         const orgCoveragePercent = await extractOrgCoverageFromLog(deployRes.stdout + deployRes.stderr || '');
 
@@ -901,6 +912,14 @@ async function handleDeployError(
       return { status: 0, stdout: (e as any).stdout, stderr: (e as any).stderr, testCoverageNotBlockingActivated: true };
     }
   }
+  // The plugins get the result of this deployment as soon as Salesforce answered
+  await emitSalesforceRunEvent(commandThis, {
+    event: getDeployRunEventName(check),
+    checkOnly: check,
+    status: 'failed',
+    deploymentLabel: deployment.label,
+    targetUsername: options.targetUsername,
+  });
   // Keep the complete deployment result available as a CI artifact, as it is not displayed in the console anymore
   const deployResultReportFile = await writeDeployResultReportFile(jsonResult, deployment.label);
   // Handle Effective error

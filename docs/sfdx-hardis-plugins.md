@@ -9,6 +9,8 @@ sfdx-hardis exposes a **Plugin API** that lets community developers build their 
 
 Your plugin commands will automatically communicate with the VS Code extension using the same WebSocket connection initialized by the main sfdx-hardis CLI: no additional setup required.
 
+Your plugin can also [react to sfdx-hardis events](#react-to-sfdx-hardis-events) in CI/CD jobs, for example post its own Pull Request comment as soon as a deployment validation returns its Apex test results.
+
 ![](assets/images/sfdx-hardis-plugin-demo.gif)
 
 See demo repository: <https://github.com/hardisgroupcom/sf-plugin-hardis-demo>
@@ -224,6 +226,115 @@ This hidden command is a working example for plugin authors who want to expose W
   }
 }
 ```
+
+## React to sfdx-hardis events
+
+sfdx-hardis sends events to the installed plugins that listen to them. A plugin can use them in CI/CD jobs, for example to turn the Apex code coverage of a validation into SonarQube or Cobertura files, or to post its own Pull Request comment.
+
+The events are [oclif custom events](https://oclif.io/docs/hooks#custom-events). sfdx-hardis fires them from inside its commands, and oclif only loads the hook file of your plugin when the event is fired: other commands pay nothing.
+
+### Available events
+
+| Event                         | Sent by                                                                                                                                                                                                                       | When                                                |
+|-------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------|
+| `sfdx-hardis:validation-done` | [hardis:project:deploy:smart](hardis/project/deploy/smart.md) in check mode, [hardis:project:deploy:validate](hardis/project/deploy/validate.md), [hardis:project:deploy:start](hardis/project/deploy/start.md) with `--dry-run` | Salesforce returned the result of the validation    |
+| `sfdx-hardis:deployment-done` | [hardis:project:deploy:smart](hardis/project/deploy/smart.md), [hardis:project:deploy:start](hardis/project/deploy/start.md), [hardis:project:deploy:quick](hardis/project/deploy/quick.md)                                      | Salesforce returned the result of the deployment    |
+| `sfdx-hardis:apex-tests-done` | [hardis:org:test:apex](hardis/org/test/apex.md)                                                                                                                                                                               | The Apex test run is over, before the notifications |
+
+The deployment events are sent as soon as Salesforce answers, on success and on failure:
+
+- before the sfdx-hardis Pull Request comment, the post-deployment actions and the code coverage check, so a failure of one of them does not prevent the event
+- once per Salesforce deployment: a deployment plan with several packages sends one event per package, with its `deploymentLabel`
+- not when nothing is sent to Salesforce (empty package.xml)
+
+### Listen to an event
+
+Declare the events under `oclif.hooks` in the `package.json` of your plugin. One hook file can listen to several events:
+
+```json
+{
+  "oclif": {
+    "commands": "./lib/commands",
+    "hooks": {
+      "sfdx-hardis:validation-done": "./lib/hooks/sfdxHardisRunDone",
+      "sfdx-hardis:deployment-done": "./lib/hooks/sfdxHardisRunDone",
+      "sfdx-hardis:apex-tests-done": "./lib/hooks/sfdxHardisRunDone"
+    }
+  }
+}
+```
+
+The hook receives the event as its options:
+
+```typescript
+import fs from "node:fs";
+import { postPullRequestComment, uxLog } from "sfdx-hardis/plugin-api";
+import type { SfdxHardisEventHookOptions, SfdxHardisRunEvent } from "sfdx-hardis/plugin-api";
+
+const hook = async function (options: SfdxHardisEventHookOptions<SfdxHardisRunEvent>): Promise<void> {
+  const { data } = options;
+  if (!data.coverageFile) {
+    return; // No Apex test ran
+  }
+  // Coverage returned by Salesforce, written by sfdx-hardis in the same JSON format for deployments and test runs
+  const coverage = JSON.parse(fs.readFileSync(data.coverageFile, "utf8"));
+  const markdown = buildMyCoverageTable(coverage);
+  const result = await postPullRequestComment({
+    pluginName: "my-coverage-plugin",
+    messageKey: data.checkOnly ? "validation" : "deployment",
+    title: "Least covered Apex classes",
+    markdown,
+    status: data.status === "success" ? "valid" : "invalid",
+  });
+  uxLog("log", null, `Coverage comment posted: ${result.posted}`);
+};
+
+export default hook;
+```
+
+A working example is in the [demo plugin](https://github.com/hardisgroupcom/sf-plugin-hardis-demo).
+
+**Catch your own errors and keep the hook quick:** the job waits for it. sfdx-hardis turns a failing hook into a warning, it never changes the result of the command.
+
+If your plugin already has a `postrun` hook that watches sfdx-hardis commands, the events replace it.
+
+### Event content
+
+Every event has the same envelope, and what is specific to the event under `data`:
+
+| Property         | Type                                                        | Description                                                                                             |
+|------------------|-------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
+| `payloadVersion` | `1`                                                         | Increased when a property changes meaning or disappears, never when one is added                        |
+| `event`          | `string`                                                    | Name of the event                                                                                       |
+| `commandId`      | `string`                                                    | sfdx-hardis command that sent it, for example `hardis:project:deploy:smart`                             |
+| `reportDir`      | `string`                                                    | Absolute path of the sfdx-hardis report directory (`hardis-report` by default)                          |
+| `currentBranch`  | `string \| null`                                            | Current git branch                                                                                      |
+| `pullRequest`    | `{ id, number, url, sourceBranch, targetBranch } \| null`   | Pull Request of the job. `null` when none is found, without a git provider, and in a major branch check |
+| `org`            | `{ username: string \| null }`                              | Target org                                                                                              |
+| `data`           | depends on the event                                        | See below                                                                                               |
+
+`data` of `sfdx-hardis:validation-done`, `sfdx-hardis:deployment-done` and `sfdx-hardis:apex-tests-done`:
+
+| Property          | Type                                     | Description                                                                                             |
+|-------------------|------------------------------------------|---------------------------------------------------------------------------------------------------------|
+| `checkOnly`       | `boolean`                                | `true` for a validation                                                                                 |
+| `deploymentLabel` | `string \| null`                         | Item of the deployment plan of hardis:project:deploy:smart, `null` for the other commands               |
+| `status`          | `"success" \| "failed" \| "unknown"`     | What Salesforce answered. `unknown`: the Apex test run gave no result                                   |
+| `coverageFile`    | `string \| null`                         | Absolute path of `apex-coverage-results.json`, the coverage returned by Salesforce. `null` when it does not exist |
+
+The types are exported by `sfdx-hardis/plugin-api`: `SfdxHardisEvent`, `SfdxHardisRunEvent`, `SalesforceRunEventData`, `SfdxHardisEventHookOptions`...
+
+### Need another extension point?
+
+These events are the first ones. If your plugin needs to plug into another sfdx-hardis feature (another command, another step of the CI/CD pipeline, more data in an event), [open an issue](https://github.com/hardisgroupcom/sfdx-hardis/issues/new/choose) describing your use case: new events are added on demand, with the same envelope.
+
+### Disable the events
+
+Set `disablePluginEvents: true` in `.sfdx-hardis.yml` (or in a branch config file), or the env variable `SFDX_HARDIS_DISABLE_PLUGIN_EVENTS=true`, which wins over the config property.
+
+### Versions
+
+`postPullRequestComment` runs in the copy of sfdx-hardis your plugin depends on: list a version of sfdx-hardis that exports it in your `dependencies`, and ask your users to install a version of sfdx-hardis that sends the events.
 
 ## API Reference
 
@@ -650,6 +761,25 @@ Interface describing a notification to send.
 | `attachedFiles` | `string[]`           |          | Absolute paths to files uploaded as attachments (e.g. CSV reports)                                                                    |
 | `alwaysSend`    | `boolean`            |          | If `true`, send even when the severity would normally be filtered out                                                                 |
 | `sideImage`     | `string`             |          | URL of a side image shown in some providers                                                                                           |
+
+### `postPullRequestComment(request)`
+
+Creates the comment of your plugin in the current Pull Request, or updates it when it exists, through the git provider set up for sfdx-hardis (GitHub, GitLab, Azure DevOps, Bitbucket). It never touches the sfdx-hardis comments: the key of your comment always starts with `plugin-<pluginName>-`.
+
+```typescript
+import { postPullRequestComment } from "sfdx-hardis/plugin-api";
+
+const result = await postPullRequestComment({
+  pluginName: "my-plugin", // npm name of your plugin
+  messageKey: "coverage", // same key = same comment, updated on each run
+  title: "My plugin results",
+  markdown: "| Class | Coverage |\n| --- | ---: |\n| `AccountService.cls` | 82% |",
+  status: "valid", // "valid" (default), "invalid" or "tovalidate"
+});
+// { posted: true }, or { posted: false, reason: "invalid-request" | "major-branch-check" | "no-git-provider" | "not-posted" }
+```
+
+It never throws. Outside a Pull Request (a local run, a job without a Pull Request), `posted` is `false`.
 
 ## Complete plugin example
 
