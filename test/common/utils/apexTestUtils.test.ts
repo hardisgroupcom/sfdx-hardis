@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import {
   extractErrorSummary,
   extractTestRunId,
+  extractTestRunOutcome,
   isNoApexError,
   isTransientNetworkError,
   parseWaitMinutes,
@@ -69,6 +70,36 @@ describe('apexTestUtils', () => {
 
     it('reads the Error line of a human output', () => {
       expect(extractErrorSummary('Command failed: sf apex get test\n\nError (INVALID_SESSION_ID): Session expired or invalid')).to.equal('Error (INVALID_SESSION_ID): Session expired or invalid');
+    });
+  });
+
+  describe('extractTestRunOutcome', () => {
+    it('reads the outcome of the test run summary', () => {
+      expect(extractTestRunOutcome('=== Test Summary\nNAME                 VALUE\nOutcome              Passed\n')).to.equal('Passed');
+      expect(extractTestRunOutcome('Command failed\r\nOutcome              Failed\r\n')).to.equal('Failed');
+    });
+
+    it('ignores coverage and results rows of classes and methods whose name contains Outcome (#2474)', () => {
+      const output = [
+        '=== Apex Code Coverage by Class',
+        'CLASSES              PERCENT  UNCOVERED LINES',
+        'ReportRunOutcome     92%      32',
+        'Outcome              100%',
+        '=== Test Results',
+        'TEST NAME                          OUTCOME  MESSAGE',
+        'ReportRunOutcomeTest.returnsOutcome  Fail     System.AssertException',
+        '=== Test Summary',
+        'NAME                 VALUE',
+        'Outcome              Failed',
+        'Tests Ran            2470',
+      ].join('\n');
+      expect(extractTestRunOutcome(output)).to.equal('Failed');
+    });
+
+    it('returns null without test run summary', () => {
+      expect(extractTestRunOutcome('ReportRunOutcome     92%      32')).to.equal(null);
+      expect(extractTestRunOutcome('Error (1): invalid cross reference id')).to.equal(null);
+      expect(extractTestRunOutcome('')).to.equal(null);
     });
   });
 
@@ -231,6 +262,7 @@ describe('apexTestUtils', () => {
       expect(getRetry.retryIf('Error (TypeError): fetch failed')).to.equal(true);
       expect(getRetry.retryIf('Outcome   Failed\nfetch failed')).to.equal(false);
       expect(getRetry.retryIf('Error (1): invalid cross reference id')).to.equal(true);
+      expect(getRetry.retryIf('ReportRunOutcome     92%      32')).to.equal(true);
     });
   });
 });

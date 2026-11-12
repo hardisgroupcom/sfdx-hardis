@@ -217,8 +217,19 @@ function buildNoResult(outputString: string, testRunId: string | null): ApexTest
   };
 }
 
+// Outcome row of the test run summary of sf apex get test --result-format human, ex: "Outcome              Failed"
+// The row must start with Outcome and hold a single word, so the coverage or results row of a class or a method
+// whose name contains Outcome (ex: "ReportRunOutcome     92%      32") is not read as the outcome of the run
+const TEST_RUN_OUTCOME_REGEX = /^[^\S\n]*Outcome[^\S\n]+([A-Za-z]+)[^\S\n]*$/m;
+
+// Outcome of the test run (Passed, Failed...) read from the output of sf apex get test, or null if there is none
+export function extractTestRunOutcome(output: string): string | null {
+  const match = TEST_RUN_OUTCOME_REGEX.exec(output || '');
+  return match ? match[1] : null;
+}
+
 function hasTestRunOutcome(output: string): boolean {
-  return /Outcome\s+\S/.test(output);
+  return extractTestRunOutcome(output) !== null;
 }
 
 function logNetworkRetry(commandThis: any, attempt: number, message: string) {
