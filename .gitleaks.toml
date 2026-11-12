@@ -70,7 +70,7 @@ regexes = ['''NOTIF_API_METRICS_BASIC_AUTH_USERNAME=\d+''']
 # within the rule window.
 # Same case in src/i18n/nl.json for "sourcesHaveBeenPulledNowStageAndCommit", whose first
 # 32 characters follow "sourceTrackedSandboxesOnly" and its value ending with "sandboxen".
-# It only shows up once lines move in that file, as the scanner reads it in chunks.
+# It is reported only since lines moved in that file (new keys before it).
 #
 # This entry is deliberately secret-scoped only, with no "paths": adding a "paths"
 # key here makes betterleaks skip the matching files wholesale (verified with
