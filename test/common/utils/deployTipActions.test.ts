@@ -159,7 +159,7 @@ describe('Deployment actions suggested by deployment error tips', () => {
         `<?xml version="1.0" encoding="UTF-8"?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Features__c</fullName>
-    <valueSet><valueSetDefinition><value><fullName>Satnav</fullName><default>false</default><label>Navigation</label></value></valueSetDefinition></valueSet>
+    <valueSet><valueSetDefinition><value><fullName>GPS_Navigation</fullName><default>false</default><label>Navigation</label></value></valueSetDefinition></valueSet>
 </CustomField>`
       );
     });
@@ -177,11 +177,11 @@ describe('Deployment actions suggested by deployment error tips', () => {
       expect(hint!.parameters).to.deep.equal({
         setting: 'picklists',
         config: {
-          picklistValues: [{ metadataType: 'CustomField', metadataFullName: 'Vehicle__c.Features__c', value: 'OLD_API_NAME', newApiName: 'Satnav' }],
+          picklistValues: [{ metadataType: 'CustomField', metadataFullName: 'Vehicle__c.Features__c', value: 'OLD_API_NAME', newApiName: 'GPS_Navigation' }],
         },
       });
       expect(hint!.toComplete).to.deep.equal(['OLD_API_NAME']);
-      expect(hint!.label).to.equal('Rename picklist value Navigation of Vehicle__c.Features__c to Satnav');
+      expect(hint!.label).to.equal('Rename picklist value Navigation of Vehicle__c.Features__c to GPS_Navigation');
       expect(hint!.docUrl).to.equal('https://amtrack.github.io/sfdx-browserforce-plugin/settings/picklists/');
     });
 
@@ -193,9 +193,9 @@ describe('Deployment actions suggested by deployment error tips', () => {
         { check: true }
       );
       const tip = errorsAndTips.find((errorAndTip: any) => errorAndTip.tip?.label === 'Duplicate label');
-      expect(tip?.tip?.deploymentAction?.parameters.config.picklistValues[0].newApiName).to.equal('Satnav');
+      expect(tip?.tip?.deploymentAction?.parameters.config.picklistValues[0].newApiName).to.equal('GPS_Navigation');
       const fromText = await buildTipDeploymentAction(duplicateLabelTip, ['', 'Vehicle__c.Features__c', 'Navigation (3:13)']);
-      expect(fromText!.parameters.config.picklistValues[0].newApiName).to.equal('Satnav');
+      expect(fromText!.parameters.config.picklistValues[0].newApiName).to.equal('GPS_Navigation');
     });
 
     it('Falls back to the values to complete when the sources do not have the value', async () => {

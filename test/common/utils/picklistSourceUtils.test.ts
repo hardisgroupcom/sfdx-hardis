@@ -10,7 +10,7 @@ const FIELD_INLINE = `<?xml version="1.0" encoding="UTF-8"?>
     <type>Picklist</type>
     <valueSet>
         <valueSetDefinition>
-            <value><fullName>Satnav</fullName><default>false</default><label>Navigation</label></value>
+            <value><fullName>GPS_Navigation</fullName><default>false</default><label>Navigation</label></value>
             <value><fullName>Rear%2C_camera</fullName><default>false</default><label>Rear &amp; camera</label></value>
         </valueSetDefinition>
     </valueSet>
@@ -59,7 +59,7 @@ describe('Picklist values in the local sources', () => {
 
   it('Finds the value of a field by its label, with its API name decoded', async () => {
     const found = await findPicklistValueByLabel('Vehicle__c.Features__c', 'Navigation', projectDir);
-    expect(found).to.deep.include({ metadataType: 'CustomField', metadataFullName: 'Vehicle__c.Features__c', apiName: 'Satnav', label: 'Navigation' });
+    expect(found).to.deep.include({ metadataType: 'CustomField', metadataFullName: 'Vehicle__c.Features__c', apiName: 'GPS_Navigation', label: 'Navigation' });
     const encoded = await findPicklistValueByLabel('Vehicle__c.Features__c', 'Rear & camera', projectDir);
     expect(encoded?.apiName).to.equal('Rear,_camera');
   });
