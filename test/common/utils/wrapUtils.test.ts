@@ -17,6 +17,10 @@ describe('buildWrappedCommandArgs()', () => {
     ]);
   });
 
+  it('keeps -d, the short flag of --source-dir, with its value', () => {
+    expect(buildWrappedCommandArgs(['-d', 'force-app'])).to.deep.equal(['-d', '"force-app"']);
+  });
+
   it('keeps the quotes already given', () => {
     expect(buildWrappedCommandArgs(['--tests', "'MyTest'"])).to.deep.equal(['--tests', "'MyTest'"]);
   });

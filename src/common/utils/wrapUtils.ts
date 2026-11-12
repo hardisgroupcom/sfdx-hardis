@@ -56,7 +56,6 @@ export function buildWrappedCommandArgs(argv: string[]): string[] {
   // Remove sfdx-hardis arguments: the flag alone, or the flag and its value
   const hardisFlags: Array<[string, number]> = [
     ["--debug", 1],
-    ["-d", 1],
     ["--websocket", 2],
     ["--skipauth", 1],
     ["--checkcoverage", 1],

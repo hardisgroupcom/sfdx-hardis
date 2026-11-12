@@ -623,6 +623,15 @@ export async function smartDeploy(
                 deploymentMetrics.testsFailed += Number(quickDeployResultJson.numberTestErrors || 0);
                 deploymentMetrics.testsTotal += Number(quickDeployResultJson.numberTestsTotal || 0);
               }
+              // A Quick Deploy runs no Apex test: no coverage file belongs to it
+              await emitSalesforceRunEvent(commandThis, {
+                event: getDeployRunEventName(check),
+                checkOnly: check,
+                status: 'success',
+                deploymentLabel: deployment.label,
+                coverageExpected: false,
+                targetUsername: options.targetUsername,
+              });
               continue;
             } else {
               uxLog(
@@ -777,6 +786,7 @@ export async function smartDeploy(
           checkOnly: check,
           status: deployRes.status === 0 ? 'success' : 'failed',
           deploymentLabel: deployment.label,
+          coverageExpected: testlevel !== 'NoTestRun',
           targetUsername: options.targetUsername,
         });
 

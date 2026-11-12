@@ -128,7 +128,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
     await setConnectionVariables(flags['target-org']?.getConnection(), true);
     // Run pre deployment commands if defined
     await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: false });
-    const result = await wrapSfdxCoreCommand("sf project deploy start", this.argv, this, flags.debug);
+    const result = await wrapSfdxCoreCommand("sf project deploy quick", this.argv, this, flags.debug);
     // The plugins get the result as soon as Salesforce answered, before the coverage check that can throw an error
     await emitWrappedDeployRunEvent(this, { checkOnly: false, targetUsername: flags['target-org']?.getUsername() || null });
     // Check org coverage if requested

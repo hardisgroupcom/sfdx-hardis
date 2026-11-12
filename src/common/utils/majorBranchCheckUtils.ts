@@ -5,14 +5,19 @@
 import { SfError } from '@salesforce/core';
 import { t } from './i18n.js';
 
-let majorBranchCheckMode = false;
+// Kept on globalThis: a plugin calls the sfdx-hardis/plugin-api of its own copy of sfdx-hardis, in the
+// same process, and its comments must also be skipped during a major branch check
+declare global {
+  // eslint-disable-next-line no-var
+  var sfdxHardisMajorBranchCheckMode: boolean | undefined;
+}
 
 export function enableMajorBranchCheckMode(): void {
-  majorBranchCheckMode = true;
+  globalThis.sfdxHardisMajorBranchCheckMode = true;
 }
 
 export function isMajorBranchCheckMode(): boolean {
-  return majorBranchCheckMode;
+  return globalThis.sfdxHardisMajorBranchCheckMode === true;
 }
 
 /**
@@ -31,5 +36,5 @@ export function assertMajorBranchCheckAllowed(currentBranch: string | null | und
 
 /** For tests only: a process running several commands must not carry the mode from one to the next */
 export function resetMajorBranchCheckMode(): void {
-  majorBranchCheckMode = false;
+  globalThis.sfdxHardisMajorBranchCheckMode = false;
 }

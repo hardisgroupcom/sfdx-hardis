@@ -16,7 +16,6 @@ import fs from './fsUtils.js';
 import { getConfig, getEnvVar, getReportDirectory } from '../../config/index.js';
 import { GitProvider } from '../gitProvider/index.js';
 import { getCurrentGitBranch, uxLog } from './index.js';
-import { isMajorBranchCheckMode } from './majorBranchCheckUtils.js';
 import { t } from './i18n.js';
 
 // ---------------------------------------------------------------------------
@@ -86,6 +85,8 @@ export type SalesforceRunEventInput = {
   checkOnly: boolean;
   status: SalesforceRunEventData['status'];
   deploymentLabel?: string | null;
+  // False when the command knows that no Apex test ran: a coverage file left by an earlier run is not sent
+  coverageExpected?: boolean;
   targetUsername?: string | null;
 };
 
@@ -142,7 +143,9 @@ export async function emitPluginEvent<TName extends SfdxHardisEventName>(
       return;
     }
     const payload = await buildEventEnvelope(commandThis, event, await buildData(), options);
-    const hookResult: any = await oclifConfig.runHook(event, payload);
+    // captureErrors: a plugin that calls this.error() or this.exit() is a failure of that plugin
+    // only, the hooks of the other plugins still run to their end
+    const hookResult: any = await oclifConfig.runHook(event, payload, undefined, true);
     for (const failure of hookResult?.failures || []) {
       logPluginFailure(commandThis, event, failure?.plugin?.name, failure?.error);
     }
@@ -153,9 +156,7 @@ export async function emitPluginEvent<TName extends SfdxHardisEventName>(
 }
 
 export function countEventListeners(oclifConfig: any, event: string): number {
-  const plugins: any[] = oclifConfig?.plugins instanceof Map
-    ? Array.from(oclifConfig.plugins.values())
-    : Array.isArray(oclifConfig?.plugins) ? oclifConfig.plugins : [];
+  const plugins: any[] = oclifConfig?.plugins instanceof Map ? Array.from(oclifConfig.plugins.values()) : [];
   return plugins.filter((plugin) => {
     const hooks = plugin?.hooks?.[event];
     return Array.isArray(hooks) ? hooks.length > 0 : !!hooks;
@@ -196,7 +197,7 @@ export async function buildEventEnvelope<TName extends string, TData>(
 
 export async function buildSalesforceRunEventData(input: SalesforceRunEventInput): Promise<SalesforceRunEventData> {
   const coverageFilePath = path.join(await getReportDirectory(), COVERAGE_RESULTS_FILE_NAME);
-  const coverageFile = fs.existsSync(coverageFilePath) ? path.resolve(coverageFilePath) : null;
+  const coverageFile = input.coverageExpected !== false && fs.existsSync(coverageFilePath) ? path.resolve(coverageFilePath) : null;
   return {
     checkOnly: input.checkOnly,
     deploymentLabel: input.deploymentLabel ?? null,
@@ -205,11 +206,8 @@ export async function buildSalesforceRunEventData(input: SalesforceRunEventInput
   };
 }
 
+// Null in a major branch check: getPullRequestInfo returns no Pull Request then
 async function findPullRequest(): Promise<SfdxHardisEventPullRequest | null> {
-  // A major branch check runs outside of any Pull Request
-  if (isMajorBranchCheckMode()) {
-    return null;
-  }
   try {
     const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
     if (!prInfo) {

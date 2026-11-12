@@ -156,7 +156,8 @@ In agent mode, all interactive prompts are skipped and default values are used.
     await emitSalesforceRunEvent(this, {
       event: 'sfdx-hardis:apex-tests-done',
       checkOnly: false,
-      status: this.testRunOutcome === 'NoResult' ? 'unknown' : this.notifSeverity === 'error' ? 'failed' : 'success',
+      status: this.testRunOutcome === 'NoResult' ? 'unknown' : ['Passed', 'NoApex'].includes(this.testRunOutcome) ? 'success' : 'failed',
+      coverageExpected: !['NoApex', 'NoResult'].includes(this.testRunOutcome),
       targetUsername: flags['target-org']?.getUsername() || null,
     });
 

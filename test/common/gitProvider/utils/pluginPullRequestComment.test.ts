@@ -75,6 +75,14 @@ describe('postPullRequestComment() for plugins', () => {
     expect(posted).to.be.empty;
   });
 
+  it('sees a major branch check started by another copy of sfdx-hardis in the same process', async () => {
+    // A plugin posts through its own copy of sfdx-hardis: the mode lives on globalThis, not in a module
+    globalThis.sfdxHardisMajorBranchCheckMode = true;
+    GitProvider.getInstance = (async () => fakeProvider(true)) as any;
+    expect(await postPullRequestComment({ pluginName: 'my-plugin', messageKey: 'coverage', title: 't', markdown: 'm' })).to.deep.equal({ posted: false, reason: 'major-branch-check' });
+    expect(posted).to.be.empty;
+  });
+
   it('never throws when the provider crashes', async () => {
     GitProvider.getInstance = (async () => {
       throw new Error('boom');

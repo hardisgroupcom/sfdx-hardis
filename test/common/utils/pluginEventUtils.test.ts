@@ -146,10 +146,30 @@ describe('Plugin events', () => {
   });
 
   it('has no Pull Request in a major branch check', async () => {
+    // The real lookup: it is the one that knows a major branch check has no Pull Request
+    GitProvider.getPullRequestInfo = originalGetPullRequestInfo;
     enableMajorBranchCheckMode();
     const envelope = await buildEventEnvelope({ id: 'hardis:project:deploy:smart' }, 'sfdx-hardis:validation-done', {});
     expect(envelope.pullRequest).to.be.null;
-    expect(pullRequestLookups).to.equal(0);
+  });
+
+  it('sends no coverage file when the command knows that no test ran', async () => {
+    const data = await buildSalesforceRunEventData({ event: 'sfdx-hardis:deployment-done', checkOnly: false, status: 'success', coverageExpected: false });
+    expect(data.coverageFile).to.be.null;
+  });
+
+  it('asks oclif to capture the errors of each plugin', async () => {
+    const captured: any[] = [];
+    const config = {
+      plugins: new Map([['plugin-0', { name: 'plugin-0', hooks: { 'sfdx-hardis:deployment-done': ['./hook.js'] } }]]),
+      runHook: async (...args: any[]) => {
+        captured.push(args);
+        return { successes: [], failures: [] };
+      },
+    };
+    await emitSalesforceRunEvent({ config }, { event: 'sfdx-hardis:deployment-done', checkOnly: false, status: 'success' });
+    expect(captured).to.have.length(1);
+    expect(captured[0][3]).to.equal(true);
   });
 
   it('has no Pull Request when the lookup fails', async () => {
