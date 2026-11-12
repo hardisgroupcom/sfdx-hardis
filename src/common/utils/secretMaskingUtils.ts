@@ -2,7 +2,14 @@
 // Each value is registered here: the CI masks it in its own logs, and redactSecrets() removes it
 // from everything sfdx-hardis prints, writes or posts (uxLog, command outputs, PR comments, notifications).
 
-const registeredSecrets = new Set<string>();
+// Kept on globalThis: a plugin posts through the sfdx-hardis/plugin-api of its own copy of sfdx-hardis,
+// in the same process, and the secrets registered by the running sfdx-hardis must be redacted there too
+declare global {
+  // eslint-disable-next-line no-var
+  var sfdxHardisRegisteredSecrets: Set<string> | undefined;
+}
+globalThis.sfdxHardisRegisteredSecrets = globalThis.sfdxHardisRegisteredSecrets ?? new Set<string>();
+const registeredSecrets: Set<string> = globalThis.sfdxHardisRegisteredSecrets;
 // Shorter values would turn the redaction of ordinary words into noise. They are still registered
 // with the CI masking, which is the provider's decision to make.
 const MIN_REDACTED_LENGTH = 3;

@@ -2,6 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { AnyJson } from "@salesforce/ts-types";
 import { wrapSfdxCoreCommand } from "../../../../common/utils/wrapUtils.js";
+import { emitWrappedDeployRunEvent } from "../../../../common/utils/pluginEventUtils.js";
 import { checkDeploymentOrgCoverage, extractOrgCoverageFromLog } from '../../../../common/utils/deployUtils.js';
 import { GitProvider } from '../../../../common/gitProvider/index.js';
 import { buildCheckDeployCommitSummary } from '../../../../common/utils/gitUtils.js';
@@ -12,6 +13,8 @@ export default class ProjectDeployValidate extends SfCommand<any> {
   public static description = `sfdx-hardis wrapper for **sf project deploy validate** that displays tips to solve deployment errors.
 
 Note: Use **--json** argument to have better results
+
+The validation always runs Apex tests and never saves anything in the org. Salesforce intends it for production orgs: on a sandbox, which runs no test by default, use [hardis:project:deploy:start](https://sfdx-hardis.cloudity.com/hardis/project/deploy/start/) with \`--dry-run --test-level RunLocalTests\`.
 
 [![Assisted solving of Salesforce deployments errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](https://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
 
@@ -62,6 +65,10 @@ commandsPostDeploy:
     runOnlyOnceByOrg: true
 \`\`\`
 
+### Plugin events
+
+As soon as Salesforce returns the result of the validation, the installed sf plugins that listen to \`sfdx-hardis:validation-done\` receive it, with the path of the Apex code coverage file, before the code coverage check. [More info](https://sfdx-hardis.cloudity.com/sfdx-hardis-plugins/#react-to-sfdx-hardis-events)
+
 ### Agent Mode
 
 Supports non-interactive execution with \`--agent\`:
@@ -85,20 +92,6 @@ In agent mode, all interactive prompts are skipped and default values are used.
     async: Flags.boolean({
       description: "async",
       exclusive: ["wait"],
-    }),
-    "dry-run": Flags.boolean({
-      description: "dry-run",
-      default: false,
-    }),
-    "ignore-conflicts": Flags.boolean({
-      char: "c",
-      description: "ignore-conflicts",
-      default: false,
-    }),
-    "ignore-errors": Flags.boolean({
-      char: "r",
-      description: "ignore-errors",
-      default: false,
     }),
     "ignore-warnings": Flags.boolean({
       char: "g",
@@ -179,7 +172,9 @@ In agent mode, all interactive prompts are skipped and default values are used.
     await buildCheckDeployCommitSummary();
     // Run pre deployment commands if defined
     await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: true });
-    const result = await wrapSfdxCoreCommand("sf project deploy start", this.argv, this, flags.debug);
+    const result = await wrapSfdxCoreCommand("sf project deploy validate", this.argv, this, flags.debug);
+    // The plugins get the result as soon as Salesforce answered, before the coverage check that can throw an error
+    await emitWrappedDeployRunEvent(this, { checkOnly: true, targetUsername: flags['target-org']?.getUsername() || null });
     // Check org coverage if requested
     if (flags['coverage-formatters'] && result.stdout) {
       const orgCoveragePercent = await extractOrgCoverageFromLog(result.stdout + result.stderr || '');

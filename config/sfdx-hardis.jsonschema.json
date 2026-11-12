@@ -2523,6 +2523,17 @@
       "title": "Disable deployment actions",
       "type": "boolean"
     },
+    "disablePluginEvents": {
+      "$id": "#/properties/disablePluginEvents",
+      "default": false,
+      "description": "Do not send the sfdx-hardis events (validation, deployment or Apex test run done) to the installed sf plugins that listen to them. Can also be set with the SFDX_HARDIS_DISABLE_PLUGIN_EVENTS env variable, which wins over this property.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/sfdx-hardis-plugins/#react-to-sfdx-hardis-events",
+      "examples": [
+        true
+      ],
+      "title": "Disable plugin events",
+      "type": "boolean"
+    },
     "failValidationOnPendingManualActions": {
       "$id": "#/properties/failValidationOnPendingManualActions",
       "default": false,

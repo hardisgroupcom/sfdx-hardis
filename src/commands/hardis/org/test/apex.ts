@@ -9,6 +9,7 @@ import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils
 import { CONSTANTS, getConfig, getEnvVar, getReportDirectory } from '../../../../config/index.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { generateApexCoverageOutputFile } from '../../../../common/utils/deployUtils.js';
+import { emitSalesforceRunEvent } from '../../../../common/utils/pluginEventUtils.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
 import { ApexTestNoResultReason, extractErrorSummary, extractTestRunOutcome, parseWaitMinutes, runApexTestsResilient } from '../../../../common/utils/apexTestUtils.js';
@@ -56,6 +57,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 - Downloads results with \`sf apex get test --test-run-id <id> --code-coverage --result-format human --output-dir <reportDir>\`.
 - Transient network errors (\`fetch failed\`, \`ECONNRESET\`, \`ETIMEDOUT\`, \`socket hang up\`...) are retried on every call to the org.
 - The download of the results is retried up to 4 times, 30 seconds apart, as long as it returns no test outcome.
+- **Plugin events:** once the test run is over, before the notifications, the installed sf plugins that listen to \`sfdx-hardis:apex-tests-done\` receive its result, with the path of the Apex code coverage file. [More info](${CONSTANTS.DOC_URL_ROOT}/sfdx-hardis-plugins/#react-to-sfdx-hardis-events)
 
 </details>
 `;
@@ -149,6 +151,15 @@ In agent mode, all interactive prompts are skipped and default values are used.
     if (this.testRunOutcome !== 'NoApex' && this.testRunOutcome !== 'NoResult') {
       uxLog("other", this, `Apex coverage: ${this.coverageValue}% (target: ${this.coverageTarget}%)`);
     }
+
+    // The plugins get the result of the test run before the notifications
+    await emitSalesforceRunEvent(this, {
+      event: 'sfdx-hardis:apex-tests-done',
+      checkOnly: false,
+      status: this.testRunOutcome === 'NoResult' ? 'unknown' : ['Passed', 'NoApex'].includes(this.testRunOutcome) ? 'success' : 'failed',
+      coverageExpected: !['NoApex', 'NoResult'].includes(this.testRunOutcome),
+      targetUsername: flags['target-org']?.getUsername() || null,
+    });
 
     await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
     await NotifProvider.postNotifications({

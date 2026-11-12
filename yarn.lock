@@ -2916,10 +2916,10 @@ baseline-browser-mapping@^2.10.44:
   resolved "https://registry.yarnpkg.com/baseline-browser-mapping/-/baseline-browser-mapping-2.11.20.tgz#26078c7a4b08299656ea7ddceaebec955dc44303"
   integrity sha512-H0ulySigv6icDJ1F7SjtdCD6PrhTpdYCmP0CactWy1+ekh0AFd0o1Wn5T8b+hnTmdBx19u9yhL6wvCylXMY7zw==
 
-basic-ftp@6.2.1, basic-ftp@^5.0.2:
-  version "6.2.1"
-  resolved "https://registry.yarnpkg.com/basic-ftp/-/basic-ftp-6.2.1.tgz#4e48a39c87baee0314e1a0fa9bcca73b1e251e53"
-  integrity sha512-bK67isD+lKq46AU8vNtjvMaT2ZqAOAmNCbxUHlFBRD4k15NWxyEjmaKtZPlgce58So4BNTjITGQOVTjL9y0ECA==
+basic-ftp@6.2.6, basic-ftp@^5.0.2:
+  version "6.2.6"
+  resolved "https://registry.yarnpkg.com/basic-ftp/-/basic-ftp-6.2.6.tgz#84905c94db0e10415c9ba4ce61b30bc38875905a"
+  integrity sha512-0EjZCaodOz6yiokv2JA1VyKGNdGxULZ+GGlPgG9tm4d+T/bHtX1hUch8CumDneBfpIbiSdn7TaCGwpM+gwsOlw==
 
 before-after-hook@^2.1.0:
   version "2.2.3"
