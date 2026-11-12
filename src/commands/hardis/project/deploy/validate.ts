@@ -14,6 +14,8 @@ export default class ProjectDeployValidate extends SfCommand<any> {
 
 Note: Use **--json** argument to have better results
 
+The validation always runs Apex tests and never saves anything in the org. Salesforce intends it for production orgs: on a sandbox, which runs no test by default, use [hardis:project:deploy:start](https://sfdx-hardis.cloudity.com/hardis/project/deploy/start/) with \`--dry-run --test-level RunLocalTests\`.
+
 [![Assisted solving of Salesforce deployments errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](https://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
 
 [See documentation of Salesforce command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_project_commands_unified.htm#cli_reference_project_deploy_validate_unified)
@@ -90,20 +92,6 @@ In agent mode, all interactive prompts are skipped and default values are used.
     async: Flags.boolean({
       description: "async",
       exclusive: ["wait"],
-    }),
-    "dry-run": Flags.boolean({
-      description: "dry-run",
-      default: false,
-    }),
-    "ignore-conflicts": Flags.boolean({
-      char: "c",
-      description: "ignore-conflicts",
-      default: false,
-    }),
-    "ignore-errors": Flags.boolean({
-      char: "r",
-      description: "ignore-errors",
-      default: false,
     }),
     "ignore-warnings": Flags.boolean({
       char: "g",
@@ -184,7 +172,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
     await buildCheckDeployCommitSummary();
     // Run pre deployment commands if defined
     await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: true });
-    const result = await wrapSfdxCoreCommand("sf project deploy start", this.argv, this, flags.debug);
+    const result = await wrapSfdxCoreCommand("sf project deploy validate", this.argv, this, flags.debug);
     // The plugins get the result as soon as Salesforce answered, before the coverage check that can throw an error
     await emitWrappedDeployRunEvent(this, { checkOnly: true, targetUsername: flags['target-org']?.getUsername() || null });
     // Check org coverage if requested

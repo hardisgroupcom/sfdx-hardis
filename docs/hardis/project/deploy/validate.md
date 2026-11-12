@@ -11,6 +11,8 @@ sfdx-hardis wrapper for **sf project deploy validate** that displays tips to sol
 
 Note: Use **--json** argument to have better results
 
+The validation always runs Apex tests and never saves anything in the org. Salesforce intends it for production orgs: on a sandbox, which runs no test by default, use [hardis:project:deploy:start](https://sfdx-hardis.cloudity.com/hardis/project/deploy/start/) with `--dry-run --test-level RunLocalTests`.
+
 [![Assisted solving of Salesforce deployments errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](https://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
 
 [See documentation of Salesforce command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_project_commands_unified.htm#cli_reference_project_deploy_validate_unified)
@@ -85,10 +87,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 | async                    | boolean | async                                                                                                        |         |          |         |
 | coverage-formatters      | option  | coverage-formatters                                                                                          |         |          |         |
 | debug                    | boolean | debug                                                                                                        |         |          |         |
-| dry-run                  | boolean | dry-run                                                                                                      |         |          |         |
 | flags-dir                | option  | Import flag values from a directory.                                                                         |         |          |         |
-| ignore-conflicts<br/>-c  | boolean | ignore-conflicts                                                                                             |         |          |         |
-| ignore-errors<br/>-r     | boolean | ignore-errors                                                                                                |         |          |         |
 | ignore-warnings<br/>-g   | boolean | ignore-warnings                                                                                              |         |          |         |
 | json                     | boolean | Format output as json.                                                                                       |         |          |         |
 | junit                    | boolean | junit                                                                                                        |         |          |         |
