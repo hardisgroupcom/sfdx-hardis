@@ -235,11 +235,11 @@ The events are [oclif custom events](https://oclif.io/docs/hooks#custom-events).
 
 ### Available events
 
-| Event                         | Sent by                                                                                                                                                                                                                       | When                                                |
-|-------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------|
+| Event                         | Sent by                                                                                                                                                                                                                          | When                                                |
+|-------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------|
 | `sfdx-hardis:validation-done` | [hardis:project:deploy:smart](hardis/project/deploy/smart.md) in check mode, [hardis:project:deploy:validate](hardis/project/deploy/validate.md), [hardis:project:deploy:start](hardis/project/deploy/start.md) with `--dry-run` | Salesforce returned the result of the validation    |
 | `sfdx-hardis:deployment-done` | [hardis:project:deploy:smart](hardis/project/deploy/smart.md), [hardis:project:deploy:start](hardis/project/deploy/start.md), [hardis:project:deploy:quick](hardis/project/deploy/quick.md)                                      | Salesforce returned the result of the deployment    |
-| `sfdx-hardis:apex-tests-done` | [hardis:org:test:apex](hardis/org/test/apex.md)                                                                                                                                                                               | The Apex test run is over, before the notifications |
+| `sfdx-hardis:apex-tests-done` | [hardis:org:test:apex](hardis/org/test/apex.md)                                                                                                                                                                                  | The Apex test run is over, before the notifications |
 
 The deployment events are sent as soon as Salesforce answers, on success and on failure:
 
@@ -302,25 +302,25 @@ If your plugin already has a `postrun` hook that watches sfdx-hardis commands, t
 
 Every event has the same envelope, and what is specific to the event under `data`:
 
-| Property         | Type                                                        | Description                                                                                             |
-|------------------|-------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
-| `payloadVersion` | `1`                                                         | Increased when a property changes meaning or disappears, never when one is added                        |
-| `event`          | `string`                                                    | Name of the event                                                                                       |
-| `commandId`      | `string`                                                    | sfdx-hardis command that sent it, for example `hardis:project:deploy:smart`                             |
-| `reportDir`      | `string`                                                    | Absolute path of the sfdx-hardis report directory (`hardis-report` by default)                          |
-| `currentBranch`  | `string \| null`                                            | Current git branch                                                                                      |
-| `pullRequest`    | `{ id, number, url, sourceBranch, targetBranch } \| null`   | Pull Request of the job. `null` when none is found, without a git provider, and in a major branch check |
-| `org`            | `{ username: string \| null }`                              | Target org                                                                                              |
-| `data`           | depends on the event                                        | See below                                                                                               |
+| Property         | Type                                                      | Description                                                                                             |
+|------------------|-----------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
+| `payloadVersion` | `1`                                                       | Increased when a property changes meaning or disappears, never when one is added                        |
+| `event`          | `string`                                                  | Name of the event                                                                                       |
+| `commandId`      | `string`                                                  | sfdx-hardis command that sent it, for example `hardis:project:deploy:smart`                             |
+| `reportDir`      | `string`                                                  | Absolute path of the sfdx-hardis report directory (`hardis-report` by default)                          |
+| `currentBranch`  | `string \| null`                                          | Current git branch                                                                                      |
+| `pullRequest`    | `{ id, number, url, sourceBranch, targetBranch } \| null` | Pull Request of the job. `null` when none is found, without a git provider, and in a major branch check |
+| `org`            | `{ username: string \| null }`                            | Target org                                                                                              |
+| `data`           | depends on the event                                      | See below                                                                                               |
 
 `data` of `sfdx-hardis:validation-done`, `sfdx-hardis:deployment-done` and `sfdx-hardis:apex-tests-done`:
 
-| Property          | Type                                     | Description                                                                                             |
-|-------------------|------------------------------------------|---------------------------------------------------------------------------------------------------------|
-| `checkOnly`       | `boolean`                                | `true` for a validation                                                                                 |
-| `deploymentLabel` | `string \| null`                         | Item of the deployment plan of hardis:project:deploy:smart, `null` for the other commands               |
-| `status`          | `"success" \| "failed" \| "unknown"`     | What Salesforce answered. `unknown`: the Apex test run gave no result                                   |
-| `coverageFile`    | `string \| null`                         | Absolute path of `apex-coverage-results.json`, the coverage returned by Salesforce. `null` when it does not exist |
+| Property          | Type                                 | Description                                                                                                       |
+|-------------------|--------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| `checkOnly`       | `boolean`                            | `true` for a validation                                                                                           |
+| `deploymentLabel` | `string \| null`                     | Item of the deployment plan of hardis:project:deploy:smart, `null` for the other commands                         |
+| `status`          | `"success" \| "failed" \| "unknown"` | What Salesforce answered. `unknown`: the Apex test run gave no result                                             |
+| `coverageFile`    | `string \| null`                     | Absolute path of `apex-coverage-results.json`, the coverage returned by Salesforce. `null` when it does not exist |
 
 The types are exported by `sfdx-hardis/plugin-api`: `SfdxHardisEvent`, `SfdxHardisRunEvent`, `SalesforceRunEventData`, `SfdxHardisEventHookOptions`...
 
