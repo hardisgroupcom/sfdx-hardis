@@ -1,4 +1,7 @@
 import { expect } from 'chai';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 import { DEPLOYMENT_ACTION_TYPES } from '../../../src/common/actionsProvider/actionTypes.js';
 import { getBuiltInActionProvider } from '../../../src/common/utils/actionUtils.js';
 import {
@@ -19,6 +22,15 @@ const RECORD_TYPE_ACTION = {
   label: 'Delete record type {1}',
   parameters: { setting: 'recordTypes', config: { deletions: [{ fullName: '{1}' }] } },
 };
+
+// The log of a failed deployment, with its --json result
+function failedDeployLog(componentFailures: Array<{ componentType: string; fullName: string; problem: string }>): string {
+  const failures = componentFailures.map((failure) => ({ success: false, problemType: 'Error', ...failure }));
+  const resultJson = { status: 1, result: { success: false, status: 'Failed', details: { componentFailures: failures } } };
+  return `[sfdx-hardis] Sadly there has been Deployment error(s)
+${JSON.stringify(resultJson, null, 2)}
+`;
+}
 
 describe('Deployment actions suggested by deployment error tips', () => {
   it('Fills the placeholders and builds the command that creates the action on the Pull Request', async () => {
@@ -95,6 +107,8 @@ describe('Deployment actions suggested by deployment error tips', () => {
       'shared-activities-not-deployable',
       'lightning-experience-theme-not-found',
       'history-tracking-not-enabled',
+      'duplicate-label',
+      'einstein-conversation-insights-not-enabled',
     ]);
     for (const tip of tipsWithAction) {
       const definition = (tip as any).deploymentAction;
@@ -104,6 +118,110 @@ describe('Deployment actions suggested by deployment error tips', () => {
       const described = provider!.getParameterDescriptions().map((description) => description.name);
       expect(described, tip.name).to.include.members(Object.keys(definition.parameters));
       expect(await buildTipDeploymentAction(tip, []), tip.name).to.not.equal(null);
+    }
+  });
+
+  it('Completes the action with what the tip resolves, and keeps the placeholders when it cannot', async () => {
+    let calledWith: string[] | null = null;
+    const resolving = {
+      ...RECORD_TYPE_ACTION,
+      toComplete: ['OLD_NAME'],
+      resolve: async (_filled: any, values: string[]) => {
+        calledWith = values;
+        return { label: `Resolved ${values[1]}`, toComplete: [] };
+      },
+    };
+    const hint = await buildDeploymentActionHint(resolving, ['', ' force-app/x/Old.recordType-meta.xml Account.Old ']);
+    expect(calledWith).to.deep.equal(['', 'Account.Old']);
+    expect(hint!.label).to.equal('Resolved Account.Old');
+    expect(hint!.toComplete).to.deep.equal([]);
+    // Not resolved without the groups of an error: the documentation pages show the template
+    const template = await buildDeploymentActionHint(resolving, []);
+    expect(template!.label).to.equal('Delete record type {1}');
+    // A resolve function that fails leaves the filled action
+    const failing = await buildDeploymentActionHint({ ...resolving, resolve: async () => Promise.reject(new Error('boom')) }, ['', 'Account.Old']);
+    expect(failing!.label).to.equal('Delete record type Account.Old');
+    expect(failing!.toComplete).to.deep.equal(['OLD_NAME']);
+  });
+
+  describe('Duplicate label after a renamed picklist value', () => {
+    const initialCwd = process.cwd();
+    let projectDir: string;
+    const duplicateLabelTip: any = getAllTips().find((tip: any) => tip.name === 'duplicate-label');
+
+    before(() => {
+      projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sfdx-hardis-duplicate-label-'));
+      fs.writeFileSync(path.join(projectDir, 'sfdx-project.json'), JSON.stringify({ packageDirectories: [{ path: 'force-app', default: true }] }));
+      const fieldFile = path.join(projectDir, 'force-app/main/default/objects/Vehicle__c/fields/Features__c.field-meta.xml');
+      fs.mkdirSync(path.dirname(fieldFile), { recursive: true });
+      fs.writeFileSync(
+        fieldFile,
+        `<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Features__c</fullName>
+    <valueSet><valueSetDefinition><value><fullName>GPS_Navigation</fullName><default>false</default><label>Navigation</label></value></valueSetDefinition></valueSet>
+</CustomField>`
+      );
+    });
+
+    // Before each test: a root hook of another test file may put the working directory back
+    beforeEach(() => process.chdir(projectDir));
+    afterEach(() => process.chdir(initialCwd));
+
+    after(() => {
+      fs.rmSync(projectDir, { recursive: true, force: true });
+    });
+
+    it('Reads the new API name from the sources: only the old API name is left to complete', async () => {
+      const hint = await buildTipDeploymentAction(duplicateLabelTip, ['', 'Vehicle__c.Features__c', 'Navigation']);
+      expect(hint!.parameters).to.deep.equal({
+        setting: 'picklists',
+        config: {
+          picklistValues: [{ metadataType: 'CustomField', metadataFullName: 'Vehicle__c.Features__c', value: 'OLD_API_NAME', newApiName: 'GPS_Navigation' }],
+        },
+      });
+      expect(hint!.toComplete).to.deep.equal(['OLD_API_NAME']);
+      expect(hint!.label).to.equal('Rename picklist value Navigation of Vehicle__c.Features__c to GPS_Navigation');
+      expect(hint!.docUrl).to.equal('https://amtrack.github.io/sfdx-browserforce-plugin/settings/picklists/');
+    });
+
+    it('Matches the error of a deployment check, and drops the position the text log adds to the label', async () => {
+      // As returned by sf project deploy start --dry-run --json on a scratch org
+      const { errorsAndTips } = await analyzeDeployErrorLogs(
+        failedDeployLog([{ componentType: 'CustomField', fullName: 'Vehicle__c.Features__c', problem: 'Duplicate label: Navigation' }]),
+        true,
+        { check: true }
+      );
+      const tip = errorsAndTips.find((errorAndTip: any) => errorAndTip.tip?.label === 'Duplicate label');
+      expect(tip?.tip?.deploymentAction?.parameters.config.picklistValues[0].newApiName).to.equal('GPS_Navigation');
+      const fromText = await buildTipDeploymentAction(duplicateLabelTip, ['', 'Vehicle__c.Features__c', 'Navigation (3:13)']);
+      expect(fromText!.parameters.config.picklistValues[0].newApiName).to.equal('GPS_Navigation');
+    });
+
+    it('Falls back to the values to complete when the sources do not have the value', async () => {
+      const field = await buildTipDeploymentAction(duplicateLabelTip, ['', 'Account.Industry', 'Banking']);
+      expect(field!.parameters.config.picklistValues[0]).to.deep.include({ metadataType: 'CustomField', metadataFullName: 'Account.Industry', newApiName: 'NEW_API_NAME' });
+      expect(field!.toComplete).to.deep.equal(['OLD_API_NAME', 'NEW_API_NAME']);
+      const valueSet = await buildTipDeploymentAction(duplicateLabelTip, ['', 'Regions', 'EMEA']);
+      expect(valueSet!.toComplete).to.deep.equal(['OLD_API_NAME', 'NEW_API_NAME', 'METADATA_TYPE']);
+    });
+  });
+
+  it('Turns on Einstein Conversation Insights before a deployment of the settings that need it', async () => {
+    // The three errors a scratch org returned with Einstein Conversation Insights turned off
+    const problems = [
+      'There was an error enabling or disabling a setting: OrgPreferences.CallSummarization',
+      'There was an error enabling or disabling a setting: OrgPreferences.GenECI',
+      'enableECICallScoring',
+    ];
+    for (const problem of problems) {
+      const { errorsAndTips } = await analyzeDeployErrorLogs(
+        failedDeployLog([{ componentType: 'ConversationalIntelligenceSettings', fullName: 'ConversationalIntelligence', problem }]),
+        true,
+        { check: true }
+      );
+      const tip = errorsAndTips.find((errorAndTip: any) => errorAndTip.tip?.label === 'Einstein Conversation Insights not enabled');
+      expect(tip?.tip?.deploymentAction?.parameters, problem).to.deep.equal({ setting: 'einsteinConversationInsights', config: { enabled: true } });
     }
   });
 

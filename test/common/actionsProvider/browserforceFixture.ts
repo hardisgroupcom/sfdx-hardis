@@ -6,7 +6,7 @@ import path from 'path';
 
 export const FIXTURE_CATALOG = {
   formatVersion: 1,
-  browserforceVersion: '7.0.0',
+  browserforceVersion: '7.2.0',
   plugins: [
     {
       key: 'densitySettings',
@@ -36,9 +36,9 @@ export interface BrowserforceFixture {
   restore: () => void;
 }
 
-/** Installs the fake plugin (version 7.0.0 unless given) and its cached catalog, and points the env vars to them */
+/** Installs the fake plugin (version 7.2.0 unless given) and its cached catalog, and points the env vars to them */
 export function installBrowserforceFixture(options: { version?: string; type?: 'user' | 'link'; catalog?: any; withCache?: boolean } = {}): BrowserforceFixture {
-  const version = options.version || '7.0.0';
+  const version = options.version || '7.2.0';
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hardis-bf-test-'));
   const dataDir = path.join(root, 'sf');
   const cacheDir = path.join(root, 'cache');

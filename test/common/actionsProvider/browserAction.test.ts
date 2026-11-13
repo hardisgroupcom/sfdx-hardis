@@ -87,7 +87,7 @@ describe('BrowserAction.applyFlags and collectParameters', () => {
 describe('BrowserAction.getDefinitionErrors and help', () => {
   let fixture: ReturnType<typeof installBrowserforceFixture>;
   before(() => {
-    fixture = installBrowserforceFixture({ version: '7.0.1' });
+    fixture = installBrowserforceFixture({ version: '7.2.1' });
   });
   after(() => fixture.restore());
 
@@ -136,10 +136,10 @@ describe('BrowserAction documentation links and deployment error hints', () => {
     // Browserforce 7.1.0 and later give a docUrl per setting: here densitySettings only
     const catalog = {
       ...FIXTURE_CATALOG,
-      browserforceVersion: '7.1.0',
+      browserforceVersion: '7.2.0',
       plugins: FIXTURE_CATALOG.plugins.map((plugin) => (plugin.key === 'densitySettings' ? { ...plugin, docUrl: DOC_URL } : plugin)),
     };
-    fixture = installBrowserforceFixture({ version: '7.1.0', catalog });
+    fixture = installBrowserforceFixture({ version: '7.2.0', catalog });
   });
   after(() => fixture.restore());
 
