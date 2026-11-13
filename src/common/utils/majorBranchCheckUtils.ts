@@ -5,14 +5,21 @@
 import { SfError } from '@salesforce/core';
 import { t } from './i18n.js';
 
-let majorBranchCheckMode = false;
+// Kept on globalThis, not in a module variable: a plugin posts its Pull Request comment through the
+// sfdx-hardis/plugin-api of its own copy of sfdx-hardis (in its node_modules), whose module variables
+// are not the ones of the running sfdx-hardis. During a major branch check the plugins still get their
+// events, but their comment is skipped like the sfdx-hardis ones: there is no Pull Request to comment
+declare global {
+  // eslint-disable-next-line no-var
+  var sfdxHardisMajorBranchCheckMode: boolean | undefined;
+}
 
 export function enableMajorBranchCheckMode(): void {
-  majorBranchCheckMode = true;
+  globalThis.sfdxHardisMajorBranchCheckMode = true;
 }
 
 export function isMajorBranchCheckMode(): boolean {
-  return majorBranchCheckMode;
+  return globalThis.sfdxHardisMajorBranchCheckMode === true;
 }
 
 /**
@@ -31,5 +38,5 @@ export function assertMajorBranchCheckAllowed(currentBranch: string | null | und
 
 /** For tests only: a process running several commands must not carry the mode from one to the next */
 export function resetMajorBranchCheckMode(): void {
-  majorBranchCheckMode = false;
+  globalThis.sfdxHardisMajorBranchCheckMode = false;
 }

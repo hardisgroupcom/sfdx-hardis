@@ -419,6 +419,10 @@ The default CI/CD templates hold this job, ready to be scheduled. With `enableMa
 
 After a deployment that follows a merge, the Pull Requests merged into the branch are listed again for the [development orgs](https://sfdx-hardis.cloudity.com/salesforce-devops-dev-orgs/) that target it, so their owners know when to run a backpromote. When no development org was ever registered, this costs one call to the git provider and nothing else. An error there never fails the deployment.
 
+### Plugin events
+
+As soon as Salesforce returns the result of each deployment, the installed sf plugins that listen to `sfdx-hardis:validation-done` or `sfdx-hardis:deployment-done` receive it, with the path of the Apex code coverage file, before the code coverage check. [More info](https://sfdx-hardis.cloudity.com/sfdx-hardis-plugins/#react-to-sfdx-hardis-events)
+
 ### Agent Mode
 
 Supports non-interactive execution with `--agent`:

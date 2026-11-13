@@ -6,6 +6,12 @@
   - The deployment assistant suggests it for the errors it can solve, with the command that adds it to your Pull Request.
   - The AI deployment assistant and the coding agent that fixes deployment errors suggest it too.
   - Each Browserforce setting links to its documentation page.
+- [sfdx-hardis plugins](https://sfdx-hardis.cloudity.com/sfdx-hardis-plugins/#react-to-sfdx-hardis-events): plugins receive the validation, deployment and Apex test run results that Salesforce returns to sfdx-hardis, and can post their own Pull Request comment through your git provider.
+- [hardis:project:deploy:start](https://sfdx-hardis.cloudity.com/hardis/project/deploy/start/), [hardis:project:deploy:validate](https://sfdx-hardis.cloudity.com/hardis/project/deploy/validate/) and [hardis:project:deploy:quick](https://sfdx-hardis.cloudity.com/hardis/project/deploy/quick/):
+  - They no longer fail in agent mode.
+  - Start and validate keep the source folder given with its short flag.
+  - Validate only validates the deployment: it deployed the metadata unless asked for a dry run.
+  - Quick runs the Quick Deploy of a validated job instead of failing.
 - [hardis:org:diagnose:unused-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unused-connected-apps/):
   - New `--days` flag and **UNUSED_CONNECTED_APPS_DAYS** env var to choose after how many days without OAuth token use a Connected App is reported (default 180).
   - The XLSX report is attached to the notification (it was generated after the notification was sent).
@@ -14,6 +20,7 @@
 - [hardis:doc:flow2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/flow2markdown/) and [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Flow diagrams drawn with Docker no longer fail with a permission error in the sfdx-hardis Docker images.
 - [hardis:doc:mkdocs-to-cf](https://sfdx-hardis.cloudity.com/hardis/doc/mkdocs-to-cf/) and [hardis:doc:mkdocs-to-salesforce](https://sfdx-hardis.cloudity.com/hardis/doc/mkdocs-to-salesforce/): the site is built with the Zensical Docker image when Zensical cannot be installed with pip, as in the Ubuntu Docker image.
 - [hardis:org:test:apex](https://sfdx-hardis.cloudity.com/hardis/org/test/apex/): failing tests fail the command when an Apex class or test method name contains "Outcome" (its coverage row was read as the outcome of the test run, so the command exited with code 0).
+- [hardis:project:generate:flow-git-diff](https://sfdx-hardis.cloudity.com/hardis/project/generate/flow-git-diff/): compare a Flow between 2 branches (ex: `--commit-before origin/main --commit-after origin/integration`), and the prompts list the branches after the commits of the Flow.
 - GitHub: QuickDeploy finds the validation of Pull Requests merged long after they were created (closed Pull Requests are now searched by update date instead of creation date).
 - Docker images: lighter, with the Docker client and a Java runtime instead of the full Docker engine and JDK, and no bundled Codex.
 - Ubuntu Docker image: the build falls back to the kernel.org Ubuntu mirror when archive.ubuntu.com cannot be reached.

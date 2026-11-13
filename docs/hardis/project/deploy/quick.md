@@ -60,6 +60,10 @@ commandsPostDeploy:
     runOnlyOnceByOrg: true
 ```
 
+### Plugin events
+
+As soon as Salesforce returns the result of the deployment, the installed sf plugins that listen to `sfdx-hardis:deployment-done` receive it, with the path of the Apex code coverage file, before the code coverage check. [More info](https://sfdx-hardis.cloudity.com/sfdx-hardis-plugins/#react-to-sfdx-hardis-events)
+
 ### Agent Mode
 
 Supports non-interactive execution with `--agent`:
