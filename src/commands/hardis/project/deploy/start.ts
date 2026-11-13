@@ -2,6 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { AnyJson } from "@salesforce/ts-types";
 import { wrapSfdxCoreCommand } from "../../../../common/utils/wrapUtils.js";
+import { emitWrappedDeployRunEvent } from "../../../../common/utils/pluginEventUtils.js";
 import { checkDeploymentOrgCoverage, extractOrgCoverageFromLog } from '../../../../common/utils/deployUtils.js';
 import { GitProvider } from '../../../../common/gitProvider/index.js';
 import { buildCheckDeployCommitSummary, handlePostDeploymentNotifications } from '../../../../common/utils/gitUtils.js';
@@ -61,6 +62,10 @@ commandsPostDeploy:
     context: process-deployment-only
     runOnlyOnceByOrg: true
 \`\`\`
+
+### Plugin events
+
+As soon as Salesforce returns the result of the deployment, the installed sf plugins that listen to \`sfdx-hardis:deployment-done\` (\`sfdx-hardis:validation-done\` with \`--dry-run\`) receive it, with the path of the Apex code coverage file, before the code coverage check. [More info](https://sfdx-hardis.cloudity.com/sfdx-hardis-plugins/#react-to-sfdx-hardis-events)
 
 ### Agent Mode
 
@@ -184,6 +189,8 @@ In agent mode, all interactive prompts are skipped and default values are used.
     // Run pre deployment commands if defined
     await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: checkOnly });
     const result = await wrapSfdxCoreCommand("sf project deploy start", this.argv, this, flags.debug);
+    // The plugins get the result as soon as Salesforce answered, before the coverage check that can throw an error
+    await emitWrappedDeployRunEvent(this, { checkOnly: checkOnly, targetUsername: flags['target-org']?.getUsername() || null });
     // Check org coverage if requested
     if (flags['coverage-formatters'] && result.stdout) {
       const orgCoveragePercent = await extractOrgCoverageFromLog(result.stdout + result.stderr || '');

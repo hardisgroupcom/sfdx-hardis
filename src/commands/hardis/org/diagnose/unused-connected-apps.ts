@@ -11,7 +11,7 @@ import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/i
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
 import { dateHelper } from '../../../../common/utils/dateHelper.js';
-import { CONSTANTS } from '../../../../config/index.js';
+import { CONSTANTS, getEnvVar, getEnvVarList } from '../../../../config/index.js';
 import sortArray from '../../../../common/utils/sortArray.js';
 import { createBlankSfdxProject } from '../../../../common/utils/projectUtils.js';
 import { parseXmlFile } from '../../../../common/utils/xmlUtils.js';
@@ -20,6 +20,17 @@ import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
+
+const DEFAULT_INACTIVE_DAYS = 180;
+
+// Days without OAuth token use after which a Connected App is reported: a value that is not a positive integer gives the default
+export function parseInactiveDays(value: string | null | undefined): number {
+  const trimmedValue = (value || '').trim();
+  if (!/^\d+$/.test(trimmedValue) || parseInt(trimmedValue, 10) === 0) {
+    return DEFAULT_INACTIVE_DAYS;
+  }
+  return parseInt(trimmedValue, 10);
+}
 
 export default class DiagnoseUnusedConnectedApps extends SfCommand<any> {
   public static title = 'Unused Connected Apps in an org';
@@ -53,7 +64,7 @@ Key functionalities:
 
 - **Connected App Data Collection:** Gathers information about all Connected Apps in the org, including creation and last modified dates, and associated users.
 - **Usage Analysis:** Analyzes \`LoginHistory\` and \`OAuthToken\` records to determine the last usage date of each Connected App.
-- **Inactivity Detection:** Flags Connected Apps as potentially unused if they have no recent login history or OAuth token usage.
+- **Inactivity Detection:** Flags Connected Apps as potentially unused if they have no recent login history or OAuth token usage. An OAuth token is recent when it was used in the last 180 days: change it with \`--days\` or the \`UNUSED_CONNECTED_APPS_DAYS\` environment variable (ex: 30, 90 or 365).
 - **Accessibility Check:** Examines Connected App metadata to identify if they are accessible (e.g., if they require admin approval and have no profiles or permission sets assigned).
 - **Ignored Apps:** Automatically ignores a predefined list of common Salesforce Connected Apps (e.g., \`Salesforce CLI\`, \`Salesforce Mobile Dashboards\`). You can extend this list by defining the \`ALLOWED_INACTIVE_CONNECTED_APPS\` environment variable.
 - **CSV Report Generation:** Generates a CSV file containing details of all analyzed Connected Apps, including their usage status, last usage date, and reasons for being flagged as potentially unused.
@@ -100,12 +111,17 @@ In agent mode, the command runs fully automatically with no interactive prompts.
   public static examples = [
     '$ sf hardis:org:diagnose:unused-connected-apps',
     '$ sf hardis:org:diagnose:unused-connected-apps --agent',
+    '$ sf hardis:org:diagnose:unused-connected-apps --days 90',
   ];
 
   public static flags: any = {
     outputfile: Flags.string({
       char: 'f',
       description: 'Force the path and name of output report file. Must end with .csv',
+    }),
+    days: Flags.integer({
+      min: 1,
+      description: 'A Connected App whose last OAuth token use is older than this number of days is reported as unused (default: UNUSED_CONNECTED_APPS_DAYS environment variable, or 180)',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -133,6 +149,7 @@ In agent mode, the command runs fully automatically with no interactive prompts.
   protected connectedAppResults: any[] = [];
   protected outputFile;
   protected outputFilesRes: any = {};
+  protected inactiveDays = DEFAULT_INACTIVE_DAYS;
 
   /* jscpd:ignore-end */
 
@@ -140,6 +157,7 @@ In agent mode, the command runs fully automatically with no interactive prompts.
     const { flags } = await this.parse(DiagnoseUnusedConnectedApps);
     this.debugMode = flags.debug || false;
     this.outputFile = flags.outputfile || null;
+    this.inactiveDays = flags.days ?? parseInactiveDays(getEnvVar('UNUSED_CONNECTED_APPS_DAYS'));
     const conn = flags['target-org'].getConnection();
 
     // Collect all Connected Apps
@@ -190,6 +208,10 @@ In agent mode, the command runs fully automatically with no interactive prompts.
     // Process result
     if (this.connectedAppResults.length > 0) {
 
+      // Generate output CSV file first, so the notification can attach the XLSX report
+      this.outputFile = await generateReportPath('connected-apps', this.outputFile);
+      this.outputFilesRes = await generateCsvFile(this.connectedAppResults, this.outputFile, { fileTitle: 'Connected Apps Analysis' });
+
       // Build notification
       const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
       const notifButtons = await getNotificationButtons();
@@ -224,16 +246,12 @@ In agent mode, the command runs fully automatically with no interactive prompts.
           AppLastModifiedDate: dateHelper(connectedApp.LastModifiedDate).format('ll'),
           AppLastModifiedBy: connectedApp.LastModifiedBy,
           LastOAuthUsageDate: connectedApp.LastOAuthUsageDate ? dateHelper(connectedApp.LastOAuthUsageDate).format('ll') : '',
-          LastOAuthUsageBy: connectedApp.LastOAuthUsageDate,
+          LastOAuthUsageBy: connectedApp.LastOAuthUsageBy,
           SeverityReason: connectedApp.severityReason,
         }
       })
       uxLog("action", this, c.cyan(t('foundConnectedAppsToCheck', { numberWarnings: c.bold(numberWarnings) })));
       uxLogTable(this, connectedAppsLight);
-
-      // Generate output CSV file
-      this.outputFile = await generateReportPath('connected-apps', this.outputFile);
-      this.outputFilesRes = await generateCsvFile(this.connectedAppResults, this.outputFile, { fileTitle: 'Connected Apps Analysis' });
     }
 
     // Return an object to be displayed with --json
@@ -255,13 +273,13 @@ In agent mode, the command runs fully automatically with no interactive prompts.
     // Check OAuthToken
     ({ severity, reason } = await this.checkOAuthToken(connectedApp, conn, loginHistoryFound, severity, reason));
 
-    // If OAuthToken < 6 months found, check on the metadata if the app is not available
+    // If no recent OAuthToken found, check on the metadata if the app is not available
     if (severity === "warning") {
       ({ severity, reason } = await this.checkNotAccessible(connectedApp, severity, reason));
     }
 
-    // Check if app name is in allowedInactiveConnectedApps
-    const additionalIgnoredConnectedApps = process.env?.ALLOWED_INACTIVE_CONNECTED_APPS ? process.env?.ALLOWED_INACTIVE_CONNECTED_APPS.split(",") : [];
+    // Check if app name is in allowedInactiveConnectedApps (names are trimmed: "My App 1, My App 2" is allowed)
+    const additionalIgnoredConnectedApps = getEnvVarList('ALLOWED_INACTIVE_CONNECTED_APPS') || [];
     const allowedInactiveConnectedApps = DiagnoseUnusedConnectedApps.allowedInactiveConnectedApps.concat(additionalIgnoredConnectedApps);
     if (severity === "warning" && allowedInactiveConnectedApps.includes(connectedApp.Name)) {
       severity = "info";
@@ -291,12 +309,12 @@ In agent mode, the command runs fully automatically with no interactive prompts.
       connectedApp.LastOAuthUsageBy = latestOAuthToken?.User?.Name || 'Not set';
       const today = dateHelper();
       const lastUsage = dateHelper(connectedApp.LastOAuthUsageDate);
-      if (today.diff(lastUsage, "months") < 6 && loginHistoryFound === false) {
+      if (today.diff(lastUsage, "days") < this.inactiveDays && loginHistoryFound === false) {
         severity = 'log';
-        reason = "OAuth Token < 6 months";
+        reason = `OAuth Token < ${this.inactiveDays} days`;
       }
       else {
-        reason = loginHistoryFound === false ? "Not Found in Login History and OAuth Token > 6 months" : reason;
+        reason = loginHistoryFound === false ? `Not Found in Login History and OAuth Token > ${this.inactiveDays} days` : reason;
       }
     }
     else {

@@ -9,9 +9,10 @@ import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils
 import { CONSTANTS, getConfig, getEnvVar, getReportDirectory } from '../../../../config/index.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { generateApexCoverageOutputFile } from '../../../../common/utils/deployUtils.js';
+import { emitSalesforceRunEvent } from '../../../../common/utils/pluginEventUtils.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
-import { ApexTestNoResultReason, extractErrorSummary, parseWaitMinutes, runApexTestsResilient } from '../../../../common/utils/apexTestUtils.js';
+import { ApexTestNoResultReason, extractErrorSummary, extractTestRunOutcome, parseWaitMinutes, runApexTestsResilient } from '../../../../common/utils/apexTestUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -56,6 +57,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 - Downloads results with \`sf apex get test --test-run-id <id> --code-coverage --result-format human --output-dir <reportDir>\`.
 - Transient network errors (\`fetch failed\`, \`ECONNRESET\`, \`ETIMEDOUT\`, \`socket hang up\`...) are retried on every call to the org.
 - The download of the results is retried up to 4 times, 30 seconds apart, as long as it returns no test outcome.
+- **Plugin events:** once the test run is over, before the notifications, the installed sf plugins that listen to \`sfdx-hardis:apex-tests-done\` receive its result, with the path of the Apex code coverage file. [More info](${CONSTANTS.DOC_URL_ROOT}/sfdx-hardis-plugins/#react-to-sfdx-hardis-events)
 
 </details>
 `;
@@ -150,6 +152,15 @@ In agent mode, all interactive prompts are skipped and default values are used.
       uxLog("other", this, `Apex coverage: ${this.coverageValue}% (target: ${this.coverageTarget}%)`);
     }
 
+    // The plugins get the result of the test run before the notifications
+    await emitSalesforceRunEvent(this, {
+      event: 'sfdx-hardis:apex-tests-done',
+      checkOnly: false,
+      status: this.testRunOutcome === 'NoResult' ? 'unknown' : ['Passed', 'NoApex'].includes(this.testRunOutcome) ? 'success' : 'failed',
+      coverageExpected: !['NoApex', 'NoResult'].includes(this.testRunOutcome),
+      targetUsername: flags['target-org']?.getUsername() || null,
+    });
+
     await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
     await NotifProvider.postNotifications({
       type: 'APEX_TESTS',
@@ -216,11 +227,11 @@ In agent mode, all interactive prompts are skipped and default values are used.
       this.testRunCompleted = false;
       return;
     }
-    // Parse outcome value from logs with Regex
-    const outcomeMatch = /Outcome *(.*) */.exec(testRunRes.outputString);
-    this.testRunOutcome = outcomeMatch ? outcomeMatch[1].trim() : 'Failed';
+    // Parse outcome value from the summary of the test run
+    const outcome = extractTestRunOutcome(testRunRes.outputString);
+    this.testRunOutcome = outcome ?? 'Failed';
     // A run that could not give a result prints no outcome
-    this.testRunCompleted = outcomeMatch !== null;
+    this.testRunCompleted = outcome !== null;
     if (testRunRes.commandFailed && this.testRunOutcome === 'Passed') {
       this.testRunOutcome = 'Failed';
     }
