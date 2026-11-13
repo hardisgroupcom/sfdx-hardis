@@ -12,6 +12,11 @@
   - Start and validate keep the source folder given with its short flag.
   - Validate only validates the deployment: it deployed the metadata unless asked for a dry run.
   - Quick runs the Quick Deploy of a validated job instead of failing.
+- [hardis:org:diagnose:unused-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unused-connected-apps/):
+  - New `--days` flag and **UNUSED_CONNECTED_APPS_DAYS** env var to choose after how many days without OAuth token use a Connected App is reported (default 180).
+  - The XLSX report is attached to the notification (it was generated after the notification was sent).
+  - The LastOAuthUsageBy column shows the user instead of the date.
+  - Names in **ALLOWED_INACTIVE_CONNECTED_APPS** are trimmed, so `My App 1, My App 2` works.
 - [hardis:doc:flow2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/flow2markdown/) and [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Flow diagrams drawn with Docker no longer fail with a permission error in the sfdx-hardis Docker images.
 - [hardis:doc:mkdocs-to-cf](https://sfdx-hardis.cloudity.com/hardis/doc/mkdocs-to-cf/) and [hardis:doc:mkdocs-to-salesforce](https://sfdx-hardis.cloudity.com/hardis/doc/mkdocs-to-salesforce/): the site is built with the Zensical Docker image when Zensical cannot be installed with pip, as in the Ubuntu Docker image.
 - [hardis:org:test:apex](https://sfdx-hardis.cloudity.com/hardis/org/test/apex/): failing tests fail the command when an Apex class or test method name contains "Outcome" (its coverage row was read as the outcome of the test run, so the command exited with code 0).
