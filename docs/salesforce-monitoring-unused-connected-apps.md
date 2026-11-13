@@ -18,7 +18,7 @@ Key: **CONNECTED_APPS**
 
 | Environment variable | Description | Default |
 |---|---|---|
-| UNUSED_CONNECTED_APPS_MONTHS | A Connected App whose last OAuth token use is older than this number of months is reported (ex: 3, 9 or 12) | 6 |
+| UNUSED_CONNECTED_APPS_DAYS | A Connected App whose last OAuth token use is older than this number of days is reported (ex: 30, 90 or 365) | 180 |
 | ALLOWED_INACTIVE_CONNECTED_APPS | Comma-separated names of Connected Apps that are never reported | |
 
 ### Grafana example

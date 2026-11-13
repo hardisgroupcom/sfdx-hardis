@@ -7,7 +7,7 @@
   - The AI deployment assistant and the coding agent that fixes deployment errors suggest it too.
   - Each Browserforce setting links to its documentation page.
 - [hardis:org:diagnose:unused-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unused-connected-apps/):
-  - New `--months` flag and **UNUSED_CONNECTED_APPS_MONTHS** env var to choose after how many months without OAuth token use a Connected App is reported (default 6).
+  - New `--days` flag and **UNUSED_CONNECTED_APPS_DAYS** env var to choose after how many days without OAuth token use a Connected App is reported (default 180).
   - The XLSX report is attached to the notification (it was generated after the notification was sent).
   - The LastOAuthUsageBy column shows the user instead of the date.
   - Names in **ALLOWED_INACTIVE_CONNECTED_APPS** are trimmed, so `My App 1, My App 2` works.

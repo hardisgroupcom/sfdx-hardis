@@ -21,13 +21,13 @@ import { t } from '../../../../common/utils/i18n.js';
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-const DEFAULT_INACTIVE_MONTHS = 6;
+const DEFAULT_INACTIVE_DAYS = 180;
 
-// Months without OAuth token use after which a Connected App is reported: a value that is not a positive integer gives the default
-export function parseInactiveMonths(value: string | null | undefined): number {
+// Days without OAuth token use after which a Connected App is reported: a value that is not a positive integer gives the default
+export function parseInactiveDays(value: string | null | undefined): number {
   const trimmedValue = (value || '').trim();
   if (!/^\d+$/.test(trimmedValue) || parseInt(trimmedValue, 10) === 0) {
-    return DEFAULT_INACTIVE_MONTHS;
+    return DEFAULT_INACTIVE_DAYS;
   }
   return parseInt(trimmedValue, 10);
 }
@@ -64,7 +64,7 @@ Key functionalities:
 
 - **Connected App Data Collection:** Gathers information about all Connected Apps in the org, including creation and last modified dates, and associated users.
 - **Usage Analysis:** Analyzes \`LoginHistory\` and \`OAuthToken\` records to determine the last usage date of each Connected App.
-- **Inactivity Detection:** Flags Connected Apps as potentially unused if they have no recent login history or OAuth token usage. An OAuth token is recent when it was used in the last 6 months: change it with \`--months\` or the \`UNUSED_CONNECTED_APPS_MONTHS\` environment variable (ex: 3, 9 or 12).
+- **Inactivity Detection:** Flags Connected Apps as potentially unused if they have no recent login history or OAuth token usage. An OAuth token is recent when it was used in the last 180 days: change it with \`--days\` or the \`UNUSED_CONNECTED_APPS_DAYS\` environment variable (ex: 30, 90 or 365).
 - **Accessibility Check:** Examines Connected App metadata to identify if they are accessible (e.g., if they require admin approval and have no profiles or permission sets assigned).
 - **Ignored Apps:** Automatically ignores a predefined list of common Salesforce Connected Apps (e.g., \`Salesforce CLI\`, \`Salesforce Mobile Dashboards\`). You can extend this list by defining the \`ALLOWED_INACTIVE_CONNECTED_APPS\` environment variable.
 - **CSV Report Generation:** Generates a CSV file containing details of all analyzed Connected Apps, including their usage status, last usage date, and reasons for being flagged as potentially unused.
@@ -111,7 +111,7 @@ In agent mode, the command runs fully automatically with no interactive prompts.
   public static examples = [
     '$ sf hardis:org:diagnose:unused-connected-apps',
     '$ sf hardis:org:diagnose:unused-connected-apps --agent',
-    '$ sf hardis:org:diagnose:unused-connected-apps --months 12',
+    '$ sf hardis:org:diagnose:unused-connected-apps --days 90',
   ];
 
   public static flags: any = {
@@ -119,9 +119,9 @@ In agent mode, the command runs fully automatically with no interactive prompts.
       char: 'f',
       description: 'Force the path and name of output report file. Must end with .csv',
     }),
-    months: Flags.integer({
+    days: Flags.integer({
       min: 1,
-      description: 'A Connected App whose last OAuth token use is older than this number of months is reported as unused (default: UNUSED_CONNECTED_APPS_MONTHS environment variable, or 6)',
+      description: 'A Connected App whose last OAuth token use is older than this number of days is reported as unused (default: UNUSED_CONNECTED_APPS_DAYS environment variable, or 180)',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -149,7 +149,7 @@ In agent mode, the command runs fully automatically with no interactive prompts.
   protected connectedAppResults: any[] = [];
   protected outputFile;
   protected outputFilesRes: any = {};
-  protected inactiveMonths = DEFAULT_INACTIVE_MONTHS;
+  protected inactiveDays = DEFAULT_INACTIVE_DAYS;
 
   /* jscpd:ignore-end */
 
@@ -157,7 +157,7 @@ In agent mode, the command runs fully automatically with no interactive prompts.
     const { flags } = await this.parse(DiagnoseUnusedConnectedApps);
     this.debugMode = flags.debug || false;
     this.outputFile = flags.outputfile || null;
-    this.inactiveMonths = flags.months ?? parseInactiveMonths(getEnvVar('UNUSED_CONNECTED_APPS_MONTHS'));
+    this.inactiveDays = flags.days ?? parseInactiveDays(getEnvVar('UNUSED_CONNECTED_APPS_DAYS'));
     const conn = flags['target-org'].getConnection();
 
     // Collect all Connected Apps
@@ -309,12 +309,12 @@ In agent mode, the command runs fully automatically with no interactive prompts.
       connectedApp.LastOAuthUsageBy = latestOAuthToken?.User?.Name || 'Not set';
       const today = dateHelper();
       const lastUsage = dateHelper(connectedApp.LastOAuthUsageDate);
-      if (today.diff(lastUsage, "months") < this.inactiveMonths && loginHistoryFound === false) {
+      if (today.diff(lastUsage, "days") < this.inactiveDays && loginHistoryFound === false) {
         severity = 'log';
-        reason = `OAuth Token < ${this.inactiveMonths} months`;
+        reason = `OAuth Token < ${this.inactiveDays} days`;
       }
       else {
-        reason = loginHistoryFound === false ? `Not Found in Login History and OAuth Token > ${this.inactiveMonths} months` : reason;
+        reason = loginHistoryFound === false ? `Not Found in Login History and OAuth Token > ${this.inactiveDays} days` : reason;
       }
     }
     else {
