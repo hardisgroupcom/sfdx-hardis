@@ -26,6 +26,7 @@
 - Docker images: lighter, with the Docker client and a Java runtime instead of the full Docker engine and JDK, and no bundled Codex.
 - Ubuntu Docker image: the build falls back to the kernel.org Ubuntu mirror when archive.ubuntu.com cannot be reached.
 - [Codex AI provider](https://sfdx-hardis.cloudity.com/salesforce-ai-setup/#with-codex-directly): sfdx-hardis no longer bundles Codex, install the Codex CLI or use a with-agents Docker image.
+- Doc: the [window of a Pull Request](https://sfdx-hardis.cloudity.com/vscode-extension-devops-pipeline/#find-and-open-any-pull-request) in VS Code explains its new search bar (Ctrl+F).
 - Doc: the DevOps Pipeline pictures show the **Major branches | Feature branches | Dev orgs** switch, and the settings menu lists Replacement Rules and Register a development org.
 - Upgrade **fast-xml-parser** to 5.12.0 to fix security advisory GHSA-474x-hrwr-fgx4.
 
