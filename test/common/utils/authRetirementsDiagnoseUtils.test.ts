@@ -1,10 +1,15 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
+import fs from 'fs';
 import { expect } from 'chai';
 import {
+  AUTH_RETIREMENT_DEADLINES,
+  AUTH_RETIREMENTS_DOC_URL,
+  AuthRetirementCheckKey,
   diagnoseAuthRetirements,
   getDeadlineDate,
   getDeadlineLabel,
   getDeadlineSeverity,
+  getFixDocUrl,
   groupLogins,
 } from '../../../src/common/utils/authRetirementsDiagnoseUtils.js';
 
@@ -15,6 +20,7 @@ interface MockOrg {
   logins?: any[];
   aggregateThrows?: boolean;
   loginHistoryThrows?: boolean;
+  orgUnreachable?: boolean;
   users?: any[];
   tokens?: any[];
   apiOnlyUserIds?: string[];
@@ -32,6 +38,9 @@ function mockConnection(org: MockOrg): any {
   const query = async (soql: string) => {
     org.queries?.push(soql);
     if (soql.includes('FROM Organization')) {
+      if (org.orgUnreachable) {
+        throw new Error('Unable to refresh session due to: token validity expired');
+      }
       return { done: true, records: [{ IsSandbox: org.isSandbox === true }] };
     }
     if (soql.includes('FROM LoginHistory')) {
@@ -150,6 +159,18 @@ describe('authRetirementsDiagnoseUtils', () => {
     });
   });
 
+  describe('getFixDocUrl()', () => {
+    it('links every check to a How to fix section that exists on the doc page', () => {
+      const docPage = fs.readFileSync('docs/salesforce-monitoring-auth-retirements.md', 'utf8');
+      expect(docPage).to.contain('### How to fix');
+      for (const key of Object.keys(AUTH_RETIREMENT_DEADLINES) as AuthRetirementCheckKey[]) {
+        const anchor = AUTH_RETIREMENT_DEADLINES[key].fixAnchor;
+        expect(getFixDocUrl(key)).to.equal(`${AUTH_RETIREMENTS_DOC_URL}#${anchor}`);
+        expect(docPage, `anchor ${anchor} of ${key}`).to.contain(`{ #${anchor} }`);
+      }
+    });
+  });
+
   describe('groupLogins()', () => {
     it('adds the counts of aggregate rows and keeps the last successful login', () => {
       const groups = groupLogins(
@@ -197,6 +218,10 @@ describe('authRetirementsDiagnoseUtils', () => {
       const check = result.checks.find((ck) => ck.key === 'soapLoginPermission')!;
       expect(check.status).to.equal('error');
       expect(check.rows.map((row) => row.Item)).to.deep.equal(['soap.integration@example.com']);
+      // The check and each of its rows link to the How to fix section of the check
+      expect(check.howToFixUrl).to.equal(getFixDocUrl('soapLoginPermission'));
+      expect(check.rows[0].HowToFix).to.equal(getFixDocUrl('soapLoginPermission'));
+      expect(check.rows[0].Recommendation).to.not.equal('');
       expect(result.metrics.SoapLoginUsersMissingPermission).to.equal(1);
       // Every active SOAP caller must move to OAuth before Summer '27
       expect(result.metrics.SoapLoginUsers).to.equal(2);
@@ -342,6 +367,7 @@ describe('authRetirementsDiagnoseUtils', () => {
         const check = result.checks.find((ck) => ck.key === key)!;
         expect(check.status, key).to.equal('info');
         expect(check.metric, key).to.be.undefined;
+        expect(check.notChecked, key).to.be.true;
       }
       expect(result.metrics).to.not.have.any.keys('DeviceFlowUsers', 'SoapLoginUsers', 'SfConnectLegacyDataSources');
       expect(result.severity).to.equal('log');
@@ -357,6 +383,16 @@ describe('authRetirementsDiagnoseUtils', () => {
       });
       expect(queries.filter((q) => q.includes('FROM LoginHistory'))).to.have.length(2);
       expect(result.metrics.DeviceFlowUsers).to.equal(1);
+    });
+
+    it('fails when the org cannot be reached, instead of reporting nothing to fix', async () => {
+      let error: Error | undefined;
+      try {
+        await runDiagnose({ orgUnreachable: true });
+      } catch (e) {
+        error = e as Error;
+      }
+      expect(error?.message).to.contain('token validity expired');
     });
   });
 });

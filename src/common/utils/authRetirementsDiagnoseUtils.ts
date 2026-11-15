@@ -4,6 +4,7 @@ import { markRowSensitiveValues } from './anonymizeUtils.js';
 import { queryAllOAuthTokens } from './oauthTokenUtils.js';
 import { isIpInRange, isRangeWiderThan } from './ipRangeUtils.js';
 import { t } from './i18n.js';
+import { CONSTANTS } from '../../config/index.js';
 
 export type AuthRetirementCheckKey =
   | 'idleRefreshTokens'
@@ -25,6 +26,8 @@ export interface AuthRetirementDeadline {
   // The change is already enforced and keeps acting every day (findings are warnings, not errors)
   rolling?: boolean;
   articleUrl: string;
+  // Anchor of the "How to fix" section of this check on the doc page
+  fixAnchor: string;
 }
 
 export interface AuthRetirementReportRow {
@@ -37,6 +40,7 @@ export interface AuthRetirementReportRow {
   LastSeen: string;
   Count: number | string;
   Recommendation: string;
+  HowToFix: string;
   Article: string;
 }
 
@@ -46,7 +50,10 @@ export interface AuthRetirementCheckResult {
   title: string;
   detail: string;
   deadline: string;
+  howToFixUrl: string;
   rows: AuthRetirementReportRow[];
+  // true when the check could not run on this org (missing object or permission)
+  notChecked?: boolean;
   // undefined when the check could not run on this org: no metric is sent then
   metric?: number;
 }
@@ -73,41 +80,52 @@ export const AUTH_RETIREMENT_DEADLINES: Record<AuthRetirementCheckKey, AuthRetir
     sandboxDate: '2026-10-21',
     rolling: true,
     articleUrl: 'https://help.salesforce.com/s/articleView?id=005461275&type=1',
+    fixAnchor: 'fix-idle-refresh-tokens',
   },
   deviceFlow: {
     productionDate: '2026-11-30',
     articleUrl: 'https://help.salesforce.com/s/articleView?id=005461280&type=1',
+    fixAnchor: 'fix-device-flow',
   },
   soapLoginPermission: {
     productionDate: '2026-12-01',
     articleUrl: 'https://help.salesforce.com/s/articleView?id=005132110&type=1',
+    fixAnchor: 'fix-soap-login-permission',
   },
   soapLoginIpRange: {
     productionDate: '2027-01-31',
     sandboxDate: '2026-12-15',
     articleUrl: 'https://help.salesforce.com/s/articleView?id=005132110&type=1',
+    fixAnchor: 'fix-soap-login-ip-range',
   },
   soapLoginInactivity: {
     productionDate: '2027-01-31',
     sandboxDate: '2026-12-15',
     articleUrl: 'https://help.salesforce.com/s/articleView?id=005132110&type=1',
+    fixAnchor: 'fix-soap-login-inactivity',
   },
   usernamePasswordFlow: {
     productionDate: '2027-02-20',
     articleUrl:
       'https://help.salesforce.com/s/articleView?id=release-notes.rn_security_oauth_unpw.htm&release=264&type=5',
+    fixAnchor: 'fix-username-password-flow',
   },
   sfConnectLegacyAuth: {
     productionDate: '2027-02-13',
     releaseLabel: "Spring '27",
-    articleUrl: 'https://www.salesforce.com/blog/winter-27-release-architect-highlights/',
+    articleUrl:
+      'https://help.salesforce.com/s/articleView?id=release-notes.rn_sf_connect_xorg_legacy_auth_retiring_ru.htm&release=264&type=5',
+    fixAnchor: 'fix-salesforce-connect',
   },
   soapLoginRetirement: {
     productionDate: '2027-06-01',
     releaseLabel: "Summer '27",
     articleUrl: 'https://help.salesforce.com/s/articleView?id=005132110&type=1',
+    fixAnchor: 'fix-soap-login-retirement',
   },
 };
+
+export const AUTH_RETIREMENTS_DOC_URL = `${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-auth-retirements/`;
 
 // A finding becomes an error when its deadline is closer than this
 export const AUTH_RETIREMENT_ERROR_DAYS = 60;
@@ -232,6 +250,11 @@ export function getDeadlineDate(key: AuthRetirementCheckKey, isSandbox: boolean)
   return isSandbox && deadline.sandboxDate ? deadline.sandboxDate : deadline.productionDate;
 }
 
+// Link to the "How to fix" section of a check on the doc page
+export function getFixDocUrl(key: AuthRetirementCheckKey): string {
+  return `${AUTH_RETIREMENTS_DOC_URL}#${AUTH_RETIREMENT_DEADLINES[key].fixAnchor}`;
+}
+
 // Group LoginHistory rows by the given key, keeping counts and the last successful login.
 // A row is either a raw LoginHistory record, or an aggregate row with its count (cnt) and its last LoginTime (lastLogin).
 export function groupLogins(
@@ -274,13 +297,11 @@ export function groupLogins(
   return Array.from(groups.values()).sort((a, b) => a.username.localeCompare(b.username));
 }
 
+// Every API user can read Organization: an error here means the org cannot be reached (expired login, invalid session...).
+// It is not caught, so the command fails instead of reporting every check as not run, which would read as "nothing to fix".
 async function fetchIsSandbox(conn: Connection): Promise<boolean> {
-  try {
-    const res = await soqlQuery('SELECT IsSandbox FROM Organization LIMIT 1', conn);
-    return res.records?.[0]?.IsSandbox === true;
-  } catch {
-    return false;
-  }
+  const res = await soqlQuery('SELECT IsSandbox FROM Organization LIMIT 1', conn);
+  return res.records?.[0]?.IsSandbox === true;
 }
 
 // One LoginHistory query for every login type the checks look at, then the usernames of the users found.
@@ -570,6 +591,7 @@ function checkSoapLoginInactivity(context: CheckContext): AuthRetirementCheckRes
       title,
       detail: row.Details,
       deadline: row.Deadline,
+      howToFixUrl: row.HowToFix,
       rows: [row],
     };
   }
@@ -609,7 +631,7 @@ function checkSoapLoginInactivity(context: CheckContext): AuthRetirementCheckRes
   if (rows.length === 0) {
     rows.push(successRow(context, key, title, detail));
   }
-  return { key, status, title, detail, deadline: getDeadlineLabel(key, context.isSandbox, context.today), rows };
+  return { key, status, title, detail, deadline: getDeadlineLabel(key, context.isSandbox, context.today), howToFixUrl: getFixDocUrl(key), rows };
 }
 
 async function checkUsernamePasswordFlow(context: CheckContext): Promise<AuthRetirementCheckResult> {
@@ -793,11 +815,20 @@ function finalizeCheck(
   );
   if (rows.length === 0) {
     const detail = t('authRetirementsNothingFound');
-    return { key, status: 'success', title, detail, deadline, rows: [successRow(context, key, title, detail)], metric };
+    return {
+      key,
+      status: 'success',
+      title,
+      detail,
+      deadline,
+      howToFixUrl: getFixDocUrl(key),
+      rows: [successRow(context, key, title, detail)],
+      metric,
+    };
   }
   // Only information rows: nothing to act on
   const detail = status === 'info' ? t('authRetirementsInfoOnly', { count: rows.length }) : foundDetail;
-  return { key, status, title, detail, deadline, rows, metric };
+  return { key, status, title, detail, deadline, howToFixUrl: getFixDocUrl(key), rows, metric };
 }
 
 function loginHistoryUnavailableResult(
@@ -822,7 +853,16 @@ function notAvailableResult(
     Count: '',
     Recommendation: '',
   });
-  return { key, status: 'info', title, detail, deadline: row.Deadline, rows: [row] };
+  return {
+    key,
+    status: 'info',
+    title,
+    detail,
+    deadline: row.Deadline,
+    howToFixUrl: row.HowToFix,
+    rows: [row],
+    notChecked: true,
+  };
 }
 
 function successRow(context: CheckContext, key: AuthRetirementCheckKey, title: string, detail: string): AuthRetirementReportRow {
@@ -848,6 +888,7 @@ function buildRow(
     Severity: severity,
     Deadline: getDeadlineLabel(key, context.isSandbox, context.today),
     ...values,
+    HowToFix: getFixDocUrl(key),
     Article: AUTH_RETIREMENT_DEADLINES[key].articleUrl,
   };
 }

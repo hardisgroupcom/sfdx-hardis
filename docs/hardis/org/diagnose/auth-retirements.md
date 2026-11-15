@@ -14,6 +14,8 @@ description: "Finds the integrations of an org that a Salesforce authentication 
 
 Salesforce retires several authentication methods between November 2026 and Summer '27. This monitoring command runs one check per change and sends a single `AUTH_RETIREMENTS` notification. Each finding gives the deadline, the user or app concerned, the last time it was seen, and what to do.
 
+Every check links to its own [How to fix](https://sfdx-hardis.cloudity.com/salesforce-monitoring-auth-retirements/#how-to-fix) section of the documentation, with the steps and the official Salesforce pages: in the summary table, in each row of the report and in the notification.
+
 | Check                                               | Salesforce change                                                                         | Production date                                      |
 |-----------------------------------------------------|-------------------------------------------------------------------------------------------|------------------------------------------------------|
 | Refresh tokens idle for 30 days                     | Refresh tokens unused for 30 days expire (`invalid_grant`)                                | Since November 4, 2026 (sandboxes: October 21, 2026) |
@@ -54,14 +56,14 @@ In agent mode the command is fully non-interactive (it never prompts); the flag 
 
 The command's implementation:
 
-- **LoginHistory:** a single Bulk query reads the logins of the last `--lookback-days` days (default and maximum 180, the LoginHistory retention) whose `LoginSubType` is a SOAP API login, `OAuth Device`, `OAuth Username-Password` or an `OAuth User-Agent` flow. `Application`, `ApiVersion` and `Status` cannot be filtered in SOQL, so the logins are grouped in memory. Only successful logins count as usage; failed ones are shown in the details, as they reveal the `INSUFFICIENT_ACCESS` errors after enforcement.
+- **LoginHistory:** a single aggregate SOQL query (grouped by user, login type, app, API version, IP address and status) reads the logins of the last `--lookback-days` days (default and maximum 180, the LoginHistory retention) whose `LoginSubType` is a SOAP API login, `OAuth Device`, `OAuth Username-Password` or an `OAuth User-Agent` flow. `Application`, `ApiVersion` and `Status` cannot be filtered in SOQL but can be grouped. The Bulk API does not support `LoginHistory`. When the aggregate query fails or returns 2000 groups, the raw logins are read instead. Only successful logins count as usage; failed ones are shown in the details, as they reveal the `INSUFFICIENT_ACCESS` errors after enforcement.
 - **Use Any API Auth:** a describe confirms `PermissionSet.PermissionsUseAnyApiAuth` exists, then `PermissionSetAssignment` is queried in chunks of 200 users, which covers profiles, permission sets and permission set groups.
 - **OAuthToken:** every token is read (Bulk, page by page past the 2500 tokens limit). The idle time is the time since `LastUsedDate` (`CreatedDate` when never used). API only users come from `PermissionSetAssignment` on `PermissionsApiUserOnly`.
 - **Trusted IP ranges:** `SecuritySettings.Metadata.networkAccess.ipRanges` (Tooling API). Profile login IP ranges cannot be read with SOQL and are not taken into account.
 - **Username-password and user-agent flows:** `OauthOidcSettings.Metadata` (Tooling API) tells if both flows are already blocked in the org.
 - **Salesforce Connect:** `ExternalDataSource` records of type `SfdcOrg` without `NamedCredentialId`.
 - **Dates:** all the Salesforce dates are in one table of `authRetirementsDiagnoseUtils.ts`. `Organization.IsSandbox` picks the sandbox date when Salesforce gives one.
-- **Report:** one CSV / XLSX (`auth-retirements-<date>`) with a row per finding, its deadline and the link to the Salesforce article. Usernames and IP addresses follow the anonymization settings.
+- **Report:** one CSV / XLSX (`auth-retirements-<date>`) with a row per finding: its deadline, its recommendation, the link to its How to fix section and the link to the Salesforce article. Usernames and IP addresses follow the anonymization settings.
 - **Metrics:** `IdleRefreshTokensExpiringSoon`, `DeviceFlowUsers`, `SoapLoginUsersMissingPermission`, `SoapLoginUsersNeedingToken`, `UsernamePasswordFlowUsers`, `SfConnectLegacyDataSources`, `SoapLoginUsers`. A check that cannot run on the org sends no metric.
 </details>
 
