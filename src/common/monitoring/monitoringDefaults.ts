@@ -88,6 +88,14 @@ export const monitoringCommandsDefault: MonitoringCommandEntry[] = [
     icon: "utility:shield",
   },
   {
+    key: "AUTH_RETIREMENTS",
+    command: "sf hardis:org:diagnose:auth-retirements",
+    frequency: "daily",
+    notificationTypes: ["AUTH_RETIREMENTS"],
+    category: "apexTestsSecurity",
+    icon: "utility:key",
+  },
+  {
     key: "DANGEROUS_PERMISSIONS",
     command: "sf hardis:org:diagnose:unsecure-permissions",
     // Off by default: this audit is opt-in. It still appears in the monitoring UI so users can

@@ -2,6 +2,10 @@
 
 ## [beta] (main)
 
+- **Salesforce authentication retirements** ([doc](https://sfdx-hardis.cloudity.com/salesforce-monitoring-auth-retirements/)): the monitoring finds the integrations that SOAP login() retirement, OAuth flow restrictions and idle refresh token expiry will break, before each Salesforce deadline.
+  - New [hardis:org:diagnose:auth-retirements](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/auth-retirements/), run every day by the monitoring.
+  - [hardis:org:diagnose:unsecure-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps/): the Connected Apps usage report tells which apps to move to External Client Apps before Summer '27.
+  - Grafana: new Authentication retirements row on the Org Security dashboard.
 - [Browser deployment action](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions-browser/#deployment-errors-a-browser-action-solves):
   - The deployment assistant suggests it for the errors it can solve, with the command that adds it to your Pull Request.
   - The AI deployment assistant and the coding agent that fixes deployment errors suggest it too.

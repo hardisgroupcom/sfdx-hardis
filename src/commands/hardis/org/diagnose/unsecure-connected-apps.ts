@@ -5,6 +5,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { bulkQuery, soqlQuery } from '../../../../common/utils/apiUtils.js';
+import { getConnectedAppMigrationStatus, listOrgOwnedConnectedAppNames, queryAllOAuthTokens, toConnectedAppApiName } from '../../../../common/utils/oauthTokenUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils/notifUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
@@ -43,7 +44,8 @@ Key functionalities:
   - **OAuth Tokens Report:** Lists all OAuth tokens with security status, app type, user information, and usage data
   - **Unsecured Connected Apps Summary:** Aggregates unsecured apps with counts of associated OAuth tokens and app type
   - **OAuth Tokens by User:** Lists each user with the apps they hold a token for and the last usage date
-  - **Connected Apps Usage:** Lists every Connected App and External Client App that has OAuth tokens (secured or not), with its last usage date and the usernames who use it
+  - **Connected Apps Usage:** Lists every Connected App and External Client App that has OAuth tokens (secured or not), with its last usage date, the usernames who use it, and whether it must be moved to an External Client App
+- **Move to External Client Apps:** Connected Apps are no longer supported from Summer '27. The usage report tells, for each app, whether the move is \`Required\` (a Connected App of the org used in the last 90 days), done by its \`Vendor\` (an app of Salesforce or of a package, used in the last 90 days), \`Done (converted)\`, \`Not needed\` (already an External Client App) or not worth it (\`Not used\` for 90 days: delete it instead). The number of apps to move is sent as the \`ConnectedAppsToMigrate\` metric and added to the notification.
 - **Visual Indicators:** Uses status icons (❌ for unsecured, ✅ for secured, ⚪ for ignored) to provide immediate visual feedback on security status.
 - **Security Recommendations:** Provides actionable guidance on how to secure Connected Apps and External Client Apps through proper configuration.
 - **Notifications:** Sends alerts to configured channels (Grafana, Slack, MS Teams) with security findings and attached reports.
@@ -57,7 +59,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
 The command's technical implementation involves:
 
-- **SOQL Query Execution:** Executes a comprehensive SOQL query on the \`OauthToken\` object, joining with \`AppMenuItem\` and \`User\` objects to gather complete security context.
+- **SOQL Query Execution:** Executes a comprehensive SOQL query on the \`OauthToken\` object, joining with \`AppMenuItem\` and \`User\` objects to gather complete security context. A Bulk query returns at most 2500 tokens, so the next ones are read page by page on \`CreatedDate\`.
+- **External Client App Migration Logic:** the apps the org owns are its \`ConnectedApp\` metadata (\`listMetadata\`), compared with the app label turned into an API name (\`ClickDeploy.io\` becomes \`ClickDeploy_io\`). \`AppMenuItem.NamespacePrefix\` marks packaged apps, and the most recent \`LastUsedDate\` of the app's tokens tells if it is still used.
 - **Connected App Security Logic:** Analyzes the \`ConnectedApplication.OptionsAllowAdminApprovedUsersOnly\` field (falling back to \`AppMenuItem.IsUsingAdminAuthorization\`) to determine if a Connected App requires admin pre-approval for user authorization. Booleans returned as strings by the Bulk API are normalized, so a \`"false"\` value is never read as secured.
 - **External Client App Security Logic:** Queries \`ExtlClntAppOauthPlcyCnfg\` for each External Client App and checks \`PermittedUsersPolicyType === 'AdminApprovedPreAuthorized'\` to determine if admin pre-approval is required. Falls back to AppName-based matching when \`AppMenuItem.ApplicationId\` is not populated.
 - **Converted Connected App Logic:** When a token points to a Connected App whose name matches an \`ExternalClientApplication\` \`MasterLabel\` or \`DeveloperName\`, the Connected App is considered migrated: the External Client App OAuth policy decides the status and the app type is reported as \`Ext Client App (converted)\`. The match is made on the name only, so every app whose status comes from an External Client App policy is logged, as well as every name match without an available policy.
@@ -206,38 +209,9 @@ In agent mode:
 
     // Collect all OAuth Tokens
     uxLog("action", this, c.cyan(t('extractingAllOauthTokensFrom', { conn: conn.instanceUrl })));
-    const tokensCountQuery = `SELECT count() FROM OauthToken`;
-    const tokensCountQueryRes = await soqlQuery(tokensCountQuery, conn);
-    const totalTokens = tokensCountQueryRes.totalSize;
-    uxLog("log", this, t('oauthTokensFound', { count: totalTokens }));
-
-    const baseOAuthTokenQuery = "SELECT AppName, AppMenuItem.IsUsingAdminAuthorization, LastUsedDate, CreatedDate, User.Name, User.Username, User.Profile.Name, UseCount, AppMenuItem.Id, AppMenuItem.Label, AppMenuItem.Name, AppMenuItem.ApplicationId, Id, DeleteToken FROM OAuthToken";
-    const allOAuthTokenQuery = baseOAuthTokenQuery + " ORDER BY CreatedDate ASC";
-    const allOAuthTokenQueryRes = await bulkQuery(allOAuthTokenQuery, conn);
-    const allOAuthTokens = allOAuthTokenQueryRes.records;
-
-    // If not all OAuth token has been found, it means SF hard limit of 2500 OAuth Tokens has been reached
-    // Recursively get remaining tokens using latest found Id as constraint
-    if (allOAuthTokens.length < totalTokens) {
-      uxLog("warning", this, c.yellow(t('salesforceApiLimitOAuthTokensReached')));
-      let lastCreatedDate = allOAuthTokens.length > 0 ? allOAuthTokens[allOAuthTokens.length - 1].CreatedDate : null;
-      while (lastCreatedDate != null) {
-        const remainingTokensQuery = `${baseOAuthTokenQuery} WHERE CreatedDate > ${lastCreatedDate} ORDER BY CreatedDate ASC`;
-        const remainingTokensQueryRes = await bulkQuery(remainingTokensQuery, conn);
-        const remainingTokens = remainingTokensQueryRes.records;
-        if (remainingTokens.length > 0) {
-          allOAuthTokens.push(...remainingTokens);
-          lastCreatedDate = remainingTokens[remainingTokens.length - 1].CreatedDate;
-          uxLog("log", this, t('oauthTokensRetrievedProgress', { count: allOAuthTokens.length, total: totalTokens }));
-          if (allOAuthTokens.length >= totalTokens) {
-            lastCreatedDate = null;
-          }
-        } else {
-          lastCreatedDate = null;
-        }
-      }
-    }
-    uxLog("log", this, t('oauthTokensRetrieved', { count: allOAuthTokens.length }));
+    // AppMenuItem.NamespacePrefix tells a packaged Connected App (migrated by its vendor) from one the org owns
+    const baseOAuthTokenQuery = "SELECT AppName, AppMenuItem.IsUsingAdminAuthorization, AppMenuItem.NamespacePrefix, LastUsedDate, CreatedDate, User.Name, User.Username, User.Profile.Name, UseCount, AppMenuItem.Id, AppMenuItem.Label, AppMenuItem.Name, AppMenuItem.ApplicationId, Id, DeleteToken FROM OAuthToken";
+    const allOAuthTokens = await queryAllOAuthTokens(conn, baseOAuthTokenQuery);
     sortArray(allOAuthTokens, { by: 'AppName' });
 
     // A Connected App migrated to an External Client App stays in the org as a read-only copy that is no longer
@@ -333,6 +307,7 @@ In agent mode:
         "x-Token-AppName": oAuthToken.AppName ? oAuthToken.AppName : 'N/A',
         "x-Token-AppMenuItemLabel": oAuthToken["AppMenuItem.Label"] ? oAuthToken["AppMenuItem.Label"] : 'N/A',
         "x-Token-AppMenuItemId": oAuthToken["AppMenuItem.Id"] ? oAuthToken["AppMenuItem.Id"] : 'N/A',
+        "x-Token-Namespace": oAuthToken["AppMenuItem.NamespacePrefix"] ? oAuthToken["AppMenuItem.NamespacePrefix"] : '',
         "x-AppName-Different-From-Label": (oAuthToken.AppName && oAuthToken["AppMenuItem.Label"] && oAuthToken.AppName !== oAuthToken["AppMenuItem.Label"]) ? 'Yes' : 'No',
       }
       return appResult;
@@ -439,13 +414,14 @@ In agent mode:
 
     // Aggregate ALL apps that have OAuth tokens (secured, unsecured and ignored) to give a full usage inventory,
     // with the most recent usage date and the list of usernames who hold a token for each app.
-    const appsUsage: { [appName: string]: { appName: string; appType: string; lastUsedDate: string; usernames: Set<string>; } } = {};
+    const appsUsage: { [appName: string]: { appName: string; appType: string; namespacePrefix: string; lastUsedDate: string; usernames: Set<string>; } } = {};
     for (const token of allOAuthTokensWithStatus) {
       const appName = token.AppName && token.AppName !== 'N/A' ? token.AppName : 'N/A';
       if (!appsUsage[appName]) {
         appsUsage[appName] = {
           appName,
           appType: token["App Type"] || 'Connected App',
+          namespacePrefix: token["x-Token-Namespace"] || '',
           lastUsedDate: '',
           usernames: new Set<string>(),
         };
@@ -462,10 +438,18 @@ In agent mode:
         appsUsage[appName].lastUsedDate = lastUsedDate;
       }
     }
+    // Only the Connected Apps the org owns can be moved by the org: the others belong to Salesforce or to a vendor
+    const orgOwnedConnectedAppNames = await listOrgOwnedConnectedAppNames(conn);
     const connectedAppsUsage = Object.values(appsUsage).map(entry => ({
       "Connected App": entry.appName,
       "App Type": entry.appType,
       "Last Used Date": entry.lastUsedDate || 'N/A',
+      "Move to External Client App": getConnectedAppMigrationStatus(
+        entry.appType,
+        entry.namespacePrefix,
+        entry.lastUsedDate,
+        orgOwnedConnectedAppNames ? orgOwnedConnectedAppNames.has(toConnectedAppApiName(entry.appName)) : null
+      ),
       "Usernames": Array.from(entry.usernames).sort().join('\n'),
     }));
     sortArray(connectedAppsUsage, { by: 'Connected App' });
@@ -474,6 +458,11 @@ In agent mode:
     if (connectedAppsUsage.length > 0) {
       uxLog("action", this, c.cyan(t('connectedAppsUsageFound', { count: connectedAppsUsage.length })));
       uxLogTable(this, connectedAppsUsage);
+    }
+    // Connected Apps are no longer supported from Summer '27: the ones the org owns and still uses must move to External Client Apps
+    const connectedAppsToMigrate = connectedAppsUsage.filter(app => app["Move to External Client App"] === 'Required');
+    if (connectedAppsToMigrate.length > 0) {
+      uxLog("warning", this, c.yellow(t('connectedAppsToMigrate', { count: connectedAppsToMigrate.length })));
     }
 
     // Build notification
@@ -485,6 +474,9 @@ In agent mode:
     let notifDetailText = '';
     for (const connectedApp of uniqueUnsecureConnectedAppsWithTokens) {
       notifDetailText += `- **${connectedApp.AppName}** (**${connectedApp.NumberOfUnsecuredOAuthTokens}** OAuth Tokens)\n`;
+    }
+    if (connectedAppsToMigrate.length > 0) {
+      notifDetailText += `\n${t('connectedAppsToMigrate', { count: connectedAppsToMigrate.length })}\n`;
     }
     const notifAttachments = [{ text: notifDetailText }];
     // Post notif
@@ -500,6 +492,7 @@ In agent mode:
       data: { metric: numberWarnings },
       metrics: {
         UnsecuredConnectedApps: numberWarnings,
+        ConnectedAppsToMigrate: connectedAppsToMigrate.length,
       },
     });
 

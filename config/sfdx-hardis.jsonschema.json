@@ -17,6 +17,7 @@
         "APEX_FLEX_QUEUE",
         "APEX_TESTS",
         "AUDIT_TRAIL",
+        "AUTH_RETIREMENTS",
         "BACKUP",
         "CONNECTED_APPS",
         "CONSUMPTION_ALERTS",
@@ -63,6 +64,7 @@
         "Apex Flex Queue",
         "Apex Tests",
         "Audit Trail",
+        "Auth Retirements",
         "Backup",
         "Connected Apps",
         "Consumption Alerts",
@@ -108,6 +110,7 @@
         "APEX_FLEX_QUEUE",
         "APEX_FLOW_ERRORS",
         "AUDIT_TRAIL",
+        "AUTH_RETIREMENTS",
         "CONNECTED_APPS",
         "CONSUMPTION_ALERTS",
         "DANGEROUS_PERMISSIONS",
@@ -142,6 +145,7 @@
         "Apex Flex Queue",
         "Apex and Flow Errors",
         "Audit Trail",
+        "Auth Retirements",
         "Connected Apps",
         "Consumption Alerts",
         "Dangerous Permissions",
@@ -3147,6 +3151,21 @@
       "title": "Override default Metadata Retriever presets",
       "type": "boolean",
       "default": false
+    },
+    "monitoringAuthRetirementsIgnoreUsers": {
+      "$id": "#/properties/monitoringAuthRetirementsIgnoreUsers",
+      "description": "List of usernames skipped by [hardis:org:diagnose:auth-retirements](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/auth-retirements/), for example an integration already being moved to another authentication method. Can also be set with env var MONITORING_AUTH_RETIREMENTS_IGNORE_USERS (comma-separated).",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-monitoring-auth-retirements/",
+      "examples": [
+        [
+          "integration@mycompany.com"
+        ]
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Users ignored by authentication retirements monitoring",
+      "type": "array"
     },
     "monitoringBackupSkipDataCloud": {
       "$id": "#/properties/monitoringBackupSkipDataCloud",

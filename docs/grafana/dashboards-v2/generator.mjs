@@ -1401,6 +1401,41 @@ const securityDashboard = dashboard({
       ],
     },
     {
+      row: 'Authentication retirements (click a number for details)',
+      panels: [
+        deltaStat('SOAP no API Auth', 'SoapLoginUsersMissingPermission_metric', {
+          gridPos: { w: 4, h: 5 },
+          description: `Users calling SOAP login() without the Use Any API Auth permission: they get INSUFFICIENT_ACCESS from December 1, 2026. ${RECENT_CLI_NOTE}`,
+          links: indicatorLink('AUTH_RETIREMENTS'),
+        }),
+        deltaStat('Device flow users', 'DeviceFlowUsers_metric', {
+          gridPos: { w: 4, h: 5 },
+          description: `Users logging in with the OAuth device flow, restricted to local External Client Apps from November 30, 2026. ${RECENT_CLI_NOTE}`,
+          links: indicatorLink('AUTH_RETIREMENTS'),
+        }),
+        deltaStat('Password flow', 'UsernamePasswordFlowUsers_metric', {
+          gridPos: { w: 4, h: 5 },
+          description: `Users logging in with the OAuth username-password flow, retired on February 20, 2027. ${RECENT_CLI_NOTE}`,
+          links: indicatorLink('AUTH_RETIREMENTS'),
+        }),
+        deltaStat('SOAP login users', 'SoapLoginUsers_metric', {
+          gridPos: { w: 4, h: 5 },
+          description: `Users calling SOAP login(), retired in Summer '27: each integration must move to OAuth with an External Client App. ${RECENT_CLI_NOTE}`,
+          links: indicatorLink('AUTH_RETIREMENTS'),
+        }),
+        deltaStat('Idle tokens', 'IdleRefreshTokensExpiringSoon_metric', {
+          gridPos: { w: 4, h: 5 },
+          description: `Refresh tokens of API only users unused for 20 days or more: they expire after 30 days without use. ${RECENT_CLI_NOTE}`,
+          links: indicatorLink('AUTH_RETIREMENTS'),
+        }),
+        deltaStat('Apps to migrate', 'ConnectedAppsToMigrate_metric', {
+          gridPos: { w: 4, h: 5 },
+          description: `Connected Apps of the org still in use, to move to External Client Apps before Summer '27. ${RECENT_CLI_NOTE}`,
+          links: indicatorLink('UNSECURED_CONNECTED_APPS'),
+        }),
+      ],
+    },
+    {
       row: 'Trends',
       panels: [
         timeseriesPanel('Suspect setup actions per day', {
