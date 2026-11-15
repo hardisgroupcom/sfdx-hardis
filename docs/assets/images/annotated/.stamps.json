@@ -24,8 +24,8 @@
     "out": "c94f45557d2cbfa6"
   },
   "vscode-guide/pipeline-pr-actions-list.png": {
-    "spec": "4de269cdcddc8f2e",
-    "out": "fd4fd65abf45fafd"
+    "spec": "39c4b14b2f3da7da",
+    "out": "562aeece07ebafe7"
   },
   "vscode-guide/pipeline-branch-modal-actions.png": {
     "spec": "fd9a67944c93dedd",
@@ -124,8 +124,8 @@
     "out": "3690d1a8a48478f8"
   },
   "vscode-guide/pipeline-pr-view-validation.png": {
-    "spec": "0d75c73d79e0cc77",
-    "out": "9e85d7affe1f2b51"
+    "spec": "88b88769555bb27a",
+    "out": "b69d7510695b1b02"
   },
   "vscode-guide/pipeline-settings-ref-global-deployment.png": {
     "spec": "dfa02ab6d097464a",
@@ -198,5 +198,9 @@
   "vscode-guide/pipeline-settings-ref-branch-danger-zone.png": {
     "spec": "5ccae2e0286e8e72",
     "out": "28a20bb3b3fd9ab2"
+  },
+  "vscode-guide/pipeline-pr-view-search.png": {
+    "spec": "009caed790cc95bb",
+    "out": "5abbbca86ce17bd4"
   }
 }

@@ -84,7 +84,7 @@ The window of a Pull Request shows:
 
 - **(1)** its state, its author, its branches, and the button that opens it on your git provider.
 - **(2)** its way through the pipeline: the validation, then each major branch up to production, with the promotion that carried it when there is one, or the open one it is waiting for. A step moves while its job is running. A branch reads **Not in the pipeline windows** when the Pull Request was merged too long ago for the pipeline to tell. A promotion, or a merge between two major branches, stops at the branch it is merged into: the stories it carries go further, it does not.
-- **(3)** its search bar: type a word to find it in the description and in the comments of the jobs. Each tab shows how many matches it holds, the collapsed sections holding one open, and Enter (Shift+Enter) goes to the next (previous) match, from one tab to the next. The filter button keeps only the runs whose comment matches. Ctrl+F (Cmd+F on macOS) puts the cursor in it.
+- **(3)** its search bar, described below.
 - **(4)** its tabs, and **(5)** the content of the one selected, here the validation comment.
 - **General**: the description of the Pull Request.
 - **Pull Requests**, on a promotion or on a merge between two major branches: the Pull Requests it carries, each one opening in the same window.
@@ -92,7 +92,14 @@ The window of a Pull Request shows:
 - **Deployment Actions** and **Tests**, as in your own Pull Request.
 - **Validation**, **Code Quality** (MegaLinter) and **Deployment**: the comment each of them posted on this Pull Request, as you would read it on your git provider, with its outcome and the links to the job and to the comment. A job that is still running or queued is listed first, with the time it has been going on and the link to the job, and its tab carries a spinner. A finished job says how long it took. **Files** lists the report files the job [published as artifacts](salesforce-devops-setup-publish-artifacts.md), downloaded in `hardis-report/job-artifacts` of your project: click one to open it. Above 10 files, they are browsed by folder. Bitbucket has no **Files** button, use the job page there. They show the comments of this Pull Request only, not those of a promotion that carried it further.
 
-![Search in the window of a Pull Request](assets/images/vscode-guide/pipeline-pr-view-search.png)
+![Search in the window of a Pull Request](assets/images/annotated/vscode-guide/pipeline-pr-view-search.png)
+
+Type a word in the search bar **(1)**, or press Ctrl+F (Cmd+F on macOS) to get there: it searches the description and the comments of the jobs, whatever their case and accents.
+
+- **(2)** Each tab shows how many matches it holds.
+- **(3)** The matches are highlighted, the current one in orange, and the collapsed sections holding one open.
+
+Enter (Shift+Enter) goes to the next (previous) match, from one tab to the next, and the counter of the bar says where you are. The filter button keeps only the runs whose comment matches. Escape clears the search.
 
 **Open on GitHub** (or your git provider) in the header is the way out to the Pull Request page. When the Pull Request was opened from a list or from another Pull Request, **Previous** and **Close** bring that window back; **Close** closes the window otherwise.
 
