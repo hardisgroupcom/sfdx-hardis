@@ -583,7 +583,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=LEGACY_API&var-metric=LegacyApiCalls_metric"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=WHAT_WILL_BREAK&var-metric=LegacyApiCalls_metric"
             }
           ]
         },
@@ -831,7 +831,7 @@
     {
       "id": 193,
       "type": "row",
-      "title": "Authentication retirements (click a number for details)",
+      "title": "What will break (click a number for details)",
       "collapsed": false,
       "gridPos": {
         "h": 1,
@@ -851,7 +851,7 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 4,
+        "w": 6,
         "x": 0,
         "y": 21
       },
@@ -891,7 +891,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=AUTH_RETIREMENTS&var-metric=SoapLoginUsersMissingPermission_metric"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=WHAT_WILL_BREAK&var-metric=SoapLoginUsersMissingPermission_metric"
             }
           ]
         },
@@ -922,8 +922,8 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 4,
-        "x": 4,
+        "w": 6,
+        "x": 6,
         "y": 21
       },
       "targets": [
@@ -962,7 +962,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=AUTH_RETIREMENTS&var-metric=DeviceFlowUsers_metric"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=WHAT_WILL_BREAK&var-metric=DeviceFlowUsers_metric"
             }
           ]
         },
@@ -993,8 +993,8 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 4,
-        "x": 8,
+        "w": 6,
+        "x": 12,
         "y": 21
       },
       "targets": [
@@ -1033,7 +1033,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=AUTH_RETIREMENTS&var-metric=UsernamePasswordFlowUsers_metric"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=WHAT_WILL_BREAK&var-metric=UsernamePasswordFlowUsers_metric"
             }
           ]
         },
@@ -1064,8 +1064,8 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 4,
-        "x": 12,
+        "w": 6,
+        "x": 18,
         "y": 21
       },
       "targets": [
@@ -1104,7 +1104,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=AUTH_RETIREMENTS&var-metric=SoapLoginUsers_metric"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=WHAT_WILL_BREAK&var-metric=SoapLoginUsers_metric"
             }
           ]
         },
@@ -1135,9 +1135,9 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 4,
-        "x": 16,
-        "y": 21
+        "w": 6,
+        "x": 0,
+        "y": 26
       },
       "targets": [
         {
@@ -1175,7 +1175,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=AUTH_RETIREMENTS&var-metric=IdleRefreshTokensExpiringSoon_metric"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=WHAT_WILL_BREAK&var-metric=IdleRefreshTokensExpiringSoon_metric"
             }
           ]
         },
@@ -1206,9 +1206,9 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 4,
-        "x": 20,
-        "y": 21
+        "w": 6,
+        "x": 6,
+        "y": 26
       },
       "targets": [
         {
@@ -1246,7 +1246,149 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=UNSECURED_CONNECTED_APPS&var-metric=ConnectedAppsToMigrate_metric"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=WHAT_WILL_BREAK&var-metric=ConnectedAppsToMigrate_metric"
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 200,
+      "type": "stat",
+      "title": "Rare refreshes",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 12,
+        "y": 26
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "max by (orgIdentifier) (last_over_time(IntegrationsRefreshingTooRarely_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
+          "refId": "A"
+        }
+      ],
+      "description": "Integrations that went 30 days or more without using their refresh token: a monthly or quarterly sync loses its token between two runs. Requires a recent sfdx-hardis version on the monitoring pipeline (empty until then).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          },
+          "links": [
+            {
+              "title": "Open indicator detail",
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=WHAT_WILL_BREAK&var-metric=IntegrationsRefreshingTooRarely_metric"
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 201,
+      "type": "stat",
+      "title": "SOAP token needed",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 18,
+        "y": 26
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "max by (orgIdentifier) (last_over_time(SoapLoginUsersNeedingToken_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
+          "refId": "A"
+        }
+      ],
+      "description": "SOAP login() callers only covered by a trusted IP range wider than /8: they need the security token from January 31, 2027. Requires a recent sfdx-hardis version on the monitoring pipeline (empty until then).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          },
+          "links": [
+            {
+              "title": "Open indicator detail",
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=WHAT_WILL_BREAK&var-metric=SoapLoginUsersNeedingToken_metric"
             }
           ]
         },
@@ -1276,7 +1418,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 26
+        "y": 31
       },
       "panels": []
     },
@@ -1292,7 +1434,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 27
+        "y": 32
       },
       "targets": [
         {
@@ -1374,7 +1516,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 27
+        "y": 32
       },
       "targets": [
         {
@@ -1404,7 +1546,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=LEGACY_API&var-metric=LegacyApiCalls_metric"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=WHAT_WILL_BREAK&var-metric=LegacyApiCalls_metric"
             }
           ],
           "custom": {
@@ -1453,7 +1595,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 35
+        "y": 40
       },
       "panels": []
     },
@@ -1469,7 +1611,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 36
+        "y": 41
       },
       "targets": [
         {

@@ -160,12 +160,11 @@ See [Monitoring configuration](salesforce-monitoring-config-home.md#monitoring-c
 | [Detect suspect setup actions in major org](salesforce-monitoring-suspect-audit-trail.md)                                   | Daily     |
 | [Apex tests](salesforce-monitoring-apex-tests.md)                                                                           | Daily     |
 | [Quality Checks with MegaLinter](salesforce-monitoring-quality-checks.md)                                                   | Daily     |
-| [Detect calls to deprecated API versions](salesforce-monitoring-deprecated-api-calls.md)                                    | Daily     |
 | [Detect limits issues](salesforce-monitoring-org-limits.md)                                                                 | Daily     |
 | [Detect Apex flex queue backlog](salesforce-monitoring-apex-flex-queue.md)                                                  | Daily     |
 | [Detect Apex and Flow errors](salesforce-monitoring-apex-flow-errors.md)                                                    | Daily     |
 | [Detect unsecured Connected Apps in an org](salesforce-monitoring-unsecured-connected-apps.md)                              | Daily     |
-| [Detect integrations broken by Salesforce authentication retirements](salesforce-monitoring-auth-retirements.md)            | Daily     |
+| [Detect what will break after dated Salesforce changes](salesforce-monitoring-what-will-break.md)                           | Daily     |
 | [Analyze metadata deployments and validations](salesforce-monitoring-deployments.md)                                        | Daily     |
 | [Detect usage-based entitlements consumed too fast](salesforce-monitoring-usage-entitlements.md)                            | Daily     |
 | [Collect the consumption utilization alerts Salesforce raises](salesforce-monitoring-consumption-alerts.md)                 | Daily     |
@@ -181,7 +180,6 @@ See [Monitoring configuration](salesforce-monitoring-config-home.md#monitoring-c
 | [Detect active users with recent logins (CRM, 1 week)](salesforce-monitoring-inactive-users.md)                             | Weekly    |
 | [Detect active users with recent logins (Experience, 1 month)](salesforce-monitoring-inactive-users.md)                     | Weekly    |
 | [Get org info + SF instance info + next major upgrade date](salesforce-monitoring-org-instance-upgrade.md)                  | Weekly    |
-| [Gather warnings about incoming and overdue Release Updates](salesforce-monitoring-release-updates.md)                      | Weekly    |
 | [Run Salesforce Security Health Check](salesforce-monitoring-health-check.md)                                               | Weekly    |
 | [Detect custom labels and custom permissions that are not in use](salesforce-monitoring-unused-metadata.md)                 | Weekly    |
 | [Detect unused Apex classes in an org](salesforce-monitoring-unused-apex-classes.md)                                        | Weekly    |

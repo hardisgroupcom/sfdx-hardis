@@ -1,11 +1,10 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Connection, Messages, SfError } from '@salesforce/core';
+import { Connection, Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
-import { bulkQuery, soqlQuery } from '../../../../common/utils/apiUtils.js';
-import { getConnectedAppMigrationStatus, listOrgOwnedConnectedAppNames, queryAllOAuthTokens, toConnectedAppApiName } from '../../../../common/utils/oauthTokenUtils.js';
+import { buildConnectedAppsUsage, collectOAuthTokensWithStatus } from '../../../../common/utils/connectedAppsUsageUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils/notifUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
@@ -45,7 +44,7 @@ Key functionalities:
   - **Unsecured Connected Apps Summary:** Aggregates unsecured apps with counts of associated OAuth tokens and app type
   - **OAuth Tokens by User:** Lists each user with the apps they hold a token for and the last usage date
   - **Connected Apps Usage:** Lists every Connected App and External Client App that has OAuth tokens (secured or not), with its last usage date, the usernames who use it, and whether it must be moved to an External Client App
-- **Move to External Client Apps:** Connected Apps are no longer supported from Summer '27. The usage report tells, for each app, whether the move is \`Required\` (a Connected App of the org used in the last 90 days), done by its \`Vendor\` (an app of Salesforce or of a package, used in the last 90 days), \`Done (converted)\`, \`Not needed\` (already an External Client App) or not worth it (\`Not used\` for 90 days: delete it instead). The number of apps to move is sent as the \`ConnectedAppsToMigrate\` metric and added to the notification.
+- **Move to External Client Apps:** Connected Apps are no longer supported from Summer '27. The usage report tells, for each app, whether the move is \`Required\` (a Connected App of the org used in the last 90 days), done by its \`Vendor\` (an app of Salesforce or of a package, used in the last 90 days), \`Done (converted)\`, \`Not needed\` (already an External Client App) or not worth it (\`Not used\` for 90 days: delete it instead). The apps to move are also reported by [hardis:org:diagnose:what-will-break](${CONSTANTS.DOC_URL_ROOT}/hardis/org/diagnose/what-will-break/), with the date.
 - **Visual Indicators:** Uses status icons (❌ for unsecured, ✅ for secured, ⚪ for ignored) to provide immediate visual feedback on security status.
 - **Security Recommendations:** Provides actionable guidance on how to secure Connected Apps and External Client Apps through proper configuration.
 - **Notifications:** Sends alerts to configured channels (Grafana, Slack, MS Teams) with security findings and attached reports.
@@ -137,24 +136,9 @@ In agent mode:
     this.outputFile = flags.outputfile || null;
     const conn: Connection = flags['target-org'].getConnection();
 
-    const normalizeAppName = (appName: string): string => (appName || '').trim().toLowerCase();
-    // Bulk API v2 returns every field as a string, so a "false" boolean must not be read as truthy,
-    // and a field with no value comes back as an empty string, not as null
-    const readBoolean = (value: any): boolean | null => {
-      if (value === true || value === 'true') {
-        return true;
-      }
-      if (value === false || value === 'false') {
-        return false;
-      }
-      return null;
-    };
-    const toBoolean = (value: any): boolean => readBoolean(value) === true;
-
     // Read config to get list of connected apps to ignore
     const config = await getConfig("project");
     this.unsecuredConnectedAppsToIgnore = getEnvVarList("MONITORING_UNSECURE_CONNECTED_APPS_IGNORE") || config.monitoringUnsecureConnectedAppsIgnore || [];
-    const unsecuredConnectedAppsToIgnoreSet = new Set(this.unsecuredConnectedAppsToIgnore.map(normalizeAppName));
     if (this.unsecuredConnectedAppsToIgnore.length > 0) {
       uxLog("action", this, c.yellow(t('connectedAppsWillBeIgnored', { count: this.unsecuredConnectedAppsToIgnore.length })));
       this.unsecuredConnectedAppsToIgnore.forEach(appName => {
@@ -162,165 +146,28 @@ In agent mode:
       });
     }
 
-    // List available connected apps
-    uxLog("action", this, c.cyan(t('listingAllInstalledConnectedAppsFrom', { conn: conn.instanceUrl })));
-    // OptionsAllowAdminApprovedUsersOnly is the "Admin approved users are pre-authorized" setting of the Connected App
-    const connectedAppQuery = `SELECT Id, Name, OptionsAllowAdminApprovedUsersOnly FROM ConnectedApplication ORDER BY Name ASC`;
-    const connectedAppQueryRes = await bulkQuery(connectedAppQuery, conn);
-    const allConnectedApps = connectedAppQueryRes.records;
-    uxLog("log", this, t('connectedAppsFound', { count: allConnectedApps.length }));
-    const allConnectedAppsById = new Map<string, any>(allConnectedApps.map(app => [app.Id, app]));
-    // Also index by Name for AppName-based matching (tokens whose AppMenuItem link is gone)
-    const allConnectedAppsByName = new Map<string, any>();
-    for (const app of allConnectedApps) {
-      if (app.Name) allConnectedAppsByName.set(normalizeAppName(app.Name), app);
-    }
-
-    // List available External Client Apps
-    uxLog("action", this, c.cyan(t('listingAllExternalClientAppsFrom', { conn: conn.instanceUrl })));
-    const externalClientAppQuery = `SELECT Id, MasterLabel, DeveloperName FROM ExternalClientApplication ORDER BY MasterLabel ASC`;
-    let allExternalClientApps: any[] = [];
-    try {
-      const externalClientAppQueryRes = await soqlQuery(externalClientAppQuery, conn);
-      allExternalClientApps = externalClientAppQueryRes.records;
-    } catch (_e) {
-      // ExternalClientApplication may not be available in all orgs or API versions
-    }
-    uxLog("log", this, t('externalClientAppsFound', { count: allExternalClientApps.length }));
-    const allExternalClientAppsById = new Map<string, any>(allExternalClientApps.map(app => [app.Id, app]));
-    // Also index by MasterLabel and DeveloperName for AppName-based matching (tokens without AppMenuItem link)
-    const allExternalClientAppsByName = new Map<string, any>();
-    for (const app of allExternalClientApps) {
-      if (app.MasterLabel) allExternalClientAppsByName.set(app.MasterLabel.toLowerCase(), app);
-      if (app.DeveloperName) allExternalClientAppsByName.set(app.DeveloperName.toLowerCase(), app);
-    }
-
-    // Query External Client App OAuth Policies to check admin pre-approval setting
-    // PermittedUsersPolicyType === 'AdminApprovedPreAuthorized' means admin pre-approved
-    const ecaOauthPoliciesQuery = `SELECT Id, ExternalClientApplicationId, PermittedUsersPolicyType FROM ExtlClntAppOauthPlcyCnfg`;
-    let allEcaOauthPolicies: any[] = [];
-    try {
-      const ecaOauthPoliciesQueryRes = await soqlQuery(ecaOauthPoliciesQuery, conn);
-      allEcaOauthPolicies = ecaOauthPoliciesQueryRes.records;
-    } catch (_e) {
-      // ExtlClntAppOauthConfigurablePolicies may not be available in all orgs or API versions
-    }
-    const ecaOauthPoliciesByAppId = new Map<string, any>(allEcaOauthPolicies.map(policy => [policy.ExternalClientApplicationId, policy]));
-
-    // Collect all OAuth Tokens
-    uxLog("action", this, c.cyan(t('extractingAllOauthTokensFrom', { conn: conn.instanceUrl })));
-    // AppMenuItem.NamespacePrefix tells a packaged Connected App (migrated by its vendor) from one the org owns
-    const baseOAuthTokenQuery = "SELECT AppName, AppMenuItem.IsUsingAdminAuthorization, AppMenuItem.NamespacePrefix, LastUsedDate, CreatedDate, User.Name, User.Username, User.Profile.Name, UseCount, AppMenuItem.Id, AppMenuItem.Label, AppMenuItem.Name, AppMenuItem.ApplicationId, Id, DeleteToken FROM OAuthToken";
-    const allOAuthTokens = await queryAllOAuthTokens(conn, baseOAuthTokenQuery);
-    sortArray(allOAuthTokens, { by: 'AppName' });
-
-    // A Connected App migrated to an External Client App stays in the org as a read-only copy that is no longer
-    // used for authentication, but its OAuth tokens still point to it. The migrated External Client App keeps
-    // the Connected App name, so when one exists, its OAuth policy is the one that applies.
-    // That detection is based on the name only: keep track of the apps whose status has been taken from an
-    // External Client App policy, so an admin can check they are really converted Connected Apps.
-    const convertedExtClientAppNames = new Set<string>();
-    const convertedExtClientAppsWithoutPolicy = new Set<string>();
-
-    const allOAuthTokensWithStatus = allOAuthTokens.map(oAuthToken => {
-      let adminPreApproved = toBoolean(oAuthToken["AppMenuItem.IsUsingAdminAuthorization"]);
-      let appName = oAuthToken.AppName ? oAuthToken.AppName : 'N/A';
-      let appType = 'Connected App';
-      const applicationId = oAuthToken["AppMenuItem.ApplicationId"];
-      // null when the org does not expose ExtlClntAppOauthPlcyCnfg, or when the app has no policy record
-      const getExtClientAppPreApproval = (extClientAppId: string): boolean | null => {
-        const ecaPolicy = ecaOauthPoliciesByAppId.get(extClientAppId);
-        return ecaPolicy ? ecaPolicy.PermittedUsersPolicyType === 'AdminApprovedPreAuthorized' : null;
-      };
-      const applyConnectedApp = (matchingConnectedApp: any) => {
-        appName = matchingConnectedApp.Name;
-        const connectedAppPreApproved = readBoolean(matchingConnectedApp.OptionsAllowAdminApprovedUsersOnly);
-        if (connectedAppPreApproved !== null) {
-          adminPreApproved = connectedAppPreApproved;
-        }
-      };
-      // Without the External Client App policy, keep the Connected App type and setting: defaulting to
-      // "not pre-approved" would report a secured Connected App as unsecured
-      const applyConvertedExtClientApp = (convertedExtClientApp: any, connectedAppName: string) => {
-        if (!convertedExtClientApp) {
-          return;
-        }
-        const extClientAppPreApproved = getExtClientAppPreApproval(convertedExtClientApp.Id);
-        if (extClientAppPreApproved === null) {
-          convertedExtClientAppsWithoutPolicy.add(connectedAppName);
-          return;
-        }
-        appType = 'Ext Client App (converted)';
-        adminPreApproved = extClientAppPreApproved;
-        convertedExtClientAppNames.add(connectedAppName);
-      };
-      if (applicationId) {
-        if (applicationId.startsWith("0xI")) {
-          // External Client App (matched via AppMenuItem.ApplicationId)
-          appType = 'Ext Client App';
-          const matchingExtClientApp = allExternalClientAppsById.get(applicationId);
-          if (matchingExtClientApp) {
-            appName = matchingExtClientApp.MasterLabel || matchingExtClientApp.DeveloperName;
-          }
-          // Use the actual ECA OAuth policy to determine admin pre-approval
-          adminPreApproved = getExtClientAppPreApproval(applicationId) === true;
-        } else {
-          // Connected App
-          const matchingConnectedApp = allConnectedAppsById.get(applicationId);
-          if (!matchingConnectedApp) {
-            throw new SfError(`Connected App with Id ${applicationId} not found among installed Connected Apps.`);
-          }
-          applyConnectedApp(matchingConnectedApp);
-          applyConvertedExtClientApp(allExternalClientAppsByName.get(appName.toLowerCase()), appName);
-        }
-      } else if (appName !== 'N/A') {
-        // No AppMenuItem link (External Client App token, or Connected App reinstalled since the token was issued):
-        // match by AppName against External Client Apps first, then against Connected Apps
-        const matchingExtClientApp = allExternalClientAppsByName.get(appName.toLowerCase());
-        const matchingConnectedApp = allConnectedAppsByName.get(normalizeAppName(appName));
-        if (matchingExtClientApp && matchingConnectedApp) {
-          // Converted Connected App: report it like the tokens that still have their AppMenuItem link
-          applyConnectedApp(matchingConnectedApp);
-          applyConvertedExtClientApp(matchingExtClientApp, appName);
-        } else if (matchingExtClientApp) {
-          appType = 'Ext Client App';
-          appName = matchingExtClientApp.MasterLabel || matchingExtClientApp.DeveloperName;
-          adminPreApproved = getExtClientAppPreApproval(matchingExtClientApp.Id) === true;
-        } else if (matchingConnectedApp) {
-          applyConnectedApp(matchingConnectedApp);
-        }
-      }
-
-      const isIgnored = unsecuredConnectedAppsToIgnoreSet.has(normalizeAppName(appName));
-      const appResult = {
-        AppName: appName,
-        "App Type": appType,
-        "Status": isIgnored ? '⚪ Ignored' : (adminPreApproved ? '✅ Secured' : '❌ Unsecured'),
-        "Admin Pre-Approved": adminPreApproved ? 'Yes' : 'No',
-        "User": oAuthToken["User.Name"] ? oAuthToken["User.Name"] : 'N/A',
-        "Username": oAuthToken["User.Username"] ? oAuthToken["User.Username"] : 'N/A',
-        "User Profile": oAuthToken["User.Profile.Name"] ? oAuthToken["User.Profile.Name"] : 'N/A',
-        "Last Used Date": oAuthToken.LastUsedDate ? new Date(oAuthToken.LastUsedDate).toISOString().split('T')[0] : 'N/A',
-        "Created Date": oAuthToken.CreatedDate ? new Date(oAuthToken.CreatedDate).toISOString().split('T')[0] : 'N/A',
-        "Use Count": oAuthToken.UseCount ? oAuthToken.UseCount : 0,
-        "x-Token-Id": oAuthToken.Id ? oAuthToken.Id : 'N/A',
-        "x-Token-AppName": oAuthToken.AppName ? oAuthToken.AppName : 'N/A',
-        "x-Token-AppMenuItemLabel": oAuthToken["AppMenuItem.Label"] ? oAuthToken["AppMenuItem.Label"] : 'N/A',
-        "x-Token-AppMenuItemId": oAuthToken["AppMenuItem.Id"] ? oAuthToken["AppMenuItem.Id"] : 'N/A',
-        "x-Token-Namespace": oAuthToken["AppMenuItem.NamespacePrefix"] ? oAuthToken["AppMenuItem.NamespacePrefix"] : '',
-        "x-AppName-Different-From-Label": (oAuthToken.AppName && oAuthToken["AppMenuItem.Label"] && oAuthToken.AppName !== oAuthToken["AppMenuItem.Label"]) ? 'Yes' : 'No',
-      }
-      return appResult;
+    // Collect Connected Apps, External Client Apps and OAuth tokens, with the security status of each token
+    const {
+      allOAuthTokens,
+      allOAuthTokensWithStatus,
+      allConnectedApps,
+      allExternalClientApps,
+      convertedExtClientAppNames,
+      convertedExtClientAppsWithoutPolicy,
+    } = await collectOAuthTokensWithStatus(conn, {
+      ignoredAppNames: this.unsecuredConnectedAppsToIgnore,
+      commandThis: this,
+      logActions: true,
     });
 
     // The status of these apps comes from an External Client App with the same name, not from the Connected App itself
-    if (convertedExtClientAppNames.size > 0) {
-      uxLog("log", this, t('connectedAppsStatusFromExtClientApp', { count: convertedExtClientAppNames.size }));
-      Array.from(convertedExtClientAppNames).sort().forEach(name => uxLog("log", this, `• ${name}`));
+    if (convertedExtClientAppNames.length > 0) {
+      uxLog("log", this, t('connectedAppsStatusFromExtClientApp', { count: convertedExtClientAppNames.length }));
+      convertedExtClientAppNames.forEach(name => uxLog("log", this, `• ${name}`));
     }
-    if (convertedExtClientAppsWithoutPolicy.size > 0) {
-      uxLog("warning", this, c.yellow(t('externalClientAppOauthPolicyNotFound', { count: convertedExtClientAppsWithoutPolicy.size })));
-      Array.from(convertedExtClientAppsWithoutPolicy).sort().forEach(name => uxLog("warning", this, c.yellow(`• ${name}`)));
+    if (convertedExtClientAppsWithoutPolicy.length > 0) {
+      uxLog("warning", this, c.yellow(t('externalClientAppOauthPolicyNotFound', { count: convertedExtClientAppsWithoutPolicy.length })));
+      convertedExtClientAppsWithoutPolicy.forEach(name => uxLog("warning", this, c.yellow(`• ${name}`)));
     }
 
     // Generate output CSV file
@@ -412,47 +259,8 @@ In agent mode:
       uxLogTable(this, oAuthTokensByUser);
     }
 
-    // Aggregate ALL apps that have OAuth tokens (secured, unsecured and ignored) to give a full usage inventory,
-    // with the most recent usage date and the list of usernames who hold a token for each app.
-    const appsUsage: { [appName: string]: { appName: string; appType: string; namespacePrefix: string; lastUsedDate: string; usernames: Set<string>; } } = {};
-    for (const token of allOAuthTokensWithStatus) {
-      const appName = token.AppName && token.AppName !== 'N/A' ? token.AppName : 'N/A';
-      if (!appsUsage[appName]) {
-        appsUsage[appName] = {
-          appName,
-          appType: token["App Type"] || 'Connected App',
-          namespacePrefix: token["x-Token-Namespace"] || '',
-          lastUsedDate: '',
-          usernames: new Set<string>(),
-        };
-      }
-      const username = token["Username"] && token["Username"] !== 'N/A'
-        ? token["Username"]
-        : (token["User"] && token["User"] !== 'N/A' ? token["User"] : '');
-      if (username) {
-        appsUsage[appName].usernames.add(username);
-      }
-      // Dates are ISO YYYY-MM-DD strings, so a string comparison keeps the most recent one
-      const lastUsedDate = token["Last Used Date"] && token["Last Used Date"] !== 'N/A' ? token["Last Used Date"] : '';
-      if (lastUsedDate && lastUsedDate > appsUsage[appName].lastUsedDate) {
-        appsUsage[appName].lastUsedDate = lastUsedDate;
-      }
-    }
-    // Only the Connected Apps the org owns can be moved by the org: the others belong to Salesforce or to a vendor
-    const orgOwnedConnectedAppNames = await listOrgOwnedConnectedAppNames(conn);
-    const connectedAppsUsage = Object.values(appsUsage).map(entry => ({
-      "Connected App": entry.appName,
-      "App Type": entry.appType,
-      "Last Used Date": entry.lastUsedDate || 'N/A',
-      "Move to External Client App": getConnectedAppMigrationStatus(
-        entry.appType,
-        entry.namespacePrefix,
-        entry.lastUsedDate,
-        orgOwnedConnectedAppNames ? orgOwnedConnectedAppNames.has(toConnectedAppApiName(entry.appName)) : null
-      ),
-      "Usernames": Array.from(entry.usernames).sort().join('\n'),
-    }));
-    sortArray(connectedAppsUsage, { by: 'Connected App' });
+    // Every app that has OAuth tokens, with its last usage date, its users and whether it must move to an External Client App
+    const connectedAppsUsage = await buildConnectedAppsUsage(allOAuthTokensWithStatus, conn);
     const outputFileConnectedAppsUsage = await generateReportPath('connected-apps-usage', '');
     await generateCsvFile(connectedAppsUsage, outputFileConnectedAppsUsage, { fileTitle: t('connectedAppsUsageFiletitle') });
     if (connectedAppsUsage.length > 0) {
@@ -475,9 +283,6 @@ In agent mode:
     for (const connectedApp of uniqueUnsecureConnectedAppsWithTokens) {
       notifDetailText += `- **${connectedApp.AppName}** (**${connectedApp.NumberOfUnsecuredOAuthTokens}** OAuth Tokens)\n`;
     }
-    if (connectedAppsToMigrate.length > 0) {
-      notifDetailText += `\n${t('connectedAppsToMigrate', { count: connectedAppsToMigrate.length })}\n`;
-    }
     const notifAttachments = [{ text: notifDetailText }];
     // Post notif
     await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
@@ -487,12 +292,11 @@ In agent mode:
       attachments: notifAttachments,
       buttons: notifButtons,
       severity: notifSeverity,
-      attachedFiles: this.outputFileConnectedApps.xlsxFile ? [this.outputFileConnectedApps.xlsxFile] : [],
+      attachedFiles: this.outputFilesResConnectedApps.xlsxFile ? [this.outputFilesResConnectedApps.xlsxFile] : [],
       logElements: uniqueUnsecureConnectedAppsWithTokens,
       data: { metric: numberWarnings },
       metrics: {
         UnsecuredConnectedApps: numberWarnings,
-        ConnectedAppsToMigrate: connectedAppsToMigrate.length,
       },
     });
 
@@ -633,7 +437,7 @@ In agent mode:
       unsecuredOAuthTokens: unsecuredOAuthTokens,
       unsecuredConnectedApps: uniqueUnsecuredAppNames as AnyJson[],
       oAuthTokensByUser: oAuthTokensByUser,
-      connectedAppsUsage: connectedAppsUsage,
+      connectedAppsUsage: connectedAppsUsage as unknown as AnyJson[],
     }
   }
 

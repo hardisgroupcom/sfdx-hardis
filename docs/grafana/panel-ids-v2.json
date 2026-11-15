@@ -135,13 +135,15 @@
     "table::Suspect audit trail entries (latest run)": 115,
     "row::MFA readiness (click a number for details)": 187,
     "stat::Not passkey-ready": 188,
-    "row::Authentication retirements (click a number for details)": 193,
+    "row::What will break (click a number for details)": 193,
     "stat::SOAP no API Auth": 194,
     "stat::Device flow users": 195,
     "stat::Password flow": 196,
     "stat::SOAP login users": 197,
     "stat::Idle tokens": 198,
-    "stat::Apps to migrate": 199
+    "stat::Apps to migrate": 199,
+    "stat::Rare refreshes": 200,
+    "stat::SOAP token needed": 201
   },
   "sfdx-hardis-v2-org-debt": {
     "row::Current debt (click a number for details)": 133,

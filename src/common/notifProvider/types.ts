@@ -83,7 +83,7 @@ export type NotifMessageType =
   | "UNUSED_USERS_CRM_6_MONTHS"
   | "UNUSED_USERS_EXPERIENCE_6_MONTHS"
   | "AUDIT_TRAIL"
-  | "AUTH_RETIREMENTS"
+  | "WHAT_WILL_BREAK"
   | "APEX_TESTS"
   | "AGENT_TESTS"
   | "BACKUP"
@@ -208,9 +208,9 @@ export const notificationTypesDefault: Record<NotifMessageType, NotificationType
     emittedSeverities: ["warning", "log"],
     defaults: { messaging: "warning", email: "off", api: "log" },
   },
-  AUTH_RETIREMENTS: {
+  WHAT_WILL_BREAK: {
     category: "apexTestsSecurity",
-    icon: "utility:key",
+    icon: "utility:warning",
     colorClass: "security",
     emittedSeverities: ["error", "warning", "log"],
     defaults: { messaging: "warning", email: "error", api: "log" },

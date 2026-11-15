@@ -2,16 +2,28 @@
 import fs from 'fs';
 import { expect } from 'chai';
 import {
-  AUTH_RETIREMENT_DEADLINES,
-  AUTH_RETIREMENTS_DOC_URL,
-  AuthRetirementCheckKey,
-  diagnoseAuthRetirements,
   getDeadlineDate,
   getDeadlineLabel,
   getDeadlineSeverity,
   getFixDocUrl,
-  groupLogins,
-} from '../../../src/common/utils/authRetirementsDiagnoseUtils.js';
+  WHAT_WILL_BREAK_DEADLINES,
+  WHAT_WILL_BREAK_DOC_URL,
+} from '../../../src/common/whatWillBreak/whatWillBreakDeadlines.js';
+import { groupLogins } from '../../../src/common/whatWillBreak/authChecks.js';
+import { runWhatWillBreak } from '../../../src/common/whatWillBreak/index.js';
+import { WhatWillBreakCheckKey, WhatWillBreakDeadlineKey } from '../../../src/common/whatWillBreak/whatWillBreakTypes.js';
+
+// The authentication checks of the original command (the refresh token use check has its own tests)
+const AUTH_CHECKS: WhatWillBreakCheckKey[] = [
+  'idleRefreshTokens',
+  'deviceFlow',
+  'soapLoginPermission',
+  'soapLoginIpRange',
+  'soapLoginInactivity',
+  'usernamePasswordFlow',
+  'sfConnectLegacyAuth',
+  'soapLoginRetirement',
+];
 
 const TODAY = new Date('2026-11-15T12:00:00Z');
 
@@ -119,8 +131,9 @@ const USERS = [
 ];
 
 async function runDiagnose(org: MockOrg, ignoreUsers: string[] = []) {
-  return diagnoseAuthRetirements({
+  return runWhatWillBreak({
     conn: mockConnection(org),
+    checks: AUTH_CHECKS,
     lookbackDays: 180,
     idleWarningDays: 20,
     ignoreUsers,
@@ -128,7 +141,7 @@ async function runDiagnose(org: MockOrg, ignoreUsers: string[] = []) {
   });
 }
 
-describe('authRetirementsDiagnoseUtils', () => {
+describe('whatWillBreak authentication checks', () => {
   describe('deadlines', () => {
     it('makes a finding an error when its deadline is less than 60 days away', () => {
       expect(getDeadlineSeverity('soapLoginPermission', false, TODAY)).to.equal('error');
@@ -154,18 +167,19 @@ describe('authRetirementsDiagnoseUtils', () => {
 
     it('labels a deadline with its date, its release, or as enforced', () => {
       expect(getDeadlineLabel('soapLoginPermission', false, TODAY)).to.contain('2026-12-01').and.contain('16');
-      expect(getDeadlineLabel('soapLoginRetirement', false, TODAY)).to.equal("Summer '27");
+      expect(getDeadlineLabel('soapLoginRetirement', false, TODAY)).to.equal("Summer '27 (2027-06)");
+      expect(getDeadlineLabel('legacyApiRetired', false, TODAY)).to.contain("Summer '25");
       expect(getDeadlineLabel('idleRefreshTokens', false, TODAY)).to.contain('2026-11-04');
     });
   });
 
   describe('getFixDocUrl()', () => {
     it('links every check to a How to fix section that exists on the doc page', () => {
-      const docPage = fs.readFileSync('docs/salesforce-monitoring-auth-retirements.md', 'utf8');
+      const docPage = fs.readFileSync('docs/salesforce-monitoring-what-will-break.md', 'utf8');
       expect(docPage).to.contain('### How to fix');
-      for (const key of Object.keys(AUTH_RETIREMENT_DEADLINES) as AuthRetirementCheckKey[]) {
-        const anchor = AUTH_RETIREMENT_DEADLINES[key].fixAnchor;
-        expect(getFixDocUrl(key)).to.equal(`${AUTH_RETIREMENTS_DOC_URL}#${anchor}`);
+      for (const key of Object.keys(WHAT_WILL_BREAK_DEADLINES) as WhatWillBreakDeadlineKey[]) {
+        const anchor = WHAT_WILL_BREAK_DEADLINES[key].fixAnchor;
+        expect(getFixDocUrl(key)).to.equal(`${WHAT_WILL_BREAK_DOC_URL}#${anchor}`);
         expect(docPage, `anchor ${anchor} of ${key}`).to.contain(`{ #${anchor} }`);
       }
     });
@@ -208,7 +222,7 @@ describe('authRetirementsDiagnoseUtils', () => {
     });
   });
 
-  describe('diagnoseAuthRetirements()', () => {
+  describe('runWhatWillBreak() on the authentication checks', () => {
     it('reports SOAP login() callers without Use Any API Auth as errors, and skips inactive users', async () => {
       const result = await runDiagnose({
         logins: [login('005A', 'SOAP API'), login('005B', 'SOAP API'), login('005C', 'SOAP API')],

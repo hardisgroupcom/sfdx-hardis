@@ -1,134 +1,21 @@
 import { Connection } from '@salesforce/core';
-import { isFieldOnObject, isUnsupportedSObjectError, soqlQuery } from './apiUtils.js';
-import { markRowSensitiveValues } from './anonymizeUtils.js';
-import { queryAllOAuthTokens } from './oauthTokenUtils.js';
-import { isIpInRange, isRangeWiderThan } from './ipRangeUtils.js';
-import { t } from './i18n.js';
-import { CONSTANTS } from '../../config/index.js';
+import { isFieldOnObject, isUnsupportedSObjectError, soqlQuery } from '../utils/apiUtils.js';
+import { markRowSensitiveValues } from '../utils/anonymizeUtils.js';
+import { queryAllOAuthTokens } from '../utils/oauthTokenUtils.js';
+import { isIpInRange, isRangeWiderThan } from '../utils/ipRangeUtils.js';
+import { t } from '../utils/i18n.js';
+import { getDeadlineLabel, getDeadlineSeverity, getFixDocUrl } from './whatWillBreakDeadlines.js';
+import { buildRow, DAY_MS, finalizeCheck, formatDate, notAvailableResult, successRow } from './checkResults.js';
+import {
+  CheckContext,
+  LoginContext,
+  WhatWillBreakCheckKey,
+  WhatWillBreakCheckResult,
+  WhatWillBreakDetailRow,
+  WhatWillBreakSeverity,
+} from './whatWillBreakTypes.js';
 
-export type AuthRetirementCheckKey =
-  | 'idleRefreshTokens'
-  | 'deviceFlow'
-  | 'soapLoginPermission'
-  | 'soapLoginIpRange'
-  | 'soapLoginInactivity'
-  | 'usernamePasswordFlow'
-  | 'sfConnectLegacyAuth'
-  | 'soapLoginRetirement';
 
-export type AuthRetirementSeverity = 'success' | 'info' | 'warning' | 'error';
-
-export interface AuthRetirementDeadline {
-  productionDate: string;
-  sandboxDate?: string;
-  // Salesforce gives a release, not a day: the date is only used to compute the severity
-  releaseLabel?: string;
-  // The change is already enforced and keeps acting every day (findings are warnings, not errors)
-  rolling?: boolean;
-  articleUrl: string;
-  // Anchor of the "How to fix" section of this check on the doc page
-  fixAnchor: string;
-}
-
-export interface AuthRetirementReportRow {
-  Check: string;
-  CheckKey: AuthRetirementCheckKey;
-  Severity: AuthRetirementSeverity;
-  Deadline: string;
-  Item: string;
-  Details: string;
-  LastSeen: string;
-  Count: number | string;
-  Recommendation: string;
-  HowToFix: string;
-  Article: string;
-}
-
-export interface AuthRetirementCheckResult {
-  key: AuthRetirementCheckKey;
-  status: AuthRetirementSeverity;
-  title: string;
-  detail: string;
-  deadline: string;
-  howToFixUrl: string;
-  rows: AuthRetirementReportRow[];
-  // true when the check could not run on this org (missing object or permission)
-  notChecked?: boolean;
-  // undefined when the check could not run on this org: no metric is sent then
-  metric?: number;
-}
-
-export interface AuthRetirementsOptions {
-  conn: Connection;
-  lookbackDays: number;
-  idleWarningDays: number;
-  ignoreUsers: string[];
-  today?: Date;
-}
-
-export interface AuthRetirementsResult {
-  checks: AuthRetirementCheckResult[];
-  metrics: Record<string, number>;
-  severity: 'error' | 'warning' | 'log';
-  reportRows: AuthRetirementReportRow[];
-}
-
-// Salesforce dates of every change. When Salesforce moves a date, update it here only.
-export const AUTH_RETIREMENT_DEADLINES: Record<AuthRetirementCheckKey, AuthRetirementDeadline> = {
-  idleRefreshTokens: {
-    productionDate: '2026-11-04',
-    sandboxDate: '2026-10-21',
-    rolling: true,
-    articleUrl: 'https://help.salesforce.com/s/articleView?id=005461275&type=1',
-    fixAnchor: 'fix-idle-refresh-tokens',
-  },
-  deviceFlow: {
-    productionDate: '2026-11-30',
-    articleUrl: 'https://help.salesforce.com/s/articleView?id=005461280&type=1',
-    fixAnchor: 'fix-device-flow',
-  },
-  soapLoginPermission: {
-    productionDate: '2026-12-01',
-    articleUrl: 'https://help.salesforce.com/s/articleView?id=005132110&type=1',
-    fixAnchor: 'fix-soap-login-permission',
-  },
-  soapLoginIpRange: {
-    productionDate: '2027-01-31',
-    sandboxDate: '2026-12-15',
-    articleUrl: 'https://help.salesforce.com/s/articleView?id=005132110&type=1',
-    fixAnchor: 'fix-soap-login-ip-range',
-  },
-  soapLoginInactivity: {
-    productionDate: '2027-01-31',
-    sandboxDate: '2026-12-15',
-    articleUrl: 'https://help.salesforce.com/s/articleView?id=005132110&type=1',
-    fixAnchor: 'fix-soap-login-inactivity',
-  },
-  usernamePasswordFlow: {
-    productionDate: '2027-02-20',
-    articleUrl:
-      'https://help.salesforce.com/s/articleView?id=release-notes.rn_security_oauth_unpw.htm&release=264&type=5',
-    fixAnchor: 'fix-username-password-flow',
-  },
-  sfConnectLegacyAuth: {
-    productionDate: '2027-02-13',
-    releaseLabel: "Spring '27",
-    articleUrl:
-      'https://help.salesforce.com/s/articleView?id=release-notes.rn_sf_connect_xorg_legacy_auth_retiring_ru.htm&release=264&type=5',
-    fixAnchor: 'fix-salesforce-connect',
-  },
-  soapLoginRetirement: {
-    productionDate: '2027-06-01',
-    releaseLabel: "Summer '27",
-    articleUrl: 'https://help.salesforce.com/s/articleView?id=005132110&type=1',
-    fixAnchor: 'fix-soap-login-retirement',
-  },
-};
-
-export const AUTH_RETIREMENTS_DOC_URL = `${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-auth-retirements/`;
-
-// A finding becomes an error when its deadline is closer than this
-export const AUTH_RETIREMENT_ERROR_DAYS = 60;
 // Trusted IP ranges wider than these prefixes no longer spare SOAP login() callers the security token
 export const SOAP_LOGIN_WIDE_RANGE_IPV4_PREFIX = 8;
 export const SOAP_LOGIN_WIDE_RANGE_IPV6_PREFIX = 29;
@@ -159,7 +46,6 @@ export const USER_AGENT_FLOW_SUBTYPES = [
 // An aggregate query returns at most 2000 groups: past that, the raw logins are read instead
 const LOGIN_AGGREGATE_MAX_GROUPS = 2000;
 
-const DAY_MS = 86400000;
 const USER_QUERY_CHUNK_SIZE = 200;
 
 interface LoginGroup {
@@ -174,85 +60,75 @@ interface LoginGroup {
   lastSuccess: string;
 }
 
-interface LoginContext {
-  failed: boolean;
-  records: any[];
-  usernameById: Map<string, string>;
-  activeUserIds: Set<string>;
-}
+// Every use of a refresh token to get a new access token
+export const REFRESH_TOKEN_SUBTYPES = ['OAuth Refresh Token', 'OAuth Refresh Token for Hybrid Apps'];
+// Salesforce apps people use on their phone or in their mailbox: a holiday longer than 30 days is not a broken integration
+const SALESFORCE_END_USER_APP_PREFIXES = [
+  'salesforce for ios',
+  'salesforce for android',
+  'salesforce mobile',
+  'salesforce authenticator',
+  'salesforce for outlook',
+  'salesforce inbox',
+  'salesforcea',
+  'salesforce insights',
+  'field service',
+  'chatter',
+  'pardot sso',
+  'tbid.',
+];
+// Users per day-grouped refresh token query: halved again when a query reaches the 2000 groups limit
+const REFRESH_DAYS_USER_CHUNK_SIZE = 20;
 
-interface CheckContext {
-  conn: Connection;
-  today: Date;
-  isSandbox: boolean;
-  lookbackDays: number;
-  idleWarningDays: number;
-  ignoreSet: Set<string>;
-  logins: LoginContext;
-}
+// The checks that read LoginHistory share a single query
+const LOGIN_BASED_CHECKS: WhatWillBreakCheckKey[] = [
+  'deviceFlow',
+  'soapLoginPermission',
+  'soapLoginIpRange',
+  'soapLoginInactivity',
+  'usernamePasswordFlow',
+  'soapLoginRetirement',
+];
 
-export async function diagnoseAuthRetirements(options: AuthRetirementsOptions): Promise<AuthRetirementsResult> {
-  const today = options.today || new Date();
-  const context: CheckContext = {
-    conn: options.conn,
-    today,
-    isSandbox: await fetchIsSandbox(options.conn),
-    lookbackDays: options.lookbackDays,
-    idleWarningDays: options.idleWarningDays,
-    ignoreSet: new Set(options.ignoreUsers.map((u) => u.toLowerCase())),
-    logins: await fetchLogins(options.conn, options.lookbackDays),
+// Run the selected authentication checks, in the order given
+export async function runAuthChecks(context: CheckContext, keys: WhatWillBreakCheckKey[]): Promise<WhatWillBreakCheckResult[]> {
+  if (keys.some((key) => LOGIN_BASED_CHECKS.includes(key))) {
+    context.logins = await fetchLogins(context.conn, context.lookbackDays);
+  }
+  const runners: Partial<Record<WhatWillBreakCheckKey, () => Promise<WhatWillBreakCheckResult> | WhatWillBreakCheckResult>> = {
+    idleRefreshTokens: () => checkIdleRefreshTokens(context),
+    refreshTokenCadence: () => checkRefreshTokenCadence(context),
+    deviceFlow: () => checkDeviceFlow(context),
+    soapLoginPermission: () => checkSoapLoginPermission(context),
+    soapLoginIpRange: () => checkSoapLoginIpRange(context),
+    soapLoginInactivity: () => checkSoapLoginInactivity(context),
+    usernamePasswordFlow: () => checkUsernamePasswordFlow(context),
+    sfConnectLegacyAuth: () => checkSfConnectLegacyAuth(context),
+    soapLoginRetirement: () => checkSoapLoginRetirement(context),
   };
-
-  // Checks are sorted by deadline, the closest first
-  const checks: AuthRetirementCheckResult[] = [
-    await checkIdleRefreshTokens(context),
-    checkDeviceFlow(context),
-    await checkSoapLoginPermission(context),
-    await checkSoapLoginIpRange(context),
-    checkSoapLoginInactivity(context),
-    await checkUsernamePasswordFlow(context),
-    await checkSfConnectLegacyAuth(context),
-    checkSoapLoginRetirement(context),
-  ];
-
-  const metrics = buildMetrics(checks);
-  const severity = rollupSeverity(checks);
-  const reportRows = checks.flatMap((ck) => ck.rows);
-  return { checks, metrics, severity, reportRows };
-}
-
-// Severity of a finding of a check, from the time left before its deadline
-export function getDeadlineSeverity(key: AuthRetirementCheckKey, isSandbox: boolean, today: Date): 'error' | 'warning' {
-  const deadline = AUTH_RETIREMENT_DEADLINES[key];
-  if (deadline.rolling) {
-    return 'warning';
+  const results: WhatWillBreakCheckResult[] = [];
+  for (const key of keys) {
+    const runner = runners[key];
+    if (runner) {
+      results.push(await runner());
+    }
   }
-  const daysLeft = getDaysLeft(key, isSandbox, today);
-  return daysLeft <= AUTH_RETIREMENT_ERROR_DAYS ? 'error' : 'warning';
+  return results;
 }
 
-// Human readable deadline of a check: "Enforced since 2026-11-04", "2026-12-01 (16 days left)", "Summer '27"
-export function getDeadlineLabel(key: AuthRetirementCheckKey, isSandbox: boolean, today: Date): string {
-  const deadline = AUTH_RETIREMENT_DEADLINES[key];
-  const date = getDeadlineDate(key, isSandbox);
-  const daysLeft = getDaysLeft(key, isSandbox, today);
-  if (daysLeft <= 0) {
-    return t('authRetirementsDeadlinePassed', { date });
+// Longest number of days between two consecutive days of use (YYYY-MM-DD strings, sorted)
+export function getLongestGapDays(sortedDays: string[]): number {
+  let longest = 0;
+  for (let i = 1; i < sortedDays.length; i++) {
+    const gap = Math.round((new Date(sortedDays[i]).getTime() - new Date(sortedDays[i - 1]).getTime()) / DAY_MS);
+    longest = Math.max(longest, gap);
   }
-  if (deadline.releaseLabel) {
-    return deadline.releaseLabel;
-  }
-  return t('authRetirementsDeadlineIn', { date, days: daysLeft });
+  return longest;
 }
 
-export function getDeadlineDate(key: AuthRetirementCheckKey, isSandbox: boolean): string {
-  const deadline = AUTH_RETIREMENT_DEADLINES[key];
-  return isSandbox && deadline.sandboxDate ? deadline.sandboxDate : deadline.productionDate;
-}
-
-// Link to the "How to fix" section of a check on the doc page
-export function getFixDocUrl(key: AuthRetirementCheckKey): string {
-  return `${AUTH_RETIREMENTS_DOC_URL}#${AUTH_RETIREMENT_DEADLINES[key].fixAnchor}`;
+export function isSalesforceEndUserApp(application: string): boolean {
+  const name = (application || '').toLowerCase();
+  return SALESFORCE_END_USER_APP_PREFIXES.some((prefix) => name.startsWith(prefix));
 }
 
 // Group LoginHistory rows by the given key, keeping counts and the last successful login.
@@ -295,13 +171,6 @@ export function groupLogins(
     groups.set(key, group);
   }
   return Array.from(groups.values()).sort((a, b) => a.username.localeCompare(b.username));
-}
-
-// Every API user can read Organization: an error here means the org cannot be reached (expired login, invalid session...).
-// It is not caught, so the command fails instead of reporting every check as not run, which would read as "nothing to fix".
-async function fetchIsSandbox(conn: Connection): Promise<boolean> {
-  const res = await soqlQuery('SELECT IsSandbox FROM Organization LIMIT 1', conn);
-  return res.records?.[0]?.IsSandbox === true;
 }
 
 // One LoginHistory query for every login type the checks look at, then the usernames of the users found.
@@ -352,8 +221,8 @@ async function queryUsersByIds(conn: Connection, userIds: string[]): Promise<any
   return users;
 }
 
-async function checkIdleRefreshTokens(context: CheckContext): Promise<AuthRetirementCheckResult> {
-  const key: AuthRetirementCheckKey = 'idleRefreshTokens';
+async function checkIdleRefreshTokens(context: CheckContext): Promise<WhatWillBreakCheckResult> {
+  const key: WhatWillBreakCheckKey = 'idleRefreshTokens';
   const title = t('authRetirementsCheckIdleTokens');
   let tokens: any[];
   try {
@@ -366,7 +235,7 @@ async function checkIdleRefreshTokens(context: CheckContext): Promise<AuthRetire
   }
   const apiOnlyUserIds = await queryApiOnlyUserIds(context.conn);
   const severity = getDeadlineSeverity(key, context.isSandbox, context.today);
-  const rows: AuthRetirementReportRow[] = [];
+  const rows: WhatWillBreakDetailRow[] = [];
   // Tokens of the other users are counted per app: listing every mobile user token would drown the report
   const otherUsersExpiringByApp = new Map<string, number>();
   for (const appUser of groupTokensByAppAndUser(tokens, context.ignoreSet)) {
@@ -382,7 +251,7 @@ async function checkIdleRefreshTokens(context: CheckContext): Promise<AuthRetire
     }
     const expired = idleDays >= REFRESH_TOKEN_IDLE_TTL_DAYS;
     rows.push(
-      markRowSensitiveValues<AuthRetirementReportRow>(
+      markRowSensitiveValues<WhatWillBreakDetailRow>(
         buildRow(context, key, title, expired ? 'info' : severity, {
           Item: `${appUser.appName} - ${appUser.username}`,
           Details: expired
@@ -449,8 +318,95 @@ async function queryApiOnlyUserIds(conn: Connection): Promise<Set<string>> {
   }
 }
 
-function checkDeviceFlow(context: CheckContext): AuthRetirementCheckResult {
-  const key: AuthRetirementCheckKey = 'deviceFlow';
+// Integrations that use their refresh token less often than every 30 days: monthly or quarterly syncs break between two runs,
+// even when their token was used yesterday. Salesforce's own end-user apps are left out.
+async function checkRefreshTokenCadence(context: CheckContext): Promise<WhatWillBreakCheckResult> {
+  const key: WhatWillBreakCheckKey = 'refreshTokenCadence';
+  const title = t('whatWillBreakCheckRefreshTokenCadence');
+  const subTypes = REFRESH_TOKEN_SUBTYPES.map((subType) => `'${subType}'`).join(',');
+  const where = `WHERE LoginTime = LAST_N_DAYS:${context.lookbackDays} AND LoginSubType IN (${subTypes})`;
+  let pairs: any[];
+  try {
+    pairs = (await soqlQuery(`SELECT UserId, Application, COUNT(Id) cnt FROM LoginHistory ${where} GROUP BY UserId, Application`, context.conn))
+      .records || [];
+  } catch {
+    return notAvailableResult(context, key, title, t('authRetirementsLoginHistoryUnavailable'));
+  }
+  const candidateUserIds = Array.from(
+    new Set(pairs.filter((pair) => pair.UserId && !isSalesforceEndUserApp(pair.Application)).map((pair) => pair.UserId as string))
+  );
+  const users = await queryUsersByIds(context.conn, candidateUserIds);
+  const activeUsers = users.filter(
+    (user) => (user.IsActive === true || user.IsActive === 'true') && !context.ignoreSet.has((user.Username || '').toLowerCase())
+  );
+  const usernameById = new Map<string, string>(activeUsers.map((user) => [user.Id, user.Username]));
+  // Days of successful use of each app by each user. Status cannot be filtered in SOQL, only grouped.
+  const daysByPair = new Map<string, { userId: string; application: string; days: Set<string> }>();
+  for (const record of await queryRefreshTokenDays(context.conn, where, Array.from(usernameById.keys()))) {
+    if (record.Status !== 'Success' || isSalesforceEndUserApp(record.Application) || !usernameById.has(record.UserId)) {
+      continue;
+    }
+    const pairKey = `${record.UserId}|${record.Application}`;
+    const pair = daysByPair.get(pairKey) || { userId: record.UserId, application: record.Application || 'N/A', days: new Set<string>() };
+    pair.days.add(String(record.d).substring(0, 10));
+    daysByPair.set(pairKey, pair);
+  }
+  const severity = getDeadlineSeverity(key, context.isSandbox, context.today);
+  const rows: WhatWillBreakDetailRow[] = [];
+  for (const pair of daysByPair.values()) {
+    const days = Array.from(pair.days).sort();
+    const longestGap = getLongestGapDays(days);
+    if (longestGap < REFRESH_TOKEN_IDLE_TTL_DAYS) {
+      continue;
+    }
+    const username = usernameById.get(pair.userId) || pair.userId;
+    rows.push(
+      markRowSensitiveValues<WhatWillBreakDetailRow>(
+        buildRow(context, key, title, severity, {
+          Item: `${pair.application} - ${username}`,
+          Details: t('whatWillBreakDetailRefreshCadence', { days: longestGap, uses: days.length }),
+          LastSeen: days[days.length - 1],
+          Count: days.length,
+          Recommendation: t('whatWillBreakRecoRefreshCadence'),
+        }),
+        [{ value: username, kind: 'user' }]
+      )
+    );
+  }
+  rows.sort((a, b) => a.Item.localeCompare(b.Item));
+  return finalizeCheck(context, key, title, rows, rows.length, t('whatWillBreakFoundRefreshCadence', { count: rows.length }));
+}
+
+// Days of refresh token use per user, app and status. A grouped query returns at most 2000 groups:
+// a chunk of users that reaches it is split in two and read again.
+async function queryRefreshTokenDays(conn: Connection, where: string, userIds: string[]): Promise<any[]> {
+  const records: any[] = [];
+  for (let i = 0; i < userIds.length; i += REFRESH_DAYS_USER_CHUNK_SIZE) {
+    records.push(...(await queryRefreshTokenDaysChunk(conn, where, userIds.slice(i, i + REFRESH_DAYS_USER_CHUNK_SIZE))));
+  }
+  return records;
+}
+
+async function queryRefreshTokenDaysChunk(conn: Connection, where: string, userIds: string[]): Promise<any[]> {
+  const idList = userIds.map((id) => `'${id}'`).join(',');
+  const res = await soqlQuery(
+    `SELECT UserId, Application, Status, DAY_ONLY(LoginTime) d, COUNT(Id) cnt FROM LoginHistory ${where} AND UserId IN (${idList}) ` +
+      'GROUP BY UserId, Application, Status, DAY_ONLY(LoginTime)',
+    conn
+  );
+  const records = res.records || [];
+  if (records.length < LOGIN_AGGREGATE_MAX_GROUPS || userIds.length === 1) {
+    return records;
+  }
+  const half = Math.ceil(userIds.length / 2);
+  return [
+    ...(await queryRefreshTokenDaysChunk(conn, where, userIds.slice(0, half))),
+    ...(await queryRefreshTokenDaysChunk(conn, where, userIds.slice(half))),
+  ];
+}
+
+function checkDeviceFlow(context: CheckContext): WhatWillBreakCheckResult {
+  const key: WhatWillBreakCheckKey = 'deviceFlow';
   const title = t('authRetirementsCheckDeviceFlow');
   if (context.logins.failed) {
     return loginHistoryUnavailableResult(context, key, title);
@@ -462,8 +418,8 @@ function checkDeviceFlow(context: CheckContext): AuthRetirementCheckResult {
   return loginGroupsResult(context, key, title, groups, 'authRetirementsDetailDeviceFlow', 'authRetirementsRecoDeviceFlow');
 }
 
-async function checkSoapLoginPermission(context: CheckContext): Promise<AuthRetirementCheckResult> {
-  const key: AuthRetirementCheckKey = 'soapLoginPermission';
+async function checkSoapLoginPermission(context: CheckContext): Promise<WhatWillBreakCheckResult> {
+  const key: WhatWillBreakCheckKey = 'soapLoginPermission';
   const title = t('authRetirementsCheckSoapPermission');
   if (context.logins.failed) {
     return loginHistoryUnavailableResult(context, key, title);
@@ -503,8 +459,8 @@ async function queryUsersWithPermission(conn: Connection, userIds: string[], per
   return result;
 }
 
-async function checkSoapLoginIpRange(context: CheckContext): Promise<AuthRetirementCheckResult> {
-  const key: AuthRetirementCheckKey = 'soapLoginIpRange';
+async function checkSoapLoginIpRange(context: CheckContext): Promise<WhatWillBreakCheckResult> {
+  const key: WhatWillBreakCheckKey = 'soapLoginIpRange';
   const title = t('authRetirementsCheckSoapIpRange');
   if (context.logins.failed) {
     return loginHistoryUnavailableResult(context, key, title);
@@ -566,8 +522,8 @@ async function fetchTrustedIpRanges(conn: Connection): Promise<any[] | null> {
   }
 }
 
-function checkSoapLoginInactivity(context: CheckContext): AuthRetirementCheckResult {
-  const key: AuthRetirementCheckKey = 'soapLoginInactivity';
+function checkSoapLoginInactivity(context: CheckContext): WhatWillBreakCheckResult {
+  const key: WhatWillBreakCheckKey = 'soapLoginInactivity';
   const title = t('authRetirementsCheckSoapInactivity');
   if (context.logins.failed) {
     return loginHistoryUnavailableResult(context, key, title);
@@ -596,7 +552,7 @@ function checkSoapLoginInactivity(context: CheckContext): AuthRetirementCheckRes
     };
   }
   const daysSince = (date: string) => Math.floor((context.today.getTime() - new Date(date).getTime()) / DAY_MS);
-  const rows: AuthRetirementReportRow[] = [];
+  const rows: WhatWillBreakDetailRow[] = [];
   const orgIdle = daysSince(lastOrgCall);
   if (orgIdle > SOAP_LOGIN_INACTIVITY_WARNING_DAYS) {
     rows.push(
@@ -611,7 +567,7 @@ function checkSoapLoginInactivity(context: CheckContext): AuthRetirementCheckRes
   }
   for (const group of groups.filter((g) => daysSince(g.lastSuccess) > SOAP_LOGIN_RARE_CALLER_DAYS)) {
     rows.push(
-      markRowSensitiveValues<AuthRetirementReportRow>(
+      markRowSensitiveValues<WhatWillBreakDetailRow>(
         buildRow(context, key, title, 'info', {
           Item: group.username,
           Details: t('authRetirementsDetailRareSoapCaller', { days: daysSince(group.lastSuccess) }),
@@ -623,7 +579,7 @@ function checkSoapLoginInactivity(context: CheckContext): AuthRetirementCheckRes
       )
     );
   }
-  const status: AuthRetirementSeverity = rows.some((r) => r.Severity === 'warning') ? 'warning' : rows.length > 0 ? 'info' : 'success';
+  const status: WhatWillBreakSeverity = rows.some((r) => r.Severity === 'warning') ? 'warning' : rows.length > 0 ? 'info' : 'success';
   const detail =
     status === 'success'
       ? t('authRetirementsSoapLoginActive', { date: formatDate(lastOrgCall) })
@@ -634,8 +590,8 @@ function checkSoapLoginInactivity(context: CheckContext): AuthRetirementCheckRes
   return { key, status, title, detail, deadline: getDeadlineLabel(key, context.isSandbox, context.today), howToFixUrl: getFixDocUrl(key), rows };
 }
 
-async function checkUsernamePasswordFlow(context: CheckContext): Promise<AuthRetirementCheckResult> {
-  const key: AuthRetirementCheckKey = 'usernamePasswordFlow';
+async function checkUsernamePasswordFlow(context: CheckContext): Promise<WhatWillBreakCheckResult> {
+  const key: WhatWillBreakCheckKey = 'usernamePasswordFlow';
   const title = t('authRetirementsCheckUsernamePassword');
   if (context.logins.failed) {
     return loginHistoryUnavailableResult(context, key, title);
@@ -704,8 +660,8 @@ async function fetchOauthOidcSettings(conn: Connection): Promise<any> {
   }
 }
 
-async function checkSfConnectLegacyAuth(context: CheckContext): Promise<AuthRetirementCheckResult> {
-  const key: AuthRetirementCheckKey = 'sfConnectLegacyAuth';
+async function checkSfConnectLegacyAuth(context: CheckContext): Promise<WhatWillBreakCheckResult> {
+  const key: WhatWillBreakCheckKey = 'sfConnectLegacyAuth';
   const title = t('authRetirementsCheckSfConnect');
   let dataSources: any[];
   try {
@@ -736,8 +692,8 @@ async function checkSfConnectLegacyAuth(context: CheckContext): Promise<AuthReti
   return finalizeCheck(context, key, title, rows, rows.length, t('authRetirementsFoundSfConnect', { count: rows.length }));
 }
 
-function checkSoapLoginRetirement(context: CheckContext): AuthRetirementCheckResult {
-  const key: AuthRetirementCheckKey = 'soapLoginRetirement';
+function checkSoapLoginRetirement(context: CheckContext): WhatWillBreakCheckResult {
+  const key: WhatWillBreakCheckKey = 'soapLoginRetirement';
   const title = t('authRetirementsCheckSoapRetirement');
   if (context.logins.failed) {
     return loginHistoryUnavailableResult(context, key, title);
@@ -762,20 +718,20 @@ function filterLoginGroups(context: CheckContext, groups: LoginGroup[]): LoginGr
 // Only active users count, and only their successful logins unless includeFailedOnly is set.
 function loginGroupsResult(
   context: CheckContext,
-  key: AuthRetirementCheckKey,
+  key: WhatWillBreakCheckKey,
   title: string,
   groups: LoginGroup[],
   detailKey: string,
   recommendationKey: string,
   includeFailedOnly = false
-): AuthRetirementCheckResult {
+): WhatWillBreakCheckResult {
   const severity = getDeadlineSeverity(key, context.isSandbox, context.today);
   const findings = groups.filter(
     (group) =>
       context.logins.activeUserIds.has(group.userId) && (group.successCount > 0 || (includeFailedOnly && group.failedCount > 0))
   );
   const rows = findings.map((group) =>
-    markRowSensitiveValues<AuthRetirementReportRow>(
+    markRowSensitiveValues<WhatWillBreakDetailRow>(
       buildRow(context, key, title, severity, {
         Item: group.username,
         Details: t(detailKey, {
@@ -799,136 +755,11 @@ function loginGroupsResult(
   return finalizeCheck(context, key, title, rows, users, t('authRetirementsFoundUsers', { count: users, days: context.lookbackDays }));
 }
 
-function finalizeCheck(
-  context: CheckContext,
-  key: AuthRetirementCheckKey,
-  title: string,
-  rows: AuthRetirementReportRow[],
-  metric: number,
-  foundDetail: string
-): AuthRetirementCheckResult {
-  const deadline = getDeadlineLabel(key, context.isSandbox, context.today);
-  const order: Record<AuthRetirementSeverity, number> = { success: 0, info: 1, warning: 2, error: 3 };
-  const status = rows.reduce<AuthRetirementSeverity>(
-    (worst, row) => (order[row.Severity] > order[worst] ? row.Severity : worst),
-    'success'
-  );
-  if (rows.length === 0) {
-    const detail = t('authRetirementsNothingFound');
-    return {
-      key,
-      status: 'success',
-      title,
-      detail,
-      deadline,
-      howToFixUrl: getFixDocUrl(key),
-      rows: [successRow(context, key, title, detail)],
-      metric,
-    };
-  }
-  // Only information rows: nothing to act on
-  const detail = status === 'info' ? t('authRetirementsInfoOnly', { count: rows.length }) : foundDetail;
-  return { key, status, title, detail, deadline, howToFixUrl: getFixDocUrl(key), rows, metric };
-}
 
 function loginHistoryUnavailableResult(
   context: CheckContext,
-  key: AuthRetirementCheckKey,
+  key: WhatWillBreakCheckKey,
   title: string
-): AuthRetirementCheckResult {
+): WhatWillBreakCheckResult {
   return notAvailableResult(context, key, title, t('authRetirementsLoginHistoryUnavailable'));
-}
-
-function notAvailableResult(
-  context: CheckContext,
-  key: AuthRetirementCheckKey,
-  title: string,
-  reason: string
-): AuthRetirementCheckResult {
-  const detail = t('authRetirementsCheckNotAvailable', { reason });
-  const row = buildRow(context, key, title, 'info', {
-    Item: '-',
-    Details: detail,
-    LastSeen: '',
-    Count: '',
-    Recommendation: '',
-  });
-  return {
-    key,
-    status: 'info',
-    title,
-    detail,
-    deadline: row.Deadline,
-    howToFixUrl: row.HowToFix,
-    rows: [row],
-    notChecked: true,
-  };
-}
-
-function successRow(context: CheckContext, key: AuthRetirementCheckKey, title: string, detail: string): AuthRetirementReportRow {
-  return buildRow(context, key, title, 'success', {
-    Item: '-',
-    Details: detail,
-    LastSeen: '',
-    Count: 0,
-    Recommendation: '',
-  });
-}
-
-function buildRow(
-  context: CheckContext,
-  key: AuthRetirementCheckKey,
-  title: string,
-  severity: AuthRetirementSeverity,
-  values: Pick<AuthRetirementReportRow, 'Item' | 'Details' | 'LastSeen' | 'Count' | 'Recommendation'>
-): AuthRetirementReportRow {
-  return {
-    Check: title,
-    CheckKey: key,
-    Severity: severity,
-    Deadline: getDeadlineLabel(key, context.isSandbox, context.today),
-    ...values,
-    HowToFix: getFixDocUrl(key),
-    Article: AUTH_RETIREMENT_DEADLINES[key].articleUrl,
-  };
-}
-
-function buildMetrics(checks: AuthRetirementCheckResult[]): Record<string, number> {
-  const metricNames: Partial<Record<AuthRetirementCheckKey, string>> = {
-    idleRefreshTokens: 'IdleRefreshTokensExpiringSoon',
-    deviceFlow: 'DeviceFlowUsers',
-    soapLoginPermission: 'SoapLoginUsersMissingPermission',
-    soapLoginIpRange: 'SoapLoginUsersNeedingToken',
-    usernamePasswordFlow: 'UsernamePasswordFlowUsers',
-    sfConnectLegacyAuth: 'SfConnectLegacyDataSources',
-    soapLoginRetirement: 'SoapLoginUsers',
-  };
-  const metrics: Record<string, number> = {};
-  for (const check of checks) {
-    const metricName = metricNames[check.key];
-    // A check that could not run on this org sends no metric: an absent metric is "not measured", a 0 is "none found"
-    if (metricName && check.metric !== undefined) {
-      metrics[metricName] = check.metric;
-    }
-  }
-  return metrics;
-}
-
-function rollupSeverity(checks: AuthRetirementCheckResult[]): 'error' | 'warning' | 'log' {
-  if (checks.some((ck) => ck.status === 'error')) {
-    return 'error';
-  }
-  if (checks.some((ck) => ck.status === 'warning')) {
-    return 'warning';
-  }
-  return 'log';
-}
-
-function getDaysLeft(key: AuthRetirementCheckKey, isSandbox: boolean, today: Date): number {
-  const date = new Date(`${getDeadlineDate(key, isSandbox)}T00:00:00Z`);
-  return Math.ceil((date.getTime() - today.getTime()) / DAY_MS);
-}
-
-function formatDate(value: string): string {
-  return value ? new Date(value).toISOString().split('T')[0] : '';
 }

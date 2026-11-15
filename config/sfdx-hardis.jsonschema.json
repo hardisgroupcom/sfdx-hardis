@@ -17,7 +17,6 @@
         "APEX_FLEX_QUEUE",
         "APEX_TESTS",
         "AUDIT_TRAIL",
-        "AUTH_RETIREMENTS",
         "BACKUP",
         "CONNECTED_APPS",
         "CONSUMPTION_ALERTS",
@@ -49,7 +48,8 @@
         "UNUSED_USERS",
         "UNUSED_USERS_CRM_6_MONTHS",
         "UNUSED_USERS_EXPERIENCE_6_MONTHS",
-        "USAGE_ENTITLEMENTS"
+        "USAGE_ENTITLEMENTS",
+        "WHAT_WILL_BREAK"
       ],
       "enumNames": [
         "Active Users",
@@ -64,7 +64,6 @@
         "Apex Flex Queue",
         "Apex Tests",
         "Audit Trail",
-        "Auth Retirements",
         "Backup",
         "Connected Apps",
         "Consumption Alerts",
@@ -96,7 +95,8 @@
         "Unused Users",
         "Unused Users CRM (6 months)",
         "Unused Users Experience (6 months)",
-        "Usage-Based Entitlements"
+        "Usage-Based Entitlements",
+        "What Will Break"
       ],
       "type": "string"
     },
@@ -110,7 +110,6 @@
         "APEX_FLEX_QUEUE",
         "APEX_FLOW_ERRORS",
         "AUDIT_TRAIL",
-        "AUTH_RETIREMENTS",
         "CONNECTED_APPS",
         "CONSUMPTION_ALERTS",
         "DANGEROUS_PERMISSIONS",
@@ -134,7 +133,8 @@
         "UNUSED_USERS",
         "UNUSED_USERS_CRM_6_MONTHS",
         "UNUSED_USERS_EXPERIENCE_6_MONTHS",
-        "USAGE_ENTITLEMENTS"
+        "USAGE_ENTITLEMENTS",
+        "WHAT_WILL_BREAK"
       ],
       "enumNames": [
         "Active Users CRM (weekly)",
@@ -145,12 +145,11 @@
         "Apex Flex Queue",
         "Apex and Flow Errors",
         "Audit Trail",
-        "Auth Retirements",
         "Connected Apps",
         "Consumption Alerts",
         "Dangerous Permissions",
         "Deployments",
-        "Legacy API",
+        "Legacy API (deprecated)",
         "Licenses",
         "Lint Access",
         "Metadata Status",
@@ -160,7 +159,7 @@
         "Org Health Check",
         "Org Info",
         "Org Limits",
-        "Release Updates",
+        "Release Updates (deprecated)",
         "Underused Permission Sets",
         "Unsecured Connected Apps",
         "Unused Apex Classes",
@@ -169,7 +168,8 @@
         "Unused Users",
         "Unused Users CRM (6 months)",
         "Unused Users Experience (6 months)",
-        "Usage-Based Entitlements"
+        "Usage-Based Entitlements",
+        "What Will Break"
       ],
       "type": "string"
     },
@@ -3152,21 +3152,6 @@
       "type": "boolean",
       "default": false
     },
-    "monitoringAuthRetirementsIgnoreUsers": {
-      "$id": "#/properties/monitoringAuthRetirementsIgnoreUsers",
-      "description": "List of usernames skipped by [hardis:org:diagnose:auth-retirements](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/auth-retirements/), for example an integration already being moved to another authentication method. Can also be set with env var MONITORING_AUTH_RETIREMENTS_IGNORE_USERS (comma-separated).",
-      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-monitoring-auth-retirements/",
-      "examples": [
-        [
-          "integration@mycompany.com"
-        ]
-      ],
-      "items": {
-        "type": "string"
-      },
-      "title": "Users ignored by authentication retirements monitoring",
-      "type": "array"
-    },
     "monitoringBackupSkipDataCloud": {
       "$id": "#/properties/monitoringBackupSkipDataCloud",
       "description": "Set to true to skip the backup of Data Cloud objects (__dlm and __dll CustomObjects) during hardis:org:monitor:backup. Can also be set via MONITORING_BACKUP_SKIP_DATA_CLOUD env variable.",
@@ -3301,6 +3286,21 @@
         }
       },
       "title": "Monitoring commands",
+      "type": "array"
+    },
+    "monitoringWhatWillBreakIgnoreUsers": {
+      "$id": "#/properties/monitoringWhatWillBreakIgnoreUsers",
+      "description": "List of usernames skipped by [hardis:org:diagnose:what-will-break](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/what-will-break/), for example an integration already being moved to another authentication method. Can also be set with env var MONITORING_WHAT_WILL_BREAK_IGNORE_USERS (comma-separated).",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-monitoring-what-will-break/",
+      "examples": [
+        [
+          "integration@mycompany.com"
+        ]
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Users ignored by What will break monitoring",
       "type": "array"
     },
     "notificationConfig": {

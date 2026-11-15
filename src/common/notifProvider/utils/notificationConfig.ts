@@ -131,10 +131,52 @@ export async function getEffectiveNotificationConfig(notifType: string): Promise
   const defaults = notificationTypesDefault[notifType as NotifMessageType]?.defaults ?? {};
   const userConfig = await getConfig("user");
   const userEntries: NotificationConfigEntry[] = userConfig.notificationConfig ?? [];
-  const userEntry = userEntries.find((entry) => entry?.key === notifType);
-  const userNotifications = userEntry?.notifications ?? {};
-  return mergeNotificationConfig(defaults, userNotifications);
+  return mergeNotificationConfig(defaults, getUserNotifications(userEntries, notifType));
 }
+
+// The user settings of a notification type. A type that replaces older ones (WHAT_WILL_BREAK replaces LEGACY_API and
+// RELEASE_UPDATES in the monitoring) inherits their settings until the user sets its own, keeping per channel the lowest
+// threshold, so no notification the user asked for is lost.
+export function getUserNotifications(userEntries: NotificationConfigEntry[], notifType: string): NotificationChannelConfig {
+  const userEntry = userEntries.find((entry) => entry?.key === notifType);
+  if (userEntry) {
+    return userEntry.notifications ?? {};
+  }
+  const predecessors = Object.keys(NOTIFICATION_TYPE_SUCCESSORS).filter((key) => NOTIFICATION_TYPE_SUCCESSORS[key] === notifType);
+  const inherited = userEntries.filter((entry) => predecessors.includes(entry?.key)).map((entry) => entry.notifications ?? {});
+  const merged: NotificationChannelConfig = {};
+  for (const notifications of inherited) {
+    for (const channel of ["messaging", "api"] as const) {
+      merged[channel] = lowestThreshold(merged[channel], notifications[channel]);
+    }
+    const email = notifications.email;
+    const emailThreshold = isEmailChannelObject(email) ? email.threshold : email;
+    const mergedEmail = merged.email;
+    const mergedThreshold = isEmailChannelObject(mergedEmail) ? mergedEmail.threshold : mergedEmail;
+    const threshold = lowestThreshold(mergedThreshold, emailThreshold);
+    if (isEmailChannelObject(email) || isEmailChannelObject(mergedEmail)) {
+      const recipients = [
+        ...(isEmailChannelObject(mergedEmail) ? (mergedEmail.recipients ?? []) : []),
+        ...(isEmailChannelObject(email) ? (email.recipients ?? []) : []),
+      ];
+      merged.email = { threshold, recipients: Array.from(new Set(recipients)) };
+    } else if (threshold !== undefined) {
+      merged.email = threshold;
+    }
+  }
+  for (const channel of ["messaging", "api", "email"] as const) {
+    if (merged[channel] === undefined) {
+      delete merged[channel];
+    }
+  }
+  return merged;
+}
+
+// Notification types the monitoring no longer sends, and the type that replaced them
+export const NOTIFICATION_TYPE_SUCCESSORS: Record<string, string> = {
+  LEGACY_API: "WHAT_WILL_BREAK",
+  RELEASE_UPDATES: "WHAT_WILL_BREAK",
+};
 
 export function mergeNotificationConfig(
   base: NotificationChannelConfig,
@@ -165,6 +207,20 @@ export function mergeNotificationConfig(
     }
   }
   return merged;
+}
+
+function lowestThreshold(
+  current: NotificationThreshold | undefined,
+  candidate: NotificationThreshold | undefined,
+): NotificationThreshold | undefined {
+  const order: NotificationThreshold[] = ["log", "success", "info", "warning", "error", "critical", "off"];
+  if (candidate === undefined) {
+    return current;
+  }
+  if (current === undefined) {
+    return candidate;
+  }
+  return order.indexOf(candidate) < order.indexOf(current) ? candidate : current;
 }
 
 function getDaysInMonth(date: Date): number {
@@ -257,7 +313,10 @@ export function resolveMonitoringCommands<T extends MonitoringCommandEntry>(
     seenKeys.add(def.key);
   }
   for (const entry of entries) {
-    if (entry?.key && !seenKeys.has(entry.key)) {
+    // A setting of a command the monitoring no longer runs has nothing to run: it is not a custom command
+    // (what-will-break skips the matching check when that setting turns it off)
+    const retiredWithoutCommand = Object.keys(NOTIFICATION_TYPE_SUCCESSORS).includes(entry?.key) && !entry?.command;
+    if (entry?.key && !seenKeys.has(entry.key) && !retiredWithoutCommand) {
       result.push(entry as T);
     }
   }
