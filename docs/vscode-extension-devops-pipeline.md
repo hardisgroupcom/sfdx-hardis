@@ -84,8 +84,8 @@ The window of a Pull Request shows:
 
 - **(1)** its state, its author, its branches, and the button that opens it on your git provider.
 - **(2)** its way through the pipeline: the validation, then each major branch up to production, with the promotion that carried it when there is one, or the open one it is waiting for. A step moves while its job is running. A branch reads **Not in the pipeline windows** when the Pull Request was merged too long ago for the pipeline to tell. A promotion, or a merge between two major branches, stops at the branch it is merged into: the stories it carries go further, it does not.
-- **(3)** its search bar, described below.
-- **(4)** its tabs, and **(5)** the content of the one selected, here the validation comment.
+- **(3)** its tabs, and **(4)** the content of the one selected, here the validation comment.
+- **(5)** its search button, described below.
 - **General**: the description of the Pull Request.
 - **Pull Requests**, on a promotion or on a merge between two major branches: the Pull Requests it carries, each one opening in the same window.
 - **Tickets**, with their status and who they are assigned to.
@@ -94,12 +94,12 @@ The window of a Pull Request shows:
 
 ![Search in the window of a Pull Request](assets/images/annotated/vscode-guide/pipeline-pr-view-search.png)
 
-Type a word in the search bar **(1)**, or press Ctrl+F (Cmd+F on macOS) to get there: it searches the description and the comments of the jobs, whatever their case and accents.
+The search button of the header, or Ctrl+F (Cmd+F on macOS), opens a search bar **(1)** above the tabs. Type a word: it is searched in the description and the comments of the jobs, whatever their case and accents.
 
 - **(2)** Each tab shows how many matches it holds.
 - **(3)** The matches are highlighted, the current one in orange, and the collapsed sections holding one open.
 
-Enter (Shift+Enter) goes to the next (previous) match, from one tab to the next, and the counter of the bar says where you are. The filter button keeps only the runs whose comment matches. Escape clears the search.
+Enter (Shift+Enter) goes to the next (previous) match, from one tab to the next, and the counter of the bar says where you are. The filter button keeps only the runs whose comment matches. Escape, or the cross at the end of the bar, clears the search and closes the bar.
 
 **Open on GitHub** (or your git provider) in the header is the way out to the Pull Request page. When the Pull Request was opened from a list or from another Pull Request, **Previous** and **Close** bring that window back; **Close** closes the window otherwise.
 
