@@ -351,6 +351,13 @@ deploy_to_org:
       - $CI_COMMIT_REF_NAME !~ $DEPLOY_BRANCHES
       - $SCRATCH_ORG_POOL == "true"
   interruptible: true
+  # With Quick Deploy or delta deployments after merge, a cancelled deployment job is a merge whose
+  # metadata may never reach the org: the next job only deploys its own Merge Request.
+  # To deploy every merge, one at a time per branch, replace "interruptible: true" above by the two
+  # lines below. Jobs waiting for the resource group run in order if its process_mode is oldest_first
+  # (set it with the Resource groups API: https://docs.gitlab.com/ci/resource_groups/#process-modes).
+  # interruptible: false
+  # resource_group: deploy_to_org_$CI_COMMIT_REF_NAME
   script:
     - |
       if [ "${CI_COMMIT_REF_NAME#auto-fix/}" != "$CI_COMMIT_REF_NAME" ]; then

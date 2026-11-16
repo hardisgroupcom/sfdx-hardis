@@ -23,6 +23,11 @@
 #   - Open the menu ⋮ and select Triggers
 #   - In "Branch filters", tick "Override the YAML continuous integration trigger from here"
 #   - "Include" all your major branches
+#   - With Quick Deploy or delta deployments after merge, every merge must run its own deployment:
+#     do not tick "Batch changes while a build is in progress", as a batched run only deploys the last merge.
+#     To also run them one at a time and in order, protect the target environment with an
+#     Exclusive Lock check and use lockBehavior: sequential
+#     (https://learn.microsoft.com/en-us/azure/devops/pipelines/process/approvals#exclusive-lock)
 
 name: Deploy to org
 

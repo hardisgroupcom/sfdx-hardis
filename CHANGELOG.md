@@ -2,7 +2,12 @@
 
 ## [beta] (main)
 
-- GitHub CI/CD template (`process-deploy.yml`): deployment jobs of a major branch now wait for their turn instead of being cancelled (`cancel-in-progress: false` and [`queue: max`](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency)). A cancelled job is a merge that may never reach the org, since the next job only deploys its own Pull Request (Quick Deploy or delta deployment). Bring the change into your own `process-deploy.yml`.
+- CI/CD templates: commented lines to deploy every merge of a major branch, one at a time, instead of cancelling the deployment jobs that a newer merge supersedes. With Quick Deploy or delta deployments after merge, a cancelled job is a merge that may never reach the org, since the next job only deploys its own Pull Request. The default behavior does not change.
+  - GitHub: `cancel-in-progress: false` and [`queue: max`](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency).
+  - GitLab: `interruptible: false` and a [`resource_group`](https://docs.gitlab.com/ci/resource_groups/) per branch.
+  - Bitbucket: a [`concurrency-group`](https://www.atlassian.com/blog/bitbucket/evolving-deployments-in-bitbucket-pipelines-concurrency-groups-and-environments).
+  - Azure: no batched CI trigger, and an [exclusive lock](https://learn.microsoft.com/en-us/azure/devops/pipelines/process/approvals#exclusive-lock) with `lockBehavior: sequential`.
+  - Jenkins: a note on queued builds folded into one.
 - [Browser deployment action](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions-browser/#deployment-errors-a-browser-action-solves):
   - The deployment assistant suggests it for the errors it can solve, with the command that adds it to your Pull Request.
   - The AI deployment assistant and the coding agent that fixes deployment errors suggest it too.

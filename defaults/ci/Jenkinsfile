@@ -56,6 +56,9 @@ pipeline {
         // Deployments can be long: raise this value if the build is aborted before the deployment ends
         timeout(time: 150, unit: 'MINUTES')
         disableConcurrentBuilds()
+        // With Quick Deploy or delta deployments after merge, every merge must run its own deployment.
+        // Jenkins may fold the queued builds of a branch into a single build of its latest commit, and the
+        // merges in between would never reach the org: check that no merge was skipped, or deploy in full.
         // Keep build logs for 30 days
         buildDiscarder(logRotator(daysToKeepStr: '30'))
     }
