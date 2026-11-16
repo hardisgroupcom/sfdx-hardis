@@ -20,9 +20,15 @@ on:
 
 name: Process Deployment (sfdx-hardis)
 permissions: read-all
+# One deployment at a time per major branch, and every merge waits for its turn: a deployment job
+# that is cancelled (running or pending) is a merge whose metadata may never reach the org, because
+# the next job only deploys its own Pull Request (Quick Deploy, or a delta deployment).
+# queue: max keeps up to 100 pending runs in FIFO order instead of the single pending run that
+# GitHub cancels when the next one arrives. It requires cancel-in-progress: false.
 concurrency:
   group: ${{ github.ref }}-${{ github.workflow }}
-  cancel-in-progress: true
+  cancel-in-progress: false
+  queue: max
 
 jobs:
   process_deployment:

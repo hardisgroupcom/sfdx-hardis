@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- GitHub CI/CD template (`process-deploy.yml`): deployment jobs of a major branch now wait for their turn instead of being cancelled (`cancel-in-progress: false` and [`queue: max`](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency)). A cancelled job is a merge that may never reach the org, since the next job only deploys its own Pull Request (Quick Deploy or delta deployment). Bring the change into your own `process-deploy.yml`.
 - [Browser deployment action](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions-browser/#deployment-errors-a-browser-action-solves):
   - The deployment assistant suggests it for the errors it can solve, with the command that adds it to your Pull Request.
   - The AI deployment assistant and the coding agent that fixes deployment errors suggest it too.
