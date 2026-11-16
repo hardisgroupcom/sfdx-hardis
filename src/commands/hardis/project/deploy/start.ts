@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { AnyJson } from "@salesforce/ts-types";
 import { wrapSfdxCoreCommand } from "../../../../common/utils/wrapUtils.js";
-import { emitWrappedDeployRunEvent } from "../../../../common/utils/pluginEventUtils.js";
+import { emitDeploymentStartEvent, emitWrappedDeployRunEvent } from "../../../../common/utils/pluginEventUtils.js";
 import { checkDeploymentOrgCoverage, extractOrgCoverageFromLog } from '../../../../common/utils/deployUtils.js';
 import { GitProvider } from '../../../../common/gitProvider/index.js';
 import { buildCheckDeployCommitSummary, handlePostDeploymentNotifications } from '../../../../common/utils/gitUtils.js';
@@ -64,6 +64,8 @@ commandsPostDeploy:
 \`\`\`
 
 ### Plugin events
+
+Before anything reads the local sources, the installed sf plugins that listen to \`sfdx-hardis:validation-start\` (validation) or \`sfdx-hardis:deployment-start\` (deployment) are called, so they can prepare the sources (for example recompose decomposed metadata).
 
 As soon as Salesforce returns the result of the deployment, the installed sf plugins that listen to \`sfdx-hardis:deployment-done\` (\`sfdx-hardis:validation-done\` with \`--dry-run\`) receive it, with the path of the Apex code coverage file, before the code coverage check. [More info](https://sfdx-hardis.cloudity.com/sfdx-hardis-plugins/#react-to-sfdx-hardis-events)
 
@@ -182,6 +184,8 @@ In agent mode, all interactive prompts are skipped and default values are used.
     const { flags } = await this.parse(ProjectDeployStart);
     const checkOnly = flags["dry-run"] === true;
     await setConnectionVariables(flags['target-org']?.getConnection(), true);
+    // The plugins can prepare the local sources (ex: recompose decomposed metadata) before anything reads them
+    await emitDeploymentStartEvent(this, { checkOnly: checkOnly, targetUsername: flags['target-org']?.getUsername() || null });
     // Compute data for PR comments & flow diffs
     if (checkOnly) {
       await buildCheckDeployCommitSummary()

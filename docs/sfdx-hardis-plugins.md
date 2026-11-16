@@ -235,13 +235,18 @@ The events are [oclif custom events](https://oclif.io/docs/hooks#custom-events).
 
 ### Available events
 
-| Event                         | Sent by                                                                                                                                                                                                                          | When                                                |
-|-------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------|
-| `sfdx-hardis:validation-done` | [hardis:project:deploy:smart](hardis/project/deploy/smart.md) in check mode, [hardis:project:deploy:validate](hardis/project/deploy/validate.md), [hardis:project:deploy:start](hardis/project/deploy/start.md) with `--dry-run` | Salesforce returned the result of the validation    |
-| `sfdx-hardis:deployment-done` | [hardis:project:deploy:smart](hardis/project/deploy/smart.md), [hardis:project:deploy:start](hardis/project/deploy/start.md), [hardis:project:deploy:quick](hardis/project/deploy/quick.md)                                      | Salesforce returned the result of the deployment    |
-| `sfdx-hardis:apex-tests-done` | [hardis:org:test:apex](hardis/org/test/apex.md)                                                                                                                                                                                  | The Apex test run is over, before the notifications |
+| Event                          | Sent by                                                                                                                                                                                                                          | When                                                |
+|--------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------|
+| `sfdx-hardis:validation-start` | [hardis:project:deploy:smart](hardis/project/deploy/smart.md) in check mode, [hardis:project:deploy:validate](hardis/project/deploy/validate.md), [hardis:project:deploy:start](hardis/project/deploy/start.md) with `--dry-run` | Before anything reads the local sources             |
+| `sfdx-hardis:deployment-start` | [hardis:project:deploy:smart](hardis/project/deploy/smart.md), [hardis:project:deploy:start](hardis/project/deploy/start.md)                                                                                                     | Before anything reads the local sources             |
+| `sfdx-hardis:validation-done`  | [hardis:project:deploy:smart](hardis/project/deploy/smart.md) in check mode, [hardis:project:deploy:validate](hardis/project/deploy/validate.md), [hardis:project:deploy:start](hardis/project/deploy/start.md) with `--dry-run` | Salesforce returned the result of the validation    |
+| `sfdx-hardis:deployment-done`  | [hardis:project:deploy:smart](hardis/project/deploy/smart.md), [hardis:project:deploy:start](hardis/project/deploy/start.md), [hardis:project:deploy:quick](hardis/project/deploy/quick.md)                                      | Salesforce returned the result of the deployment    |
+| `sfdx-hardis:apex-tests-done`  | [hardis:org:test:apex](hardis/org/test/apex.md)                                                                                                                                                                                  | The Apex test run is over, before the notifications |
+| `sfdx-hardis:retrieve-done`    | [hardis:source:retrieve](hardis/source/retrieve.md)                                                                                                                                                                              | The metadata retrieve is over, success or failure   |
 
-The deployment events are sent as soon as Salesforce answers, on success and on failure:
+`sfdx-hardis:validation-start` and `sfdx-hardis:deployment-start` are sent once per command, before the package.xml, the delta, the replacement rules and the deployment read the local sources. Use it to prepare the sources, for example to recompose metadata that your plugin decomposed after a retrieve (`sfdx-hardis:retrieve-done`). It is not sent by [hardis:project:deploy:quick](hardis/project/deploy/quick.md), which sends no sources.
+
+The `-done` deployment events are sent as soon as Salesforce answers, on success and on failure:
 
 - before the sfdx-hardis Pull Request comment, the post-deployment actions and the code coverage check, so a failure of one of them does not prevent the event
 - once per Salesforce deployment: a deployment plan with several packages sends one event per package, with its `deploymentLabel`
@@ -322,7 +327,25 @@ Every event has the same envelope, and what is specific to the event under `data
 | `status`          | `"success" \| "failed" \| "unknown"` | What Salesforce answered. `unknown`: the Apex test run gave no result                                             |
 | `coverageFile`    | `string \| null`                     | Absolute path of `apex-coverage-results.json`, the coverage returned by Salesforce. `null` when it does not exist |
 
-The types are exported by `sfdx-hardis/plugin-api`: `SfdxHardisEvent`, `SfdxHardisRunEvent`, `SalesforceRunEventData`, `SfdxHardisEventHookOptions`...
+`data` of `sfdx-hardis:validation-start` and `sfdx-hardis:deployment-start`:
+
+| Property    | Type      | Description             |
+|-------------|-----------|-------------------------|
+| `checkOnly` | `boolean` | `true` for a validation |
+
+`data` of `sfdx-hardis:retrieve-done`:
+
+| Property       | Type                     | Description                                                                          |
+|----------------|--------------------------|--------------------------------------------------------------------------------------|
+| `status`       | `"success" \| "failed"`  | What the retrieve returned                                                           |
+| `manifest`     | `string \| null`         | Absolute path of the package.xml given with `--manifest`, `null` without it          |
+| `metadata`     | `string[]`               | Metadata asked with `--metadata`, or the types selected in the interactive menu      |
+| `sourcePaths`  | `string[]`               | Absolute paths given with `--sourcepath`                                             |
+| `packageNames` | `string[]`               | Packages given with `--packagenames`                                                 |
+
+The plugin finds the retrieved files in the local project, for example with `git status` to list what changed.
+
+The types are exported by `sfdx-hardis/plugin-api`: `SfdxHardisEvent`, `SfdxHardisRunEvent`, `SalesforceRunEventData`, `SfdxHardisDeploymentStartEvent`, `DeploymentStartEventData`, `SfdxHardisRetrieveEvent`, `RetrieveEventData`, `SfdxHardisEventHookOptions`...
 
 ### Need another extension point?
 

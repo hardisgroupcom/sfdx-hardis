@@ -29,6 +29,7 @@ import {
 import { CONSTANTS, getConfig, getEnvVar } from '../../../../config/index.js';
 import { commitContainsDeploymentKeyword } from '../../../../common/utils/deploymentKeywordUtils.js';
 import { smartDeploy, removePackageXmlContent, createEmptyPackageXml } from '../../../../common/utils/deployUtils.js';
+import { emitDeploymentStartEvent } from '../../../../common/utils/pluginEventUtils.js';
 import { extendPackageFileWithDependencies, appendPackageModifications } from '../../../../common/utils/deltaUtils.js';
 import { isProductionOrg, promptOrgUsernameDefault, setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { getApexTestClasses, selectTestClassesFromPullRequests } from '../../../../common/utils/classUtils.js';
@@ -469,6 +470,8 @@ After a deployment that follows a merge, the Pull Requests merged into the branc
 
 ### Plugin events
 
+Before the package.xml, the delta and the replacement rules read the local sources, the installed sf plugins that listen to \`sfdx-hardis:validation-start\` (validation) or \`sfdx-hardis:deployment-start\` (deployment) are called, so they can prepare the sources (for example recompose decomposed metadata).
+
 As soon as Salesforce returns the result of each deployment, the installed sf plugins that listen to \`sfdx-hardis:validation-done\` or \`sfdx-hardis:deployment-done\` receive it, with the path of the Apex code coverage file, before the code coverage check. [More info](${CONSTANTS.DOC_URL_ROOT}/sfdx-hardis-plugins/#react-to-sfdx-hardis-events)
 
 ### Agent Mode
@@ -686,6 +689,10 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     // ships the promotion to the org before it is reviewed and merged. Checked before anything is
     // computed, because the answer is to fix the CI configuration, not to let the job continue.
     assertPromotionBranchIsNotDeployed(this, this.configInfo, this.checkOnly, currentGitBranch);
+
+    // The plugins can prepare the local sources (ex: recompose decomposed metadata) before the
+    // package.xml, the delta, the replacement rules and the deployment read them
+    await emitDeploymentStartEvent(this, { checkOnly: this.checkOnly, targetUsername: this.targetOrg.getUsername() || targetUsername });
 
     // Promotion branch: inherit the custom behaviors (NO_DELTA, PURGE_FLOW_VERSIONS...) of the
     // Pull Requests it declares, before the delta decision reads them. No-op unless
