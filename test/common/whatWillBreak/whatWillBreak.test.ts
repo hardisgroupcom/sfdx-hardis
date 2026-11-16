@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { expect } from 'chai';
+import fs from 'fs';
+import path from 'path';
 import {
   getDefaultWhatWillBreakChecks,
   parseWhatWillBreakChecks,
@@ -9,6 +11,7 @@ import {
   writeWhatWillBreakReports,
 } from '../../../src/common/whatWillBreak/index.js';
 import { getLongestGapDays, isSalesforceEndUserApp } from '../../../src/common/whatWillBreak/authChecks.js';
+import { getReleaseUpdateCatalogEntry, RELEASE_UPDATES_CATALOG } from '../../../src/common/whatWillBreak/releaseUpdatesCatalog.js';
 import {
   WhatWillBreakCheckKey,
   WhatWillBreakCheckResult,
@@ -314,6 +317,86 @@ describe('whatWillBreak', () => {
       expect(result.checks[0].notChecked).to.be.true;
       expect(result.metrics).to.not.have.property('ReleaseUpdates');
     });
+
+    it('explains a known release update in plain words, links its official page, and makes one that cannot break anything information', async () => {
+      const result = await runWhatWillBreak({
+        conn: mockConnection({
+          releaseUpdates: [
+            {
+              Title: 'Salesforce to Salesforce Retirement',
+              DeveloperName: 'SalesforceToSalesforceRetirement',
+              StepStage: 'Upcoming',
+              Status: 'Info',
+              Category: 'Sales',
+              DueDate: '2027-02-01',
+            },
+            {
+              Title: 'Optimize Performance for Revenue Management',
+              DeveloperName: 'RevenueManagementOptimized',
+              StepStage: 'Upcoming',
+              Status: 'Info',
+              Category: 'Revenue',
+              DueDate: '2027-05-01',
+            },
+          ],
+        }),
+        checks: ['releaseUpdates'],
+        lookbackDays: 180,
+        idleWarningDays: 20,
+        ignoreUsers: [],
+        today: TODAY,
+      });
+      const [s2s, revenue] = result.checks[0].mainRows!.map((dated) => dated.row);
+      expect(s2s['What will break']).to.contain('no longer sent or received');
+      expect(s2s['What to do']).to.contain('Partner Cloud');
+      expect(s2s['Salesforce announcement']).to.equal(getReleaseUpdateCatalogEntry('SalesforceToSalesforceRetirement')!.articleUrl);
+      expect(s2s.Severity).to.equal('warning');
+      expect(revenue.Severity).to.equal('info');
+    });
+
+    it("shows Salesforce's own description for a release update sfdx-hardis does not know", async () => {
+      const result = await runWhatWillBreak({
+        conn: mockConnection({
+          releaseUpdates: [
+            {
+              Title: 'Brand New Change',
+              DeveloperName: 'BrandNewChange',
+              Description: '<p>Starting in Summer &amp; later, <b>widgets</b> are required.</p>',
+              StepStage: 'Upcoming',
+              Status: 'Info',
+              Category: 'Security',
+              DueDate: '2027-06-01',
+            },
+          ],
+        }),
+        checks: ['releaseUpdates'],
+        lookbackDays: 180,
+        idleWarningDays: 20,
+        ignoreUsers: [],
+        today: TODAY,
+      });
+      const row = result.checks[0].mainRows![0].row;
+      expect(row['What will break']).to.equal('Release update "Brand New Change": Starting in Summer & later, widgets are required.');
+      expect(row['Salesforce announcement']).to.equal('https://test.my.salesforce.com/lightning/setup/ReleaseUpdates/home');
+    });
+  });
+
+  describe('release updates catalog', () => {
+    const docPage = fs.readFileSync(path.join(process.cwd(), 'docs', 'salesforce-monitoring-what-will-break.md'), 'utf8');
+    const locales = ['de', 'en', 'es', 'fr', 'it', 'ja', 'nl', 'pl', 'pt-BR'];
+    const translations = Object.fromEntries(
+      locales.map((locale) => [locale, JSON.parse(fs.readFileSync(path.join(process.cwd(), 'src', 'i18n', `${locale}.json`), 'utf8'))])
+    );
+    for (const entry of RELEASE_UPDATES_CATALOG) {
+      it(`${entry.developerName}: texts in every language, an official link, and a row of the doc table`, () => {
+        for (const locale of locales) {
+          expect(translations[locale], `${locale} Impact`).to.have.property(`whatWillBreakRu${entry.developerName}Impact`);
+          expect(translations[locale], `${locale} Todo`).to.have.property(`whatWillBreakRu${entry.developerName}Todo`);
+        }
+        expect(entry.articleUrl).to.match(/^https:\/\/(help|developer)\.salesforce\.com\//);
+        expect(docPage).to.contain(`| ${entry.title} |`);
+      });
+    }
   });
 
   describe('writeWhatWillBreakReports()', () => {

@@ -8,6 +8,7 @@
   - [hardis:org:diagnose:unsecure-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps/): the Connected Apps usage report tells which apps to move to External Client Apps before Summer '27, the notification attaches its report again, and the usernames of that report are anonymized in CI.
   - Each thing that will break gets its own row, naming the app, user or data source, with the exact steps to fix it and keep it from breaking again.
   - A release update that enforces a change another check already covers is not listed twice: that check shows its due date and when to enable it.
+  - Each known release update says in plain words what stops working and what to do, with a link to its official Salesforce page.
   - In VS Code, each check shows its progress while it runs.
   - [hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/): one API clients file per range of API versions, so two ranges of the same severity no longer overwrite each other.
   - Grafana: new What will break row on the Org Security dashboard.

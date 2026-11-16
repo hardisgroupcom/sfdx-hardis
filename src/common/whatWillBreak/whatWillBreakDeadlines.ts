@@ -62,7 +62,8 @@ export const WHAT_WILL_BREAK_DEADLINES: Record<WhatWillBreakDeadlineKey, WhatWil
   connectedAppsToEca: {
     productionDate: '2027-06-01',
     releaseLabel: "Summer '27",
-    articleUrl: 'https://help.salesforce.com/s/articleView?id=xcloud.migrate_connected_app_to_external_client_app.htm&type=5',
+    // End of support, not a block: Connected Apps keep working without fixes or support
+    articleUrl: 'https://help.salesforce.com/s/articleView?id=release-notes.rn_security_migrate_all_connected_apps.htm&release=264&type=5',
     fixAnchor: 'fix-connected-apps-to-eca',
   },
   // API versions 31.0 to 40.0: deprecated in Summer '27, retired in Summer '28

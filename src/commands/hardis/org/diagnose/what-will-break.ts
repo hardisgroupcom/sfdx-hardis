@@ -60,7 +60,7 @@ The command starts with a list of every check, all selected: keep the ones to ru
 | OAuth username-password and user-agent flows | Both flows are retired | February 20, 2027 | [Release update](${WHAT_WILL_BREAK_DEADLINES.usernamePasswordFlow.articleUrl}) |
 | Salesforce Connect cross-org legacy authentication | Cross-org data sources must use a Named Credential | Spring '27 | [Release update](${WHAT_WILL_BREAK_DEADLINES.sfConnectLegacyAuth.articleUrl}) |
 | SOAP login() retirement | SOAP \`login()\` is retired in API versions 31.0 to 64.0 | Summer '27 | [Article 005132110](${WHAT_WILL_BREAK_DEADLINES.soapLoginRetirement.articleUrl}) |
-| Connected Apps to move to External Client Apps | Connected Apps are no longer supported | Summer '27 | [Migrate a Connected App to an External Client App](${WHAT_WILL_BREAK_DEADLINES.connectedAppsToEca.articleUrl}) |
+| Connected Apps to move to External Client Apps | Connected Apps keep working, but Salesforce no longer fixes or supports them | Summer '27 | [Release note](${WHAT_WILL_BREAK_DEADLINES.connectedAppsToEca.articleUrl}) |
 | Calls to retired API versions | API versions 30.0 and older are retired, 31.0 to 40.0 are retired in Summer '28 | Summer '25 and Summer '28 | [API 21.0 to 30.0](${WHAT_WILL_BREAK_DEADLINES.legacyApiRetired.articleUrl}), [API 31.0 to 40.0](${WHAT_WILL_BREAK_DEADLINES.legacyApiVersions.articleUrl}) |
 | Release updates due | Each release update is enforced on its due date | The due date of each release update | [Release Updates](${WHAT_WILL_BREAK_DEADLINES.releaseUpdates.articleUrl}) (each release update links to its own article in Setup) |
 
