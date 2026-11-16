@@ -32,6 +32,15 @@ describe('connectedAppsUsageUtils', () => {
       ]);
     });
 
+    it('recognizes a Connected App of the org from its API name when its label is different', async () => {
+      const conn: any = { metadata: { list: async () => [{ fullName: 'DLIntegration' }] } };
+      const rows = await buildConnectedAppsUsage(
+        [{ ...token('Data Loader Integration', 'Connected App', 'a@x.com', recentDate), "x-Token-AppMenuItemName": 'DLIntegration' }],
+        conn
+      );
+      expect(rows[0]["Move to External Client App"]).to.equal('Required');
+    });
+
     it('anonymizes every username of the Usernames column, which no field rule recognizes', async () => {
       const conn: any = { metadata: { list: async () => [{ fullName: 'My_App' }] } };
       const rows = await buildConnectedAppsUsage(

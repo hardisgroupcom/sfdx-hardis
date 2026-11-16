@@ -211,6 +211,8 @@ export async function collectOAuthTokensWithStatus(conn: Connection, options: Co
       "x-Token-Id": oAuthToken.Id ? oAuthToken.Id : 'N/A',
       "x-Token-AppName": oAuthToken.AppName ? oAuthToken.AppName : 'N/A',
       "x-Token-AppMenuItemLabel": oAuthToken["AppMenuItem.Label"] ? oAuthToken["AppMenuItem.Label"] : 'N/A',
+      // API name of the app: tells whether the org owns it, as its label may differ from its API name
+      "x-Token-AppMenuItemName": oAuthToken["AppMenuItem.Name"] ? oAuthToken["AppMenuItem.Name"] : '',
       "x-Token-AppMenuItemId": oAuthToken["AppMenuItem.Id"] ? oAuthToken["AppMenuItem.Id"] : 'N/A',
       "x-Token-Namespace": oAuthToken["AppMenuItem.NamespacePrefix"] ? oAuthToken["AppMenuItem.NamespacePrefix"] : '',
       "x-AppName-Different-From-Label": (oAuthToken.AppName && oAuthToken["AppMenuItem.Label"] && oAuthToken.AppName !== oAuthToken["AppMenuItem.Label"]) ? 'Yes' : 'No',
@@ -232,7 +234,9 @@ export async function collectOAuthTokensWithStatus(conn: Connection, options: Co
 // with the most recent usage date, the list of usernames who hold a token for each app,
 // and whether the app must be moved to an External Client App
 export async function buildConnectedAppsUsage(allOAuthTokensWithStatus: any[], conn: Connection): Promise<ConnectedAppUsageRow[]> {
-  const appsUsage: { [appName: string]: { appName: string; appType: string; namespacePrefix: string; lastUsedDate: string; usernames: Set<string>; } } = {};
+  const appsUsage: {
+    [appName: string]: { appName: string; appType: string; namespacePrefix: string; lastUsedDate: string; usernames: Set<string>; apiNames: Set<string> };
+  } = {};
   for (const token of allOAuthTokensWithStatus) {
     const appName = token.AppName && token.AppName !== 'N/A' ? token.AppName : 'N/A';
     if (!appsUsage[appName]) {
@@ -242,7 +246,11 @@ export async function buildConnectedAppsUsage(allOAuthTokensWithStatus: any[], c
         namespacePrefix: token["x-Token-Namespace"] || '',
         lastUsedDate: '',
         usernames: new Set<string>(),
+        apiNames: new Set<string>([toConnectedAppApiName(appName)]),
       };
+    }
+    if (token["x-Token-AppMenuItemName"]) {
+      appsUsage[appName].apiNames.add(toConnectedAppApiName(token["x-Token-AppMenuItemName"]));
     }
     const username = token["Username"] && token["Username"] !== 'N/A'
       ? token["Username"]
@@ -269,7 +277,7 @@ export async function buildConnectedAppsUsage(allOAuthTokensWithStatus: any[], c
           entry.appType,
           entry.namespacePrefix,
           entry.lastUsedDate,
-          orgOwnedConnectedAppNames ? orgOwnedConnectedAppNames.has(toConnectedAppApiName(entry.appName)) : null
+          orgOwnedConnectedAppNames ? Array.from(entry.apiNames).some((apiName) => orgOwnedConnectedAppNames.has(apiName)) : null
         ),
         "Usernames": Array.from(entry.usernames).sort().join('\n'),
       },
