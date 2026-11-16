@@ -16,7 +16,7 @@ import {
   WhatWillBreakMainRow,
   WhatWillBreakResult,
 } from '../../../src/common/whatWillBreak/whatWillBreakTypes.js';
-import { markRowSensitiveValues, SENSITIVE_VALUES_KEY } from '../../../src/common/utils/anonymizeUtils.js';
+import { anonymizeNotifMessage, markRowSensitiveValues, SENSITIVE_VALUES_KEY } from '../../../src/common/utils/anonymizeUtils.js';
 import { getUserNotifications, resolveMonitoringCommands } from '../../../src/common/notifProvider/utils/notificationConfig.js';
 import { computeHealthScore } from '../../../src/common/monitoring/healthScore.js';
 import { WebSocketClient } from '../../../src/common/websocketClient.js';
@@ -385,6 +385,37 @@ describe('whatWillBreak', () => {
       const last = mainRows[mainRows.length - 1];
       expect(last['What will break']).to.contain('5');
       expect(last['What to do']).to.contain('soap.csv');
+    });
+  });
+
+  describe('anonymization of what is sent outside', () => {
+    it('removes the usernames from the sentences of the rows, the text and the attachments sent to Grafana', async () => {
+      const result: WhatWillBreakResult = {
+        isSandbox: false,
+        severity: 'warning',
+        metrics: {},
+        checks: [
+          check({ key: 'usernamePasswordFlow', status: 'warning', metric: 1, rows: [finding('usernamePasswordFlow', 'warning', 'sync@example.com')] }),
+        ],
+      };
+      const { mainRows } = await writeWhatWillBreakReports(result);
+      const sent = anonymizeNotifMessage(
+        {
+          type: 'WHAT_WILL_BREAK',
+          text: 'Something breaks for sync@example.com',
+          attachments: [{ text: `${mainRows[0]['What will break']}` }],
+          severity: 'warning',
+          logElements: mainRows,
+          data: {},
+          metrics: {},
+        } as any,
+        'standard',
+        'api'
+      );
+      const serialized = JSON.stringify(sent);
+      expect(serialized).to.not.contain('sync@example.com');
+      expect(sent.logElements[0]['What will break']).to.match(/user_/);
+      expect(sent.logElements[0]['What to do']).to.match(/user_/);
     });
   });
 

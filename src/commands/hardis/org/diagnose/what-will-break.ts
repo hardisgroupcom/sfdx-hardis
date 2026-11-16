@@ -24,7 +24,7 @@ import { getDeadlineLabel, WHAT_WILL_BREAK_DEADLINES } from '../../../../common/
 import { SOAP_LOGIN_INACTIVITY_DAYS } from '../../../../common/whatWillBreak/authChecks.js';
 import { WhatWillBreakCheckKey } from '../../../../common/whatWillBreak/whatWillBreakTypes.js';
 import { t } from '../../../../common/utils/i18n.js';
-import { SENSITIVE_VALUES_KEY, stripSensitiveValues } from '../../../../common/utils/anonymizeUtils.js';
+import { markRowSensitiveValues, SENSITIVE_VALUES_KEY, stripSensitiveValues } from '../../../../common/utils/anonymizeUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -207,17 +207,22 @@ The command's implementation:
     this.outputFile = await generateReportPath('what-will-break', this.outputFile);
     this.outputFilesRes = await generateCsvFile(mainRows, this.outputFile, { fileTitle: t('whatWillBreakReportFileTitle'), mainReport: true });
 
-    // Summary: the main report, what will break first
+    // Summary: the main report, what will break first. The rows keep their markers: in CI, the table is anonymized like the files
     uxLog('action', this, c.cyan(t('whatWillBreakSummaryHeader')));
     uxLogTable(
       this,
-      mainRows.slice(0, 20).map((row) => ({
-        Status: row.Status,
-        Check: row.Check,
-        'What will break': row['What will break'],
-        Date: row.Date,
-        'How to fix': row.Severity === 'success' ? '' : row['How to fix'],
-      }))
+      mainRows.slice(0, 20).map((row) =>
+        markRowSensitiveValues(
+          {
+            Status: row.Status,
+            Check: row.Check,
+            'What will break': row['What will break'],
+            Date: row.Date,
+            'How to fix': row.Severity === 'success' ? '' : row['How to fix'],
+          },
+          (row as any)[SENSITIVE_VALUES_KEY] || []
+        )
+      )
     );
     if (mainRows.length > 20) {
       uxLog('log', this, c.grey(t('authRetirementsSeeReportForMore', { count: mainRows.length - 20 })));

@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { buildConnectedAppsUsage } from '../../../src/common/utils/connectedAppsUsageUtils.js';
+import { anonymizeRows, stripSensitiveValues } from '../../../src/common/utils/anonymizeUtils.js';
 
 describe('connectedAppsUsageUtils', () => {
   describe('buildConnectedAppsUsage()', () => {
@@ -23,12 +24,24 @@ describe('connectedAppsUsageUtils', () => {
         token('Salesforce Mobile', 'Connected App', 'a@x.com', recentDate),
         token('Packaged', 'Connected App', 'a@x.com', recentDate, 'pkg'),
       ], conn);
-      expect(rows).to.deep.equal([
+      expect(stripSensitiveValues(rows)).to.deep.equal([
         { "Connected App": 'Ext App', "App Type": 'Ext Client App', "Last Used Date": 'N/A', "Move to External Client App": 'Not needed', "Usernames": 'a@x.com' },
         { "Connected App": 'My App', "App Type": 'Connected App', "Last Used Date": recentDate, "Move to External Client App": 'Required', "Usernames": 'a@x.com\nb@x.com' },
         { "Connected App": 'Packaged', "App Type": 'Connected App', "Last Used Date": recentDate, "Move to External Client App": 'Vendor', "Usernames": 'a@x.com' },
         { "Connected App": 'Salesforce Mobile', "App Type": 'Connected App', "Last Used Date": recentDate, "Move to External Client App": 'Vendor', "Usernames": 'a@x.com' },
       ]);
+    });
+
+    it('anonymizes every username of the Usernames column, which no field rule recognizes', async () => {
+      const conn: any = { metadata: { list: async () => [{ fullName: 'My_App' }] } };
+      const rows = await buildConnectedAppsUsage(
+        [token('My App', 'Connected App', 'b@x.com', olderDate), token('My App', 'Connected App', 'a@x.com', recentDate)],
+        conn
+      );
+      const anonymized = anonymizeRows(rows, 'standard');
+      expect(anonymized[0]['Usernames']).to.not.contain('a@x.com');
+      expect(anonymized[0]['Usernames']).to.not.contain('b@x.com');
+      expect(anonymized[0]['Usernames']).to.match(/user_/);
     });
 
     it('requires the move of a recently used app when the ConnectedApp metadata cannot be listed', async () => {

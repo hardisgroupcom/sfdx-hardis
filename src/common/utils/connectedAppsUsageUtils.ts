@@ -10,6 +10,7 @@ import {
   toConnectedAppApiName,
 } from './oauthTokenUtils.js';
 import sortArray from './sortArray.js';
+import { markRowSensitiveValues } from './anonymizeUtils.js';
 import { t } from './i18n.js';
 
 // One row of the Connected Apps usage report: every app that has OAuth tokens, secured or not
@@ -257,18 +258,24 @@ export async function buildConnectedAppsUsage(allOAuthTokensWithStatus: any[], c
   }
   // Only the Connected Apps the org owns can be moved by the org: the others belong to Salesforce or to a vendor
   const orgOwnedConnectedAppNames = await listOrgOwnedConnectedAppNames(conn);
-  const connectedAppsUsage: ConnectedAppUsageRow[] = Object.values(appsUsage).map(entry => ({
-    "Connected App": entry.appName,
-    "App Type": entry.appType,
-    "Last Used Date": entry.lastUsedDate || 'N/A',
-    "Move to External Client App": getConnectedAppMigrationStatus(
-      entry.appType,
-      entry.namespacePrefix,
-      entry.lastUsedDate,
-      orgOwnedConnectedAppNames ? orgOwnedConnectedAppNames.has(toConnectedAppApiName(entry.appName)) : null
-    ),
-    "Usernames": Array.from(entry.usernames).sort().join('\n'),
-  }));
+  // "Usernames" holds several users in one cell: no field rule of the anonymization knows it, so each one is marked
+  const connectedAppsUsage: ConnectedAppUsageRow[] = Object.values(appsUsage).map(entry =>
+    markRowSensitiveValues<ConnectedAppUsageRow>(
+      {
+        "Connected App": entry.appName,
+        "App Type": entry.appType,
+        "Last Used Date": entry.lastUsedDate || 'N/A',
+        "Move to External Client App": getConnectedAppMigrationStatus(
+          entry.appType,
+          entry.namespacePrefix,
+          entry.lastUsedDate,
+          orgOwnedConnectedAppNames ? orgOwnedConnectedAppNames.has(toConnectedAppApiName(entry.appName)) : null
+        ),
+        "Usernames": Array.from(entry.usernames).sort().join('\n'),
+      },
+      Array.from(entry.usernames)
+    )
+  );
   sortArray(connectedAppsUsage, { by: 'Connected App' });
   return connectedAppsUsage;
 }
