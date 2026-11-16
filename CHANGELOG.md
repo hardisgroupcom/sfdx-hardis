@@ -5,7 +5,7 @@
 - **What will break** ([doc](https://sfdx-hardis.cloudity.com/salesforce-monitoring-what-will-break/)): one report tells what dated Salesforce changes will break in your org, when, and what to do before, and confirms when nothing will.
   - New [hardis:org:diagnose:what-will-break](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/what-will-break/), run every day by the monitoring, from authentication changes to retired API versions and release updates.
   - [hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/) and [hardis:org:diagnose:releaseupdates](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/releaseupdates/) are deprecated: the monitoring runs What will break instead, and keeps their settings.
-  - [hardis:org:diagnose:unsecure-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps/): the Connected Apps usage report tells which apps to move to External Client Apps before Summer '27, and the notification attaches its report again.
+  - [hardis:org:diagnose:unsecure-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps/): the Connected Apps usage report tells which apps to move to External Client Apps before Summer '27, the notification attaches its report again, and the usernames of that report are anonymized in CI.
   - Each thing that will break gets its own row, naming the app, user or data source, with the exact steps to fix it and keep it from breaking again.
   - A release update that enforces a change another check already covers is not listed twice: that check shows its due date and when to enable it.
   - In VS Code, each check shows its progress while it runs.
