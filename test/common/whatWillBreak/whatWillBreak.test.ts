@@ -238,6 +238,16 @@ describe('whatWillBreak', () => {
       expect(result.metrics.IntegrationsRefreshingTooRarely).to.equal(1);
     });
 
+    it('leaves out the Salesforce CLI, whose expired login only asks the developer to log in again', async () => {
+      const result = await run({
+        pairs: [{ UserId: '005A', Application: 'Salesforce CLI' }],
+        users: [{ Id: '005A', Username: 'dev@example.com', IsActive: true }],
+        days: [refreshDay('005A', 'Salesforce CLI', '2026-08-01'), refreshDay('005A', 'Salesforce CLI', '2026-11-14')],
+      });
+      expect(result.checks[0].status).to.equal('success');
+      expect(result.metrics.IntegrationsRefreshingTooRarely).to.equal(0);
+    });
+
     it('still reads every user past 2000 user and app pairs', async () => {
       const result = await run({
         pairs: Array.from({ length: 2000 }, (_, i) => ({ UserId: `005P${i}`, Application: `App ${i}` })),

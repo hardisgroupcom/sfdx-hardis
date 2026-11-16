@@ -77,6 +77,8 @@ const SALESFORCE_END_USER_APP_PREFIXES = [
   'pardot sso',
   'tbid.',
 ];
+// Refresh tokens of the Salesforce CLI expire without harm: the developer logs in again
+const APPS_ALLOWED_TO_EXPIRE_PREFIXES = ['salesforce cli'];
 // Users per day-grouped refresh token query: halved again when a query reaches the 2000 groups limit
 const REFRESH_DAYS_USER_CHUNK_SIZE = 20;
 
@@ -133,6 +135,12 @@ export function getLongestGapDays(sortedDays: string[]): number {
 export function isSalesforceEndUserApp(application: string): boolean {
   const name = (application || '').toLowerCase();
   return SALESFORCE_END_USER_APP_PREFIXES.some((prefix) => name.startsWith(prefix));
+}
+
+// Apps whose refresh token may expire without breaking anything: a developer logs in again (sf org login)
+export function isAppAllowedToExpire(application: string): boolean {
+  const name = (application || '').toLowerCase();
+  return APPS_ALLOWED_TO_EXPIRE_PREFIXES.some((prefix) => name.startsWith(prefix));
 }
 
 // Group LoginHistory rows by the given key, keeping counts and the last successful login.
@@ -295,7 +303,7 @@ function groupTokensByAppAndUser(
     const isActive = token['User.IsActive'] === true || token['User.IsActive'] === 'true';
     const username = token['User.Username'] || token.UserId || '';
     const lastUse = token.LastUsedDate || token.CreatedDate || '';
-    if (!isActive || !lastUse || ignoreSet.has(username.toLowerCase())) {
+    if (!isActive || !lastUse || ignoreSet.has(username.toLowerCase()) || isAppAllowedToExpire(token.AppName)) {
       continue;
     }
     const appName = token.AppName || 'N/A';
@@ -344,7 +352,12 @@ async function checkRefreshTokenCadence(context: CheckContext): Promise<WhatWill
   // Days of successful use of each app by each user. Status cannot be filtered in SOQL, only grouped.
   const daysByPair = new Map<string, { userId: string; application: string; days: Set<string> }>();
   for (const record of await queryRefreshTokenDays(context.conn, where, Array.from(usernameById.keys()))) {
-    if (record.Status !== 'Success' || isSalesforceEndUserApp(record.Application) || !usernameById.has(record.UserId)) {
+    if (
+      record.Status !== 'Success' ||
+      isSalesforceEndUserApp(record.Application) ||
+      isAppAllowedToExpire(record.Application) ||
+      !usernameById.has(record.UserId)
+    ) {
       continue;
     }
     const pairKey = `${record.UserId}|${record.Application}`;
@@ -393,7 +406,9 @@ async function queryRefreshTokenUserIds(conn: Connection, where: string): Promis
   const unique = (ids: string[]) => Array.from(new Set(ids.filter((id) => !!id)));
   const pairs = (await soqlQuery(`SELECT UserId, Application, COUNT(Id) cnt FROM LoginHistory ${where} GROUP BY UserId, Application`, conn)).records || [];
   if (pairs.length < LOGIN_AGGREGATE_MAX_GROUPS) {
-    return unique(pairs.filter((pair) => !isSalesforceEndUserApp(pair.Application)).map((pair) => pair.UserId));
+    return unique(
+      pairs.filter((pair) => !isSalesforceEndUserApp(pair.Application) && !isAppAllowedToExpire(pair.Application)).map((pair) => pair.UserId)
+    );
   }
   const users = (await soqlQuery(`SELECT UserId, COUNT(Id) cnt FROM LoginHistory ${where} GROUP BY UserId`, conn)).records || [];
   if (users.length < LOGIN_AGGREGATE_MAX_GROUPS) {
