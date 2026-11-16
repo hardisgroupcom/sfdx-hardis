@@ -49,20 +49,20 @@ The command starts with a list of every check, all selected: keep the ones to ru
 | How to fix | The [How to fix](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-what-will-break/#how-to-fix) section of the check, with the steps |
 | Detail report | The report of the check, with every item it found |
 
-| Check | Salesforce change | Production date |
-|---|---|---|
-| Refresh tokens idle for 30 days | Refresh tokens unused for 30 days expire (\`invalid_grant\`) | Since November 4, 2026 (sandboxes: October 21, 2026) |
-| Integrations using their refresh token less than every 30 days | A monthly or quarterly sync loses its token between two runs | Since November 4, 2026 (sandboxes: October 21, 2026) |
-| OAuth device flow | Only allowed on local External Client Apps with a localhost callback | November 30, 2026 |
-| Use Any API Auth permission for SOAP login() | Every SOAP \`login()\` caller needs the permission (\`INSUFFICIENT_ACCESS\` otherwise) | December 1, 2026 |
-| Security token for SOAP login() from wide IP ranges | A trusted IP range wider than /8 (IPv4) or /29 (IPv6) no longer spares the security token | January 31, 2027 (sandboxes: December 15, 2026) |
-| SOAP login() turned off after 6 months without use | Salesforce turns \`login()\` off in orgs where nobody called it in 6 months | January 31, 2027 (sandboxes: December 15, 2026) |
-| OAuth username-password and user-agent flows | Both flows are retired | February 20, 2027 |
-| Salesforce Connect cross-org legacy authentication | Cross-org data sources must use a Named Credential | Spring '27 |
-| SOAP login() retirement | SOAP \`login()\` is retired in API versions 31.0 to 64.0 | Summer '27 |
-| Connected Apps to move to External Client Apps | Connected Apps are no longer supported | Summer '27 |
-| Calls to retired API versions | API versions 30.0 and older are retired, 31.0 to 40.0 are retired in Summer '28 | Summer '25 and Summer '28 |
-| Release updates due | Each release update is enforced on its due date | The due date of each release update |
+| Check | Salesforce change | Production date | Salesforce announcement |
+|---|---|---|---|
+| Refresh tokens idle for 30 days | Refresh tokens unused for 30 days expire (\`invalid_grant\`) | Since November 4, 2026 (sandboxes: October 21, 2026) | [Article 005461275](${WHAT_WILL_BREAK_DEADLINES.idleRefreshTokens.articleUrl}) |
+| Integrations using their refresh token less than every 30 days | A monthly or quarterly sync loses its token between two runs | Since November 4, 2026 (sandboxes: October 21, 2026) | [Article 005461275](${WHAT_WILL_BREAK_DEADLINES.refreshTokenCadence.articleUrl}) |
+| OAuth device flow | Only allowed on local External Client Apps with a localhost callback | November 30, 2026 | [Article 005461280](${WHAT_WILL_BREAK_DEADLINES.deviceFlow.articleUrl}) |
+| Use Any API Auth permission for SOAP login() | Every SOAP \`login()\` caller needs the permission (\`INSUFFICIENT_ACCESS\` otherwise) | December 1, 2026 | [Article 005132110](${WHAT_WILL_BREAK_DEADLINES.soapLoginPermission.articleUrl}) |
+| Security token for SOAP login() from wide IP ranges | A trusted IP range wider than /8 (IPv4) or /29 (IPv6) no longer spares the security token | January 31, 2027 (sandboxes: December 15, 2026) | [Article 005132110](${WHAT_WILL_BREAK_DEADLINES.soapLoginIpRange.articleUrl}) |
+| SOAP login() turned off after 6 months without use | Salesforce turns \`login()\` off in orgs where nobody called it in 6 months | January 31, 2027 (sandboxes: December 15, 2026) | [Article 005132110](${WHAT_WILL_BREAK_DEADLINES.soapLoginInactivity.articleUrl}) |
+| OAuth username-password and user-agent flows | Both flows are retired | February 20, 2027 | [Release update](${WHAT_WILL_BREAK_DEADLINES.usernamePasswordFlow.articleUrl}) |
+| Salesforce Connect cross-org legacy authentication | Cross-org data sources must use a Named Credential | Spring '27 | [Release update](${WHAT_WILL_BREAK_DEADLINES.sfConnectLegacyAuth.articleUrl}) |
+| SOAP login() retirement | SOAP \`login()\` is retired in API versions 31.0 to 64.0 | Summer '27 | [Article 005132110](${WHAT_WILL_BREAK_DEADLINES.soapLoginRetirement.articleUrl}) |
+| Connected Apps to move to External Client Apps | Connected Apps are no longer supported | Summer '27 | [Migrate a Connected App to an External Client App](${WHAT_WILL_BREAK_DEADLINES.connectedAppsToEca.articleUrl}) |
+| Calls to retired API versions | API versions 30.0 and older are retired, 31.0 to 40.0 are retired in Summer '28 | Summer '25 and Summer '28 | [API 21.0 to 30.0](${WHAT_WILL_BREAK_DEADLINES.legacyApiRetired.articleUrl}), [API 31.0 to 40.0](${WHAT_WILL_BREAK_DEADLINES.legacyApiVersions.articleUrl}) |
+| Release updates due | Each release update is enforced on its due date | The due date of each release update | [Release Updates](${WHAT_WILL_BREAK_DEADLINES.releaseUpdates.articleUrl}) (each release update links to its own article in Setup) |
 
 Each check that found something also writes its own report. The legacy API check keeps the files of [hardis:org:diagnose:legacyapi](${CONSTANTS.DOC_URL_ROOT}/hardis/org/diagnose/legacyapi/), including one file of API clients (IP addresses) per range of API versions.
 
