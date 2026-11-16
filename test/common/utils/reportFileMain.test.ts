@@ -6,7 +6,7 @@ import { generateCsvFile } from '../../../src/common/utils/filesUtils.js';
 import { WebSocketClient } from '../../../src/common/websocketClient.js';
 
 // Collect the reportFile messages sent while run() executes
-async function captureReportFiles(run: () => Promise<unknown>): Promise<any[]> {
+async function captureReportFiles(run: () => unknown): Promise<any[]> {
   const originalSendMessage = WebSocketClient.sendMessage;
   const messages: any[] = [];
   try {
