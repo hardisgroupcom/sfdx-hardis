@@ -4,8 +4,8 @@ import { isFieldOnObject, isUnsupportedSObjectError, soqlQuery } from '../utils/
 import { markRowSensitiveValues } from '../utils/anonymizeUtils.js';
 import { isIpInRange, isRangeWiderThan } from '../utils/ipRangeUtils.js';
 import { t } from '../utils/i18n.js';
-import { getDateLabel, getDeadlineLabel, getDeadlineSeverity, getDeadlineWhen, getFixDocUrl } from './whatWillBreakDeadlines.js';
-import { buildRow, DAY_MS, finalizeCheck, formatDate, getOrgOAuthTokens, notAvailableResult, successRow } from './checkResults.js';
+import { DAY_MS, getDateLabel, getDeadlineLabel, getDeadlineSeverity, getDeadlineWhen, getFixDocUrl } from './whatWillBreakDeadlines.js';
+import { buildRow, finalizeCheck, formatDate, getOrgOAuthTokens, notAvailableResult, setRowKind, successRow } from './checkResults.js';
 import {
   CheckContext,
   LoginContext,
@@ -242,7 +242,12 @@ async function checkIdleRefreshTokens(context: CheckContext): Promise<WhatWillBr
   } catch (e) {
     return notAvailableResult(context, key, title, (e as Error).message);
   }
-  const apiOnlyUserIds = await queryApiOnlyUserIds(context.conn);
+  let apiOnlyUserIds: Set<string>;
+  try {
+    apiOnlyUserIds = await queryApiOnlyUserIds(context.conn);
+  } catch (e) {
+    return notAvailableResult(context, key, title, (e as Error).message);
+  }
   const severity = getDeadlineSeverity(key, context.isSandbox, context.today);
   const rows: WhatWillBreakDetailRow[] = [];
   // Tokens of the other users are counted per app: listing every mobile user token would drown the report
@@ -319,16 +324,16 @@ function groupTokensByAppAndUser(
   return Array.from(byAppAndUser.values()).sort((a, b) => `${a.appName}|${a.username}`.localeCompare(`${b.appName}|${b.username}`));
 }
 
+// An org without the API Only User permission has no API only user. Any other error is raised: the check then did not run.
 async function queryApiOnlyUserIds(conn: Connection): Promise<Set<string>> {
-  try {
-    const res = await soqlQuery(
-      'SELECT AssigneeId FROM PermissionSetAssignment WHERE PermissionSet.PermissionsApiUserOnly = true AND Assignee.IsActive = true',
-      conn
-    );
-    return new Set((res.records || []).map((r: any) => r.AssigneeId));
-  } catch {
+  if (!(await isFieldOnObject(conn, 'PermissionSet', 'PermissionsApiUserOnly'))) {
     return new Set();
   }
+  const res = await soqlQuery(
+    'SELECT AssigneeId FROM PermissionSetAssignment WHERE PermissionSet.PermissionsApiUserOnly = true AND Assignee.IsActive = true',
+    conn
+  );
+  return new Set((res.records || []).map((r: any) => r.AssigneeId));
 }
 
 // Integrations that use their refresh token less often than every 30 days: monthly or quarterly syncs break between two runs,
@@ -404,14 +409,14 @@ async function checkRefreshTokenCadence(context: CheckContext): Promise<WhatWill
 // users are grouped alone, and past 2000 users every active user is read: the day queries keep only the users who refreshed.
 async function queryRefreshTokenUserIds(conn: Connection, where: string): Promise<string[]> {
   const unique = (ids: string[]) => Array.from(new Set(ids.filter((id) => !!id)));
-  const pairs = (await soqlQuery(`SELECT UserId, Application, COUNT(Id) cnt FROM LoginHistory ${where} GROUP BY UserId, Application`, conn)).records || [];
-  if (pairs.length < LOGIN_AGGREGATE_MAX_GROUPS) {
+  const pairs = await queryLoginGroups(conn, `SELECT UserId, Application, COUNT(Id) cnt FROM LoginHistory ${where} GROUP BY UserId, Application`);
+  if (pairs) {
     return unique(
       pairs.filter((pair) => !isSalesforceEndUserApp(pair.Application) && !isAppAllowedToExpire(pair.Application)).map((pair) => pair.UserId)
     );
   }
-  const users = (await soqlQuery(`SELECT UserId, COUNT(Id) cnt FROM LoginHistory ${where} GROUP BY UserId`, conn)).records || [];
-  if (users.length < LOGIN_AGGREGATE_MAX_GROUPS) {
+  const users = await queryLoginGroups(conn, `SELECT UserId, COUNT(Id) cnt FROM LoginHistory ${where} GROUP BY UserId`);
+  if (users) {
     return unique(users.map((user) => user.UserId));
   }
   const activeUsers = (await soqlQuery('SELECT Id FROM User WHERE IsActive = true', conn)).records || [];
@@ -457,20 +462,36 @@ async function queryRefreshTokenDays(conn: Connection, where: string, userIds: s
 
 async function queryRefreshTokenDaysChunk(conn: Connection, where: string, userIds: string[]): Promise<any[]> {
   const idList = userIds.map((id) => `'${id}'`).join(',');
-  const res = await soqlQuery(
+  const records = await queryLoginGroups(
+    conn,
     `SELECT UserId, Application, Status, DAY_ONLY(LoginTime) d, COUNT(Id) cnt FROM LoginHistory ${where} AND UserId IN (${idList}) ` +
-      'GROUP BY UserId, Application, Status, DAY_ONLY(LoginTime)',
-    conn
+      'GROUP BY UserId, Application, Status, DAY_ONLY(LoginTime)'
   );
-  const records = res.records || [];
-  if (records.length < LOGIN_AGGREGATE_MAX_GROUPS || userIds.length === 1) {
+  if (records) {
     return records;
+  }
+  if (userIds.length === 1) {
+    throw new SfError(t('whatWillBreakTooManyLoginGroups'));
   }
   const half = Math.ceil(userIds.length / 2);
   return [
     ...(await queryRefreshTokenDaysChunk(conn, where, userIds.slice(0, half))),
     ...(await queryRefreshTokenDaysChunk(conn, where, userIds.slice(half))),
   ];
+}
+
+// A grouped LoginHistory query, or null when it reaches the 2000 groups limit: Salesforce then returns 2000 groups,
+// or fails because an aggregate query cannot be read in several batches (queryMore)
+async function queryLoginGroups(conn: Connection, soql: string): Promise<any[] | null> {
+  try {
+    const records = (await soqlQuery(soql, conn)).records || [];
+    return records.length < LOGIN_AGGREGATE_MAX_GROUPS ? records : null;
+  } catch (e) {
+    if (/queryMore|single batch/i.test((e as Error).message || '')) {
+      return null;
+    }
+    throw e;
+  }
 }
 
 function checkDeviceFlow(context: CheckContext): WhatWillBreakCheckResult {
@@ -688,6 +709,9 @@ async function checkUsernamePasswordFlow(context: CheckContext): Promise<WhatWil
     'authRetirementsDetailUsernamePassword',
     'whatWillBreakUsernamePassword'
   );
+  for (const row of result.rows.filter((detailRow) => detailRow.Severity !== 'success')) {
+    setRowKind(row, 'usernamePassword');
+  }
   if (groups.length === 0) {
     const oauthSettings = await fetchOauthOidcSettings(context.conn);
     if (oauthSettings?.blockOAuthUnPwFlow === true) {
@@ -707,7 +731,7 @@ async function checkUsernamePasswordFlow(context: CheckContext): Promise<WhatWil
       'userId',
     ]).filter((group) => group.successCount > 0);
     const userAgentRows = userAgentApps.map((app) =>
-      buildRow(context, key, title, 'info', {
+      setRowKind(buildRow(context, key, title, 'info', {
         Item: app.application,
         Details: t('authRetirementsDetailUserAgent', {
           loginSubType: app.loginSubType,
@@ -724,7 +748,7 @@ async function checkUsernamePasswordFlow(context: CheckContext): Promise<WhatWil
         Recommendation: t(isSalesforceUserAgentApp(app.application) ? 'whatWillBreakUserAgentTodoSalesforce' : 'whatWillBreakUserAgentTodo', {
           app: app.application,
         }),
-      })
+      }), 'userAgent')
     );
     result.rows = [...result.rows.filter((row) => row.Severity !== 'success'), ...userAgentRows];
     if (result.status === 'success') {

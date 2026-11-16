@@ -4958,6 +4958,7 @@
   "whatWillBreakSummaryNotChecked": "実行したチェックでは動作しなくなるものはありませんでしたが、{{count}} 件のチェックをこの org で実行できませんでした: What will break 列を確認してください。",
   "whatWillBreakSummaryWarning": "動作しなくなるものがあります: 期限までに、レポートの What to do 列に従って対応してください。",
   "whatWillBreakTodoNotChecked": "このチェックに必要なアクセス権を監視ユーザに付与するか、このチェックを無視してください",
+  "whatWillBreakTooManyLoginGroups": "1 人のユーザーの LoginHistory にリフレッシュトークンによるログインのグループが 2000 件を超えてあるため、Salesforce はこのユーザーについてグループ化できません",
   "whatWillBreakUnknownChecks": "不明なチェック: {{checks}}。使用可能なチェック: {{available}}",
   "whatWillBreakUserAgentImpact": "{{users}} 人のユーザが {{loginSubType}} で {{app}} にログインしています",
   "whatWillBreakUserAgentTodo": "Salesforce for iOS、Salesforce for Android、ブラウザは対応不要です。{{app}} が自社のアプリの場合は、PKCE 付き Web サーバーフローに移行してください",

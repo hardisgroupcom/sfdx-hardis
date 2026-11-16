@@ -4961,6 +4961,7 @@
   "whatWillBreakSummaryNotChecked": "Volgens de uitgevoerde controles gaat er niets stuk, maar {{count}} controle(s) konden niet worden uitgevoerd op deze org: zie de kolom What will break.",
   "whatWillBreakSummaryWarning": "Er gaat iets stuk: volg de kolom What to do van het rapport voor de deadlines.",
   "whatWillBreakTodoNotChecked": "Geef de monitoringgebruiker de toegang die deze controle nodig heeft, of negeer haar",
+  "whatWillBreakTooManyLoginGroups": "Eén gebruiker heeft meer dan 2000 groepen aanmeldingen met refresh token in LoginHistory: Salesforce kan ze voor deze gebruiker niet groeperen",
   "whatWillBreakUnknownChecks": "Onbekende controle(s): {{checks}}. Beschikbare controles: {{available}}",
   "whatWillBreakUserAgentImpact": "{{users}} gebruiker(s) loggen in bij {{app}} met {{loginSubType}}",
   "whatWillBreakUserAgentTodo": "Niets te doen voor Salesforce for iOS, Salesforce for Android en de browser. Als {{app}} een eigen app is, zet hem dan over op de web server flow met PKCE",

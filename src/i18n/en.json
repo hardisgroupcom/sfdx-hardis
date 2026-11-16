@@ -4965,6 +4965,7 @@
   "whatWillBreakSummaryNotChecked": "Nothing will break according to the checks that ran, but {{count}} check(s) could not run on this org: see the What will break column.",
   "whatWillBreakSummaryWarning": "Something will break: follow the What to do column of the report before the dates.",
   "whatWillBreakTodoNotChecked": "Give the monitoring user the access this check needs, or ignore it",
+  "whatWillBreakTooManyLoginGroups": "One user has more than 2000 groups of refresh token logins in LoginHistory: Salesforce cannot group them for this user",
   "whatWillBreakUnknownChecks": "Unknown check(s): {{checks}}. Available checks: {{available}}",
   "whatWillBreakUserAgentImpact": "{{users}} user(s) log in to {{app}} with {{loginSubType}}",
   "whatWillBreakUserAgentTodo": "Nothing to do for Salesforce for iOS, Salesforce for Android and the browser. If {{app}} is an app of yours, move it to the web server flow with PKCE",

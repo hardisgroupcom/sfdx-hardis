@@ -7,7 +7,7 @@ import { getMonitoringDisable } from '../notifProvider/utils/notificationConfig.
 import { markRowSensitiveValues, SENSITIVE_VALUES_KEY } from '../utils/anonymizeUtils.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { loadLoginHistory, needsLoginHistory, runAuthCheck } from './authChecks.js';
-import { buildMainRow, getStatusLabel, notAvailableResult } from './checkResults.js';
+import { buildMainRow, getRowKind, getStatusLabel, notAvailableResult, worstSeverity } from './checkResults.js';
 import { checkConnectedAppsToEca } from './connectedAppsCheck.js';
 import { checkLegacyApiVersions } from './legacyApiCheck.js';
 import { checkReleaseUpdates } from './releaseUpdatesCheck.js';
@@ -229,7 +229,7 @@ function mergeReleaseUpdatesIntoChecks(checks: WhatWillBreakCheckResult[], today
     const releaseUpdate = { title: releaseUpdates.rows[index].Item, dueDate: datedRow.date, dueLabel: datedRow.row.Date };
     if (!related) {
       kept.push(index);
-    } else if (!attachReleaseUpdate(related, releaseUpdate, datedRow.relatedRowsMatch, today)) {
+    } else if (!attachReleaseUpdate(related, releaseUpdate, datedRow.relatedRowsKind, today)) {
       // The check ran and found nothing of this kind (only other findings): the release update keeps its row, which says so
       kept.push(index);
       datedRow.row['What to do'] = t('whatWillBreakReleaseUpdateNothingFound', {
@@ -255,20 +255,20 @@ function mergeReleaseUpdatesIntoChecks(checks: WhatWillBreakCheckResult[], today
 
 // The rows of a check take the release update that enforces its change: its due date when it comes first, and for a row to fix,
 // the step to enable it once fixed (an information row only says which release update enforces the change).
-// rowsMatch keeps the rows whose Details name its login type, when one check covers two release updates.
+// rowsKind keeps the rows of its kind, when one check covers several changes (login type, range of API versions).
 // Returns false when the check has findings but none the release update applies to: its row then stays.
 function attachReleaseUpdate(
   check: WhatWillBreakCheckResult,
   releaseUpdate: WhatWillBreakReleaseUpdateLink,
-  rowsMatch: string | undefined,
+  rowsKind: string | undefined,
   today: Date
 ): boolean {
   if (check.status === 'success') {
     check.enforcingReleaseUpdates = [...(check.enforcingReleaseUpdates || []), releaseUpdate];
     return true;
   }
-  const rows = check.rows.filter((row) => row.Severity !== 'success' && (!rowsMatch || row.Details.includes(rowsMatch)));
-  const mainRows = check.mainRows || [];
+  const rows = check.rows.filter((row) => row.Severity !== 'success' && (!rowsKind || getRowKind(row) === rowsKind));
+  const mainRows = (check.mainRows || []).filter((datedRow) => !rowsKind || getRowKind(datedRow.row) === rowsKind);
   if (rows.length === 0 && mainRows.length === 0) {
     return false;
   }
@@ -300,11 +300,6 @@ function attachReleaseUpdate(
   }
   check.status = worstSeverity(check.rows);
   return true;
-}
-
-function worstSeverity(rows: WhatWillBreakDetailRow[]): WhatWillBreakSeverity {
-  const order: Record<WhatWillBreakSeverity, number> = { success: 0, info: 1, warning: 2, error: 3 };
-  return rows.reduce<WhatWillBreakSeverity>((worst, row) => (order[row.Severity] > order[worst] ? row.Severity : worst), 'success');
 }
 
 function buildMetrics(checks: WhatWillBreakCheckResult[]): Record<string, number> {
@@ -342,7 +337,8 @@ async function writeCheckReport(check: WhatWillBreakCheckResult): Promise<string
     return [];
   }
   const reportPath = await generateReportPath(`what-will-break-${check.key}`, '');
-  const files = await generateCsvFile(rows, reportPath, { fileTitle: check.detailReportTitle || check.title });
+  // A detail report: only the main report opens
+  const files = await generateCsvFile(rows, reportPath, { fileTitle: check.detailReportTitle || check.title, noOpen: true });
   return [files?.csvFile || reportPath, files?.xlsxFile].filter(Boolean);
 }
 
@@ -377,7 +373,7 @@ function buildCheckMainRows(check: WhatWillBreakCheckResult, isSandbox: boolean,
           date: firstReleaseUpdate?.dueLabel || check.deadline,
           whatToDo,
           announcementUrl,
-          count: check.metric ?? '',
+          count: isSuccess ? 0 : '',
         }),
       },
     ];

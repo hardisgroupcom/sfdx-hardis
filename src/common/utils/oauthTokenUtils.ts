@@ -74,11 +74,16 @@ export async function queryAllOAuthTokens(conn: Connection, baseQuery: string): 
 
   if (allOAuthTokens.length < totalTokens) {
     uxLog("warning", this, c.yellow(t('salesforceApiLimitOAuthTokensReached')));
+    // ">=" and the Ids already read: tokens created in the same second as the last one of a page are not skipped
+    const readTokenIds = new Set<string>(allOAuthTokens.map((token: any) => token.Id));
     let lastCreatedDate = allOAuthTokens.length > 0 ? allOAuthTokens[allOAuthTokens.length - 1].CreatedDate : null;
     while (lastCreatedDate != null) {
-      const remainingTokensQuery = `${baseQuery} WHERE CreatedDate > ${lastCreatedDate} ORDER BY CreatedDate ASC`;
+      const remainingTokensQuery = `${baseQuery} WHERE CreatedDate >= ${lastCreatedDate} ORDER BY CreatedDate ASC`;
       const remainingTokensQueryRes = await bulkQuery(remainingTokensQuery, conn);
-      const remainingTokens = remainingTokensQueryRes.records;
+      const remainingTokens = remainingTokensQueryRes.records.filter((token: any) => !readTokenIds.has(token.Id));
+      for (const token of remainingTokens) {
+        readTokenIds.add(token.Id);
+      }
       if (remainingTokens.length > 0) {
         allOAuthTokens.push(...remainingTokens);
         lastCreatedDate = remainingTokens[remainingTokens.length - 1].CreatedDate;

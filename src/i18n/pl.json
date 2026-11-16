@@ -4961,6 +4961,7 @@
   "whatWillBreakSummaryNotChecked": "Według wykonanych kontroli nic nie przestanie działać, ale nie udało się uruchomić części kontroli w tym org ({{count}}): patrz kolumna What will break.",
   "whatWillBreakSummaryWarning": "Coś przestanie działać: należy wykonać działania z kolumny What to do w raporcie przed podanymi terminami.",
   "whatWillBreakTodoNotChecked": "Należy nadać użytkownikowi monitoringu dostęp wymagany przez tę kontrolę albo ją zignorować",
+  "whatWillBreakTooManyLoginGroups": "Jeden użytkownik ma ponad 2000 grup logowań refresh tokenem w LoginHistory: Salesforce nie może ich pogrupować dla tego użytkownika",
   "whatWillBreakUnknownChecks": "Nieznane kontrole: {{checks}}. Dostępne kontrole: {{available}}",
   "whatWillBreakUserAgentImpact": "Liczba użytkowników logujących się do {{app}} przez {{loginSubType}}: {{users}}",
   "whatWillBreakUserAgentTodo": "Nic do zrobienia dla Salesforce for iOS, Salesforce for Android i przeglądarki. Jeśli {{app}} jest własną aplikacją, przenieść ją na web server flow z PKCE",

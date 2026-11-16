@@ -4961,6 +4961,7 @@
   "whatWillBreakSummaryNotChecked": "No se va a romper nada según las comprobaciones ejecutadas, pero {{count}} comprobación(es) no se han podido ejecutar en esta org: consulta la columna What will break.",
   "whatWillBreakSummaryWarning": "Algo se va a romper: sigue la columna What to do del informe antes de las fechas límite.",
   "whatWillBreakTodoNotChecked": "Da al usuario de monitorización el acceso que necesita esta comprobación, o ignórala",
+  "whatWillBreakTooManyLoginGroups": "Un usuario tiene más de 2000 grupos de inicios de sesión con refresh token en LoginHistory: Salesforce no puede agruparlos para este usuario",
   "whatWillBreakUnknownChecks": "Comprobación(es) desconocida(s): {{checks}}. Comprobaciones disponibles: {{available}}",
   "whatWillBreakUserAgentImpact": "{{users}} usuario(s) inician sesión en {{app}} con {{loginSubType}}",
   "whatWillBreakUserAgentTodo": "No hay nada que hacer para Salesforce for iOS, Salesforce for Android y el navegador. Si {{app}} es una aplicación tuya, pásala al web server flow con PKCE",

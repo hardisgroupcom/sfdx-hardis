@@ -32,6 +32,8 @@ interface CadenceOrg {
   userGroups: any[];
   days: any[];
   daysThrow: boolean;
+  // The user and app pairs query fails like Salesforce does past 2000 groups
+  pairsTooMany: boolean;
   users: any[];
 }
 
@@ -52,6 +54,9 @@ function mockConnection(org: Partial<CadenceOrg> & { releaseUpdates?: any[]; rel
       }
       if (soql.includes('FROM LoginHistory') && soql.endsWith('GROUP BY UserId')) {
         return { done: true, records: org.userGroups || [] };
+      }
+      if (org.pairsTooMany && soql.includes('FROM LoginHistory') && soql.endsWith('GROUP BY UserId, Application')) {
+        throw new Error('Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch');
       }
       if (soql.includes('FROM LoginHistory')) {
         return { done: true, records: org.pairs || [] };
@@ -261,6 +266,17 @@ describe('whatWillBreak', () => {
       expect(result.checks[0].rows.map((row) => row.Item)).to.deep.equal(['Monthly Sync - sync@example.com']);
     });
 
+    it('also falls back when Salesforce fails the grouped query because it has too many groups', async () => {
+      const result = await run({
+        pairsTooMany: true,
+        userGroups: [{ UserId: '005A' }],
+        users: [{ Id: '005A', Username: 'sync@example.com', IsActive: true }],
+        days: [refreshDay('005A', 'Monthly Sync', '2026-08-01'), refreshDay('005A', 'Monthly Sync', '2026-11-14')],
+      });
+      expect(result.checks[0].notChecked).to.not.equal(true);
+      expect(result.checks[0].rows.map((row) => row.Item)).to.deep.equal(['Monthly Sync - sync@example.com']);
+    });
+
     it('reports a check that fails as not checked, and still runs the other checks', async () => {
       const result = await run(
         {
@@ -394,7 +410,9 @@ describe('whatWillBreak', () => {
           expect(translations[locale], `${locale} Todo`).to.have.property(`whatWillBreakRu${entry.developerName}Todo`);
         }
         expect(entry.articleUrl).to.match(/^https:\/\/(help|developer)\.salesforce\.com\//);
-        expect(docPage).to.contain(`| ${entry.title} |`);
+        // The markdown table formatter pads the cells
+        const tableRows = docPage.split('\n').filter((line) => line.startsWith('|'));
+        expect(tableRows.some((line) => line.split('|')[1]?.trim() === entry.title)).to.equal(true);
       });
     }
   });
@@ -586,6 +604,14 @@ describe('whatWillBreak', () => {
         'WHAT_WILL_BREAK'
       );
       expect(notifications).to.deep.equal({ messaging: 'warning', email: 'off' });
+    });
+
+    it('keeps sending only to its own recipients the emails of a replaced type that did so', () => {
+      const notifications = getUserNotifications(
+        [{ key: 'LEGACY_API', notifications: { email: { threshold: 'error', recipients: ['sec@example.com'], replaceRecipients: true } } }] as any,
+        'WHAT_WILL_BREAK'
+      );
+      expect(notifications.email).to.deep.equal({ threshold: 'error', recipients: ['sec@example.com'], replaceRecipients: true });
     });
 
     it('keeps the settings the user gave WHAT_WILL_BREAK itself', () => {

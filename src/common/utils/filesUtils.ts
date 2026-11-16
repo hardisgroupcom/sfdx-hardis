@@ -1514,6 +1514,8 @@ export interface ExcelExportOptions {
   fileTitle?: string;
   // The main report of the command: UIs show it before its other reports
   mainReport?: boolean;
+  // A secondary report of the command: written and listed, but never opened (only the main report opens)
+  noOpen?: boolean;
   csvFileTitle?: string;
   xlsFileTitle?: string;
   noExcel?: boolean;
@@ -1606,7 +1608,7 @@ export async function generateCsvFile(
       uxLog("action", this, c.cyan(c.italic(t('pleaseSeeDetailedCsvLogIn', { outputPath: c.bold(csvFile) }))));
     }
     result.csvFile = csvFile;
-    if (!isAgentMode() && !WebSocketClient.isAliveWithLwcUI() && !options?.skipNotifyToWebSocket) {
+    if (!isAgentMode() && !WebSocketClient.isAliveWithLwcUI() && !options?.skipNotifyToWebSocket && !options?.noOpen) {
       WebSocketClient.requestOpenFile(csvFile);
     }
     const csvFileTitle = options?.fileTitle ? `${options.fileTitle} (CSV)` : options?.csvFileTitle ?? "Report (CSV)";
@@ -1641,7 +1643,7 @@ export async function createXlsxFromCsv(outputPath: string, options: ExcelExport
     const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
     WebSocketClient.sendReportFileMessage(xslxFile, xlsFileTitle, "report", undefined, { main: options?.mainReport });
     result.xlsxFile = xslxFile;
-    if (!isAgentMode() && !isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI()) {
+    if (!isAgentMode() && !isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI() && !options?.noOpen) {
       try {
         uxLog("other", this, c.italic(c.grey(t('openingXlsxFileDefineNoopenTrueTo', { xslxFile: c.bold(xslxFile) }))));
         await open(xslxFile, { wait: false });
@@ -1692,7 +1694,7 @@ export async function createXlsxFromCsvFiles(csvFilesPath: string[], outputPath:
     }
     const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
     WebSocketClient.sendReportFileMessage(xslxFile, xlsFileTitle, "report", undefined, { main: options?.mainReport });
-    if (!isAgentMode() && !isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI()) {
+    if (!isAgentMode() && !isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI() && !options?.noOpen) {
       try {
         uxLog("other", this, c.italic(c.grey(t('openingXlsxFileDefineNoopenTrueTo', { xslxFile: c.bold(xslxFile) }))));
         await open(xslxFile, { wait: false });

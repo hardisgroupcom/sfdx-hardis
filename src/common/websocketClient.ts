@@ -59,12 +59,12 @@ export interface OrgDiffItem {
   status: 'added' | 'modified' | 'deleted';
 }
 
-/** Context passed to the WebSocketClient constructor, identifying the running command and connection endpoint. */
 export interface ReportFileMessageOptions {
   // The main report of the command: the UI shows it before the secondary reports, whatever the order they were sent in
   main?: boolean;
 }
 
+/** Context passed to the WebSocketClient constructor, identifying the running command and connection endpoint. */
 export interface WebSocketClientContext {
   /** The command identifier, e.g. `"hardis:doc:flow2markdown"`. */
   command?: string;

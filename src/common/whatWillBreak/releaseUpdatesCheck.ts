@@ -58,7 +58,7 @@ export async function checkReleaseUpdates(context: CheckContext): Promise<WhatWi
       count: 1,
     }),
     relatedCheckKey: entries[index]?.relatedCheck,
-    relatedRowsMatch: entries[index]?.relatedRowsMatch,
+    relatedRowsKind: entries[index]?.relatedRowsKind,
   }));
   result.detailReportRows = records;
   result.detailReportTitle = t('whatWillBreakReleaseUpdatesReportTitle');

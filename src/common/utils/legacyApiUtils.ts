@@ -85,7 +85,7 @@ export interface LegacyApiCallsCollectorOptions {
   // Command instance used for uxLog / uxLogTable, or null
   commandThis: any;
   // Run as one step of another command (what-will-break): the log file steps go to the caller's progress block
-  // instead of a new one, and no report file is opened
+  // instead of a new one, and no report file is opened (the caller opens its own main report)
   partOfAnotherCommand?: boolean;
   // The calls report is the main report of the command: UIs show it before the API clients reports
   mainReport?: boolean;
@@ -549,7 +549,7 @@ export class LegacyApiCallsCollector {
     WebSocketClient.sendReportFileMessage(this.outputFile, t('legacyApiCallsCsv'), 'report', undefined, { main: this.mainReport });
     if (this.totalCsvRows > 0) {
       const result: any = {};
-      await createXlsxFromCsv(this.outputFile, { fileTitle: 'Legacy API Calls', mainReport: this.mainReport }, result);
+      await createXlsxFromCsv(this.outputFile, { fileTitle: 'Legacy API Calls', mainReport: this.mainReport, noOpen: this.partOfAnotherCommand }, result);
       if (result.xlsxFile) {
         this.xlsxFile = result.xlsxFile;
       }
@@ -600,6 +600,7 @@ export class LegacyApiCallsCollector {
       : this.outputFile + `api-clients-${severity}-${range}.csv`;
     const outputFileIpsRes = await generateCsvFile(sortedIpResults, outputFileIps, {
       fileTitle: `Legacy API Clients - ${severity} - API ${descriptor.minApiVersion} to ${descriptor.maxApiVersion}`,
+      noOpen: this.partOfAnotherCommand,
     });
     const apiClientsFile: LegacyApiClientsFile = {
       severity,

@@ -159,7 +159,11 @@ export function getUserNotifications(userEntries: NotificationConfigEntry[], not
         ...(isEmailChannelObject(mergedEmail) ? (mergedEmail.recipients ?? []) : []),
         ...(isEmailChannelObject(email) ? (email.recipients ?? []) : []),
       ];
-      merged.email = { threshold, recipients: Array.from(new Set(recipients)) };
+      // A type whose emails went only to its own recipients keeps doing so: they are not sent to the default addresses
+      const replaceRecipients =
+        (isEmailChannelObject(mergedEmail) && mergedEmail.replaceRecipients === true) ||
+        (isEmailChannelObject(email) && email.replaceRecipients === true);
+      merged.email = { threshold, recipients: Array.from(new Set(recipients)), ...(replaceRecipients ? { replaceRecipients: true } : {}) };
     } else if (threshold !== undefined) {
       merged.email = threshold;
     }

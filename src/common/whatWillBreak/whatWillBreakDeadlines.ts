@@ -93,7 +93,7 @@ export const WHAT_WILL_BREAK_DOC_URL = `${CONSTANTS.DOC_URL_ROOT}/salesforce-mon
 // A finding becomes an error when its date is closer than this
 export const WHAT_WILL_BREAK_ERROR_DAYS = 60;
 
-const DAY_MS = 86400000;
+export const DAY_MS = 86400000;
 
 // Severity of a finding of a check, from the time left before its date
 export function getDeadlineSeverity(key: WhatWillBreakDeadlineKey, isSandbox: boolean, today: Date): 'error' | 'warning' {

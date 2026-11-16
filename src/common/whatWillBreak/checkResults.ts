@@ -11,7 +11,24 @@ import {
   WhatWillBreakSeverity,
 } from './whatWillBreakTypes.js';
 
-export const DAY_MS = 86400000;
+// Kind of a finding, when a release update applies to some rows of a check only (a login type, a range of API versions).
+// Kept outside the row, so it never becomes a column of the reports.
+const rowKinds = new WeakMap<object, string>();
+
+export function setRowKind<T extends object>(row: T, kind: string): T {
+  rowKinds.set(row, kind);
+  return row;
+}
+
+export function getRowKind(row: object): string | undefined {
+  return rowKinds.get(row);
+}
+
+// The most severe finding of a list, success when there is none
+export function worstSeverity(rows: Pick<WhatWillBreakDetailRow, 'Severity'>[]): WhatWillBreakSeverity {
+  const order: Record<WhatWillBreakSeverity, number> = { success: 0, info: 1, warning: 2, error: 3 };
+  return rows.reduce<WhatWillBreakSeverity>((worst, row) => (order[row.Severity] > order[worst] ? row.Severity : worst), 'success');
+}
 
 // Every OAuth token of the org, read once per run: the idle tokens and the Connected Apps checks both need them,
 // and reading them is a full Bulk extraction on orgs with many mobile users
@@ -32,11 +49,7 @@ export function finalizeCheck(
   foundDetail: string
 ): WhatWillBreakCheckResult {
   const deadline = getDeadlineLabel(key, context.isSandbox, context.today);
-  const order: Record<WhatWillBreakSeverity, number> = { success: 0, info: 1, warning: 2, error: 3 };
-  const status = rows.reduce<WhatWillBreakSeverity>(
-    (worst, row) => (order[row.Severity] > order[worst] ? row.Severity : worst),
-    'success'
-  );
+  const status = worstSeverity(rows);
   if (rows.length === 0) {
     const detail = t('authRetirementsNothingFound');
     return {

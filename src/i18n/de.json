@@ -4960,6 +4960,7 @@
   "whatWillBreakSummaryNotChecked": "Laut den ausgeführten Prüfungen wird nichts unterbrochen, aber {{count}} Prüfung(en) konnten in dieser Org nicht ausgeführt werden: siehe die Spalte What will break.",
   "whatWillBreakSummaryWarning": "Etwas wird unterbrochen: Folgen Sie vor den Fristen der Spalte What to do des Berichts.",
   "whatWillBreakTodoNotChecked": "Geben Sie dem Monitoring-Benutzer den Zugriff, den diese Prüfung benötigt, oder ignorieren Sie sie",
+  "whatWillBreakTooManyLoginGroups": "Ein Benutzer hat mehr als 2000 Gruppen von Refresh-Token-Anmeldungen in LoginHistory: Salesforce kann sie für diesen Benutzer nicht gruppieren",
   "whatWillBreakUnknownChecks": "Unbekannte Prüfung(en): {{checks}}. Verfügbare Prüfungen: {{available}}",
   "whatWillBreakUserAgentImpact": "{{users}} Benutzer melden sich mit {{loginSubType}} bei {{app}} an",
   "whatWillBreakUserAgentTodo": "Für Salesforce for iOS, Salesforce for Android und den Browser ist nichts zu tun. Wenn {{app}} Ihre eigene App ist, stellen Sie sie auf den Web Server Flow mit PKCE um",

@@ -14,6 +14,7 @@ import { WebSocketClient } from '../../../../common/websocketClient.js';
 import sortArray from '../../../../common/utils/sortArray.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { t } from '../../../../common/utils/i18n.js';
+import { stripSensitiveValues } from '../../../../common/utils/anonymizeUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -437,7 +438,7 @@ In agent mode:
       unsecuredOAuthTokens: unsecuredOAuthTokens,
       unsecuredConnectedApps: uniqueUnsecuredAppNames as AnyJson[],
       oAuthTokensByUser: oAuthTokensByUser,
-      connectedAppsUsage: connectedAppsUsage as unknown as AnyJson[],
+      connectedAppsUsage: stripSensitiveValues(connectedAppsUsage) as unknown as AnyJson[],
     }
   }
 

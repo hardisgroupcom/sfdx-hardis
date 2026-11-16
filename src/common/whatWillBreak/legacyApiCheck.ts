@@ -1,7 +1,7 @@
 import path from 'path';
 import { t } from '../utils/i18n.js';
 import { LegacyApiCallsCollector, LegacyApiDescriptor } from '../utils/legacyApiUtils.js';
-import { buildMainRow, buildRow, finalizeCheck, notAvailableResult, successRow } from './checkResults.js';
+import { buildMainRow, buildRow, finalizeCheck, notAvailableResult, setRowKind, successRow } from './checkResults.js';
 import { getDeadlineDate, getDeadlineLabel, getDeadlineSeverity, WHAT_WILL_BREAK_DEADLINES } from './whatWillBreakDeadlines.js';
 import {
   CheckContext,
@@ -62,16 +62,18 @@ export async function checkLegacyApiVersions(context: CheckContext): Promise<Wha
     });
     row.Deadline = deadline;
     row.Article = WHAT_WILL_BREAK_DEADLINES[deadlineKey].articleUrl;
-    rows.push(row);
+    // A release update retires one range of API versions: it applies to the rows of that range only
+    const kind = `apiVersions${found.descriptor.minApiVersion}to${found.descriptor.maxApiVersion}`;
+    rows.push(setRowKind(row, kind));
     mainRows.push({
       date: getDeadlineDate(deadlineKey, context.isSandbox),
-      row: buildMainRow({ key, title, howToFixUrl: row.HowToFix }, severity, {
+      row: setRowKind(buildMainRow({ key, title, howToFixUrl: row.HowToFix }, severity, {
         whatWillBreak,
         date: deadline,
         whatToDo,
         announcementUrl: row.Article,
         count: found.totalErrors,
-      }),
+      }), kind),
     });
   }
   // The metric keeps the meaning it had with hardis:org:diagnose:legacyapi (SOAP login() calls included), so the history continues

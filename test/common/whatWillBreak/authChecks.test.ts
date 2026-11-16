@@ -102,7 +102,9 @@ function mockConnection(org: MockOrg): any {
       },
     },
     sobject: () => ({
-      describe: async () => ({ fields: org.noUseAnyApiAuthField ? [] : [{ name: 'PermissionsUseAnyApiAuth' }] }),
+      describe: async () => ({
+        fields: [...(org.noUseAnyApiAuthField ? [] : [{ name: 'PermissionsUseAnyApiAuth' }]), { name: 'PermissionsApiUserOnly' }],
+      }),
     }),
   };
 }

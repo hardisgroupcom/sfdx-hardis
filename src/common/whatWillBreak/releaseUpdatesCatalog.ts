@@ -17,8 +17,8 @@ export interface ReleaseUpdateCatalogEntry {
   impacting: boolean;
   // Check of the report that covers the same change: the release update is merged into its rows
   relatedCheck?: WhatWillBreakCheckKey;
-  // Text the Details of the related check rows must contain, when that check covers several release updates (login type)
-  relatedRowsMatch?: string;
+  // Kind of the related check rows it applies to, when that check covers several changes (login type, range of API versions)
+  relatedRowsKind?: string;
 }
 
 export const RELEASE_UPDATES_CATALOG: ReleaseUpdateCatalogEntry[] = [
@@ -97,7 +97,7 @@ export const RELEASE_UPDATES_CATALOG: ReleaseUpdateCatalogEntry[] = [
     articleUrl: 'https://help.salesforce.com/s/articleView?id=release-notes.rn_security_oauth_unpw.htm&release=264&type=5',
     impacting: true,
     relatedCheck: 'usernamePasswordFlow',
-    relatedRowsMatch: 'Username-Password',
+    relatedRowsKind: 'usernamePassword',
   },
   {
     developerName: 'OAuthUsrAgtFlowsEOLReleaseUpdate',
@@ -105,7 +105,7 @@ export const RELEASE_UPDATES_CATALOG: ReleaseUpdateCatalogEntry[] = [
     articleUrl: 'https://help.salesforce.com/s/articleView?id=release-notes.rn_security_oauth_useragent.htm&release=264&type=5',
     impacting: true,
     relatedCheck: 'usernamePasswordFlow',
-    relatedRowsMatch: 'User-Agent',
+    relatedRowsKind: 'userAgent',
   },
   {
     developerName: 'SoapLoginRetirementNoTestFeatureReleaseUpdate',
@@ -139,6 +139,7 @@ export const RELEASE_UPDATES_CATALOG: ReleaseUpdateCatalogEntry[] = [
     articleUrl: 'https://help.salesforce.com/s/articleView?id=release-notes.rn_api_retirement.htm&release=264&type=5',
     impacting: true,
     relatedCheck: 'legacyApiVersions',
+    relatedRowsKind: 'apiVersions31to40',
   },
 ];
 

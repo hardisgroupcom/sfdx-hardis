@@ -4961,6 +4961,7 @@
   "whatWillBreakSummaryNotChecked": "Niente smetterà di funzionare secondo i controlli eseguiti, ma non è stato possibile eseguire {{count}} controllo/i su questa org: vedi la colonna What will break.",
   "whatWillBreakSummaryWarning": "Qualcosa smetterà di funzionare: segui la colonna What to do del report prima delle scadenze.",
   "whatWillBreakTodoNotChecked": "Dai all'utente di monitoraggio l'accesso di cui questo controllo ha bisogno, oppure ignoralo",
+  "whatWillBreakTooManyLoginGroups": "Un utente ha più di 2000 gruppi di accessi con refresh token in LoginHistory: Salesforce non può raggrupparli per questo utente",
   "whatWillBreakUnknownChecks": "Controllo/i sconosciuto/i: {{checks}}. Controlli disponibili: {{available}}",
   "whatWillBreakUserAgentImpact": "{{users}} utente/i effettuano il login a {{app}} con {{loginSubType}}",
   "whatWillBreakUserAgentTodo": "Niente da fare per Salesforce for iOS, Salesforce for Android e il browser. Se {{app}} è una tua app, passala al web server flow con PKCE",

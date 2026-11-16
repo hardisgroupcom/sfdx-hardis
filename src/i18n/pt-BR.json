@@ -4927,6 +4927,7 @@
   "whatWillBreakSummaryNotChecked": "Nada vai quebrar segundo as verificações executadas, mas {{count}} verificação(ões) não puderam ser executadas nesta org: veja a coluna What will break.",
   "whatWillBreakSummaryWarning": "Algo vai quebrar: siga a coluna What to do do relatório antes dos prazos.",
   "whatWillBreakTodoNotChecked": "Dê ao usuário de monitoramento o acesso de que esta verificação precisa, ou ignore-a",
+  "whatWillBreakTooManyLoginGroups": "Um usuário tem mais de 2000 grupos de logins com refresh token no LoginHistory: o Salesforce não consegue agrupá-los para esse usuário",
   "whatWillBreakUnknownChecks": "Verificação(ões) desconhecida(s): {{checks}}. Verificações disponíveis: {{available}}",
   "whatWillBreakUserAgentImpact": "{{users}} usuário(s) fazem login em {{app}} com {{loginSubType}}",
   "whatWillBreakUserAgentTodo": "Nada a fazer para Salesforce for iOS, Salesforce for Android e o navegador. Se {{app}} é um app seu, passe-o para o web server flow com PKCE",
