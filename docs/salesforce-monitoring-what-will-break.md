@@ -18,20 +18,20 @@ Key: **WHAT_WILL_BREAK**
 
 The command starts with the list of checks, all selected: keep the ones to run. In CI and with `--agent`, all of them run, or the ones given with `--checks`.
 
-| Check                                                          | Key                    | Salesforce change                                                                         | Production date                                 | Salesforce announcement                                                                                                                        |
-|----------------------------------------------------------------|------------------------|-------------------------------------------------------------------------------------------|-------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
-| Refresh tokens idle for 30 days                                | `idleRefreshTokens`    | A refresh token unused for 30 days expires (`invalid_grant`)                              | Since November 4, 2026 (sandboxes: October 21)  | [005461275](https://help.salesforce.com/s/articleView?id=005461275&type=1)                                                                     |
-| Integrations using their refresh token less than every 30 days | `refreshTokenCadence`  | A monthly or quarterly sync loses its refresh token between two runs                      | Since November 4, 2026 (sandboxes: October 21)  | [005461275](https://help.salesforce.com/s/articleView?id=005461275&type=1)                                                                     |
-| OAuth device flow                                              | `deviceFlow`           | Only allowed on local External Client Apps with a `https://localhost` callback            | November 30, 2026                               | [005461280](https://help.salesforce.com/s/articleView?id=005461280&type=1)                                                                     |
-| Use Any API Auth permission for SOAP login()                   | `soapLoginPermission`  | Every SOAP `login()` caller needs the permission, or gets `INSUFFICIENT_ACCESS`           | December 1, 2026                                | [005132110](https://help.salesforce.com/s/articleView?id=005132110&type=1)                                                                     |
-| Security token for SOAP login() from wide IP ranges            | `soapLoginIpRange`     | A trusted IP range wider than /8 (IPv4) or /29 (IPv6) no longer spares the security token | January 31, 2027 (sandboxes: December 15, 2026) | [005132110](https://help.salesforce.com/s/articleView?id=005132110&type=1)                                                                     |
-| SOAP login() turned off after 6 months without use             | `soapLoginInactivity`  | Salesforce turns `login()` off in orgs where nobody called it in 6 months                 | January 31, 2027 (sandboxes: December 15, 2026) | [005132110](https://help.salesforce.com/s/articleView?id=005132110&type=1)                                                                     |
-| OAuth username-password and user-agent flows                   | `usernamePasswordFlow` | Both flows are retired                                                                    | February 20, 2027                               | [Release update](https://help.salesforce.com/s/articleView?id=release-notes.rn_security_oauth_unpw.htm&release=264&type=5)                     |
-| Salesforce Connect cross-org legacy authentication             | `sfConnectLegacyAuth`  | Cross-org external data sources must use a Named Credential                               | Spring '27                                      | [Release update](https://help.salesforce.com/s/articleView?id=release-notes.rn_sf_connect_xorg_legacy_auth_retiring_ru.htm&release=264&type=5) |
-| SOAP login() retirement                                        | `soapLoginRetirement`  | SOAP `login()` is retired in API versions 31.0 to 64.0                                    | Summer '27                                      | [005132110](https://help.salesforce.com/s/articleView?id=005132110&type=1)                                                                     |
-| Connected Apps to move to External Client Apps                 | `connectedAppsToEca`   | Connected Apps are no longer supported                                                    | Summer '27                                      | [Migrate a Connected App](https://help.salesforce.com/s/articleView?id=xcloud.migrate_connected_app_to_external_client_app.htm&type=5)         |
+| Check                                                          | Key                    | Salesforce change                                                                         | Production date                                 | Salesforce announcement                                                                                                                                |
+|----------------------------------------------------------------|------------------------|-------------------------------------------------------------------------------------------|-------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Refresh tokens idle for 30 days                                | `idleRefreshTokens`    | A refresh token unused for 30 days expires (`invalid_grant`)                              | Since November 4, 2026 (sandboxes: October 21)  | [005461275](https://help.salesforce.com/s/articleView?id=005461275&type=1)                                                                             |
+| Integrations using their refresh token less than every 30 days | `refreshTokenCadence`  | A monthly or quarterly sync loses its refresh token between two runs                      | Since November 4, 2026 (sandboxes: October 21)  | [005461275](https://help.salesforce.com/s/articleView?id=005461275&type=1)                                                                             |
+| OAuth device flow                                              | `deviceFlow`           | Only allowed on local External Client Apps with a `https://localhost` callback            | November 30, 2026                               | [005461280](https://help.salesforce.com/s/articleView?id=005461280&type=1)                                                                             |
+| Use Any API Auth permission for SOAP login()                   | `soapLoginPermission`  | Every SOAP `login()` caller needs the permission, or gets `INSUFFICIENT_ACCESS`           | December 1, 2026                                | [005132110](https://help.salesforce.com/s/articleView?id=005132110&type=1)                                                                             |
+| Security token for SOAP login() from wide IP ranges            | `soapLoginIpRange`     | A trusted IP range wider than /8 (IPv4) or /29 (IPv6) no longer spares the security token | January 31, 2027 (sandboxes: December 15, 2026) | [005132110](https://help.salesforce.com/s/articleView?id=005132110&type=1)                                                                             |
+| SOAP login() turned off after 6 months without use             | `soapLoginInactivity`  | Salesforce turns `login()` off in orgs where nobody called it in 6 months                 | January 31, 2027 (sandboxes: December 15, 2026) | [005132110](https://help.salesforce.com/s/articleView?id=005132110&type=1)                                                                             |
+| OAuth username-password and user-agent flows                   | `usernamePasswordFlow` | Both flows are retired                                                                    | February 20, 2027                               | [Release update](https://help.salesforce.com/s/articleView?id=release-notes.rn_security_oauth_unpw.htm&release=264&type=5)                             |
+| Salesforce Connect cross-org legacy authentication             | `sfConnectLegacyAuth`  | Cross-org external data sources must use a Named Credential                               | Spring '27                                      | [Release update](https://help.salesforce.com/s/articleView?id=release-notes.rn_sf_connect_xorg_legacy_auth_retiring_ru.htm&release=264&type=5)         |
+| SOAP login() retirement                                        | `soapLoginRetirement`  | SOAP `login()` is retired in API versions 31.0 to 64.0                                    | Summer '27                                      | [005132110](https://help.salesforce.com/s/articleView?id=005132110&type=1)                                                                             |
+| Connected Apps to move to External Client Apps                 | `connectedAppsToEca`   | Connected Apps are no longer supported                                                    | Summer '27                                      | [Migrate a Connected App](https://help.salesforce.com/s/articleView?id=xcloud.migrate_connected_app_to_external_client_app.htm&type=5)                 |
 | Calls to retired API versions                                  | `legacyApiVersions`    | API versions 30.0 and older are retired, 31.0 to 40.0 are retired in Summer '28           | Summer '25 and Summer '28                       | [000389618](https://help.salesforce.com/s/articleView?id=000389618&type=1), [005321531](https://help.salesforce.com/s/articleView?id=005321531&type=1) |
-| Release updates due                                            | `releaseUpdates`       | Salesforce enforces each release update on its due date                                   | The due date of each release update             | The Release Updates page of the org                                                                                                            |
+| Release updates due                                            | `releaseUpdates`       | Salesforce enforces each release update on its due date                                   | The due date of each release update             | The Release Updates page of the org                                                                                                                    |
 
 Salesforce has moved several of these dates already. Check the announcement of each change before you plan around it.
 
@@ -39,17 +39,17 @@ Salesforce has moved several of these dates already. Check the announcement of e
 
 The **main report** (`what-will-break-<date>.csv` and `.xlsx`) has one row per thing that will break, and one row per check that found nothing:
 
-| Column                  | Content                                                                                                     |
-|-------------------------|-------------------------------------------------------------------------------------------------------------|
-| Status                  | ❌ Error, ⚠️ Warning, ℹ️ Info, ⏸️ Not checked (the reason is in What will break) or ✅ OK                       |
-| Check                   | The check                                                                                                   |
-| What will break         | What fails and how many integrations, calls or apps are concerned. On an OK row, what was checked.          |
-| Date                    | When it breaks: a day, "Enforced since", or a Salesforce release such as "Summer '28 (2028-06)"             |
-| What to do              | The action that avoids the break                                                                            |
-| Salesforce announcement | The official Salesforce page of the change                                                                  |
-| How to fix              | The section of this page with the steps                                                                     |
-| Count                   | The number of items found                                                                                   |
-| Detail report           | The report of the check, with every item it found                                                           |
+| Column                  | Content                                                                                            |
+|-------------------------|----------------------------------------------------------------------------------------------------|
+| Status                  | ❌ Error, ⚠️ Warning, ℹ️ Info, ⏸️ Not checked (the reason is in What will break) or ✅ OK            |
+| Check                   | The check                                                                                          |
+| What will break         | What fails and how many integrations, calls or apps are concerned. On an OK row, what was checked. |
+| Date                    | When it breaks: a day, "Enforced since", or a Salesforce release such as "Summer '28 (2028-06)"    |
+| What to do              | The action that avoids the break                                                                   |
+| Salesforce announcement | The official Salesforce page of the change                                                         |
+| How to fix              | The section of this page with the steps                                                            |
+| Count                   | The number of items found                                                                          |
+| Detail report           | The report of the check, with every item it found                                                  |
 
 What will break comes first: errors, then warnings, the earliest date first. A check that could not run on the org (missing object or permission) is **Not checked**, never OK: it proves nothing.
 
@@ -241,18 +241,18 @@ The metrics keep their names, so the Grafana history of `LegacyApiCalls` and `Re
 
 ### Grafana metrics
 
-| Metric                            | Meaning                                                               |
-|-----------------------------------|-----------------------------------------------------------------------|
-| `IdleRefreshTokensExpiringSoon`   | Refresh tokens of API only users about to expire                      |
-| `IntegrationsRefreshingTooRarely` | Integrations using their refresh token less than every 30 days        |
-| `DeviceFlowUsers`                 | Users logging in with the OAuth device flow                           |
-| `SoapLoginUsersMissingPermission` | SOAP `login()` callers without Use Any API Auth                       |
-| `SoapLoginUsersNeedingToken`      | SOAP `login()` callers only covered by a wide trusted range           |
-| `UsernamePasswordFlowUsers`       | Users logging in with the OAuth username-password flow                |
-| `SfConnectLegacyDataSources`      | Cross-org data sources without Named Credential                       |
-| `SoapLoginUsers`                  | Users calling SOAP `login()`                                          |
-| `ConnectedAppsToMigrate`          | Connected Apps of the org to move to External Client Apps             |
-| `LegacyApiCalls`                  | Calls to deprecated or retired API versions, SOAP `login()` included  |
-| `ReleaseUpdates`                  | Release updates due                                                   |
+| Metric                            | Meaning                                                              |
+|-----------------------------------|----------------------------------------------------------------------|
+| `IdleRefreshTokensExpiringSoon`   | Refresh tokens of API only users about to expire                     |
+| `IntegrationsRefreshingTooRarely` | Integrations using their refresh token less than every 30 days       |
+| `DeviceFlowUsers`                 | Users logging in with the OAuth device flow                          |
+| `SoapLoginUsersMissingPermission` | SOAP `login()` callers without Use Any API Auth                      |
+| `SoapLoginUsersNeedingToken`      | SOAP `login()` callers only covered by a wide trusted range          |
+| `UsernamePasswordFlowUsers`       | Users logging in with the OAuth username-password flow               |
+| `SfConnectLegacyDataSources`      | Cross-org data sources without Named Credential                      |
+| `SoapLoginUsers`                  | Users calling SOAP `login()`                                         |
+| `ConnectedAppsToMigrate`          | Connected Apps of the org to move to External Client Apps            |
+| `LegacyApiCalls`                  | Calls to deprecated or retired API versions, SOAP `login()` included |
+| `ReleaseUpdates`                  | Release updates due                                                  |
 
 A check that is not selected, or cannot run on an org, sends no metric, so the dashboards show "no data" instead of a false zero.
