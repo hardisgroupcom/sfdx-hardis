@@ -4901,6 +4901,8 @@
   "whatWillBreakRefreshSingleUseImpact": "{{app}}, run as {{user}}, used its refresh token on one day only in the last {{lookback}} days, {{days}} days ago: if it does not run again within 30 days of that use, the token expires and its next run fails with invalid_grant",
   "whatWillBreakReleaseUpdateEnableAfterFix": "Once fixed, enable the release update \"{{title}}\" in Setup > Release Updates, before Salesforce does it on {{date}}",
   "whatWillBreakReleaseUpdateEnableNow": "Nothing to fix in this org: in Setup > Release Updates, you can enable {{titles}} now, before Salesforce does it on {{date}}",
+  "whatWillBreakReleaseUpdateEnforcedBy": "Salesforce enforces this change with the release update \"{{title}}\" (Setup > Release Updates) on {{date}}",
+  "whatWillBreakReleaseUpdateNothingFound": "The \"{{check}}\" check of this report found nothing in this org that this change breaks: in Setup > Release Updates, you can enable \"{{title}}\" now, before Salesforce does it on {{date}}",
   "whatWillBreakReleaseUpdateTodo": "In Setup > Release Updates, open \"{{title}}\" and read what it changes (Get Started gives the steps and the Salesforce article). Enable it in a sandbox, run your Apex tests and main business scenarios and fix what fails, then enable it in production before its due date, at a time you choose",
   "whatWillBreakReleaseUpdatesReportTitle": "Release updates due",
   "whatWillBreakReportFileTitle": "What will break",

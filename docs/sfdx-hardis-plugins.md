@@ -335,13 +335,13 @@ Every event has the same envelope, and what is specific to the event under `data
 
 `data` of `sfdx-hardis:retrieve-done`:
 
-| Property       | Type                     | Description                                                                          |
-|----------------|--------------------------|--------------------------------------------------------------------------------------|
-| `status`       | `"success" \| "failed"`  | What the retrieve returned                                                           |
-| `manifest`     | `string \| null`         | Absolute path of the package.xml given with `--manifest`, `null` without it          |
-| `metadata`     | `string[]`               | Metadata asked with `--metadata`, or the types selected in the interactive menu      |
-| `sourcePaths`  | `string[]`               | Absolute paths given with `--sourcepath`                                             |
-| `packageNames` | `string[]`               | Packages given with `--packagenames`                                                 |
+| Property       | Type                    | Description                                                                     |
+|----------------|-------------------------|---------------------------------------------------------------------------------|
+| `status`       | `"success" \| "failed"` | What the retrieve returned                                                      |
+| `manifest`     | `string \| null`        | Absolute path of the package.xml given with `--manifest`, `null` without it     |
+| `metadata`     | `string[]`              | Metadata asked with `--metadata`, or the types selected in the interactive menu |
+| `sourcePaths`  | `string[]`              | Absolute paths given with `--sourcepath`                                        |
+| `packageNames` | `string[]`              | Packages given with `--packagenames`                                            |
 
 The plugin finds the retrieved files in the local project, for example with `git status` to list what changed.
 

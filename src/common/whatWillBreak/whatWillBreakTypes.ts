@@ -73,6 +73,8 @@ export interface WhatWillBreakDatedMainRow {
   date: string;
   // Check of this report that covers the same change (a release update the authentication checks look at)
   relatedCheckKey?: WhatWillBreakCheckKey;
+  // Text the Details of the related check rows must contain, when that check covers several release updates (login type)
+  relatedRowsMatch?: string;
 }
 
 // A release update that enforces the change a check looks at: the check rows carry it instead of a row of its own

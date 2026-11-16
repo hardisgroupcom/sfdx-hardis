@@ -6,14 +6,15 @@ import { CheckContext, WhatWillBreakCheckKey, WhatWillBreakCheckResult, WhatWill
 
 // Release updates that enforce the change another check of the report looks at, by DeveloperName:
 // they are merged into the rows of that check instead of having their own row
-const RELEASE_UPDATE_RELATED_CHECKS: Record<string, WhatWillBreakCheckKey> = {
-  SoapLoginUserPermEnforcementReleaseUpdate: 'soapLoginPermission',
-  OAuthDeviceFlowRestrictionReleaseUpdate: 'deviceFlow',
-  OAuthUsrPassFlowEOLReleaseUpdate: 'usernamePasswordFlow',
-  OAuthUsrAgtFlowsEOLReleaseUpdate: 'usernamePasswordFlow',
-  SoapLoginRetirementNoTestFeatureReleaseUpdate: 'soapLoginRetirement',
-  ConnectedAppHardBlockEOLReleaseUpdate: 'connectedAppsToEca',
-  ApiVersions31to40Retirement: 'legacyApiVersions',
+// rowsMatch: the usernamePasswordFlow check covers two release updates, each one applies to the rows of its login type
+const RELEASE_UPDATE_RELATED_CHECKS: Record<string, { check: WhatWillBreakCheckKey; rowsMatch?: string }> = {
+  SoapLoginUserPermEnforcementReleaseUpdate: { check: 'soapLoginPermission' },
+  OAuthDeviceFlowRestrictionReleaseUpdate: { check: 'deviceFlow' },
+  OAuthUsrPassFlowEOLReleaseUpdate: { check: 'usernamePasswordFlow', rowsMatch: 'Username-Password' },
+  OAuthUsrAgtFlowsEOLReleaseUpdate: { check: 'usernamePasswordFlow', rowsMatch: 'User-Agent' },
+  SoapLoginRetirementNoTestFeatureReleaseUpdate: { check: 'soapLoginRetirement' },
+  ConnectedAppHardBlockEOLReleaseUpdate: { check: 'connectedAppsToEca' },
+  ApiVersions31to40Retirement: { check: 'legacyApiVersions' },
 };
 
 // Release updates not applied yet: each one is a row of the main report, with its own due date
@@ -54,7 +55,8 @@ export async function checkReleaseUpdates(context: CheckContext): Promise<WhatWi
       announcementUrl: setupUrl,
       count: 1,
     }),
-    relatedCheckKey: RELEASE_UPDATE_RELATED_CHECKS[records[index].DeveloperName],
+    relatedCheckKey: RELEASE_UPDATE_RELATED_CHECKS[records[index].DeveloperName]?.check,
+    relatedRowsMatch: RELEASE_UPDATE_RELATED_CHECKS[records[index].DeveloperName]?.rowsMatch,
   }));
   result.detailReportRows = records;
   result.detailReportTitle = t('whatWillBreakReleaseUpdatesReportTitle');

@@ -4894,6 +4894,8 @@
   "whatWillBreakRefreshSingleUseImpact": "{{user}} として実行される {{app}} は、過去 {{lookback}} 日間でリフレッシュトークンを 1 日だけ ({{days}} 日前) 使用しました。その使用から 30 日以内に再度実行されない場合、トークンは期限切れになり、次回の実行は invalid_grant で失敗します",
   "whatWillBreakReleaseUpdateEnableAfterFix": "修正後、Salesforce が {{date}} に有効化する前に、Setup > Release Updates で Release Update \"{{title}}\" を有効化してください",
   "whatWillBreakReleaseUpdateEnableNow": "この org で修正するものはありません: Setup > Release Updates で {{titles}} を今すぐ有効化できます。Salesforce は {{date}} に有効化します",
+  "whatWillBreakReleaseUpdateEnforcedBy": "Salesforce はこの変更を Release Update \"{{title}}\" (Setup > Release Updates) により {{date}} に適用します",
+  "whatWillBreakReleaseUpdateNothingFound": "このレポートのチェック \"{{check}}\" では、この変更で動作しなくなるものはこの org に見つかりませんでした: Setup > Release Updates で \"{{title}}\" を今すぐ有効化できます。Salesforce は {{date}} に有効化します",
   "whatWillBreakReleaseUpdateTodo": "Setup > Release Updates で \"{{title}}\" を開き、変更内容を確認してください (Get Started に手順と Salesforce の記事があります)。Sandbox で有効にして、Apex テストと主要な業務シナリオを実行し、失敗した箇所を修正してから、期日までの都合のよい時間に本番環境で有効にしてください",
   "whatWillBreakReleaseUpdatesReportTitle": "期限が近い Release Updates",
   "whatWillBreakReportFileTitle": "動作しなくなるもの",

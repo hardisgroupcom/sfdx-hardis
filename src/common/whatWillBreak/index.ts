@@ -217,7 +217,7 @@ async function runCheckOfFamily(context: CheckContext, check: WhatWillBreakCheck
 
 // A release update that enforces the change another check of the report looks at is not listed twice: its row leaves the
 // main report (the detail report keeps every release update), and the rows of that check take its exact due date and the
-// step to enable it. A check that did not run keeps nothing: the release update row stays.
+// step to enable it. The release update row stays when that check did not run, or has findings but none of its kind.
 function mergeReleaseUpdatesIntoChecks(checks: WhatWillBreakCheckResult[], today: Date): void {
   const releaseUpdates = checks.find((check) => check.key === 'releaseUpdates');
   if (!releaseUpdates?.mainRows || releaseUpdates.notChecked === true) {
@@ -226,11 +226,18 @@ function mergeReleaseUpdatesIntoChecks(checks: WhatWillBreakCheckResult[], today
   const kept: number[] = [];
   releaseUpdates.mainRows.forEach((datedRow, index) => {
     const related = checks.find((check) => check.key === datedRow.relatedCheckKey && check.notChecked !== true);
+    const releaseUpdate = { title: releaseUpdates.rows[index].Item, dueDate: datedRow.date, dueLabel: datedRow.row.Date };
     if (!related) {
       kept.push(index);
-      return;
+    } else if (!attachReleaseUpdate(related, releaseUpdate, datedRow.relatedRowsMatch, today)) {
+      // The check ran and found nothing of this kind (only other findings): the release update keeps its row, which says so
+      kept.push(index);
+      datedRow.row['What to do'] = t('whatWillBreakReleaseUpdateNothingFound', {
+        title: releaseUpdate.title,
+        check: getWhatWillBreakCheckTitle(related.key),
+        date: releaseUpdate.dueDate,
+      });
     }
-    attachReleaseUpdate(related, { title: releaseUpdates.rows[index].Item, dueDate: datedRow.date, dueLabel: datedRow.row.Date }, today);
   });
   if (kept.length === releaseUpdates.mainRows.length) {
     return;
@@ -246,22 +253,41 @@ function mergeReleaseUpdatesIntoChecks(checks: WhatWillBreakCheckResult[], today
   }
 }
 
-// The rows of a check take the release update that enforces its change: its due date when it comes first, and the step to enable it
-function attachReleaseUpdate(check: WhatWillBreakCheckResult, releaseUpdate: WhatWillBreakReleaseUpdateLink, today: Date): void {
+// The rows of a check take the release update that enforces its change: its due date when it comes first, and for a row to fix,
+// the step to enable it once fixed (an information row only says which release update enforces the change).
+// rowsMatch keeps the rows whose Details name its login type, when one check covers two release updates.
+// Returns false when the check has findings but none the release update applies to: its row then stays.
+function attachReleaseUpdate(
+  check: WhatWillBreakCheckResult,
+  releaseUpdate: WhatWillBreakReleaseUpdateLink,
+  rowsMatch: string | undefined,
+  today: Date
+): boolean {
+  if (check.status === 'success') {
+    check.enforcingReleaseUpdates = [...(check.enforcingReleaseUpdates || []), releaseUpdate];
+    return true;
+  }
+  const rows = check.rows.filter((row) => row.Severity !== 'success' && (!rowsMatch || row.Details.includes(rowsMatch)));
+  const mainRows = check.mainRows || [];
+  if (rows.length === 0 && mainRows.length === 0) {
+    return false;
+  }
   check.enforcingReleaseUpdates = [...(check.enforcingReleaseUpdates || []), releaseUpdate];
-  const enableStep = t('whatWillBreakReleaseUpdateEnableAfterFix', { title: releaseUpdate.title, date: releaseUpdate.dueDate });
+  const params = { title: releaseUpdate.title, date: releaseUpdate.dueDate };
+  const stepFor = (severity: WhatWillBreakSeverity | 'notChecked') =>
+    severity === 'info' ? t('whatWillBreakReleaseUpdateEnforcedBy', params) : t('whatWillBreakReleaseUpdateEnableAfterFix', params);
   const comesFirst = (date: string) => !!releaseUpdate.dueDate && releaseUpdate.dueDate < (date || '9999');
   const raiseSeverity = (severity: WhatWillBreakSeverity): WhatWillBreakSeverity =>
     severity === 'warning' && releaseUpdate.dueDate && getDateSeverity(releaseUpdate.dueDate, today) === 'error' ? 'error' : severity;
-  for (const row of check.rows.filter((detailRow) => detailRow.Severity !== 'success')) {
+  for (const row of rows) {
     if (comesFirst(getFindingDate(row))) {
       row.Deadline = releaseUpdate.dueLabel;
     }
     row.Severity = raiseSeverity(row.Severity);
-    row.Recommendation = `${row.Recommendation}. ${enableStep}`;
+    row.Recommendation = `${row.Recommendation}. ${stepFor(row.Severity)}`;
   }
   // Checks that build their own main rows (calls to retired API versions)
-  for (const datedRow of check.mainRows || []) {
+  for (const datedRow of mainRows) {
     if (comesFirst(datedRow.date)) {
       datedRow.date = releaseUpdate.dueDate;
       datedRow.row.Date = releaseUpdate.dueLabel;
@@ -270,11 +296,10 @@ function attachReleaseUpdate(check: WhatWillBreakCheckResult, releaseUpdate: Wha
       datedRow.row.Severity = raiseSeverity(datedRow.row.Severity);
       datedRow.row.Status = getStatusLabel(datedRow.row.Severity);
     }
-    datedRow.row['What to do'] = `${datedRow.row['What to do']}. ${enableStep}`;
+    datedRow.row['What to do'] = `${datedRow.row['What to do']}. ${stepFor(datedRow.row.Severity)}`;
   }
-  if (check.status !== 'success') {
-    check.status = worstSeverity(check.rows);
-  }
+  check.status = worstSeverity(check.rows);
+  return true;
 }
 
 function worstSeverity(rows: WhatWillBreakDetailRow[]): WhatWillBreakSeverity {

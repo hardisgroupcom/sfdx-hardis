@@ -39,17 +39,17 @@ Salesforce has moved several of these dates already. Check the announcement of e
 
 The **main report** (`what-will-break-<date>.csv` and `.xlsx`) has one row per thing that will break (an integration and its user, a Connected App, a data source, a range of API versions, a release update), and one row per check that found nothing. A check with more than 20 findings lists the first 20, and a last row points to its detail report for the others:
 
-| Column                  | Content                                                                                            |
-|-------------------------|----------------------------------------------------------------------------------------------------|
-| Status                  | ❌ Error, ⚠️ Warning, ℹ️ Info, ⏸️ Not checked (the reason is in What will break) or ✅ OK            |
-| Check                   | The check                                                                                          |
-| What will break         | What fails, for which app, user or data source, and when. On an OK row, what was checked.          |
-| Date                    | When it breaks: a day, "Enforced since", or a Salesforce release such as "Summer '28 (2028-06)"    |
-| What to do              | The steps that fix this item and keep it from breaking again, or the report file that lists them   |
-| Salesforce announcement | The official Salesforce page of the change                                                         |
-| How to fix              | The section of this page with the steps                                                            |
-| Count                   | The number of items found                                                                          |
-| Detail report           | The report of the check, with every item it found                                                  |
+| Column                  | Content                                                                                          |
+|-------------------------|--------------------------------------------------------------------------------------------------|
+| Status                  | ❌ Error, ⚠️ Warning, ℹ️ Info, ⏸️ Not checked (the reason is in What will break) or ✅ OK        |
+| Check                   | The check                                                                                        |
+| What will break         | What fails, for which app, user or data source, and when. On an OK row, what was checked.        |
+| Date                    | When it breaks: a day, "Enforced since", or a Salesforce release such as "Summer '28 (2028-06)"  |
+| What to do              | The steps that fix this item and keep it from breaking again, or the report file that lists them |
+| Salesforce announcement | The official Salesforce page of the change                                                       |
+| How to fix              | The section of this page with the steps                                                          |
+| Count                   | The number of items found                                                                        |
+| Detail report           | The report of the check, with every item it found                                                |
 
 What will break comes first: errors, then warnings, the earliest date first. A check that could not run on the org (missing object or permission) is **Not checked**, never OK: it proves nothing.
 
@@ -66,7 +66,7 @@ Each check that found something writes its own **detail report** (`what-will-bre
 - **Salesforce Connect**: the external data sources of type Salesforce (cross-org adapter) without Named Credential.
 - **Connected Apps**: the Connected Apps the org owns and used in the last 90 days. Apps of Salesforce and of vendors are moved by their owner, and an app unused for 90 days is better deleted. The detail report is the whole Connected Apps usage list, the same as in [Unsecured Connected Apps](salesforce-monitoring-unsecured-connected-apps.md).
 - **API versions**: the `ApiTotalUsage` event log files (free in every org, kept one day), as described in [Calls to deprecated API versions](salesforce-monitoring-deprecated-api-calls.md). SOAP `login()` calls are kept in the detail report, but the main report counts them in the SOAP login() retirement check.
-- **Release updates**: the release updates not applied yet, with their due date. An overdue one is an error.
+- **Release updates**: the release updates not applied yet, with their due date. An overdue one is an error. A release update that enforces the change another check looks at (SOAP `login()` permission, device flow, username-password and user-agent flows, SOAP `login()` retirement, Connected Apps, API 31.0 to 40.0) has no row of its own in the main report: the rows of that check take its due date in the org and the step to enable it, and a check that found nothing says it can be enabled now. The detail report lists every release update.
 
 ### How to fix
 

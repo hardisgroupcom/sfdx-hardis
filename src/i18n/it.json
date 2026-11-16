@@ -4897,6 +4897,8 @@
   "whatWillBreakRefreshSingleUseImpact": "{{app}}, eseguita come {{user}}, ha usato il suo refresh token un solo giorno negli ultimi {{lookback}} giorni, {{days}} giorni fa: se non viene eseguita di nuovo entro 30 giorni da quell'utilizzo, il token scade e l'esecuzione successiva fallisce con invalid_grant",
   "whatWillBreakReleaseUpdateEnableAfterFix": "Una volta corretto, attiva la Release Update \"{{title}}\" in Setup > Release Updates, prima che lo faccia Salesforce il {{date}}",
   "whatWillBreakReleaseUpdateEnableNow": "Niente da correggere in questa org: in Setup > Release Updates puoi attivare {{titles}} subito, prima che lo faccia Salesforce il {{date}}",
+  "whatWillBreakReleaseUpdateEnforcedBy": "Salesforce applica questa modifica con la Release Update \"{{title}}\" (Setup > Release Updates) il {{date}}",
+  "whatWillBreakReleaseUpdateNothingFound": "Il controllo \"{{check}}\" di questo report non ha trovato nulla in questa org che questa modifica interrompa: in Setup > Release Updates puoi attivare \"{{title}}\" subito, prima che lo faccia Salesforce il {{date}}",
   "whatWillBreakReleaseUpdateTodo": "In Setup > Release Updates, apri \"{{title}}\" e leggi cosa cambia (Get Started fornisce i passaggi e l'articolo Salesforce). Attivala in una sandbox, esegui i tuoi test Apex e i principali scenari di business e correggi ciò che fallisce, poi attivala in produzione prima della data di scadenza, nel momento che scegli",
   "whatWillBreakReleaseUpdatesReportTitle": "Release Update in scadenza",
   "whatWillBreakReportFileTitle": "Cosa smetterà di funzionare",
