@@ -1,4 +1,5 @@
 import { t } from '../utils/i18n.js';
+import { isSalesforceOwnedApp } from './authChecks.js';
 import { getConnectedAppsUsage } from '../utils/connectedAppsUsageUtils.js';
 import { buildRow, finalizeCheck, getOrgOAuthTokens, notAvailableResult } from './checkResults.js';
 import { getDeadlineSeverity, getDeadlineWhen } from './whatWillBreakDeadlines.js';
@@ -16,7 +17,8 @@ export async function checkConnectedAppsToEca(context: CheckContext): Promise<Wh
     return notAvailableResult(context, key, title, (e as Error).message);
   }
   const severity = getDeadlineSeverity(key, context.isSandbox, context.today);
-  const toMove = usage.filter((app) => app['Move to External Client App'] === 'Required');
+  // Salesforce's own apps (Salesforce CLI, Account Engagement...) are moved by Salesforce, even when the org lists them
+  const toMove = usage.filter((app) => app['Move to External Client App'] === 'Required' && !isSalesforceOwnedApp(app['Connected App']));
   const when = getDeadlineWhen(key, context.isSandbox, context.today);
   const rows = toMove.map((app) =>
     buildRow(context, key, title, severity, {

@@ -116,9 +116,15 @@ export function getDeadlineLabel(key: WhatWillBreakDeadlineKey, isSandbox: boole
 // "from <date>" or "since <date>", to say in a sentence when the change hits this org
 export function getDeadlineWhen(key: WhatWillBreakDeadlineKey, isSandbox: boolean, today: Date): string {
   const date = getDeadlineDate(key, isSandbox);
-  const releaseLabel = WHAT_WILL_BREAK_DEADLINES[key].releaseLabel;
-  const label = releaseLabel ? `${releaseLabel} (${date.substring(0, 7)})` : date;
+  const label = getDeadlineDateText(key, isSandbox);
   return getDaysLeft(date, today) <= 0 ? t('whatWillBreakWhenPast', { date: label }) : t('whatWillBreakWhenFuture', { date: label });
+}
+
+// The date of a change as the texts of a row write it: "2026-12-01", or "Summer '27 (2027-06)" when Salesforce gives a release
+export function getDeadlineDateText(key: WhatWillBreakDeadlineKey, isSandbox: boolean): string {
+  const date = getDeadlineDate(key, isSandbox);
+  const releaseLabel = WHAT_WILL_BREAK_DEADLINES[key].releaseLabel;
+  return releaseLabel ? `${releaseLabel} (${date.substring(0, 7)})` : date;
 }
 
 export function getDeadlineDate(key: WhatWillBreakDeadlineKey, isSandbox: boolean): string {

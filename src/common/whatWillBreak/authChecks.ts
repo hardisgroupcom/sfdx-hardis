@@ -5,7 +5,7 @@ import { markRowSensitiveValues } from '../utils/anonymizeUtils.js';
 import { isIpInRange, isRangeWiderThan } from '../utils/ipRangeUtils.js';
 import { t } from '../utils/i18n.js';
 import { DAY_MS, getDateLabel, getDeadlineLabel, getDeadlineSeverity, getDeadlineWhen, getFixDocUrl } from './whatWillBreakDeadlines.js';
-import { buildRow, finalizeCheck, formatDate, getOrgOAuthTokens, notAvailableResult, setRowKind, successRow } from './checkResults.js';
+import { buildRow, finalizeCheck, formatDate, getOrgOAuthTokens, notAvailableResult, setRowKind, successRow, worstSeverity } from './checkResults.js';
 import {
   CheckContext,
   LoginContext,
@@ -79,6 +79,17 @@ const SALESFORCE_END_USER_APP_PREFIXES = [
 ];
 // Refresh tokens of the Salesforce CLI expire without harm: the developer logs in again
 const APPS_ALLOWED_TO_EXPIRE_PREFIXES = ['salesforce cli'];
+// Other apps of Salesforce that orgs list among their Connected Apps: Salesforce moves them itself
+const SALESFORCE_PLATFORM_APP_NAMES = [
+  'code builder',
+  'chatbots',
+  'customer 360 data platform',
+  'insights',
+  'wave web',
+  'sfdcsiqactivityplatform',
+  'steelbrick cpq',
+  'getfeedback',
+];
 // Users per day-grouped refresh token query: halved again when a query reaches the 2000 groups limit
 const REFRESH_DAYS_USER_CHUNK_SIZE = 20;
 
@@ -135,6 +146,22 @@ export function getLongestGapDays(sortedDays: string[]): number {
 export function isSalesforceEndUserApp(application: string): boolean {
   const name = (application || '').toLowerCase();
   return SALESFORCE_END_USER_APP_PREFIXES.some((prefix) => name.startsWith(prefix));
+}
+
+// Salesforce's own apps (mobile apps, browser, Salesforce CLI, Account Engagement...): Salesforce moves them itself,
+// the org has nothing to fix in them
+export function isSalesforceOwnedApp(application: string): boolean {
+  return (
+    isSalesforceEndUserApp(application) ||
+    isAppAllowedToExpire(application) ||
+    /^(salesforce|browser)/i.test(application || '') ||
+    SALESFORCE_PLATFORM_APP_NAMES.includes((application || '').trim().toLowerCase())
+  );
+}
+
+// Users Salesforce creates and runs itself, named after the org Id (cloud@00d..., autoproc@00d...)
+export function isSalesforceSystemUser(username: string): boolean {
+  return /^[a-z0-9._-]+@00d[a-z0-9]{12,15}$/i.test(username || '');
 }
 
 // Apps whose refresh token may expire without breaking anything: a developer logs in again (sf org login)
@@ -250,17 +277,14 @@ async function checkIdleRefreshTokens(context: CheckContext): Promise<WhatWillBr
   }
   const severity = getDeadlineSeverity(key, context.isSandbox, context.today);
   const rows: WhatWillBreakDetailRow[] = [];
-  // Tokens of the other users are counted per app: listing every mobile user token would drown the report
-  const otherUsersExpiringByApp = new Map<string, number>();
+
   for (const appUser of groupTokensByAppAndUser(tokens, context.ignoreSet)) {
     const idleDays = Math.floor((context.today.getTime() - new Date(appUser.lastUse).getTime()) / DAY_MS);
     if (idleDays < context.idleWarningDays) {
       continue;
     }
+    // A person whose token expires is asked to log in again: only the API only users, which run integrations, are reported
     if (!apiOnlyUserIds.has(appUser.userId)) {
-      if (idleDays < REFRESH_TOKEN_IDLE_TTL_DAYS) {
-        otherUsersExpiringByApp.set(appUser.appName, (otherUsersExpiringByApp.get(appUser.appName) || 0) + 1);
-      }
       continue;
     }
     const expired = idleDays >= REFRESH_TOKEN_IDLE_TTL_DAYS;
@@ -282,18 +306,6 @@ async function checkIdleRefreshTokens(context: CheckContext): Promise<WhatWillBr
     }
     rows.push(markRowSensitiveValues<WhatWillBreakDetailRow>(row, [appUser.username]));
   }
-  for (const [appName, count] of Array.from(otherUsersExpiringByApp.entries()).sort()) {
-    rows.push(
-      buildRow(context, key, title, 'info', {
-        Item: appName,
-        Details: t('authRetirementsDetailTokensOtherUsers', { count, days: REFRESH_TOKEN_IDLE_TTL_DAYS }),
-        WhatWillBreak: t('whatWillBreakOtherUsersTokensImpact', { count, app: appName }),
-        LastSeen: '',
-        Count: count,
-        Recommendation: t('whatWillBreakOtherUsersTokensTodo', { app: appName }),
-      })
-    );
-  }
   const expiringCount = rows.filter((r) => r.Severity === severity).length;
   return finalizeCheck(context, key, title, rows, expiringCount, t('authRetirementsFoundIdleTokens', { count: expiringCount }));
 }
@@ -308,7 +320,13 @@ function groupTokensByAppAndUser(
     const isActive = token['User.IsActive'] === true || token['User.IsActive'] === 'true';
     const username = token['User.Username'] || token.UserId || '';
     const lastUse = token.LastUsedDate || token.CreatedDate || '';
-    if (!isActive || !lastUse || ignoreSet.has(username.toLowerCase()) || isAppAllowedToExpire(token.AppName)) {
+    if (
+      !isActive ||
+      !lastUse ||
+      ignoreSet.has(username.toLowerCase()) ||
+      isAppAllowedToExpire(token.AppName) ||
+      isSalesforceSystemUser(username)
+    ) {
       continue;
     }
     const appName = token.AppName || 'N/A';
@@ -351,7 +369,10 @@ async function checkRefreshTokenCadence(context: CheckContext): Promise<WhatWill
   }
   const users = await queryUsersByIds(context.conn, candidateUserIds);
   const activeUsers = users.filter(
-    (user) => (user.IsActive === true || user.IsActive === 'true') && !context.ignoreSet.has((user.Username || '').toLowerCase())
+    (user) =>
+      (user.IsActive === true || user.IsActive === 'true') &&
+      !context.ignoreSet.has((user.Username || '').toLowerCase()) &&
+      !isSalesforceSystemUser(user.Username)
   );
   const usernameById = new Map<string, string>(activeUsers.map((user) => [user.Id, user.Username]));
   // Days of successful use of each app by each user. Status cannot be filtered in SOQL, only grouped.
@@ -359,8 +380,7 @@ async function checkRefreshTokenCadence(context: CheckContext): Promise<WhatWill
   for (const record of await queryRefreshTokenDays(context.conn, where, Array.from(usernameById.keys()))) {
     if (
       record.Status !== 'Success' ||
-      isSalesforceEndUserApp(record.Application) ||
-      isAppAllowedToExpire(record.Application) ||
+      isSalesforceOwnedApp(record.Application) ||
       !usernameById.has(record.UserId)
     ) {
       continue;
@@ -371,8 +391,19 @@ async function checkRefreshTokenCadence(context: CheckContext): Promise<WhatWill
     daysByPair.set(pairKey, pair);
   }
   const severity = getDeadlineSeverity(key, context.isSandbox, context.today);
+  // An app several people use (a document generation tool, an IDE) asks each of them to log in again when their token
+  // expires: nothing breaks. An integration runs as an API only user, or is the only user of its app.
+  // Without the list of API only users, the apps of one user are still kept
+  const apiOnlyUserIds = await queryApiOnlyUserIds(context.conn).catch(() => new Set<string>());
+  const usersByApp = new Map<string, number>();
+  for (const pair of daysByPair.values()) {
+    usersByApp.set(pair.application, (usersByApp.get(pair.application) || 0) + 1);
+  }
   const rows: WhatWillBreakDetailRow[] = [];
   for (const pair of daysByPair.values()) {
+    if (!apiOnlyUserIds.has(pair.userId) && (usersByApp.get(pair.application) || 0) > 1) {
+      continue;
+    }
     const days = Array.from(pair.days).sort();
     const username = usernameById.get(pair.userId) || pair.userId;
     // One day of use gives no gap to measure: a semi-annual sync looks like that
@@ -412,7 +443,7 @@ async function queryRefreshTokenUserIds(conn: Connection, where: string): Promis
   const pairs = await queryLoginGroups(conn, `SELECT UserId, Application, COUNT(Id) cnt FROM LoginHistory ${where} GROUP BY UserId, Application`);
   if (pairs) {
     return unique(
-      pairs.filter((pair) => !isSalesforceEndUserApp(pair.Application) && !isAppAllowedToExpire(pair.Application)).map((pair) => pair.UserId)
+      pairs.filter((pair) => !isSalesforceOwnedApp(pair.Application)).map((pair) => pair.UserId)
     );
   }
   const users = await queryLoginGroups(conn, `SELECT UserId, COUNT(Id) cnt FROM LoginHistory ${where} GROUP BY UserId`);
@@ -628,22 +659,16 @@ function checkSoapLoginInactivity(context: CheckContext): WhatWillBreakCheckResu
   const groups = filterLoginGroups(context, allCallers);
   const lastOrgCall = allCallers.reduce((latest, group) => (group.lastSuccess > latest ? group.lastSuccess : latest), '');
   if (!lastOrgCall) {
-    const row = buildRow(context, key, title, 'info', {
-      Item: '-',
-      Details: t('authRetirementsDetailNoSoapLogin', { days: context.lookbackDays }),
-      WhatWillBreak: t('authRetirementsDetailNoSoapLogin', { days: context.lookbackDays }),
-      LastSeen: '',
-      Count: 0,
-      Recommendation: t('whatWillBreakNothingToDo'),
-    });
+    const detail = t('authRetirementsDetailNoSoapLogin', { days: context.lookbackDays });
     return {
       key,
-      status: 'info',
+      status: 'success',
       title,
-      detail: row.Details,
-      deadline: row.Deadline,
-      howToFixUrl: row.HowToFix,
-      rows: [row],
+      detail,
+      deadline: getDeadlineLabel(key, context.isSandbox, context.today),
+      howToFixUrl: getFixDocUrl(key),
+      rows: [successRow(context, key, title, detail)],
+      successWhat: t('whatWillBreakOkNoSoapLogin', { days: context.lookbackDays }),
     };
   }
   const daysSince = (date: string) => Math.floor((context.today.getTime() - new Date(date).getTime()) / DAY_MS);
@@ -719,19 +744,21 @@ async function checkUsernamePasswordFlow(context: CheckContext): Promise<WhatWil
       result.rows = [successRow(context, key, title, result.detail)];
     }
   }
-  // User-agent flow logins: one information row per app, with its number of users
+  // User-agent flow logins: one row per app, with its number of users. Salesforce moves its own apps (mobile apps, browser)
   const userAgentApps = groupLogins(context.logins.records, context.logins.usernameById, USER_AGENT_FLOW_SUBTYPES, [
     'application',
     'loginSubType',
-  ]).filter((group) => group.successCount > 0);
+  ]).filter((group) => group.successCount > 0 && !isSalesforceOwnedApp(group.application));
   if (userAgentApps.length > 0) {
     const userAgentUsers = groupLogins(context.logins.records, context.logins.usernameById, USER_AGENT_FLOW_SUBTYPES, [
       'application',
       'loginSubType',
       'userId',
     ]).filter((group) => group.successCount > 0);
+    const severity = getDeadlineSeverity(key, context.isSandbox, context.today);
+    const when = getDeadlineWhen(key, context.isSandbox, context.today);
     const userAgentRows = userAgentApps.map((app) =>
-      setRowKind(buildRow(context, key, title, 'info', {
+      setRowKind(buildRow(context, key, title, severity, {
         Item: app.application,
         Details: t('authRetirementsDetailUserAgent', {
           loginSubType: app.loginSubType,
@@ -741,26 +768,18 @@ async function checkUsernamePasswordFlow(context: CheckContext): Promise<WhatWil
           app: app.application,
           loginSubType: app.loginSubType,
           users: userAgentUsers.filter((u) => u.application === app.application && u.loginSubType === app.loginSubType).length,
+          when,
         }),
         LastSeen: formatDate(app.lastSuccess),
         Count: app.successCount,
-        // Salesforce moves its own apps (mobile apps, browser): only the other apps need something from the org
-        Recommendation: t(isSalesforceUserAgentApp(app.application) ? 'whatWillBreakUserAgentTodoSalesforce' : 'whatWillBreakUserAgentTodo', {
-          app: app.application,
-        }),
+        Recommendation: t('whatWillBreakUserAgentTodo', { app: app.application }),
       }), 'userAgent')
     );
     result.rows = [...result.rows.filter((row) => row.Severity !== 'success'), ...userAgentRows];
-    if (result.status === 'success') {
-      result.status = 'info';
-      result.detail = t('authRetirementsFoundUserAgentApps', { count: userAgentApps.length });
-    }
+    // The UsernamePasswordFlowUsers metric keeps counting the username-password flow only
+    result.status = worstSeverity(result.rows);
   }
   return result;
-}
-
-function isSalesforceUserAgentApp(application: string): boolean {
-  return isSalesforceEndUserApp(application) || /^(salesforce|browser)/i.test(application || '');
 }
 
 async function fetchOauthOidcSettings(conn: Connection): Promise<any> {
@@ -823,7 +842,28 @@ function checkSoapLoginRetirement(context: CheckContext): WhatWillBreakCheckResu
       'apiVersion',
     ])
   );
-  return loginGroupsResult(context, key, title, groups, 'authRetirementsDetailSoapRetirement', 'whatWillBreakSoapRetirement');
+  return loginGroupsResult(context, key, title, mergeApiVersions(groups), 'authRetirementsDetailSoapRetirement', 'whatWillBreakSoapRetirement');
+}
+
+// One group per user and app, with the API versions it calls ("37.0, 52.0"): one integration is one row
+function mergeApiVersions(groups: LoginGroup[]): LoginGroup[] {
+  const merged = new Map<string, LoginGroup>();
+  for (const group of groups) {
+    const mapKey = `${group.userId}|${group.application}`;
+    const existing = merged.get(mapKey);
+    if (!existing) {
+      merged.set(mapKey, { ...group });
+      continue;
+    }
+    const versions = new Set([...existing.apiVersion.split(', '), group.apiVersion]);
+    existing.apiVersion = Array.from(versions).sort((a, b) => parseFloat(a) - parseFloat(b)).join(', ');
+    existing.successCount += group.successCount;
+    existing.failedCount += group.failedCount;
+    if (group.lastSuccess > existing.lastSuccess) {
+      existing.lastSuccess = group.lastSuccess;
+    }
+  }
+  return Array.from(merged.values());
 }
 
 // Skip the groups of ignored users
@@ -851,7 +891,7 @@ function loginGroupsResult(
   );
   const rows = findings.map((group) => {
     const params = {
-      application: group.application,
+      application: group.application && group.application !== 'N/A' ? group.application : t('whatWillBreakNoConnectedApp'),
       apiVersion: group.apiVersion,
       loginSubType: group.loginSubType,
       sourceIp: group.sourceIp || '-',

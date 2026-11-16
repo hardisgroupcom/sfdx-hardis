@@ -41,7 +41,7 @@ The command starts with a list of every check, all selected: keep the ones to ru
 
 Each check that found something also writes its own report. The legacy API check keeps the files of [hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/), including one file of API clients (IP addresses) per range of API versions.
 
-Idle refresh tokens are only reported one by one for **API only users**, which run the integrations: the tokens of other users are counted per app. Neither refresh token check reports the Salesforce CLI: when its token expires, the developer logs in again. The refresh token use check covers every user, except in Salesforce's own end-user apps (mobile, Outlook, Authenticator...).
+The refresh token checks look at integrations only: idle tokens of **API only users**, and the refresh token use of an app run by an API only user or by one user only. A person whose token expires is asked to log in again: nothing breaks. Salesforce's own apps (mobile, Outlook, Salesforce CLI, Code Builder...) and the users Salesforce runs itself are left out.
 
 Users listed in the project config key `monitoringWhatWillBreakIgnoreUsers` or the env var `MONITORING_WHAT_WILL_BREAK_IGNORE_USERS` (comma-separated) are skipped, for example an integration already being fixed.
 

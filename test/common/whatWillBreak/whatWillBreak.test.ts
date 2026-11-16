@@ -246,6 +246,21 @@ describe('whatWillBreak', () => {
       expect(result.metrics.IntegrationsRefreshingTooRarely).to.equal(1);
     });
 
+    it('leaves out an app several people use: each of them is asked to log in again, nothing breaks', async () => {
+      const result = await run({
+        pairs: [
+          { UserId: '005A', Application: 'Document Generator' },
+          { UserId: '005B', Application: 'Document Generator' },
+        ],
+        users: [
+          { Id: '005A', Username: 'seller1@example.com', IsActive: true },
+          { Id: '005B', Username: 'seller2@example.com', IsActive: true },
+        ],
+        days: [refreshDay('005A', 'Document Generator', '2026-08-01'), refreshDay('005B', 'Document Generator', '2026-09-01')],
+      });
+      expect(result.checks[0].status).to.equal('success');
+    });
+
     it('leaves out the Salesforce CLI, whose expired login only asks the developer to log in again', async () => {
       const result = await run({
         pairs: [{ UserId: '005A', Application: 'Salesforce CLI' }],

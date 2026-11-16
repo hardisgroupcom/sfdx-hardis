@@ -264,12 +264,13 @@ describe('whatWillBreak authentication checks', () => {
       expect(result.metrics.SoapLoginUsers).to.equal(0);
     });
 
-    it('reports the device flow and the username-password flow, and the user-agent flows per app as information', async () => {
+    it('reports the device flow, the username-password flow, and the user-agent flows of apps that are not Salesforce ones', async () => {
       const result = await runDiagnose({
         logins: [
           login('005D', 'OAuth Device', { Application: 'Salesforce CLI' }),
           login('005E', 'OAuth Username-Password', { Application: 'Old ETL' }),
           login('005F', 'OAuth User-Agent for Hybrid Apps', { Application: 'Salesforce for iOS' }),
+          login('005F', 'OAuth User-Agent', { Application: 'Field Survey App' }),
         ],
         users: USERS,
       });
@@ -279,8 +280,11 @@ describe('whatWillBreak authentication checks', () => {
       const usernamePassword = result.checks.find((ck) => ck.key === 'usernamePasswordFlow')!;
       expect(usernamePassword.status).to.equal('warning');
       expect(result.metrics.UsernamePasswordFlowUsers).to.equal(1);
-      const userAgentRow = usernamePassword.rows.find((row) => row.Item === 'Salesforce for iOS')!;
-      expect(userAgentRow.Severity).to.equal('info');
+      // Salesforce moves its own apps: no row. Another app breaks when the user-agent flows are retired
+      expect(usernamePassword.rows.find((row) => row.Item === 'Salesforce for iOS')).to.equal(undefined);
+      const userAgentRow = usernamePassword.rows.find((row) => row.Item === 'Field Survey App')!;
+      expect(userAgentRow.Severity).to.equal('warning');
+      expect(userAgentRow.WhatWillBreak).to.contain('can no longer log in');
     });
 
     it('passes the username-password check when the flow is already blocked', async () => {
@@ -319,7 +323,8 @@ describe('whatWillBreak authentication checks', () => {
       expect(oldCall.checks.find((ck) => ck.key === 'soapLoginInactivity')!.status).to.equal('warning');
       const noCall = await runDiagnose({ users: USERS });
       const noCallCheck = noCall.checks.find((ck) => ck.key === 'soapLoginInactivity')!;
-      expect(noCallCheck.status).to.equal('info');
+      // No call at all: nothing breaks, an OK row
+      expect(noCallCheck.status).to.equal('success');
       expect(noCallCheck.metric).to.be.undefined;
     });
 
@@ -345,8 +350,11 @@ describe('whatWillBreak authentication checks', () => {
           // Still used: another token of the same app and user is recent
           token('005B', 'Hourly Sync', '2026-11-15T10:00:00.000Z', 'soap.allowed@example.com'),
           token('005B', 'Hourly Sync', '2026-09-01T10:00:00.000Z', 'soap.allowed@example.com'),
-          // Not an API only user: counted per app
+          // Not an API only user: a person, who is asked to log in again, never reported
           token('005F', 'Salesforce for iOS', '2026-10-21T12:00:00.000Z', 'mobile.user@example.com'),
+          token('005F', 'Field Survey App', '2026-10-21T12:00:00.000Z', 'mobile.user@example.com'),
+          // A user Salesforce runs itself: never reported
+          token('005A', 'Chatbots', '2026-01-01T12:00:00.000Z', 'cloud@00d0y000000bnhcuai'),
         ],
       });
       const check = result.checks.find((ck) => ck.key === 'idleRefreshTokens')!;
@@ -356,7 +364,24 @@ describe('whatWillBreak authentication checks', () => {
       expect(warningRows).to.have.length(1);
       expect(warningRows[0].Item).to.equal('Nightly Sync - soap.integration@example.com');
       expect(warningRows[0].Count).to.equal(20);
-      expect(check.rows.find((row) => row.Item === 'Salesforce for iOS')!.Severity).to.equal('info');
+      expect(check.rows.find((row) => row.Item === 'Salesforce for iOS')).to.equal(undefined);
+      expect(check.rows.find((row) => row.Item === 'Field Survey App')).to.equal(undefined);
+      expect(check.rows.find((row) => row.Item.startsWith('Chatbots'))).to.equal(undefined);
+    });
+
+    it('makes one SOAP login() retirement row per integration, with every API version it calls, and names a login without Connected App', async () => {
+      const result = await runDiagnose({
+        logins: [
+          login('005A', 'SOAP API', { Application: 'N/A', ApiVersion: '52.0' }),
+          login('005A', 'SOAP API', { Application: 'N/A', ApiVersion: '37.0' }),
+        ],
+        users: USERS,
+      });
+      const check = result.checks.find((ck) => ck.key === 'soapLoginRetirement')!;
+      expect(check.rows).to.have.length(1);
+      expect(check.rows[0].WhatWillBreak).to.contain('37.0, 52.0');
+      expect(check.rows[0].WhatWillBreak).to.contain('no Connected App');
+      expect(check.rows[0].WhatWillBreak).to.not.contain('N/A');
     });
 
     it('reports cross-org data sources without Named Credential', async () => {

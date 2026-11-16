@@ -57,15 +57,15 @@ Each check that found something writes its own **detail report** (`what-will-bre
 
 ### What each check looks at
 
-- **Refresh tokens idle for 30 days**: the OAuth tokens of **API only users**, the users who run integrations. A token unused for 20 days or more (change it with `--idle-warning-days`) is about to expire. A token of another user is only counted per app: people log in again anyway. When an app and a user have several tokens, the most recent one counts.
-- **Refresh token use**: the `OAuth Refresh Token` logins of the last 180 days, day by day, for every user, API only or not. An app and user that went 30 days or more without using its refresh token, even once, runs too rarely: its next run fails. An app and user that used it on one day only is listed too: as information while that day is less than 30 days ago, as a warning after, as its token has expired. Salesforce's own end-user apps (Salesforce for iOS and Android, Outlook, Authenticator...) are left out, as a holiday is not a broken integration.
+- **Refresh tokens idle for 30 days**: the OAuth tokens of **API only users**, the users who run integrations. A token unused for 20 days or more (change it with `--idle-warning-days`) is about to expire. The token of another user is not reported: that person is asked to log in again, nothing breaks. Users Salesforce runs itself (named after the org Id, such as `cloud@00d...`) are left out. When an app and a user have several tokens, the most recent one counts.
+- **Refresh token use**: the `OAuth Refresh Token` logins of the last 180 days, day by day, of the integrations: an app used by an API only user, or by one user only. An app several people use (a document generation tool, an IDE) only asks each of them to log in again. An app and user that went 30 days or more without using its refresh token, even once, runs too rarely: its next run fails. An app and user that used it on one day only is listed too: as information while that day is less than 30 days ago, as a warning after, as its token has expired. Salesforce's own apps (Salesforce for iOS and Android, Outlook, Authenticator, Code Builder...) are left out, as a holiday is not a broken integration.
 - **Salesforce CLI**: its refresh tokens are left out of both refresh token checks. When one expires, the developer logs in again with `sf org login`: nothing breaks.
 - **Device flow, username-password flow, SOAP login()**: the logins of the last 180 days in `LoginHistory` (change it with `--lookback-days`). Only active users count.
-- **User-agent flows**: listed per app as information. Salesforce for iOS and Salesforce for Android log in with the user-agent flow for hybrid apps, and Salesforce migrates its own apps.
+- **User-agent flows**: one row per app that is not a Salesforce one, with its number of users: it can no longer log them in once the flows are retired. Salesforce for iOS, Salesforce for Android and the browser also use these flows, and Salesforce moves them itself.
 - **Use Any API Auth**: the permission is looked for in the profiles, permission sets and permission set groups of each SOAP `login()` caller. Failed logins are kept, as after December 1, 2026 a caller without the permission only fails.
 - **Wide IP ranges**: the trusted IP ranges of Setup > Network Access. Profile login IP ranges cannot be read and are not taken into account.
 - **Salesforce Connect**: the external data sources of type Salesforce (cross-org adapter) without Named Credential.
-- **Connected Apps**: the Connected Apps the org owns and used in the last 90 days. Apps of Salesforce and of vendors are moved by their owner, and an app unused for 90 days is better deleted. The detail report is the whole Connected Apps usage list, the same as in [Unsecured Connected Apps](salesforce-monitoring-unsecured-connected-apps.md).
+- **Connected Apps**: the Connected Apps the org owns and used in the last 90 days. Apps of Salesforce (Salesforce CLI, Account Engagement, Einstein Activity Capture, Salesforce CPQ...) and of vendors are moved by their owner, and an app unused for 90 days is better deleted. The detail report is the whole Connected Apps usage list, the same as in [Unsecured Connected Apps](salesforce-monitoring-unsecured-connected-apps.md).
 - **API versions**: the `ApiTotalUsage` event log files (free in every org, kept one day), as described in [Calls to deprecated API versions](salesforce-monitoring-deprecated-api-calls.md). SOAP `login()` calls are kept in the detail report, but the main report counts them in the SOAP login() retirement check.
 - **Release updates**: the release updates not applied yet, with their due date. An overdue one is an error. A release update that enforces the change another check looks at (SOAP `login()` permission, device flow, username-password and user-agent flows, SOAP `login()` retirement, Connected Apps, API 31.0 to 40.0) has no row of its own in the main report: the rows of that check take its due date in the org and the step to enable it, and a check that found nothing says it can be enabled now. The detail report lists every release update.
 
@@ -85,7 +85,6 @@ An OAuth access token also works as the session id of the SOAP API, so a SOAP in
 
 - **Token about to expire**: make sure the integration runs at least once every 30 days, or move it to the client credentials or JWT bearer flow, which use no refresh token.
 - **Token expired** (`invalid_grant`): if the integration is still needed, authorize it again from the app to get a new token, then apply the line above.
-- **Tokens of other users**: nothing to do, these people log in to the app again when their token expires.
 
 An expired refresh token shows on the side of the integration, not in Salesforce: look for `invalid_grant` errors in the logs of the system that calls Salesforce.
 
@@ -147,7 +146,7 @@ Salesforce article: [005132110](https://help.salesforce.com/s/articleView?id=005
 1. Move each integration of the report to the client credentials flow (one integration user) or the JWT bearer flow (several users). Salesforce gives the steps in [Migrate from OAuth Username-Password to Client Credentials Flow](https://help.salesforce.com/s/articleView?id=000886201&type=1).
 2. When no user of the flow remains, [block the username-password and user-agent flows](https://help.salesforce.com/s/articleView?id=sf.remoteaccess_disable_username_password_flow.htm&type=5) in Setup > OAuth and OpenID Connect Settings. The check then shows the flows as blocked.
 
-User-agent flow rows are information. Salesforce for iOS, Salesforce for Android and the browser need nothing from you. Your own apps move to the web server flow with PKCE.
+A user-agent flow row is an app that is not a Salesforce one: move it to the web server flow with PKCE, or ask its vendor for a version that uses it. Salesforce for iOS, Salesforce for Android and the browser need nothing from you.
 
 Salesforce article: [release update](https://help.salesforce.com/s/articleView?id=release-notes.rn_security_oauth_unpw.htm&release=264&type=5).
 

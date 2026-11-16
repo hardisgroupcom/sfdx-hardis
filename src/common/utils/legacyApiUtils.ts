@@ -36,6 +36,10 @@ export type LegacyApiDescriptorState = LegacyApiDescriptor & {
   ipCounts: Record<string, { count: number; reasons: string[] }>;
 };
 
+// Above this number of API calls, the calls report stays a CSV file: the Excel conversion would not finish, and Excel
+// opens 1,048,576 rows at most. The API clients reports, one row per IP address, are still written in both formats.
+export const LEGACY_API_XLSX_MAX_ROWS = 100000;
+
 export const LEGACY_API_DESCRIPTORS: readonly LegacyApiDescriptor[] = [
   {
     apiFamily: ['SOAP', 'REST', 'BULK_API'],
@@ -547,7 +551,14 @@ export class LegacyApiCallsCollector {
       WebSocketClient.requestOpenFile(this.outputFile);
     }
     WebSocketClient.sendReportFileMessage(this.outputFile, t('legacyApiCallsCsv'), 'report', undefined, { main: this.mainReport });
-    if (this.totalCsvRows > 0) {
+    if (this.totalCsvRows > LEGACY_API_XLSX_MAX_ROWS) {
+      // One row per API call: an org can make millions a day, which Excel cannot open and the conversion cannot finish
+      uxLog(
+        "log",
+        this.commandThis,
+        c.grey(t('legacyApiXlsxSkippedTooManyRows', { count: this.totalCsvRows, max: LEGACY_API_XLSX_MAX_ROWS }))
+      );
+    } else if (this.totalCsvRows > 0) {
       const result: any = {};
       await createXlsxFromCsv(this.outputFile, { fileTitle: 'Legacy API Calls', mainReport: this.mainReport, noOpen: this.partOfAnotherCommand }, result);
       if (result.xlsxFile) {

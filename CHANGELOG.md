@@ -9,8 +9,9 @@
   - Each thing that will break gets its own row, naming the app, user or data source, with the exact steps to fix it and keep it from breaking again.
   - A release update that enforces a change another check already covers is not listed twice: that check shows its due date and when to enable it.
   - Each known release update says in plain words what stops working and what to do, with a link to its official Salesforce page.
+  - Only what really breaks is listed: Salesforce's own apps and people who are simply asked to log in again are left out.
   - In VS Code, each check shows its progress while it runs.
-  - [hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/): one API clients file per range of API versions, so two ranges of the same severity no longer overwrite each other.
+  - [hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/): one API clients file per range of API versions, so two ranges of the same severity no longer overwrite each other, and an org with millions of calls gets its report in minutes (CSV only above 100,000 calls).
   - Grafana: new What will break row on the Org Security dashboard.
 - [Browser deployment action](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions-browser/#deployment-errors-a-browser-action-solves):
   - The deployment assistant suggests it for the errors it can solve, with the command that adds it to your Pull Request.
