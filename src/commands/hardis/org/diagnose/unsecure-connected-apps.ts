@@ -45,7 +45,7 @@ Key functionalities:
   - **Unsecured Connected Apps Summary:** Aggregates unsecured apps with counts of associated OAuth tokens and app type
   - **OAuth Tokens by User:** Lists each user with the apps they hold a token for and the last usage date
   - **Connected Apps Usage:** Lists every Connected App and External Client App that has OAuth tokens (secured or not), with its last usage date, the usernames who use it, and whether it must be moved to an External Client App
-- **Move to External Client Apps:** Connected Apps are no longer supported from Summer '27. The usage report tells, for each app, whether the move is \`Required\` (a Connected App of the org used in the last 90 days), done by its \`Vendor\` (an app of Salesforce or of a package, used in the last 90 days), \`Done (converted)\`, \`Not needed\` (already an External Client App) or not worth it (\`Not used\` for 90 days: delete it instead). The apps to move are also reported by [hardis:org:diagnose:what-will-break](${CONSTANTS.DOC_URL_ROOT}/hardis/org/diagnose/what-will-break/), with the date.
+- **Move to External Client Apps:** Salesforce ends the support of Connected Apps in Summer '27 (they keep working, without fixes or support). The usage report tells, for each app, whether the move is \`Required\` (a Connected App of the org used in the last 90 days), done by its \`Vendor\` (an app of Salesforce or of a package, used in the last 90 days), \`Done (converted)\`, \`Not needed\` (already an External Client App) or not worth it (\`Not used\` for 90 days: delete it instead). The apps to move are also reported by [hardis:org:diagnose:what-will-break](${CONSTANTS.DOC_URL_ROOT}/hardis/org/diagnose/what-will-break/), with the date.
 - **Visual Indicators:** Uses status icons (❌ for unsecured, ✅ for secured, ⚪ for ignored) to provide immediate visual feedback on security status.
 - **Security Recommendations:** Provides actionable guidance on how to secure Connected Apps and External Client Apps through proper configuration.
 - **Notifications:** Sends alerts to configured channels (Grafana, Slack, MS Teams) with security findings and attached reports.
@@ -268,7 +268,7 @@ In agent mode:
       uxLog("action", this, c.cyan(t('connectedAppsUsageFound', { count: connectedAppsUsage.length })));
       uxLogTable(this, connectedAppsUsage);
     }
-    // Connected Apps are no longer supported from Summer '27: the ones the org owns and still uses must move to External Client Apps
+    // Salesforce ends the support of Connected Apps in Summer '27 (they keep working, without fixes or support): the ones the org owns and still uses must move to External Client Apps
     const connectedAppsToMigrate = connectedAppsUsage.filter(app => app["Move to External Client App"] === 'Required');
     if (connectedAppsToMigrate.length > 0) {
       uxLog("warning", this, c.yellow(t('connectedAppsToMigrate', { count: connectedAppsToMigrate.length })));

@@ -354,7 +354,7 @@ describe('whatWillBreak authentication checks', () => {
           token('005F', 'Salesforce for iOS', '2026-10-21T12:00:00.000Z', 'mobile.user@example.com'),
           token('005F', 'Field Survey App', '2026-10-21T12:00:00.000Z', 'mobile.user@example.com'),
           // A user Salesforce runs itself: never reported
-          token('005A', 'Chatbots', '2026-01-01T12:00:00.000Z', 'cloud@00d0y000000bnhcuai'),
+          token('005A', 'Chatbots', '2026-01-01T12:00:00.000Z', 'cloud@00d000000000001aaa'),
         ],
       });
       const check = result.checks.find((ck) => ck.key === 'idleRefreshTokens')!;

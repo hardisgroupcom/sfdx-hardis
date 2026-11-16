@@ -10,7 +10,7 @@ export type ConnectedAppMigrationStatus = 'Required' | 'Vendor' | 'Not used' | '
 // A Connected App still used in the last CONNECTED_APP_MIGRATION_RECENT_DAYS days must be moved to an External Client App
 export const CONNECTED_APP_MIGRATION_RECENT_DAYS = 90;
 
-// Connected Apps are no longer supported from Summer '27: tell which apps of the usage report must move to an External Client App.
+// Salesforce ends the support of Connected Apps in Summer '27 (they keep working, without fixes or support): tell which apps of the usage report must move to an External Client App.
 // appType is the "App Type" column of the report, lastUsedDate an ISO date (YYYY-MM-DD) or an empty string.
 // ownedByOrg is false for an app that is not a ConnectedApp metadata of the org (an app of Salesforce or of a vendor), null when unknown.
 export function getConnectedAppMigrationStatus(
