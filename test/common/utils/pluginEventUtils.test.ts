@@ -7,10 +7,12 @@ import {
   buildRetrieveEventData,
   buildSalesforceRunEventData,
   countEventListeners,
+  emitDeploymentStartEvent,
   emitPluginEvent,
   emitRetrieveEvent,
   emitSalesforceRunEvent,
   getDeployRunEventName,
+  getDeployStartEventName,
 } from '../../../src/common/utils/pluginEventUtils.js';
 import { enableMajorBranchCheckMode, resetMajorBranchCheckMode } from '../../../src/common/utils/majorBranchCheckUtils.js';
 
@@ -198,6 +200,21 @@ describe('Plugin events', () => {
     expect(data.deploymentLabel).to.be.null;
     expect(data).to.have.property('coverageFile');
     expect(data).not.to.have.property('testsRun');
+  });
+
+  it('names the start events from the check mode', () => {
+    expect(getDeployStartEventName(true)).to.equal('sfdx-hardis:validation-start');
+    expect(getDeployStartEventName(false)).to.equal('sfdx-hardis:deployment-start');
+  });
+
+  it('sends the validation start event with the check mode to the listening plugins', async () => {
+    const { config, calls } = fakeOclifConfig([['sfdx-hardis:validation-start'], ['sfdx-hardis:deployment-start']]);
+    await emitDeploymentStartEvent({ id: 'hardis:project:deploy:smart', config }, { checkOnly: true, targetUsername: 'user@example.com' });
+    expect(calls).to.have.length(1);
+    expect(calls[0].event).to.equal('sfdx-hardis:validation-start');
+    expect(calls[0].payload.commandId).to.equal('hardis:project:deploy:smart');
+    expect(calls[0].payload.org).to.deep.equal({ username: 'user@example.com' });
+    expect(calls[0].payload.data).to.deep.equal({ checkOnly: true });
   });
 
   it('sends the envelope and the data of a retrieve to the listening plugins', async () => {

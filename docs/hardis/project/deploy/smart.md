@@ -421,6 +421,8 @@ After a deployment that follows a merge, the Pull Requests merged into the branc
 
 ### Plugin events
 
+Before the package.xml, the delta and the replacement rules read the local sources, the installed sf plugins that listen to `sfdx-hardis:validation-start` (validation) or `sfdx-hardis:deployment-start` (deployment) are called, so they can prepare the sources (for example recompose decomposed metadata).
+
 As soon as Salesforce returns the result of each deployment, the installed sf plugins that listen to `sfdx-hardis:validation-done` or `sfdx-hardis:deployment-done` receive it, with the path of the Apex code coverage file, before the code coverage check. [More info](https://sfdx-hardis.cloudity.com/sfdx-hardis-plugins/#react-to-sfdx-hardis-events)
 
 ### Agent Mode

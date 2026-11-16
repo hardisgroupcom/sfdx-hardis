@@ -64,6 +64,8 @@ commandsPostDeploy:
 
 ### Plugin events
 
+Before anything reads the local sources, the installed sf plugins that listen to `sfdx-hardis:validation-start` are called, so they can prepare the sources (for example recompose decomposed metadata).
+
 As soon as Salesforce returns the result of the validation, the installed sf plugins that listen to `sfdx-hardis:validation-done` receive it, with the path of the Apex code coverage file, before the code coverage check. [More info](https://sfdx-hardis.cloudity.com/sfdx-hardis-plugins/#react-to-sfdx-hardis-events)
 
 ### Agent Mode

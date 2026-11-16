@@ -3,8 +3,8 @@
  *
  * This module exposes the public API for sfdx-hardis plugins.
  * Plugins can import these utilities to integrate with the sfdx-hardis VS Code extension
- * via the shared WebSocket connection, to react to the events sfdx-hardis sends (a validation,
- * a deployment, an Apex test run or a metadata retrieve is done), and to post their own Pull Request comments.
+ * via the shared WebSocket connection, to react to the events sfdx-hardis sends (a validation
+ * or a deployment starts or is done, an Apex test run or a metadata retrieve is done), and to post their own Pull Request comments.
  *
  * Usage from a plugin:
  *   import { uxLog, prompts, WebSocketClient } from 'sfdx-hardis/plugin-api';
@@ -52,6 +52,9 @@ export type {
   SfdxHardisRunEvent,
   SfdxHardisRunEventName,
   SalesforceRunEventData,
+  SfdxHardisDeploymentStartEvent,
+  SfdxHardisDeploymentStartEventName,
+  DeploymentStartEventData,
   SfdxHardisRetrieveEvent,
   SfdxHardisRetrieveEventName,
   RetrieveEventData,

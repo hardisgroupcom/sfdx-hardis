@@ -6,8 +6,9 @@
  * oclif.hooks in its package.json, and nothing at all when no plugin does.
  *
  * Every event carries the same envelope (command, report directory, branch, Pull Request, org) and
- * its own data. Events are sent as soon as Salesforce returns the result of a validation, a deployment,
- * an Apex test run or a metadata retrieve; other events will use the same envelope.
+ * its own data. Events are sent before a validation or a deployment reads the sources, as soon as
+ * Salesforce returns the result of a validation, a deployment, an Apex test run, and after a metadata
+ * retrieve; other events will use the same envelope.
  */
 import c from 'chalk';
 import * as path from 'path';
@@ -72,6 +73,19 @@ export type SalesforceRunEventData = {
 export type SfdxHardisRunEvent = SfdxHardisEvent<SfdxHardisRunEventName, SalesforceRunEventData>;
 
 // ---------------------------------------------------------------------------
+// Start events: sent before a validation or a deployment reads the local sources
+// ---------------------------------------------------------------------------
+
+export type SfdxHardisDeploymentStartEventName = 'sfdx-hardis:validation-start' | 'sfdx-hardis:deployment-start';
+
+export type DeploymentStartEventData = {
+  // True for a validation
+  checkOnly: boolean;
+};
+
+export type SfdxHardisDeploymentStartEvent = SfdxHardisEvent<SfdxHardisDeploymentStartEventName, DeploymentStartEventData>;
+
+// ---------------------------------------------------------------------------
 // Retrieve event: metadata retrieved from an org into the local project
 // ---------------------------------------------------------------------------
 
@@ -106,6 +120,8 @@ export type SfdxHardisEventDataMap = {
   'sfdx-hardis:validation-done': SalesforceRunEventData;
   'sfdx-hardis:deployment-done': SalesforceRunEventData;
   'sfdx-hardis:apex-tests-done': SalesforceRunEventData;
+  'sfdx-hardis:validation-start': DeploymentStartEventData;
+  'sfdx-hardis:deployment-start': DeploymentStartEventData;
   'sfdx-hardis:retrieve-done': RetrieveEventData;
 };
 
@@ -148,6 +164,21 @@ export async function emitSalesforceRunEvent(commandThis: any, input: Salesforce
   await emitPluginEvent(commandThis, input.event, () => buildSalesforceRunEventData(input), {
     targetUsername: input.targetUsername,
   });
+}
+
+// Tell the plugins that a validation or a deployment starts, before anything reads the local sources:
+// a plugin can rebuild the files Salesforce expects, for example recompose decomposed metadata
+export async function emitDeploymentStartEvent(
+  commandThis: any,
+  options: { checkOnly: boolean; targetUsername: string | null }
+): Promise<void> {
+  await emitPluginEvent(commandThis, getDeployStartEventName(options.checkOnly), () => ({ checkOnly: options.checkOnly }), {
+    targetUsername: options.targetUsername,
+  });
+}
+
+export function getDeployStartEventName(checkOnly: boolean): SfdxHardisDeploymentStartEventName {
+  return checkOnly ? 'sfdx-hardis:validation-start' : 'sfdx-hardis:deployment-start';
 }
 
 // Send the result of a metadata retrieve to the plugins
