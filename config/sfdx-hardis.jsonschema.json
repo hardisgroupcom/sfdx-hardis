@@ -48,7 +48,8 @@
         "UNUSED_USERS",
         "UNUSED_USERS_CRM_6_MONTHS",
         "UNUSED_USERS_EXPERIENCE_6_MONTHS",
-        "USAGE_ENTITLEMENTS"
+        "USAGE_ENTITLEMENTS",
+        "WHAT_WILL_BREAK"
       ],
       "enumNames": [
         "Active Users",
@@ -94,7 +95,8 @@
         "Unused Users",
         "Unused Users CRM (6 months)",
         "Unused Users Experience (6 months)",
-        "Usage-Based Entitlements"
+        "Usage-Based Entitlements",
+        "What Will Break"
       ],
       "type": "string"
     },
@@ -131,7 +133,8 @@
         "UNUSED_USERS",
         "UNUSED_USERS_CRM_6_MONTHS",
         "UNUSED_USERS_EXPERIENCE_6_MONTHS",
-        "USAGE_ENTITLEMENTS"
+        "USAGE_ENTITLEMENTS",
+        "WHAT_WILL_BREAK"
       ],
       "enumNames": [
         "Active Users CRM (weekly)",
@@ -146,7 +149,7 @@
         "Consumption Alerts",
         "Dangerous Permissions",
         "Deployments",
-        "Legacy API",
+        "Legacy API (deprecated)",
         "Licenses",
         "Lint Access",
         "Metadata Status",
@@ -156,7 +159,7 @@
         "Org Health Check",
         "Org Info",
         "Org Limits",
-        "Release Updates",
+        "Release Updates (deprecated)",
         "Underused Permission Sets",
         "Unsecured Connected Apps",
         "Unused Apex Classes",
@@ -165,7 +168,8 @@
         "Unused Users",
         "Unused Users CRM (6 months)",
         "Unused Users Experience (6 months)",
-        "Usage-Based Entitlements"
+        "Usage-Based Entitlements",
+        "What Will Break"
       ],
       "type": "string"
     },
@@ -3282,6 +3286,21 @@
         }
       },
       "title": "Monitoring commands",
+      "type": "array"
+    },
+    "monitoringWhatWillBreakIgnoreUsers": {
+      "$id": "#/properties/monitoringWhatWillBreakIgnoreUsers",
+      "description": "List of usernames skipped by [hardis:org:diagnose:what-will-break](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/what-will-break/), for example an integration already being moved to another authentication method. Can also be set with env var MONITORING_WHAT_WILL_BREAK_IGNORE_USERS (comma-separated).",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-monitoring-what-will-break/",
+      "examples": [
+        [
+          "integration@mycompany.com"
+        ]
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Users ignored by What will break monitoring",
       "type": "array"
     },
     "notificationConfig": {

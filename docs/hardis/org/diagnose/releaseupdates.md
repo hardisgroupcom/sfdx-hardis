@@ -1,11 +1,15 @@
 ---
 title: "hardis:org:diagnose:releaseupdates - Check Release Updates of an org"
-description: "Export Release Updates into a CSV file with selected criteria, and highlight Release Updates that should be checked."
+description: "This command is deprecated: use hardis:org:diagnose:what-will-break, which checks the release updates due together with everything else that will break after a dated Salesforce change."
 ---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:releaseupdates
 
 ## Description
+
+## DEPRECATED
+
+This command is deprecated: use [hardis:org:diagnose:what-will-break](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/what-will-break/), which checks the release updates due together with everything else that will break after a dated Salesforce change.
 
 Export Release Updates into a CSV file with selected criteria, and highlight Release Updates that should be checked.
 

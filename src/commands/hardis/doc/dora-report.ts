@@ -268,7 +268,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
       await fs.copy(mdOutputFile, docsDoraOutputFile, { overwrite: true });
       uxLog("log", this, c.grey(`[DORA] ${t("copied")} ${docsDoraOutputFile}`));
     }
-    WebSocketClient.sendReportFileMessage(docsDoraOutputFile || mdOutputFile, t("doraReportTitle"), "report");
+    WebSocketClient.sendReportFileMessage(docsDoraOutputFile || mdOutputFile, t("doraReportTitle"), "report", undefined, { main: true });
 
     // 5. CSV of the jobs behind the numbers
     uxLog("action", this, c.cyan(t("doraReportGeneratingCsv")));

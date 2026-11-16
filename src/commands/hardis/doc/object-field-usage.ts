@@ -1072,7 +1072,7 @@ In agent mode:
     if (csvFilesForXlsx.length > 0) {
       const consolidatedBase = await generateReportPath('object-field-usage', '', { withDate: true });
       uxLog("action", this, c.cyan(t('generatingConsolidatedXlsxReport')));
-      const consolidatedXlsx = await createXlsxFromCsvFiles(csvFilesForXlsx, consolidatedBase, { fileTitle: 'Object field usage (all)' });
+      const consolidatedXlsx = await createXlsxFromCsvFiles(csvFilesForXlsx, consolidatedBase, { fileTitle: 'Object field usage (all)', mainReport: true });
       if (consolidatedXlsx) {
         reportFiles.push({ type: 'xlsx', file: consolidatedXlsx });
       }

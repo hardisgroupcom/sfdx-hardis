@@ -29,7 +29,8 @@ Key functionalities:
   - **OAuth Tokens Report:** Lists all OAuth tokens with security status, app type, user information, and usage data
   - **Unsecured Connected Apps Summary:** Aggregates unsecured apps with counts of associated OAuth tokens and app type
   - **OAuth Tokens by User:** Lists each user with the apps they hold a token for and the last usage date
-  - **Connected Apps Usage:** Lists every Connected App and External Client App that has OAuth tokens (secured or not), with its last usage date and the usernames who use it
+  - **Connected Apps Usage:** Lists every Connected App and External Client App that has OAuth tokens (secured or not), with its last usage date, the usernames who use it, and whether it must be moved to an External Client App
+- **Move to External Client Apps:** Salesforce ends the support of Connected Apps in Summer '27 (they keep working, without fixes or support). The usage report tells, for each app, whether the move is `Required` (a Connected App of the org used in the last 90 days), done by its `Vendor` (an app of Salesforce or of a package, used in the last 90 days), `Done (converted)`, `Not needed` (already an External Client App) or not worth it (`Not used` for 90 days: delete it instead). The apps to move are also reported by [hardis:org:diagnose:what-will-break](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/what-will-break/), with the date.
 - **Visual Indicators:** Uses status icons (❌ for unsecured, ✅ for secured, ⚪ for ignored) to provide immediate visual feedback on security status.
 - **Security Recommendations:** Provides actionable guidance on how to secure Connected Apps and External Client Apps through proper configuration.
 - **Notifications:** Sends alerts to configured channels (Grafana, Slack, MS Teams) with security findings and attached reports.
@@ -43,7 +44,8 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
 The command's technical implementation involves:
 
-- **SOQL Query Execution:** Executes a comprehensive SOQL query on the `OauthToken` object, joining with `AppMenuItem` and `User` objects to gather complete security context.
+- **SOQL Query Execution:** Executes a comprehensive SOQL query on the `OauthToken` object, joining with `AppMenuItem` and `User` objects to gather complete security context. A Bulk query returns at most 2500 tokens, so the next ones are read page by page on `CreatedDate`.
+- **External Client App Migration Logic:** the apps the org owns are its `ConnectedApp` metadata (`listMetadata`), compared with the app label turned into an API name (`ClickDeploy.io` becomes `ClickDeploy_io`). `AppMenuItem.NamespacePrefix` marks packaged apps, and the most recent `LastUsedDate` of the app's tokens tells if it is still used.
 - **Connected App Security Logic:** Analyzes the `ConnectedApplication.OptionsAllowAdminApprovedUsersOnly` field (falling back to `AppMenuItem.IsUsingAdminAuthorization`) to determine if a Connected App requires admin pre-approval for user authorization. Booleans returned as strings by the Bulk API are normalized, so a `"false"` value is never read as secured.
 - **External Client App Security Logic:** Queries `ExtlClntAppOauthPlcyCnfg` for each External Client App and checks `PermittedUsersPolicyType === 'AdminApprovedPreAuthorized'` to determine if admin pre-approval is required. Falls back to AppName-based matching when `AppMenuItem.ApplicationId` is not populated.
 - **Converted Connected App Logic:** When a token points to a Connected App whose name matches an `ExternalClientApplication` `MasterLabel` or `DeveloperName`, the Connected App is considered migrated: the External Client App OAuth policy decides the status and the app type is reported as `Ext Client App (converted)`. The match is made on the name only, so every app whose status comes from an External Client App policy is logged, as well as every name match without an available policy.

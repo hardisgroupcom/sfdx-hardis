@@ -2,6 +2,17 @@
 
 ## [beta] (main)
 
+- **What will break** ([doc](https://sfdx-hardis.cloudity.com/salesforce-monitoring-what-will-break/)): one report tells what dated Salesforce changes will break in your org, when, and what to do before, and confirms when nothing will.
+  - New [hardis:org:diagnose:what-will-break](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/what-will-break/), run every day by the monitoring, from authentication changes to retired API versions and release updates.
+  - [hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/) and [hardis:org:diagnose:releaseupdates](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/releaseupdates/) are deprecated: the monitoring runs What will break instead, and keeps their settings.
+  - [hardis:org:diagnose:unsecure-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps/): the Connected Apps usage report tells which apps to move to External Client Apps before Summer '27, the notification attaches its report again, and the usernames of that report are anonymized in CI.
+  - Each thing that will break gets its own row, naming the app, user or data source, with the exact steps to fix it and keep it from breaking again.
+  - A release update that enforces a change another check already covers is not listed twice: that check shows its due date and when to enable it.
+  - Each known release update says in plain words what stops working and what to do, with a link to its official Salesforce page.
+  - Only what really breaks is listed: Salesforce's own apps and people who are simply asked to log in again are left out.
+  - In VS Code, each check shows its progress while it runs.
+  - [hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/): one API clients file per range of API versions, so two ranges of the same severity no longer overwrite each other, and an org with millions of calls gets its report in minutes (CSV only above 100,000 calls).
+  - Grafana: new What will break row on the Org Security dashboard.
 - [Browser deployment action](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions-browser/#deployment-errors-a-browser-action-solves):
   - The deployment assistant suggests it for the errors it can solve, with the command that adds it to your Pull Request.
   - The AI deployment assistant and the coding agent that fixes deployment errors suggest it too.
@@ -28,6 +39,7 @@
 - GitHub: QuickDeploy finds the validation of Pull Requests merged long after they were created (closed Pull Requests are now searched by update date instead of creation date).
 - Docker images: lighter, with the Docker client and a Java runtime instead of the full Docker engine and JDK, and no bundled Codex.
 - Ubuntu Docker image: the build falls back to the kernel.org Ubuntu mirror when archive.ubuntu.com cannot be reached.
+- VS Code: the main report of a command is the first report button, before its detail reports (What will break, Apex and Flow errors, legacy API calls, Connected Apps, storage stats, object field usage, DORA report).
 - [Codex AI provider](https://sfdx-hardis.cloudity.com/salesforce-ai-setup/#with-codex-directly): sfdx-hardis no longer bundles Codex, install the Codex CLI or use a with-agents Docker image.
 - Doc: the [window of a Pull Request](https://sfdx-hardis.cloudity.com/vscode-extension-devops-pipeline/#find-and-open-any-pull-request) in VS Code explains its new search bar (Ctrl+F).
 - Doc: the DevOps Pipeline pictures show the **Major branches | Feature branches | Dev orgs** switch, and the settings menu lists Replacement Rules and Register a development org.
