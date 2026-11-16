@@ -63,6 +63,15 @@ export const monitoringCommandsDefault: MonitoringCommandEntry[] = [
     category: "apexTestsSecurity",
     icon: "utility:einstein",
   },
+  // Right after the tests: the Org Monitoring panel shows it third in its category, after Apex tests and Agent tests
+  {
+    key: "WHAT_WILL_BREAK",
+    command: "sf hardis:org:diagnose:what-will-break",
+    frequency: "daily",
+    notificationTypes: ["WHAT_WILL_BREAK"],
+    category: "apexTestsSecurity",
+    icon: "utility:warning",
+  },
   {
     key: "UNSECURED_CONNECTED_APPS",
     command: "sf hardis:org:diagnose:unsecure-connected-apps",
@@ -78,14 +87,6 @@ export const monitoringCommandsDefault: MonitoringCommandEntry[] = [
     notificationTypes: ["MFA_CONFIG"],
     category: "apexTestsSecurity",
     icon: "utility:shield",
-  },
-  {
-    key: "WHAT_WILL_BREAK",
-    command: "sf hardis:org:diagnose:what-will-break",
-    frequency: "daily",
-    notificationTypes: ["WHAT_WILL_BREAK"],
-    category: "apexTestsSecurity",
-    icon: "utility:warning",
   },
   {
     key: "DANGEROUS_PERMISSIONS",
