@@ -7,6 +7,7 @@
   - [hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/) and [hardis:org:diagnose:releaseupdates](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/releaseupdates/) are deprecated: the monitoring runs What will break instead, and keeps their settings.
   - [hardis:org:diagnose:unsecure-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps/): the Connected Apps usage report tells which apps to move to External Client Apps before Summer '27, and the notification attaches its report again.
   - Each thing that will break gets its own row, naming the app, user or data source, with the exact steps to fix it and keep it from breaking again.
+  - A release update that enforces a change another check already covers is not listed twice: that check shows its due date and when to enable it.
   - In VS Code, each check shows its progress while it runs.
   - [hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/): one API clients file per range of API versions, so two ranges of the same severity no longer overwrite each other.
   - Grafana: new What will break row on the Org Security dashboard.
