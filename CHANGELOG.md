@@ -8,6 +8,7 @@
   - Each Browserforce setting links to its documentation page.
   - New with Browserforce 7.2.0: rename in the target org a picklist value renamed in the sources, and turn on Einstein Conversation Insights before deploying Call Summaries.
 - [sfdx-hardis plugins](https://sfdx-hardis.cloudity.com/sfdx-hardis-plugins/#react-to-sfdx-hardis-events): plugins receive the validation, deployment and Apex test run results that Salesforce returns to sfdx-hardis, and can post their own Pull Request comment through your git provider.
+- [hardis:source:retrieve](https://sfdx-hardis.cloudity.com/hardis/source/retrieve/): sends the [sfdx-hardis:retrieve-done](https://sfdx-hardis.cloudity.com/sfdx-hardis-plugins/#available-events) event to the plugins once the retrieve is over, with its status and what was asked.
 - [hardis:project:deploy:start](https://sfdx-hardis.cloudity.com/hardis/project/deploy/start/), [hardis:project:deploy:validate](https://sfdx-hardis.cloudity.com/hardis/project/deploy/validate/) and [hardis:project:deploy:quick](https://sfdx-hardis.cloudity.com/hardis/project/deploy/quick/):
   - They no longer fail in agent mode.
   - Start and validate keep the source folder given with its short flag.

@@ -1,11 +1,14 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { expect } from 'chai';
 import { GitProvider } from '../../../src/common/gitProvider/index.js';
+import * as path from 'path';
 import {
   buildEventEnvelope,
+  buildRetrieveEventData,
   buildSalesforceRunEventData,
   countEventListeners,
   emitPluginEvent,
+  emitRetrieveEvent,
   emitSalesforceRunEvent,
   getDeployRunEventName,
 } from '../../../src/common/utils/pluginEventUtils.js';
@@ -195,5 +198,47 @@ describe('Plugin events', () => {
     expect(data.deploymentLabel).to.be.null;
     expect(data).to.have.property('coverageFile');
     expect(data).not.to.have.property('testsRun');
+  });
+
+  it('sends the envelope and the data of a retrieve to the listening plugins', async () => {
+    const { config, calls } = fakeOclifConfig([['sfdx-hardis:retrieve-done'], ['sfdx-hardis:deployment-done']]);
+    await emitRetrieveEvent({ id: 'hardis:source:retrieve', config }, {
+      status: 'success',
+      metadata: ['ApexClass', 'CustomObject'],
+      targetUsername: 'user@example.com',
+    });
+    expect(calls).to.have.length(1);
+    const payload = calls[0].payload;
+    expect(calls[0].event).to.equal('sfdx-hardis:retrieve-done');
+    expect(payload.commandId).to.equal('hardis:source:retrieve');
+    expect(payload.org).to.deep.equal({ username: 'user@example.com' });
+    expect(payload.data).to.deep.equal({
+      status: 'success',
+      manifest: null,
+      metadata: ['ApexClass', 'CustomObject'],
+      sourcePaths: [],
+      packageNames: [],
+    });
+  });
+
+  it('gives absolute paths for the manifest and the source paths of a retrieve', () => {
+    const data = buildRetrieveEventData({
+      status: 'failed',
+      manifest: 'manifest/package.xml',
+      sourcePaths: ['force-app/main/default/classes'],
+      packageNames: ['MyPackage'],
+    });
+    expect(data.status).to.equal('failed');
+    expect(data.manifest).to.equal(path.resolve('manifest/package.xml'));
+    expect(data.sourcePaths).to.deep.equal([path.resolve('force-app/main/default/classes')]);
+    expect(data.packageNames).to.deep.equal(['MyPackage']);
+    expect(data.metadata).to.deep.equal([]);
+  });
+
+  it('sends no retrieve event when no plugin listens', async () => {
+    const { config, calls } = fakeOclifConfig([['sfdx-hardis:deployment-done']]);
+    await emitRetrieveEvent({ config }, { status: 'success' });
+    expect(calls).to.be.empty;
+    expect(pullRequestLookups).to.equal(0);
   });
 });
