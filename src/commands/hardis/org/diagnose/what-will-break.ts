@@ -24,6 +24,7 @@ import { getDeadlineLabel, WHAT_WILL_BREAK_DEADLINES } from '../../../../common/
 import { SOAP_LOGIN_INACTIVITY_DAYS } from '../../../../common/whatWillBreak/authChecks.js';
 import { WhatWillBreakCheckKey } from '../../../../common/whatWillBreak/whatWillBreakTypes.js';
 import { t } from '../../../../common/utils/i18n.js';
+import { SENSITIVE_VALUES_KEY, stripSensitiveValues } from '../../../../common/utils/anonymizeUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -36,14 +37,14 @@ export default class DiagnoseWhatWillBreak extends SfCommand<any> {
 
 **Tells what will break in an org because of a dated Salesforce change, when, and what to do before it breaks.**
 
-The command starts with a list of every check, all selected: keep the ones to run. It then writes a main report with one row per thing that will break, and one row per check that found nothing, so a clean org gets a report that says so.
+The command starts with a list of every check, all selected: keep the ones to run. It then writes a main report with one row per thing that will break (an integration and its user, a Connected App, a data source, a range of API versions, a release update), and one row per check that found nothing, so a clean org gets a report that says so. A check with more than 20 findings lists the first 20, and a last row points to its detail report.
 
 | Main report column | Content |
 |---|---|
 | Status | Error (the date has passed or is less than 60 days away), Warning, Info, Not checked (with the reason) or OK |
-| What will break | What fails, and how many integrations, calls or apps are concerned. On an OK row, what was checked. |
+| What will break | What fails, for which app, user or data source, and when. On an OK row, what was checked. |
 | Date | When it breaks: a day, "Enforced since", or a Salesforce release such as "Summer '28 (2028-06)" |
-| What to do | The action that avoids the break |
+| What to do | The steps that fix this item and keep it from breaking again, or the report file that lists them |
 | Salesforce announcement | The official Salesforce page of the change |
 | How to fix | The [How to fix](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-what-will-break/#how-to-fix) section of the check, with the steps |
 | Detail report | The report of the check, with every item it found |
@@ -241,10 +242,21 @@ The command's implementation:
     const notifButtons = await getNotificationButtons();
     const notifSeverity: NotifSeverity = result.severity;
     const notifText = t('whatWillBreakNotificationText', { count: failingRows.length, orgMarkdown });
-    let notifDetailText = '';
+    // A finding that names a user or an IP address is counted in one line per check: the message is not anonymized, the attached report is
+    const notifLines: { row: (typeof failingRows)[number]; count: number }[] = [];
     for (const row of failingRows) {
+      const grouped = (row as any)[SENSITIVE_VALUES_KEY] ? notifLines.find((line) => line.count > 0 && line.row.CheckKey === row.CheckKey) : undefined;
+      if (grouped) {
+        grouped.count++;
+      } else {
+        notifLines.push({ row, count: (row as any)[SENSITIVE_VALUES_KEY] ? 1 : 0 });
+      }
+    }
+    let notifDetailText = '';
+    for (const { row, count } of notifLines) {
       const howToFix = `[${t('authRetirementsHowToFix')}](${row['How to fix']})`;
-      notifDetailText += `${row.Status.split(' ')[0]} **${row.Check}** (${row.Date}): ${row['What will break']} - ${howToFix}\n`;
+      const what = count > 0 ? t('whatWillBreakNotifFindings', { count }) : row['What will break'];
+      notifDetailText += `${row.Status.split(' ')[0]} **${row.Check}** (${row.Date}): ${what} - ${howToFix}\n`;
     }
     if (failingRows.length === 0) {
       notifDetailText = allClearText;
@@ -279,7 +291,7 @@ The command's implementation:
         metric: check.metric,
         reportFiles: reportFiles[check.key] || [],
       })),
-      rows: mainRows,
+      rows: stripSensitiveValues(mainRows),
       outputFiles: { main: this.outputFilesRes, perCheck: reportFiles },
       outputString: notifText,
     } as any;

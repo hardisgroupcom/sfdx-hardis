@@ -112,6 +112,14 @@ export function getDeadlineLabel(key: WhatWillBreakDeadlineKey, isSandbox: boole
   return getDateLabel(date, today, WHAT_WILL_BREAK_DEADLINES[key].releaseLabel);
 }
 
+// "from <date>" or "since <date>", to say in a sentence when the change hits this org
+export function getDeadlineWhen(key: WhatWillBreakDeadlineKey, isSandbox: boolean, today: Date): string {
+  const date = getDeadlineDate(key, isSandbox);
+  const releaseLabel = WHAT_WILL_BREAK_DEADLINES[key].releaseLabel;
+  const label = releaseLabel ? `${releaseLabel} (${date.substring(0, 7)})` : date;
+  return getDaysLeft(date, today) <= 0 ? t('whatWillBreakWhenPast', { date: label }) : t('whatWillBreakWhenFuture', { date: label });
+}
+
 export function getDeadlineDate(key: WhatWillBreakDeadlineKey, isSandbox: boolean): string {
   const deadline = WHAT_WILL_BREAK_DEADLINES[key];
   return isSandbox && deadline.sandboxDate ? deadline.sandboxDate : deadline.productionDate;

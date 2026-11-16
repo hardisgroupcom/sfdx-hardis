@@ -1,3 +1,4 @@
+import path from 'path';
 import { t } from '../utils/i18n.js';
 import { LegacyApiCallsCollector, LegacyApiDescriptor } from '../utils/legacyApiUtils.js';
 import { buildMainRow, buildRow, finalizeCheck, notAvailableResult, successRow } from './checkResults.js';
@@ -39,12 +40,23 @@ export async function checkLegacyApiVersions(context: CheckContext): Promise<Wha
     const severity = getDeadlineSeverity(deadlineKey, context.isSandbox, context.today);
     const deadline = getDeadlineLabel(deadlineKey, context.isSandbox, context.today);
     const versions = `${found.descriptor.minApiVersion} - ${found.descriptor.maxApiVersion}`;
+    // The API clients file of this range lists the IP addresses and the users to go and fix
+    const clientsFile = collected.apiClientsFiles.find((file) => file.severity === found.descriptor.severity);
+    const whatToDo = t('whatWillBreakLegacyApiTodo', {
+      clientsFile: clientsFile ? path.basename(clientsFile.xlsxFile || clientsFile.csvFile) : path.basename(collected.csvFile || ''),
+      ips: found.ipCount,
+      min: found.descriptor.minApiVersion,
+      max: found.descriptor.maxApiVersion,
+      latest: context.conn.getApiVersion(),
+    });
+    const whatWillBreak = t('whatWillBreakImpactLegacyApiVersions', { count: found.totalErrors, versions, ips: found.ipCount });
     const row = buildRow(context, key, title, severity, {
       Item: versions,
       Details: t('whatWillBreakDetailLegacyApi', { count: found.totalErrors, ips: found.ipCount }),
+      WhatWillBreak: whatWillBreak,
       LastSeen: '',
       Count: found.totalErrors,
-      Recommendation: t('whatWillBreakTodoLegacyApiVersions'),
+      Recommendation: whatToDo,
     });
     row.Deadline = deadline;
     row.Article = WHAT_WILL_BREAK_DEADLINES[deadlineKey].articleUrl;
@@ -52,9 +64,9 @@ export async function checkLegacyApiVersions(context: CheckContext): Promise<Wha
     mainRows.push({
       date: getDeadlineDate(deadlineKey, context.isSandbox),
       row: buildMainRow({ key, title, howToFixUrl: row.HowToFix }, severity, {
-        whatWillBreak: t('whatWillBreakImpactLegacyApiVersions', { count: found.totalErrors, versions, ips: found.ipCount }),
+        whatWillBreak,
         date: deadline,
-        whatToDo: t('whatWillBreakTodoLegacyApiVersions'),
+        whatToDo,
         announcementUrl: row.Article,
         count: found.totalErrors,
       }),

@@ -86,14 +86,20 @@ export function buildRow(
   key: WhatWillBreakCheckKey,
   title: string,
   severity: WhatWillBreakSeverity,
-  values: Pick<WhatWillBreakDetailRow, 'Item' | 'Details' | 'LastSeen' | 'Count' | 'Recommendation'>
+  values: Pick<WhatWillBreakDetailRow, 'Item' | 'Details' | 'LastSeen' | 'Count' | 'Recommendation'> & { WhatWillBreak?: string }
 ): WhatWillBreakDetailRow {
+  // Explicit order: it is the column order of the detail report
   return {
     Check: title,
     CheckKey: key,
     Severity: severity,
     Deadline: getDeadlineLabel(key, context.isSandbox, context.today),
-    ...values,
+    Item: values.Item,
+    Details: values.Details,
+    WhatWillBreak: values.WhatWillBreak || '',
+    LastSeen: values.LastSeen,
+    Count: values.Count,
+    Recommendation: values.Recommendation,
     HowToFix: getFixDocUrl(key),
     Article: WHAT_WILL_BREAK_DEADLINES[key].articleUrl,
   };

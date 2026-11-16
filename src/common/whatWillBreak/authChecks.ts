@@ -5,7 +5,7 @@ import { markRowSensitiveValues } from '../utils/anonymizeUtils.js';
 import { queryAllOAuthTokens } from '../utils/oauthTokenUtils.js';
 import { isIpInRange, isRangeWiderThan } from '../utils/ipRangeUtils.js';
 import { t } from '../utils/i18n.js';
-import { getDeadlineLabel, getDeadlineSeverity, getFixDocUrl } from './whatWillBreakDeadlines.js';
+import { getDateLabel, getDeadlineLabel, getDeadlineSeverity, getDeadlineWhen, getFixDocUrl } from './whatWillBreakDeadlines.js';
 import { buildRow, DAY_MS, finalizeCheck, formatDate, notAvailableResult, successRow } from './checkResults.js';
 import {
   CheckContext,
@@ -255,29 +255,33 @@ async function checkIdleRefreshTokens(context: CheckContext): Promise<WhatWillBr
       continue;
     }
     const expired = idleDays >= REFRESH_TOKEN_IDLE_TTL_DAYS;
-    rows.push(
-      markRowSensitiveValues<WhatWillBreakDetailRow>(
-        buildRow(context, key, title, expired ? 'info' : severity, {
-          Item: `${appUser.appName} - ${appUser.username}`,
-          Details: expired
-            ? t('authRetirementsDetailTokenExpired', { days: idleDays })
-            : t('authRetirementsDetailTokenExpiring', { days: idleDays, left: REFRESH_TOKEN_IDLE_TTL_DAYS - idleDays }),
-          LastSeen: formatDate(appUser.lastUse),
-          Count: appUser.useCount,
-          Recommendation: t(expired ? 'authRetirementsRecoTokenExpired' : 'authRetirementsRecoTokenExpiring'),
-        }),
-        [appUser.username]
-      )
-    );
+    const expiryDate = formatDate(new Date(new Date(appUser.lastUse).getTime() + REFRESH_TOKEN_IDLE_TTL_DAYS * DAY_MS).toISOString());
+    const params = { app: appUser.appName, user: appUser.username, date: expiryDate, days: idleDays };
+    const row = buildRow(context, key, title, expired ? 'info' : severity, {
+      Item: `${appUser.appName} - ${appUser.username}`,
+      Details: expired
+        ? t('authRetirementsDetailTokenExpired', { days: idleDays })
+        : t('authRetirementsDetailTokenExpiring', { days: idleDays, left: REFRESH_TOKEN_IDLE_TTL_DAYS - idleDays }),
+      WhatWillBreak: t(expired ? 'whatWillBreakExpiredTokenImpact' : 'whatWillBreakIdleTokenImpact', params),
+      LastSeen: formatDate(appUser.lastUse),
+      Count: appUser.useCount,
+      Recommendation: t(expired ? 'whatWillBreakExpiredTokenTodo' : 'whatWillBreakIdleTokenTodo', params),
+    });
+    // Each token has its own expiry date
+    if (!expired) {
+      row.Deadline = getDateLabel(expiryDate, context.today);
+    }
+    rows.push(markRowSensitiveValues<WhatWillBreakDetailRow>(row, [appUser.username]));
   }
   for (const [appName, count] of Array.from(otherUsersExpiringByApp.entries()).sort()) {
     rows.push(
       buildRow(context, key, title, 'info', {
         Item: appName,
         Details: t('authRetirementsDetailTokensOtherUsers', { count, days: REFRESH_TOKEN_IDLE_TTL_DAYS }),
+        WhatWillBreak: t('whatWillBreakOtherUsersTokensImpact', { count, app: appName }),
         LastSeen: '',
         Count: count,
-        Recommendation: t('authRetirementsRecoTokensOtherUsers'),
+        Recommendation: t('whatWillBreakOtherUsersTokensTodo', { app: appName }),
       })
     );
   }
@@ -365,14 +369,16 @@ async function checkRefreshTokenCadence(context: CheckContext): Promise<WhatWill
       continue;
     }
     const username = usernameById.get(pair.userId) || pair.userId;
+    const params = { app: pair.application, user: username, days: longestGap };
     rows.push(
       markRowSensitiveValues<WhatWillBreakDetailRow>(
         buildRow(context, key, title, severity, {
           Item: `${pair.application} - ${username}`,
           Details: t('whatWillBreakDetailRefreshCadence', { days: longestGap, uses: days.length }),
+          WhatWillBreak: t('whatWillBreakRefreshCadenceImpact', params),
           LastSeen: days[days.length - 1],
           Count: days.length,
-          Recommendation: t('whatWillBreakRecoRefreshCadence'),
+          Recommendation: t('whatWillBreakRefreshCadenceTodo', params),
         }),
         [{ value: username, kind: 'user' }]
       )
@@ -423,7 +429,7 @@ function checkDeviceFlow(context: CheckContext): WhatWillBreakCheckResult {
     context,
     groupLogins(context.logins.records, context.logins.usernameById, DEVICE_FLOW_SUBTYPES, ['userId', 'application'])
   );
-  return loginGroupsResult(context, key, title, groups, 'authRetirementsDetailDeviceFlow', 'authRetirementsRecoDeviceFlow');
+  return loginGroupsResult(context, key, title, groups, 'authRetirementsDetailDeviceFlow', 'whatWillBreakDeviceFlow');
 }
 
 async function checkSoapLoginPermission(context: CheckContext): Promise<WhatWillBreakCheckResult> {
@@ -446,7 +452,7 @@ async function checkSoapLoginPermission(context: CheckContext): Promise<WhatWill
   );
   const missing = groups.filter((group) => !usersWithPermission.has(group.userId));
   // Failed logins are kept: after enforcement, a caller without the permission only fails (INSUFFICIENT_ACCESS)
-  return loginGroupsResult(context, key, title, missing, 'authRetirementsDetailSoapPermission', 'authRetirementsRecoSoapPermission', true);
+  return loginGroupsResult(context, key, title, missing, 'authRetirementsDetailSoapPermission', 'whatWillBreakSoapPermission', true);
 }
 
 async function queryUsersWithPermission(conn: Connection, userIds: string[], permissionField: string): Promise<Set<string>> {
@@ -498,16 +504,20 @@ async function checkSoapLoginIpRange(context: CheckContext): Promise<WhatWillBre
     title,
     needingToken,
     'authRetirementsDetailSoapIpRange',
-    'authRetirementsRecoSoapIpRange'
+    'whatWillBreakSoapIpRange'
   );
   // The wide ranges themselves are worth a look even when no SOAP caller uses them
   const wideRangeRows = wideRanges.map((range) =>
     buildRow(context, key, title, 'info', {
       Item: `${range.start} - ${range.end}`,
       Details: t('authRetirementsDetailWideRange', { description: range.description || '-' }),
+      WhatWillBreak: t('whatWillBreakWideRangeImpact', {
+        range: `${range.start} - ${range.end}`,
+        when: getDeadlineWhen(key, context.isSandbox, context.today),
+      }),
       LastSeen: '',
       Count: '',
-      Recommendation: t('authRetirementsRecoWideRange'),
+      Recommendation: t('whatWillBreakWideRangeTodo', { range: `${range.start} - ${range.end}` }),
     })
   );
   if (wideRangeRows.length > 0) {
@@ -545,9 +555,10 @@ function checkSoapLoginInactivity(context: CheckContext): WhatWillBreakCheckResu
     const row = buildRow(context, key, title, 'info', {
       Item: '-',
       Details: t('authRetirementsDetailNoSoapLogin', { days: context.lookbackDays }),
+      WhatWillBreak: t('authRetirementsDetailNoSoapLogin', { days: context.lookbackDays }),
       LastSeen: '',
       Count: 0,
-      Recommendation: t('authRetirementsRecoNoSoapLogin'),
+      Recommendation: t('whatWillBreakNothingToDo'),
     });
     return {
       key,
@@ -567,9 +578,10 @@ function checkSoapLoginInactivity(context: CheckContext): WhatWillBreakCheckResu
       buildRow(context, key, title, 'warning', {
         Item: '-',
         Details: t('authRetirementsDetailOrgSoapIdle', { days: orgIdle, limit: SOAP_LOGIN_INACTIVITY_DAYS }),
+        WhatWillBreak: t('whatWillBreakOrgSoapIdleImpact', { days: orgIdle, limit: SOAP_LOGIN_INACTIVITY_DAYS }),
         LastSeen: formatDate(lastOrgCall),
         Count: '',
-        Recommendation: t('authRetirementsRecoOrgSoapIdle'),
+        Recommendation: t('whatWillBreakOrgSoapIdleTodo'),
       })
     );
   }
@@ -579,9 +591,10 @@ function checkSoapLoginInactivity(context: CheckContext): WhatWillBreakCheckResu
         buildRow(context, key, title, 'info', {
           Item: group.username,
           Details: t('authRetirementsDetailRareSoapCaller', { days: daysSince(group.lastSuccess) }),
+          WhatWillBreak: t('whatWillBreakRareSoapCallerImpact', { user: group.username, days: daysSince(group.lastSuccess) }),
           LastSeen: formatDate(group.lastSuccess),
           Count: group.successCount,
-          Recommendation: t('authRetirementsRecoRareSoapCaller'),
+          Recommendation: t('whatWillBreakRareSoapCallerTodo', { user: group.username }),
         }),
         [group.username]
       )
@@ -618,7 +631,7 @@ async function checkUsernamePasswordFlow(context: CheckContext): Promise<WhatWil
     title,
     groups,
     'authRetirementsDetailUsernamePassword',
-    'authRetirementsRecoUsernamePassword'
+    'whatWillBreakUsernamePassword'
   );
   if (groups.length === 0) {
     const oauthSettings = await fetchOauthOidcSettings(context.conn);
@@ -645,9 +658,17 @@ async function checkUsernamePasswordFlow(context: CheckContext): Promise<WhatWil
           loginSubType: app.loginSubType,
           users: userAgentUsers.filter((u) => u.application === app.application && u.loginSubType === app.loginSubType).length,
         }),
+        WhatWillBreak: t('whatWillBreakUserAgentImpact', {
+          app: app.application,
+          loginSubType: app.loginSubType,
+          users: userAgentUsers.filter((u) => u.application === app.application && u.loginSubType === app.loginSubType).length,
+        }),
         LastSeen: formatDate(app.lastSuccess),
         Count: app.successCount,
-        Recommendation: t('authRetirementsRecoUserAgent'),
+        // Salesforce moves its own apps (mobile apps, browser): only the other apps need something from the org
+        Recommendation: t(isSalesforceUserAgentApp(app.application) ? 'whatWillBreakUserAgentTodoSalesforce' : 'whatWillBreakUserAgentTodo', {
+          app: app.application,
+        }),
       })
     );
     result.rows = [...result.rows.filter((row) => row.Severity !== 'success'), ...userAgentRows];
@@ -657,6 +678,10 @@ async function checkUsernamePasswordFlow(context: CheckContext): Promise<WhatWil
     }
   }
   return result;
+}
+
+function isSalesforceUserAgentApp(application: string): boolean {
+  return isSalesforceEndUserApp(application) || /^(salesforce|browser)/i.test(application || '');
 }
 
 async function fetchOauthOidcSettings(conn: Connection): Promise<any> {
@@ -692,9 +717,14 @@ async function checkSfConnectLegacyAuth(context: CheckContext): Promise<WhatWill
     buildRow(context, key, title, severity, {
       Item: `${ds.MasterLabel} (${ds.DeveloperName})`,
       Details: t('authRetirementsDetailSfConnect', { protocol: ds.Protocol, principalType: ds.PrincipalType || '-' }),
+      WhatWillBreak: t('whatWillBreakSfConnectImpact', {
+        name: ds.MasterLabel,
+        protocol: ds.Protocol,
+        when: getDeadlineWhen(key, context.isSandbox, context.today),
+      }),
       LastSeen: '',
       Count: '',
-      Recommendation: t('authRetirementsRecoSfConnect'),
+      Recommendation: t('whatWillBreakSfConnectTodo', { name: ds.MasterLabel }),
     })
   );
   return finalizeCheck(context, key, title, rows, rows.length, t('authRetirementsFoundSfConnect', { count: rows.length }));
@@ -714,7 +744,7 @@ function checkSoapLoginRetirement(context: CheckContext): WhatWillBreakCheckResu
       'apiVersion',
     ])
   );
-  return loginGroupsResult(context, key, title, groups, 'authRetirementsDetailSoapRetirement', 'authRetirementsRecoSoapRetirement');
+  return loginGroupsResult(context, key, title, groups, 'authRetirementsDetailSoapRetirement', 'whatWillBreakSoapRetirement');
 }
 
 // Skip the groups of ignored users
@@ -724,41 +754,47 @@ function filterLoginGroups(context: CheckContext, groups: LoginGroup[]): LoginGr
 
 // Result of a check whose findings are login groups: one row per group, the metric is the number of distinct users.
 // Only active users count, and only their successful logins unless includeFailedOnly is set.
+// findingKeyPrefix names the two texts of a finding: <prefix>Impact (what will break) and <prefix>Todo (what to do).
 function loginGroupsResult(
   context: CheckContext,
   key: WhatWillBreakCheckKey,
   title: string,
   groups: LoginGroup[],
   detailKey: string,
-  recommendationKey: string,
+  findingKeyPrefix: string,
   includeFailedOnly = false
 ): WhatWillBreakCheckResult {
+  const when = getDeadlineWhen(key, context.isSandbox, context.today);
   const severity = getDeadlineSeverity(key, context.isSandbox, context.today);
   const findings = groups.filter(
     (group) =>
       context.logins.activeUserIds.has(group.userId) && (group.successCount > 0 || (includeFailedOnly && group.failedCount > 0))
   );
-  const rows = findings.map((group) =>
-    markRowSensitiveValues<WhatWillBreakDetailRow>(
+  const rows = findings.map((group) => {
+    const params = {
+      application: group.application,
+      apiVersion: group.apiVersion,
+      loginSubType: group.loginSubType,
+      sourceIp: group.sourceIp || '-',
+      failed: group.failedCount,
+      user: group.username,
+      when,
+    };
+    return markRowSensitiveValues<WhatWillBreakDetailRow>(
       buildRow(context, key, title, severity, {
         Item: group.username,
-        Details: t(detailKey, {
-          application: group.application,
-          apiVersion: group.apiVersion,
-          loginSubType: group.loginSubType,
-          sourceIp: group.sourceIp || '-',
-          failed: group.failedCount,
-        }),
+        Details: t(detailKey, params),
+        WhatWillBreak: t(`${findingKeyPrefix}Impact`, params),
         LastSeen: formatDate(group.lastSuccess),
         Count: group.successCount,
-        Recommendation: t(recommendationKey),
+        Recommendation: t(`${findingKeyPrefix}Todo`, params),
       }),
       [
         { value: group.username, kind: 'user' },
         group.sourceIp ? { value: group.sourceIp, kind: 'ip' } : null,
       ]
-    )
-  );
+    );
+  });
   const users = new Set(findings.map((group) => group.userId)).size;
   return finalizeCheck(context, key, title, rows, users, t('authRetirementsFoundUsers', { count: users, days: context.lookbackDays }));
 }

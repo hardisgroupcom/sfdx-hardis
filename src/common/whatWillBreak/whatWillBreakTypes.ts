@@ -42,8 +42,11 @@ export interface WhatWillBreakDetailRow {
   Deadline: string;
   Item: string;
   Details: string;
+  // What breaks for this item, and when: the "What will break" column of the main report
+  WhatWillBreak: string;
   LastSeen: string;
   Count: number | string;
+  // The steps that fix this item and keep it from breaking again: the "What to do" column of the main report
   Recommendation: string;
   HowToFix: string;
   Article: string;
@@ -68,6 +71,8 @@ export interface WhatWillBreakMainRow {
 export interface WhatWillBreakDatedMainRow {
   row: WhatWillBreakMainRow;
   date: string;
+  // Check of this report that covers the same change (a release update the authentication checks look at)
+  relatedCheckKey?: WhatWillBreakCheckKey;
 }
 
 export interface WhatWillBreakCheckResult {
@@ -84,8 +89,6 @@ export interface WhatWillBreakCheckResult {
   metric?: number;
   // Main report rows built by the check itself, when it covers several dates (one row per release update...)
   mainRows?: WhatWillBreakDatedMainRow[];
-  // Names to list in the main report row (app names: never usernames, which the anonymization cannot reach there)
-  impactItems?: string[];
   // Rows of the check's own report when they are not detail rows (release update records...)
   detailReportRows?: any[];
   detailReportTitle?: string;

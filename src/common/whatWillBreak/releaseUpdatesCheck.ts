@@ -4,6 +4,12 @@ import { buildMainRow, buildRow, finalizeCheck, notAvailableResult } from './che
 import { getDateLabel, getDateSeverity } from './whatWillBreakDeadlines.js';
 import { CheckContext, WhatWillBreakCheckKey, WhatWillBreakCheckResult, WhatWillBreakDetailRow } from './whatWillBreakTypes.js';
 
+// Release updates that enforce a change one of the authentication checks looks at, by DeveloperName
+const RELEASE_UPDATE_RELATED_CHECKS: Record<string, WhatWillBreakCheckKey> = {
+  SoapLoginUserPermEnforcementReleaseUpdate: 'soapLoginPermission',
+  OAuthDeviceFlowRestrictionReleaseUpdate: 'deviceFlow',
+};
+
 // Release updates not applied yet: each one is a row of the main report, with its own due date
 export async function checkReleaseUpdates(context: CheckContext): Promise<WhatWillBreakCheckResult> {
   const key: WhatWillBreakCheckKey = 'releaseUpdates';
@@ -20,9 +26,10 @@ export async function checkReleaseUpdates(context: CheckContext): Promise<WhatWi
     const row = buildRow(context, key, title, getReleaseUpdateSeverity(record, context.today), {
       Item: record.Title,
       Details: `${record.StepStage}, ${record.Status}, ${record.Category}`,
+      WhatWillBreak: t('whatWillBreakImpactReleaseUpdate', { title: record.Title }),
       LastSeen: '',
       Count: '',
-      Recommendation: t('whatWillBreakTodoReleaseUpdates'),
+      Recommendation: t('whatWillBreakReleaseUpdateTodo', { title: record.Title }),
     });
     row.Deadline = dueDate ? getDateLabel(dueDate, context.today) : '';
     row.Article = setupUrl;
@@ -35,12 +42,13 @@ export async function checkReleaseUpdates(context: CheckContext): Promise<WhatWi
   result.mainRows = rows.map((row, index) => ({
     date: String(records[index].DueDate || '').substring(0, 10),
     row: buildMainRow(result, row.Severity, {
-      whatWillBreak: t('whatWillBreakImpactReleaseUpdate', { title: row.Item }),
+      whatWillBreak: row.WhatWillBreak,
       date: row.Deadline,
-      whatToDo: t('whatWillBreakTodoReleaseUpdates'),
+      whatToDo: row.Recommendation,
       announcementUrl: setupUrl,
       count: 1,
     }),
+    relatedCheckKey: RELEASE_UPDATE_RELATED_CHECKS[records[index].DeveloperName],
   }));
   result.detailReportRows = records;
   result.detailReportTitle = t('whatWillBreakReleaseUpdatesReportTitle');

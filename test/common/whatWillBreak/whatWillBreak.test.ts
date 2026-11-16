@@ -5,10 +5,17 @@ import {
   parseWhatWillBreakChecks,
   runWhatWillBreak,
   WHAT_WILL_BREAK_CHECK_KEYS,
+  WHAT_WILL_BREAK_MAX_MAIN_ROWS_PER_CHECK,
   writeWhatWillBreakReports,
 } from '../../../src/common/whatWillBreak/index.js';
 import { getLongestGapDays, isSalesforceEndUserApp } from '../../../src/common/whatWillBreak/authChecks.js';
-import { WhatWillBreakCheckResult, WhatWillBreakResult } from '../../../src/common/whatWillBreak/whatWillBreakTypes.js';
+import {
+  WhatWillBreakCheckKey,
+  WhatWillBreakCheckResult,
+  WhatWillBreakDetailRow,
+  WhatWillBreakResult,
+} from '../../../src/common/whatWillBreak/whatWillBreakTypes.js';
+import { markRowSensitiveValues, SENSITIVE_VALUES_KEY } from '../../../src/common/utils/anonymizeUtils.js';
 import { getUserNotifications, resolveMonitoringCommands } from '../../../src/common/notifProvider/utils/notificationConfig.js';
 import { computeHealthScore } from '../../../src/common/monitoring/healthScore.js';
 import { WebSocketClient } from '../../../src/common/websocketClient.js';
@@ -53,6 +60,27 @@ function mockConnection(org: Partial<CadenceOrg> & { releaseUpdates?: any[]; rel
 
 function refreshDay(userId: string, application: string, day: string, status = 'Success') {
   return { UserId: userId, Application: application, Status: status, d: day, cnt: 1 };
+}
+
+// A finding as the checks build it: its own texts, and its username marked as personal
+function finding(key: WhatWillBreakCheckKey, severity: 'error' | 'warning', user: string): WhatWillBreakDetailRow {
+  return markRowSensitiveValues<WhatWillBreakDetailRow>(
+    {
+      Check: key,
+      CheckKey: key,
+      Severity: severity,
+      Deadline: '2026-12-01 (16 days left)',
+      Item: user,
+      Details: 'details',
+      WhatWillBreak: `What breaks for ${user}`,
+      LastSeen: '',
+      Count: 1,
+      Recommendation: `Steps for ${user}`,
+      HowToFix: `https://doc#${key}`,
+      Article: 'https://help.salesforce.com/article',
+    },
+    [{ value: user, kind: 'user' }]
+  );
 }
 
 function check(values: Partial<WhatWillBreakCheckResult> & Pick<WhatWillBreakCheckResult, 'key' | 'status'>): WhatWillBreakCheckResult {
@@ -222,8 +250,20 @@ describe('whatWillBreak', () => {
         checks: [
           check({ key: 'deviceFlow', status: 'success', metric: 0 }),
           check({ key: 'sfConnectLegacyAuth', status: 'info', notChecked: true, detail: 'Not available on this org' }),
-          check({ key: 'usernamePasswordFlow', status: 'warning', metric: 3, reportFiles: ['C:/reports/what-will-break-usernamePasswordFlow.csv'] }),
-          check({ key: 'soapLoginPermission', status: 'error', metric: 2, reportFiles: ['C:/reports/what-will-break-soapLoginPermission.csv'] }),
+          check({
+            key: 'usernamePasswordFlow',
+            status: 'warning',
+            metric: 1,
+            rows: [finding('usernamePasswordFlow', 'warning', 'sync@example.com')],
+            reportFiles: ['C:/reports/what-will-break-usernamePasswordFlow.csv'],
+          }),
+          check({
+            key: 'soapLoginPermission',
+            status: 'error',
+            metric: 1,
+            rows: [finding('soapLoginPermission', 'error', 'etl@example.com')],
+            reportFiles: ['C:/reports/what-will-break-soapLoginPermission.csv'],
+          }),
         ],
       };
       const { mainRows } = await writeWhatWillBreakReports(result);
@@ -240,6 +280,88 @@ describe('whatWillBreak', () => {
       expect(mainRows[2]['What will break']).to.equal('Not available on this org');
       expect(mainRows[3].Severity).to.equal('success');
       expect(mainRows[3].Status).to.contain('✅');
+    });
+
+    it('makes one row per finding, naming what breaks and what to do for that item, with its user marked for the anonymization', async () => {
+      const result: WhatWillBreakResult = {
+        isSandbox: false,
+        severity: 'warning',
+        metrics: {},
+        checks: [
+          check({
+            key: 'usernamePasswordFlow',
+            status: 'warning',
+            metric: 2,
+            rows: [finding('usernamePasswordFlow', 'warning', 'sync@example.com'), finding('usernamePasswordFlow', 'warning', 'etl@example.com')],
+          }),
+        ],
+      };
+      const { mainRows } = await writeWhatWillBreakReports(result);
+      expect(mainRows.map((row) => row['What will break'])).to.deep.equal([
+        'What breaks for sync@example.com',
+        'What breaks for etl@example.com',
+      ]);
+      expect(mainRows[0]['What to do']).to.equal('Steps for sync@example.com');
+      expect((mainRows[0] as any)[SENSITIVE_VALUES_KEY]).to.deep.equal([{ value: 'sync@example.com', kind: 'user' }]);
+    });
+
+    it('lists the first findings of a check, and points to its detail report for the others', async () => {
+      const rows = Array.from({ length: WHAT_WILL_BREAK_MAX_MAIN_ROWS_PER_CHECK + 5 }, (_, i) =>
+        finding('soapLoginRetirement', 'warning', `user${i}@example.com`)
+      );
+      const result: WhatWillBreakResult = {
+        isSandbox: false,
+        severity: 'warning',
+        metrics: {},
+        checks: [check({ key: 'soapLoginRetirement', status: 'warning', metric: rows.length, rows, reportFiles: ['C:/reports/soap.csv'] })],
+      };
+      const { mainRows } = await writeWhatWillBreakReports(result);
+      expect(mainRows).to.have.length(WHAT_WILL_BREAK_MAX_MAIN_ROWS_PER_CHECK + 1);
+      const last = mainRows[mainRows.length - 1];
+      expect(last['What will break']).to.contain('5');
+      expect(last['What to do']).to.contain('soap.csv');
+    });
+  });
+
+  describe('release updates checked by another check', () => {
+    it('tells in the release update row what the check of the same change found in this org', async () => {
+      const result = await runWhatWillBreak({
+        conn: mockConnection({
+          pairs: [
+            {
+              UserId: '005A',
+              LoginSubType: 'OAuth Device',
+              Application: 'Some CLI',
+              ApiVersion: '',
+              SourceIp: '10.0.0.1',
+              Status: 'Success',
+              cnt: 3,
+              lastLogin: '2026-11-10T10:00:00.000Z',
+            },
+          ],
+          users: [{ Id: '005A', Username: 'dev@example.com', IsActive: true }],
+          releaseUpdates: [
+            {
+              Title: 'Restrict the OAuth 2.0 Device Flow to Local External Client Apps',
+              DeveloperName: 'OAuthDeviceFlowRestrictionReleaseUpdate',
+              DueDate: '2026-11-30',
+              StepStage: 'Upcoming',
+              Status: 'Info',
+              Category: 'Security',
+            },
+          ],
+        }),
+        checks: ['deviceFlow', 'releaseUpdates'],
+        lookbackDays: 180,
+        idleWarningDays: 20,
+        ignoreUsers: [],
+        today: TODAY,
+      });
+      const deviceFlow = result.checks.find((c) => c.key === 'deviceFlow') as WhatWillBreakCheckResult;
+      expect(deviceFlow.rows[0].WhatWillBreak).to.contain('dev@example.com');
+      expect(deviceFlow.rows[0].Recommendation).to.contain('External Client App');
+      const releaseUpdates = result.checks.find((c) => c.key === 'releaseUpdates') as WhatWillBreakCheckResult;
+      expect(releaseUpdates.mainRows?.[0].row['What to do']).to.contain(deviceFlow.title);
     });
   });
 

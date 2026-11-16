@@ -1,7 +1,7 @@
 import { t } from '../utils/i18n.js';
 import { getConnectedAppsUsage } from '../utils/connectedAppsUsageUtils.js';
 import { buildRow, finalizeCheck, notAvailableResult } from './checkResults.js';
-import { getDeadlineSeverity } from './whatWillBreakDeadlines.js';
+import { getDeadlineSeverity, getDeadlineWhen } from './whatWillBreakDeadlines.js';
 import { CheckContext, WhatWillBreakCheckKey, WhatWillBreakCheckResult } from './whatWillBreakTypes.js';
 
 // Connected Apps the org owns and still uses: they must become External Client Apps before Salesforce stops supporting them.
@@ -17,18 +17,19 @@ export async function checkConnectedAppsToEca(context: CheckContext): Promise<Wh
   }
   const severity = getDeadlineSeverity(key, context.isSandbox, context.today);
   const toMove = usage.filter((app) => app['Move to External Client App'] === 'Required');
+  const when = getDeadlineWhen(key, context.isSandbox, context.today);
   const rows = toMove.map((app) =>
     buildRow(context, key, title, severity, {
       Item: app['Connected App'],
       Details: t('whatWillBreakDetailConnectedAppToMove', { lastUsed: app['Last Used Date'] }),
+      WhatWillBreak: t('whatWillBreakConnectedAppImpact', { app: app['Connected App'], lastUsed: app['Last Used Date'], when }),
       LastSeen: app['Last Used Date'],
       Count: '',
-      Recommendation: t('whatWillBreakTodoConnectedAppsToEca'),
+      Recommendation: t('whatWillBreakConnectedAppTodo', { app: app['Connected App'] }),
     })
   );
   const result = finalizeCheck(context, key, title, rows, rows.length, t('whatWillBreakFoundConnectedApps', { count: rows.length }));
   if (rows.length > 0) {
-    result.impactItems = toMove.map((app) => app['Connected App']);
     // The whole usage list: the apps of vendors and the unused ones tell what else to clean up
     result.detailReportRows = usage;
     result.detailReportTitle = t('connectedAppsUsageFiletitle');

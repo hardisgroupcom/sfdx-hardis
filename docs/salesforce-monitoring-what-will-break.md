@@ -37,15 +37,15 @@ Salesforce has moved several of these dates already. Check the announcement of e
 
 ### Reports
 
-The **main report** (`what-will-break-<date>.csv` and `.xlsx`) has one row per thing that will break, and one row per check that found nothing:
+The **main report** (`what-will-break-<date>.csv` and `.xlsx`) has one row per thing that will break (an integration and its user, a Connected App, a data source, a range of API versions, a release update), and one row per check that found nothing. A check with more than 20 findings lists the first 20, and a last row points to its detail report for the others:
 
 | Column                  | Content                                                                                            |
 |-------------------------|----------------------------------------------------------------------------------------------------|
 | Status                  | ❌ Error, ⚠️ Warning, ℹ️ Info, ⏸️ Not checked (the reason is in What will break) or ✅ OK            |
 | Check                   | The check                                                                                          |
-| What will break         | What fails and how many integrations, calls or apps are concerned. On an OK row, what was checked. |
+| What will break         | What fails, for which app, user or data source, and when. On an OK row, what was checked.          |
 | Date                    | When it breaks: a day, "Enforced since", or a Salesforce release such as "Summer '28 (2028-06)"    |
-| What to do              | The action that avoids the break                                                                   |
+| What to do              | The steps that fix this item and keep it from breaking again, or the report file that lists them   |
 | Salesforce announcement | The official Salesforce page of the change                                                         |
 | How to fix              | The section of this page with the steps                                                            |
 | Count                   | The number of items found                                                                          |
@@ -53,7 +53,7 @@ The **main report** (`what-will-break-<date>.csv` and `.xlsx`) has one row per t
 
 What will break comes first: errors, then warnings, the earliest date first. A check that could not run on the org (missing object or permission) is **Not checked**, never OK: it proves nothing.
 
-Each check that found something writes its own **detail report** (`what-will-break-<check>-<date>`), with one row per user, app, data source or release update to fix. The calls to retired API versions keep the reports of the former `hardis:org:diagnose:legacyapi`, including one file of API clients (IP addresses) per severity.
+Each check that found something writes its own **detail report** (`what-will-break-<check>-<date>`), with one row per user, app, data source or release update to fix, and the same **WhatWillBreak** and **Recommendation** texts. The calls to retired API versions keep the reports of the former `hardis:org:diagnose:legacyapi`, including one file of API clients (IP addresses) per severity.
 
 ### What each check looks at
 
