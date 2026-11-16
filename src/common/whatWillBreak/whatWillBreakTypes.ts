@@ -131,6 +131,8 @@ export interface CheckContext {
   ignoreSet: Set<string>;
   // Filled by loadLoginHistory, only when a selected check needs the logins
   logins: LoginContext;
+  // Every OAuth token of the org, read once by the first check that needs them (see getOrgOAuthTokens)
+  oauthTokens?: Promise<any[]>;
   commandThis?: any;
   debugMode?: boolean;
 }

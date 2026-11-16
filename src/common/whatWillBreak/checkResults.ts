@@ -1,4 +1,6 @@
 import { t } from '../utils/i18n.js';
+import { OAUTH_TOKEN_QUERY } from '../utils/connectedAppsUsageUtils.js';
+import { queryAllOAuthTokens } from '../utils/oauthTokenUtils.js';
 import { getDeadlineLabel, getFixDocUrl, WHAT_WILL_BREAK_DEADLINES } from './whatWillBreakDeadlines.js';
 import {
   CheckContext,
@@ -10,6 +12,15 @@ import {
 } from './whatWillBreakTypes.js';
 
 export const DAY_MS = 86400000;
+
+// Every OAuth token of the org, read once per run: the idle tokens and the Connected Apps checks both need them,
+// and reading them is a full Bulk extraction on orgs with many mobile users
+export function getOrgOAuthTokens(context: CheckContext): Promise<any[]> {
+  if (!context.oauthTokens) {
+    context.oauthTokens = queryAllOAuthTokens(context.conn, OAUTH_TOKEN_QUERY);
+  }
+  return context.oauthTokens;
+}
 
 // Result of a check from its findings: its status is the most severe finding, or success when it found nothing
 export function finalizeCheck(

@@ -2,11 +2,10 @@ import { Connection, SfError } from '@salesforce/core';
 import { WebSocketClient } from '../websocketClient.js';
 import { isFieldOnObject, isUnsupportedSObjectError, soqlQuery } from '../utils/apiUtils.js';
 import { markRowSensitiveValues } from '../utils/anonymizeUtils.js';
-import { queryAllOAuthTokens } from '../utils/oauthTokenUtils.js';
 import { isIpInRange, isRangeWiderThan } from '../utils/ipRangeUtils.js';
 import { t } from '../utils/i18n.js';
 import { getDateLabel, getDeadlineLabel, getDeadlineSeverity, getDeadlineWhen, getFixDocUrl } from './whatWillBreakDeadlines.js';
-import { buildRow, DAY_MS, finalizeCheck, formatDate, notAvailableResult, successRow } from './checkResults.js';
+import { buildRow, DAY_MS, finalizeCheck, formatDate, getOrgOAuthTokens, notAvailableResult, successRow } from './checkResults.js';
 import {
   CheckContext,
   LoginContext,
@@ -231,10 +230,7 @@ async function checkIdleRefreshTokens(context: CheckContext): Promise<WhatWillBr
   const title = t('authRetirementsCheckIdleTokens');
   let tokens: any[];
   try {
-    tokens = await queryAllOAuthTokens(
-      context.conn,
-      'SELECT Id, AppName, LastUsedDate, CreatedDate, UseCount, UserId, User.Username, User.IsActive FROM OAuthToken'
-    );
+    tokens = await getOrgOAuthTokens(context);
   } catch (e) {
     return notAvailableResult(context, key, title, (e as Error).message);
   }
@@ -334,16 +330,12 @@ async function checkRefreshTokenCadence(context: CheckContext): Promise<WhatWill
   const title = t('whatWillBreakCheckRefreshTokenCadence');
   const subTypes = REFRESH_TOKEN_SUBTYPES.map((subType) => `'${subType}'`).join(',');
   const where = `WHERE LoginTime = LAST_N_DAYS:${context.lookbackDays} AND LoginSubType IN (${subTypes})`;
-  let pairs: any[];
+  let candidateUserIds: string[];
   try {
-    pairs = (await soqlQuery(`SELECT UserId, Application, COUNT(Id) cnt FROM LoginHistory ${where} GROUP BY UserId, Application`, context.conn))
-      .records || [];
+    candidateUserIds = await queryRefreshTokenUserIds(context.conn, where);
   } catch {
     return notAvailableResult(context, key, title, t('authRetirementsLoginHistoryUnavailable'));
   }
-  const candidateUserIds = Array.from(
-    new Set(pairs.filter((pair) => pair.UserId && !isSalesforceEndUserApp(pair.Application)).map((pair) => pair.UserId as string))
-  );
   const users = await queryUsersByIds(context.conn, candidateUserIds);
   const activeUsers = users.filter(
     (user) => (user.IsActive === true || user.IsActive === 'true') && !context.ignoreSet.has((user.Username || '').toLowerCase())
@@ -364,11 +356,16 @@ async function checkRefreshTokenCadence(context: CheckContext): Promise<WhatWill
   const rows: WhatWillBreakDetailRow[] = [];
   for (const pair of daysByPair.values()) {
     const days = Array.from(pair.days).sort();
+    const username = usernameById.get(pair.userId) || pair.userId;
+    // One day of use gives no gap to measure: a semi-annual sync looks like that
+    if (days.length === 1) {
+      rows.push(singleUseRow(context, key, title, severity, { app: pair.application, user: username, day: days[0] }));
+      continue;
+    }
     const longestGap = getLongestGapDays(days);
     if (longestGap < REFRESH_TOKEN_IDLE_TTL_DAYS) {
       continue;
     }
-    const username = usernameById.get(pair.userId) || pair.userId;
     const params = { app: pair.application, user: username, days: longestGap };
     rows.push(
       markRowSensitiveValues<WhatWillBreakDetailRow>(
@@ -385,7 +382,49 @@ async function checkRefreshTokenCadence(context: CheckContext): Promise<WhatWill
     );
   }
   rows.sort((a, b) => a.Item.localeCompare(b.Item));
-  return finalizeCheck(context, key, title, rows, rows.length, t('whatWillBreakFoundRefreshCadence', { count: rows.length }));
+  // A recent single use is information: it does not count as an integration that refreshes too rarely
+  const found = rows.filter((row) => row.Severity !== 'info').length;
+  return finalizeCheck(context, key, title, rows, found, t('whatWillBreakFoundRefreshCadence', { count: found }));
+}
+
+// Users who refreshed a token, without the Salesforce end-user apps. Past 2000 user and app pairs (the aggregate limit),
+// users are grouped alone, and past 2000 users every active user is read: the day queries keep only the users who refreshed.
+async function queryRefreshTokenUserIds(conn: Connection, where: string): Promise<string[]> {
+  const unique = (ids: string[]) => Array.from(new Set(ids.filter((id) => !!id)));
+  const pairs = (await soqlQuery(`SELECT UserId, Application, COUNT(Id) cnt FROM LoginHistory ${where} GROUP BY UserId, Application`, conn)).records || [];
+  if (pairs.length < LOGIN_AGGREGATE_MAX_GROUPS) {
+    return unique(pairs.filter((pair) => !isSalesforceEndUserApp(pair.Application)).map((pair) => pair.UserId));
+  }
+  const users = (await soqlQuery(`SELECT UserId, COUNT(Id) cnt FROM LoginHistory ${where} GROUP BY UserId`, conn)).records || [];
+  if (users.length < LOGIN_AGGREGATE_MAX_GROUPS) {
+    return unique(users.map((user) => user.UserId));
+  }
+  const activeUsers = (await soqlQuery('SELECT Id FROM User WHERE IsActive = true', conn)).records || [];
+  return unique(activeUsers.map((user) => user.Id));
+}
+
+// An app and user that refreshed its token on one day only: its token has expired when that day is 30 days or more ago
+function singleUseRow(
+  context: CheckContext,
+  key: WhatWillBreakCheckKey,
+  title: string,
+  severity: WhatWillBreakSeverity,
+  use: { app: string; user: string; day: string }
+): WhatWillBreakDetailRow {
+  const daysSinceUse = Math.floor((context.today.getTime() - new Date(use.day).getTime()) / DAY_MS);
+  const expired = daysSinceUse >= REFRESH_TOKEN_IDLE_TTL_DAYS;
+  const params = { ...use, days: daysSinceUse, lookback: context.lookbackDays };
+  return markRowSensitiveValues<WhatWillBreakDetailRow>(
+    buildRow(context, key, title, expired ? severity : 'info', {
+      Item: `${use.app} - ${use.user}`,
+      Details: t('whatWillBreakDetailRefreshSingleUse', params),
+      WhatWillBreak: t(expired ? 'whatWillBreakRefreshSingleUseExpiredImpact' : 'whatWillBreakRefreshSingleUseImpact', params),
+      LastSeen: use.day,
+      Count: 1,
+      Recommendation: t('whatWillBreakRefreshCadenceTodo', params),
+    }),
+    [{ value: use.user, kind: 'user' }]
+  );
 }
 
 // Days of refresh token use per user, app and status. A grouped query returns at most 2000 groups:
@@ -546,11 +585,12 @@ function checkSoapLoginInactivity(context: CheckContext): WhatWillBreakCheckResu
   if (context.logins.failed) {
     return loginHistoryUnavailableResult(context, key, title);
   }
-  const groups = filterLoginGroups(
-    context,
-    groupLogins(context.logins.records, context.logins.usernameById, SOAP_LOGIN_SUBTYPES, ['userId'])
-  ).filter((group) => group.successCount > 0);
-  const lastOrgCall = groups.reduce((latest, group) => (group.lastSuccess > latest ? group.lastSuccess : latest), '');
+  // Every caller keeps login() on in the org, ignored users included: they only leave the list of rare callers
+  const allCallers = groupLogins(context.logins.records, context.logins.usernameById, SOAP_LOGIN_SUBTYPES, ['userId']).filter(
+    (group) => group.successCount > 0
+  );
+  const groups = filterLoginGroups(context, allCallers);
+  const lastOrgCall = allCallers.reduce((latest, group) => (group.lastSuccess > latest ? group.lastSuccess : latest), '');
   if (!lastOrgCall) {
     const row = buildRow(context, key, title, 'info', {
       Item: '-',

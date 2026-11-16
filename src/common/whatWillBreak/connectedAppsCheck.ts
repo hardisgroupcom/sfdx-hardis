@@ -1,6 +1,6 @@
 import { t } from '../utils/i18n.js';
 import { getConnectedAppsUsage } from '../utils/connectedAppsUsageUtils.js';
-import { buildRow, finalizeCheck, notAvailableResult } from './checkResults.js';
+import { buildRow, finalizeCheck, getOrgOAuthTokens, notAvailableResult } from './checkResults.js';
 import { getDeadlineSeverity, getDeadlineWhen } from './whatWillBreakDeadlines.js';
 import { CheckContext, WhatWillBreakCheckKey, WhatWillBreakCheckResult } from './whatWillBreakTypes.js';
 
@@ -11,7 +11,7 @@ export async function checkConnectedAppsToEca(context: CheckContext): Promise<Wh
   const title = t('whatWillBreakCheckConnectedAppsToEca');
   let usage: Awaited<ReturnType<typeof getConnectedAppsUsage>>;
   try {
-    usage = await getConnectedAppsUsage(context.conn);
+    usage = await getConnectedAppsUsage(context.conn, { allOAuthTokens: await getOrgOAuthTokens(context) });
   } catch (e) {
     return notAvailableResult(context, key, title, (e as Error).message);
   }

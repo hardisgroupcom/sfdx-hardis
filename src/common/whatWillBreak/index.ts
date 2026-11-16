@@ -7,7 +7,7 @@ import { getMonitoringDisable } from '../notifProvider/utils/notificationConfig.
 import { markRowSensitiveValues, SENSITIVE_VALUES_KEY } from '../utils/anonymizeUtils.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { loadLoginHistory, needsLoginHistory, runAuthCheck } from './authChecks.js';
-import { buildMainRow } from './checkResults.js';
+import { buildMainRow, notAvailableResult } from './checkResults.js';
 import { checkConnectedAppsToEca } from './connectedAppsCheck.js';
 import { checkLegacyApiVersions } from './legacyApiCheck.js';
 import { checkReleaseUpdates } from './releaseUpdatesCheck.js';
@@ -124,7 +124,14 @@ export async function runWhatWillBreak(options: WhatWillBreakOptions): Promise<W
   };
   const selected = WHAT_WILL_BREAK_CHECKS.filter((check) => options.checks.includes(check.key));
   if (needsLoginHistory(selected.map((check) => check.key))) {
-    await withProgress(t('whatWillBreakReadingLoginHistory', { days: context.lookbackDays }), () => loadLoginHistory(context));
+    await withProgress(t('whatWillBreakReadingLoginHistory', { days: context.lookbackDays }), async () => {
+      try {
+        await loadLoginHistory(context);
+      } catch {
+        // The login based checks then report "Not checked", with the reason
+        context.logins = { failed: true, records: [], usernameById: new Map(), activeUserIds: new Set() };
+      }
+    });
   }
   const checks: WhatWillBreakCheckResult[] = [];
   for (const [index, check] of selected.entries()) {
@@ -182,7 +189,16 @@ async function withProgress<T>(title: string, run: () => Promise<T>): Promise<T>
   }
 }
 
+// A check that fails (query timeout, missing access...) is reported as not checked, and the other checks still report
 async function runCheck(context: CheckContext, check: WhatWillBreakCheckDefinition): Promise<WhatWillBreakCheckResult> {
+  try {
+    return await runCheckOfFamily(context, check);
+  } catch (e) {
+    return notAvailableResult(context, check.key, getWhatWillBreakCheckTitle(check.key), (e as Error).message);
+  }
+}
+
+async function runCheckOfFamily(context: CheckContext, check: WhatWillBreakCheckDefinition): Promise<WhatWillBreakCheckResult> {
   switch (check.family) {
     case 'auth':
       return runAuthCheck(context, check.key);

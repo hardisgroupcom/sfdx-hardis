@@ -24,7 +24,10 @@ const TODAY = new Date('2026-11-15T12:00:00Z');
 
 interface CadenceOrg {
   pairs: any[];
+  // Answer of the LoginHistory query grouped by user only (past 2000 user and app pairs)
+  userGroups: any[];
   days: any[];
+  daysThrow: boolean;
   users: any[];
 }
 
@@ -38,7 +41,13 @@ function mockConnection(org: Partial<CadenceOrg> & { releaseUpdates?: any[]; rel
         return { done: true, records: [{ IsSandbox: false }] };
       }
       if (soql.includes('DAY_ONLY(LoginTime)')) {
+        if (org.daysThrow) {
+          throw new Error('QUERY_TIMEOUT: Your query request was running for too long.');
+        }
         return { done: true, records: org.days || [] };
+      }
+      if (soql.includes('FROM LoginHistory') && soql.endsWith('GROUP BY UserId')) {
+        return { done: true, records: org.userGroups || [] };
       }
       if (soql.includes('FROM LoginHistory')) {
         return { done: true, records: org.pairs || [] };
@@ -200,6 +209,61 @@ describe('whatWillBreak', () => {
       expect(events[0].title).to.contain('1/2');
       expect(events[1]).to.include({ step: 1, totalSteps: 1 });
       expect(events[3].title).to.contain('2/2');
+    });
+  });
+
+  describe('refresh token use, edge cases', () => {
+    const run = (org: Partial<CadenceOrg>, checks: any[] = ['refreshTokenCadence']) =>
+      runWhatWillBreak({ conn: mockConnection(org), checks, lookbackDays: 180, idleWarningDays: 20, ignoreUsers: [], today: TODAY });
+
+    it('lists an app used on one day only: information when recent, warning once its token has expired', async () => {
+      const result = await run({
+        pairs: [
+          { UserId: '005A', Application: 'Semester Sync' },
+          { UserId: '005B', Application: 'New Sync' },
+        ],
+        users: [
+          { Id: '005A', Username: 'semester@example.com', IsActive: true },
+          { Id: '005B', Username: 'new@example.com', IsActive: true },
+        ],
+        days: [refreshDay('005A', 'Semester Sync', '2026-09-01'), refreshDay('005B', 'New Sync', '2026-11-10')],
+      });
+      const rows = result.checks[0].rows;
+      expect(rows.map((row) => [row.Item, row.Severity])).to.deep.equal([
+        ['New Sync - new@example.com', 'info'],
+        ['Semester Sync - semester@example.com', 'warning'],
+      ]);
+      // A recent single use is not an integration that refreshes too rarely (yet)
+      expect(result.metrics.IntegrationsRefreshingTooRarely).to.equal(1);
+    });
+
+    it('still reads every user past 2000 user and app pairs', async () => {
+      const result = await run({
+        pairs: Array.from({ length: 2000 }, (_, i) => ({ UserId: `005P${i}`, Application: `App ${i}` })),
+        userGroups: [{ UserId: '005A' }],
+        users: [{ Id: '005A', Username: 'sync@example.com', IsActive: true }],
+        days: [refreshDay('005A', 'Monthly Sync', '2026-08-01'), refreshDay('005A', 'Monthly Sync', '2026-11-14')],
+      });
+      expect(result.checks[0].rows.map((row) => row.Item)).to.deep.equal(['Monthly Sync - sync@example.com']);
+    });
+
+    it('reports a check that fails as not checked, and still runs the other checks', async () => {
+      const result = await run(
+        {
+          pairs: [{ UserId: '005A', Application: 'Monthly Sync' }],
+          users: [{ Id: '005A', Username: 'sync@example.com', IsActive: true }],
+          daysThrow: true,
+          releaseUpdates: [],
+        } as any,
+        ['refreshTokenCadence', 'releaseUpdates']
+      );
+      expect(result.checks.map((c) => [c.key, c.notChecked === true])).to.deep.equal([
+        ['refreshTokenCadence', true],
+        ['releaseUpdates', false],
+      ]);
+      expect(result.checks[0].detail).to.contain('QUERY_TIMEOUT');
+      // No metric for a check that did not run
+      expect(result.metrics).to.not.have.property('IntegrationsRefreshingTooRarely');
     });
   });
 

@@ -41,7 +41,9 @@ export async function checkLegacyApiVersions(context: CheckContext): Promise<Wha
     const deadline = getDeadlineLabel(deadlineKey, context.isSandbox, context.today);
     const versions = `${found.descriptor.minApiVersion} - ${found.descriptor.maxApiVersion}`;
     // The API clients file of this range lists the IP addresses and the users to go and fix
-    const clientsFile = collected.apiClientsFiles.find((file) => file.severity === found.descriptor.severity);
+    const clientsFile = collected.apiClientsFiles.find(
+      (file) => file.minApiVersion === found.descriptor.minApiVersion && file.maxApiVersion === found.descriptor.maxApiVersion
+    );
     const whatToDo = t('whatWillBreakLegacyApiTodo', {
       clientsFile: clientsFile ? path.basename(clientsFile.xlsxFile || clientsFile.csvFile) : path.basename(collected.csvFile || ''),
       ips: found.ipCount,

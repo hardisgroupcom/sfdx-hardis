@@ -64,7 +64,7 @@ The command starts with a list of every check, all selected: keep the ones to ru
 | Calls to retired API versions | API versions 30.0 and older are retired, 31.0 to 40.0 are retired in Summer '28 | Summer '25 and Summer '28 |
 | Release updates due | Each release update is enforced on its due date | The due date of each release update |
 
-Each check that found something also writes its own report. The legacy API check keeps the files of [hardis:org:diagnose:legacyapi](${CONSTANTS.DOC_URL_ROOT}/hardis/org/diagnose/legacyapi/), including one file of API clients (IP addresses) per severity.
+Each check that found something also writes its own report. The legacy API check keeps the files of [hardis:org:diagnose:legacyapi](${CONSTANTS.DOC_URL_ROOT}/hardis/org/diagnose/legacyapi/), including one file of API clients (IP addresses) per range of API versions.
 
 Idle refresh tokens are only reported one by one for **API only users**, which run the integrations: the tokens of other users are counted per app. The refresh token use check covers every user, except in Salesforce's own end-user apps (mobile, Outlook, Authenticator...).
 
@@ -89,7 +89,7 @@ In agent mode, and in CI, the list of checks is not shown: \`--checks\` picks th
 The command's implementation:
 
 - **LoginHistory:** a single aggregate SOQL query (grouped by user, login type, app, API version, IP address and status) reads the logins of the last \`--lookback-days\` days (default and maximum 180, the LoginHistory retention) whose \`LoginSubType\` is a SOAP API login, \`OAuth Device\`, \`OAuth Username-Password\` or an \`OAuth User-Agent\` flow. \`Application\`, \`ApiVersion\` and \`Status\` cannot be filtered in SOQL but can be grouped. The Bulk API does not support \`LoginHistory\`. When the aggregate query fails or returns 2000 groups, the raw logins are read instead.
-- **Refresh token use:** the \`OAuth Refresh Token\` logins are grouped by user, app, status and day (\`DAY_ONLY(LoginTime)\`), 20 users per query, a chunk being split in two when it reaches the 2000 groups limit. A user and app whose longest gap between two days of use is 30 days or more is reported.
+- **Refresh token use:** the \`OAuth Refresh Token\` logins are grouped by user, app, status and day (\`DAY_ONLY(LoginTime)\`), 20 users per query, a chunk being split in two when it reaches the 2000 groups limit. A user and app whose longest gap between two days of use is 30 days or more is reported, and so is one used on a single day (as information while that day is less than 30 days ago). Past 2000 user and app pairs, the users are grouped alone, then every active user is read.
 - **Use Any API Auth:** a describe confirms \`PermissionSet.PermissionsUseAnyApiAuth\` exists, then \`PermissionSetAssignment\` is queried in chunks of 200 users, which covers profiles, permission sets and permission set groups.
 - **OAuthToken:** every token is read (Bulk, page by page past the 2500 tokens limit). The idle time is the time since \`LastUsedDate\` (\`CreatedDate\` when never used). API only users come from \`PermissionSetAssignment\` on \`PermissionsApiUserOnly\`.
 - **Trusted IP ranges:** \`SecuritySettings.Metadata.networkAccess.ipRanges\` (Tooling API). Profile login IP ranges cannot be read with SOQL and are not taken into account.
@@ -169,7 +169,8 @@ The command's implementation:
     const agentMode = flags.agent === true;
     this.outputFile = flags.outputfile || null;
     const conn: Connection = flags['target-org'].getConnection();
-    const config = await getConfig('project');
+    // The user layer merges the branch file: a monitoring repository has one branch per org, with its own settings
+    const config = await getConfig('user');
 
     const checks = await this.selectChecks(flags.checks, config, agentMode);
     if (checks.length === 0) {
@@ -241,7 +242,11 @@ The command's implementation:
     const orgMarkdown = await getOrgMarkdown(conn?.instanceUrl);
     const notifButtons = await getNotificationButtons();
     const notifSeverity: NotifSeverity = result.severity;
-    const notifText = t('whatWillBreakNotificationText', { count: failingRows.length, orgMarkdown });
+    // Findings of every check: the main report lists at most 20 of them per check
+    const findingCount = result.checks
+      .flatMap((check) => check.rows)
+      .filter((row) => row.Severity === 'error' || row.Severity === 'warning').length;
+    const notifText = t('whatWillBreakNotificationText', { count: findingCount, orgMarkdown });
     // A finding that names a user or an IP address is counted in one line per check: the message is not anonymized, the attached report is
     const notifLines: { row: (typeof failingRows)[number]; count: number }[] = [];
     for (const row of failingRows) {
@@ -270,7 +275,7 @@ The command's implementation:
       severity: notifSeverity,
       attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
       logElements: mainRows,
-      data: { metric: failingRows.length },
+      data: { metric: findingCount },
       metrics: result.metrics,
     });
 

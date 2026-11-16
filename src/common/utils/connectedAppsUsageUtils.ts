@@ -28,6 +28,8 @@ export interface CollectOAuthTokensOptions {
   commandThis?: any;
   // true: log each step as an "action" line, like a command does. false: grey "log" lines only
   logActions?: boolean;
+  // OAuth tokens already read with OAUTH_TOKEN_QUERY: they are not read again
+  allOAuthTokens?: any[];
 }
 
 export interface OAuthTokensWithStatusResult {
@@ -43,12 +45,13 @@ export interface OAuthTokensWithStatusResult {
   convertedExtClientAppsWithoutPolicy: string[];
 }
 
-// AppMenuItem.NamespacePrefix tells a packaged Connected App (migrated by its vendor) from one the org owns
-const BASE_OAUTH_TOKEN_QUERY = "SELECT AppName, AppMenuItem.IsUsingAdminAuthorization, AppMenuItem.NamespacePrefix, LastUsedDate, CreatedDate, User.Name, User.Username, User.Profile.Name, UseCount, AppMenuItem.Id, AppMenuItem.Label, AppMenuItem.Name, AppMenuItem.ApplicationId, Id, DeleteToken FROM OAuthToken";
+// Every field the OAuthToken readers need, so the tokens can be read once and shared (hardis:org:diagnose:what-will-break).
+// AppMenuItem.NamespacePrefix tells a packaged Connected App (migrated by its vendor) from one the org owns.
+export const OAUTH_TOKEN_QUERY = "SELECT AppName, AppMenuItem.IsUsingAdminAuthorization, AppMenuItem.NamespacePrefix, LastUsedDate, CreatedDate, UserId, User.Name, User.Username, User.IsActive, User.Profile.Name, UseCount, AppMenuItem.Id, AppMenuItem.Label, AppMenuItem.Name, AppMenuItem.ApplicationId, Id, DeleteToken FROM OAuthToken";
 
 // Connected Apps usage of the org, without prompt, report file, table or notification, so it can run in CI
-export async function getConnectedAppsUsage(conn: Connection): Promise<ConnectedAppUsageRow[]> {
-  const { allOAuthTokensWithStatus } = await collectOAuthTokensWithStatus(conn);
+export async function getConnectedAppsUsage(conn: Connection, options: CollectOAuthTokensOptions = {}): Promise<ConnectedAppUsageRow[]> {
+  const { allOAuthTokensWithStatus } = await collectOAuthTokensWithStatus(conn, options);
   return await buildConnectedAppsUsage(allOAuthTokensWithStatus, conn);
 }
 
@@ -111,7 +114,8 @@ export async function collectOAuthTokensWithStatus(conn: Connection, options: Co
 
   // Collect all OAuth Tokens
   logStep(t('extractingAllOauthTokensFrom', { conn: conn.instanceUrl }));
-  const allOAuthTokens = await queryAllOAuthTokens(conn, BASE_OAUTH_TOKEN_QUERY);
+  // A copy: the list is sorted below, and the caller may share it with other readers
+  const allOAuthTokens = options.allOAuthTokens ? [...options.allOAuthTokens] : await queryAllOAuthTokens(conn, OAUTH_TOKEN_QUERY);
   sortArray(allOAuthTokens, { by: 'AppName' });
 
   // A Connected App migrated to an External Client App stays in the org as a read-only copy that is no longer

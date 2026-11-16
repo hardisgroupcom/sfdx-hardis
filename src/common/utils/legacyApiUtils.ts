@@ -102,6 +102,9 @@ export interface LegacyApiDescriptorResult {
 
 export interface LegacyApiClientsFile {
   severity: string;
+  // Range of API versions whose callers the file lists
+  minApiVersion: number;
+  maxApiVersion: number;
   csvFile: string;
   xlsxFile?: string;
 }
@@ -235,7 +238,7 @@ export class LegacyApiCallsCollector {
     const outputFileIps: string[] = [];
     for (const descriptor of this.descriptors) {
       if (descriptor.totalErrors > 0) {
-        const outputFileIp = await this.generateSummaryLog(descriptor.ipCounts, descriptor.severity);
+        const outputFileIp = await this.generateSummaryLog(descriptor);
         if (outputFileIp) {
           outputFileIps.push(outputFileIp);
         }
@@ -555,10 +558,10 @@ export class LegacyApiCallsCollector {
     }
   }
 
-  private async generateSummaryLog(
-    ipCounts: Record<string, { count: number; reasons: string[] }>,
-    severity: string
-  ): Promise<string | null> {
+  // One API clients file per range of API versions: several ranges share a severity, and each one has its own callers
+  private async generateSummaryLog(descriptor: LegacyApiDescriptorState): Promise<string | null> {
+    const { ipCounts, severity } = descriptor;
+    const range = `v${descriptor.minApiVersion}-${descriptor.maxApiVersion}`;
     if (!ipCounts || Object.keys(ipCounts).length === 0) {
       return null;
     }
@@ -593,12 +596,17 @@ export class LegacyApiCallsCollector {
     ];
     // Write output CSV with client api info
     const outputFileIps = this.outputFile.endsWith('.csv')
-      ? this.outputFile.replace('.csv', '.api-clients-' + severity + '.csv')
-      : this.outputFile + 'api-clients-' + severity + '.csv';
+      ? this.outputFile.replace('.csv', `.api-clients-${severity}-${range}.csv`)
+      : this.outputFile + `api-clients-${severity}-${range}.csv`;
     const outputFileIpsRes = await generateCsvFile(sortedIpResults, outputFileIps, {
-      fileTitle: `Legacy API Clients - ${severity}`,
+      fileTitle: `Legacy API Clients - ${severity} - API ${descriptor.minApiVersion} to ${descriptor.maxApiVersion}`,
     });
-    const apiClientsFile: LegacyApiClientsFile = { severity, csvFile: outputFileIps };
+    const apiClientsFile: LegacyApiClientsFile = {
+      severity,
+      minApiVersion: descriptor.minApiVersion,
+      maxApiVersion: descriptor.maxApiVersion,
+      csvFile: outputFileIps,
+    };
     if (outputFileIpsRes.xlsxFile) {
       apiClientsFile.xlsxFile = outputFileIpsRes.xlsxFile;
     }
