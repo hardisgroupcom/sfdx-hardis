@@ -218,7 +218,7 @@ In agent mode:
       }
     });
     this.outputFileConnectedApps = await generateReportPath('unsecured-connected-apps', this.outputFileConnectedApps);
-    this.outputFilesResConnectedApps = await generateCsvFile(uniqueUnsecureConnectedAppsWithTokens, this.outputFileConnectedApps, { fileTitle: t('unsecuredConnectedAppsFiletitle') });
+    this.outputFilesResConnectedApps = await generateCsvFile(uniqueUnsecureConnectedAppsWithTokens, this.outputFileConnectedApps, { fileTitle: t('unsecuredConnectedAppsFiletitle'), mainReport: true });
     if (uniqueUnsecuredAppNames.length > 0) {
       uxLog("action", this, c.cyan(t('unsecuredConnectedAppsFound', { count: uniqueUnsecuredAppNames.length })));
       uxLogTable(this, uniqueUnsecureConnectedAppsWithTokens);

@@ -1512,6 +1512,8 @@ export interface ExcelColumnStyle {
 
 export interface ExcelExportOptions {
   fileTitle?: string;
+  // The main report of the command: UIs show it before its other reports
+  mainReport?: boolean;
   csvFileTitle?: string;
   xlsFileTitle?: string;
   noExcel?: boolean;
@@ -1609,7 +1611,7 @@ export async function generateCsvFile(
     }
     const csvFileTitle = options?.fileTitle ? `${options.fileTitle} (CSV)` : options?.csvFileTitle ?? "Report (CSV)";
     if (!options?.skipNotifyToWebSocket) {
-      WebSocketClient.sendReportFileMessage(csvFile, csvFileTitle, "report");
+      WebSocketClient.sendReportFileMessage(csvFile, csvFileTitle, "report", undefined, { main: options?.mainReport });
     }
     if (data.length > 0 && !options?.noExcel) {
       await createXlsxFromCsv(csvFile, options, result);
@@ -1637,7 +1639,7 @@ export async function createXlsxFromCsv(outputPath: string, options: ExcelExport
       uxLog("action", this, c.cyan(c.italic(t('pleaseSeeDetailedXlsxLogIn', { xslxFile: c.bold(xslxFile) }))));
     }
     const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
-    WebSocketClient.sendReportFileMessage(xslxFile, xlsFileTitle, "report");
+    WebSocketClient.sendReportFileMessage(xslxFile, xlsFileTitle, "report", undefined, { main: options?.mainReport });
     result.xlsxFile = xslxFile;
     if (!isAgentMode() && !isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI()) {
       try {
@@ -1689,7 +1691,7 @@ export async function createXlsxFromCsvFiles(csvFilesPath: string[], outputPath:
       uxLog("action", this, c.cyan(c.italic(t('pleaseSeeDetailedXlsxLogIn', { xslxFile: c.bold(xslxFile) }))));
     }
     const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
-    WebSocketClient.sendReportFileMessage(xslxFile, xlsFileTitle, "report");
+    WebSocketClient.sendReportFileMessage(xslxFile, xlsFileTitle, "report", undefined, { main: options?.mainReport });
     if (!isAgentMode() && !isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI()) {
       try {
         uxLog("other", this, c.italic(c.grey(t('openingXlsxFileDefineNoopenTrueTo', { xslxFile: c.bold(xslxFile) }))));

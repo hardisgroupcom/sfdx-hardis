@@ -6,6 +6,7 @@
   - New [hardis:org:diagnose:what-will-break](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/what-will-break/), run every day by the monitoring, from authentication changes to retired API versions and release updates.
   - [hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/) and [hardis:org:diagnose:releaseupdates](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/releaseupdates/) are deprecated: the monitoring runs What will break instead, and keeps their settings.
   - [hardis:org:diagnose:unsecure-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps/): the Connected Apps usage report tells which apps to move to External Client Apps before Summer '27, and the notification attaches its report again.
+  - In VS Code, each check shows its progress while it runs.
   - Grafana: new What will break row on the Org Security dashboard.
 - [Browser deployment action](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions-browser/#deployment-errors-a-browser-action-solves):
   - The deployment assistant suggests it for the errors it can solve, with the command that adds it to your Pull Request.
@@ -30,6 +31,7 @@
 - GitHub: QuickDeploy finds the validation of Pull Requests merged long after they were created (closed Pull Requests are now searched by update date instead of creation date).
 - Docker images: lighter, with the Docker client and a Java runtime instead of the full Docker engine and JDK, and no bundled Codex.
 - Ubuntu Docker image: the build falls back to the kernel.org Ubuntu mirror when archive.ubuntu.com cannot be reached.
+- VS Code: the main report of a command is the first report button, before its detail reports (What will break, Apex and Flow errors, legacy API calls, Connected Apps, storage stats, object field usage, DORA report).
 - [Codex AI provider](https://sfdx-hardis.cloudity.com/salesforce-ai-setup/#with-codex-directly): sfdx-hardis no longer bundles Codex, install the Codex CLI or use a with-agents Docker image.
 - Doc: the [window of a Pull Request](https://sfdx-hardis.cloudity.com/vscode-extension-devops-pipeline/#find-and-open-any-pull-request) in VS Code explains its new search bar (Ctrl+F).
 - Doc: the DevOps Pipeline pictures show the **Major branches | Feature branches | Dev orgs** switch, and the settings menu lists Replacement Rules and Register a development org.

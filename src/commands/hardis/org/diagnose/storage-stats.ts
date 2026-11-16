@@ -398,7 +398,7 @@ In agent mode, all interactive prompts are skipped with sensible defaults:
     const fileTitleBreakdown = isDateFieldForGranularity
       ? `Storage stats breakdown by ${breakdownField} (${this.dateGranularity})${whereInfo}`
       : `Storage stats breakdown by ${breakdownField}${whereInfo}`;
-    this.outputFilesRes = await generateCsvFile(this.tableStorageInfos, this.outputFile, { fileTitle: fileTitleBreakdown });
+    this.outputFilesRes = await generateCsvFile(this.tableStorageInfos, this.outputFile, { fileTitle: fileTitleBreakdown, mainReport: true });
 
     // Generate output CSV file with only total per object
     const outputFileTotals = this.outputFile.replace('.csv', '-totals.csv');

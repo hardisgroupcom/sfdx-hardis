@@ -11,6 +11,7 @@ import { getLongestGapDays, isSalesforceEndUserApp } from '../../../src/common/w
 import { WhatWillBreakCheckResult, WhatWillBreakResult } from '../../../src/common/whatWillBreak/whatWillBreakTypes.js';
 import { getUserNotifications, resolveMonitoringCommands } from '../../../src/common/notifProvider/utils/notificationConfig.js';
 import { computeHealthScore } from '../../../src/common/monitoring/healthScore.js';
+import { WebSocketClient } from '../../../src/common/websocketClient.js';
 
 const TODAY = new Date('2026-11-15T12:00:00Z');
 
@@ -139,6 +140,38 @@ describe('whatWillBreak', () => {
       // The failed refresh of October is not a use: the longest gap is from September 5 to November 14
       expect(cadence.rows[0].Details).to.contain('70');
       expect(result.metrics.IntegrationsRefreshingTooRarely).to.equal(1);
+    });
+  });
+
+  describe('progress in the UIs', () => {
+    it('shows each check as a progress block, with the steps of the refresh token use check', async () => {
+      const originalSendMessage = WebSocketClient.sendMessage;
+      const events: any[] = [];
+      try {
+        WebSocketClient.sendMessage = (data: any) => {
+          if (String(data.event).startsWith('progress')) {
+            events.push(data);
+          }
+        };
+        await runWhatWillBreak({
+          conn: mockConnection({
+            pairs: [{ UserId: '005A', Application: 'Monthly Sync' }],
+            users: [{ Id: '005A', Username: 'sync@example.com', IsActive: true }],
+            days: [refreshDay('005A', 'Monthly Sync', '2026-11-14')],
+          }),
+          checks: ['refreshTokenCadence', 'releaseUpdates'],
+          lookbackDays: 180,
+          idleWarningDays: 20,
+          ignoreUsers: [],
+          today: TODAY,
+        });
+      } finally {
+        WebSocketClient.sendMessage = originalSendMessage;
+      }
+      expect(events.map((event) => event.event)).to.deep.equal(['progressStart', 'progressStep', 'progressEnd', 'progressStart', 'progressEnd']);
+      expect(events[0].title).to.contain('1/2');
+      expect(events[1]).to.include({ step: 1, totalSteps: 1 });
+      expect(events[3].title).to.contain('2/2');
     });
   });
 

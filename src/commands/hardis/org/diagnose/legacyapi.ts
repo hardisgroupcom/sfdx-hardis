@@ -110,6 +110,7 @@ In agent mode, the command runs fully automatically with no interactive prompts.
       outputFile: flags.outputfile || null,
       debugMode: this.debugMode,
       commandThis: this,
+      mainReport: true,
       // Build command result before the report files are written, to keep the same output order
       onAnalysisComplete: (descriptors) => {
         const hasBlockingErrors = descriptors.some(

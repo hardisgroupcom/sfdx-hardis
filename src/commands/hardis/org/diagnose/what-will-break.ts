@@ -203,7 +203,7 @@ The command's implementation:
     // Reports of the checks, then the main report
     const { mainRows, reportFiles } = await writeWhatWillBreakReports(result);
     this.outputFile = await generateReportPath('what-will-break', this.outputFile);
-    this.outputFilesRes = await generateCsvFile(mainRows, this.outputFile, { fileTitle: t('whatWillBreakReportFileTitle') });
+    this.outputFilesRes = await generateCsvFile(mainRows, this.outputFile, { fileTitle: t('whatWillBreakReportFileTitle'), mainReport: true });
 
     // Summary: the main report, what will break first
     uxLog('action', this, c.cyan(t('whatWillBreakSummaryHeader')));
@@ -231,7 +231,8 @@ The command's implementation:
     } else if (result.severity === 'warning') {
       uxLog('warning', this, c.yellow(t('whatWillBreakSummaryWarning')));
     } else {
-      uxLog('error', this, c.red(t('whatWillBreakSummaryError')));
+      // Not an error log line: finding what will break is the expected result of a run, and an error line shows the run as failed in VS Code
+      uxLog('warning', this, c.yellow(t('whatWillBreakSummaryError')));
     }
 
     // Notification: one line per thing to act on, the details are in the attached main report

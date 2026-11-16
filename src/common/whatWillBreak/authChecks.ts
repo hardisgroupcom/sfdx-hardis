@@ -1,4 +1,5 @@
-import { Connection } from '@salesforce/core';
+import { Connection, SfError } from '@salesforce/core';
+import { WebSocketClient } from '../websocketClient.js';
 import { isFieldOnObject, isUnsupportedSObjectError, soqlQuery } from '../utils/apiUtils.js';
 import { markRowSensitiveValues } from '../utils/anonymizeUtils.js';
 import { queryAllOAuthTokens } from '../utils/oauthTokenUtils.js';
@@ -90,11 +91,18 @@ const LOGIN_BASED_CHECKS: WhatWillBreakCheckKey[] = [
   'soapLoginRetirement',
 ];
 
-// Run the selected authentication checks, in the order given
-export async function runAuthChecks(context: CheckContext, keys: WhatWillBreakCheckKey[]): Promise<WhatWillBreakCheckResult[]> {
-  if (keys.some((key) => LOGIN_BASED_CHECKS.includes(key))) {
-    context.logins = await fetchLogins(context.conn, context.lookbackDays);
-  }
+// True when one of the given checks reads the shared LoginHistory query
+export function needsLoginHistory(keys: WhatWillBreakCheckKey[]): boolean {
+  return keys.some((key) => LOGIN_BASED_CHECKS.includes(key));
+}
+
+// Read the LoginHistory rows the login based checks share, once, before they run
+export async function loadLoginHistory(context: CheckContext): Promise<void> {
+  context.logins = await fetchLogins(context.conn, context.lookbackDays);
+}
+
+// Run one authentication check. The login based ones need loadLoginHistory first.
+export async function runAuthCheck(context: CheckContext, key: WhatWillBreakCheckKey): Promise<WhatWillBreakCheckResult> {
   const runners: Partial<Record<WhatWillBreakCheckKey, () => Promise<WhatWillBreakCheckResult> | WhatWillBreakCheckResult>> = {
     idleRefreshTokens: () => checkIdleRefreshTokens(context),
     refreshTokenCadence: () => checkRefreshTokenCadence(context),
@@ -106,14 +114,11 @@ export async function runAuthChecks(context: CheckContext, keys: WhatWillBreakCh
     sfConnectLegacyAuth: () => checkSfConnectLegacyAuth(context),
     soapLoginRetirement: () => checkSoapLoginRetirement(context),
   };
-  const results: WhatWillBreakCheckResult[] = [];
-  for (const key of keys) {
-    const runner = runners[key];
-    if (runner) {
-      results.push(await runner());
-    }
+  const runner = runners[key];
+  if (!runner) {
+    throw new SfError(`${key} is not an authentication check`);
   }
-  return results;
+  return runner();
 }
 
 // Longest number of days between two consecutive days of use (YYYY-MM-DD strings, sorted)
@@ -381,8 +386,11 @@ async function checkRefreshTokenCadence(context: CheckContext): Promise<WhatWill
 // a chunk of users that reaches it is split in two and read again.
 async function queryRefreshTokenDays(conn: Connection, where: string, userIds: string[]): Promise<any[]> {
   const records: any[] = [];
+  const chunkCount = Math.ceil(userIds.length / REFRESH_DAYS_USER_CHUNK_SIZE);
   for (let i = 0; i < userIds.length; i += REFRESH_DAYS_USER_CHUNK_SIZE) {
     records.push(...(await queryRefreshTokenDaysChunk(conn, where, userIds.slice(i, i + REFRESH_DAYS_USER_CHUNK_SIZE))));
+    // Steps of the progress block the check runs in
+    WebSocketClient.sendProgressStepMessage(i / REFRESH_DAYS_USER_CHUNK_SIZE + 1, chunkCount);
   }
   return records;
 }

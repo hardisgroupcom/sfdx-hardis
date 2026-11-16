@@ -60,6 +60,11 @@ export interface OrgDiffItem {
 }
 
 /** Context passed to the WebSocketClient constructor, identifying the running command and connection endpoint. */
+export interface ReportFileMessageOptions {
+  // The main report of the command: the UI shows it before the secondary reports, whatever the order they were sent in
+  main?: boolean;
+}
+
 export interface WebSocketClientContext {
   /** The command identifier, e.g. `"hardis:doc:flow2markdown"`. */
   command?: string;
@@ -343,11 +348,13 @@ static sendMessage(data: any) {
   // Sends info about downloadable report file
   // commandArgs is only used by the "actionCommand" type: it carries the arguments passed
   // to the VS Code command, so a button can deep-link into a specific panel section.
+  // options.main marks the main report of a command, shown first.
   static sendReportFileMessage(
     file: string,
     title: string,
     type: "actionCommand" | "actionUrl" | "report" | "docUrl",
-    commandArgs?: any[]
+    commandArgs?: any[],
+    options: ReportFileMessageOptions = {}
   ) {
     const message: any = {
       event: 'reportFile',
@@ -357,6 +364,9 @@ static sendMessage(data: any) {
     };
     if (type === 'actionCommand' && Array.isArray(commandArgs) && commandArgs.length > 0) {
       message.commandArgs = commandArgs;
+    }
+    if (options.main === true) {
+      message.main = true;
     }
     WebSocketClient.sendMessage(message);
   }

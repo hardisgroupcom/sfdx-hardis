@@ -24,6 +24,7 @@ export async function checkLegacyApiVersions(context: CheckContext): Promise<Wha
       outputFile: null,
       debugMode: context.debugMode === true,
       commandThis: context.commandThis || null,
+      partOfAnotherCommand: true,
     }).collect();
   } catch (e) {
     return notAvailableResult(context, key, title, (e as Error).message);

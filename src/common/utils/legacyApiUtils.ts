@@ -84,6 +84,11 @@ export interface LegacyApiCallsCollectorOptions {
   debugMode: boolean;
   // Command instance used for uxLog / uxLogTable, or null
   commandThis: any;
+  // Run as one step of another command (what-will-break): the log file steps go to the caller's progress block
+  // instead of a new one, and no report file is opened
+  partOfAnotherCommand?: boolean;
+  // The calls report is the main report of the command: UIs show it before the API clients reports
+  mainReport?: boolean;
   // Called once every log file is analyzed and the per-descriptor counts are displayed, before the report files are written
   onAnalysisComplete?: (descriptors: LegacyApiDescriptorResult[]) => void | Promise<void>;
 }
@@ -139,6 +144,8 @@ export class LegacyApiCallsCollector {
   private readonly forcedOutputFile: string | null;
   private readonly debugMode: boolean;
   private readonly commandThis: any;
+  private readonly partOfAnotherCommand: boolean;
+  private readonly mainReport: boolean;
   private readonly onAnalysisComplete?: (descriptors: LegacyApiDescriptorResult[]) => void | Promise<void>;
 
   private descriptors: LegacyApiDescriptorState[] = [];
@@ -161,6 +168,8 @@ export class LegacyApiCallsCollector {
     this.forcedOutputFile = options.outputFile || null;
     this.debugMode = options.debugMode || false;
     this.commandThis = options.commandThis ?? null;
+    this.partOfAnotherCommand = options.partOfAnotherCommand === true;
+    this.mainReport = options.mainReport === true;
     this.onAnalysisComplete = options.onAnalysisComplete;
   }
 
@@ -197,14 +206,19 @@ export class LegacyApiCallsCollector {
     const eventLogRes: any = await soqlQuery(logCollectQuery, this.conn);
 
     // Collect legacy api calls from logs
-    WebSocketClient.sendProgressStartMessage(t('downloadingAndAnalyzingLogFiles'), eventLogRes.records.length);
+    const ownProgress = !this.partOfAnotherCommand;
+    if (ownProgress) {
+      WebSocketClient.sendProgressStartMessage(t('downloadingAndAnalyzingLogFiles'), eventLogRes.records.length);
+    }
     let counter = 0;
     for (const eventLogFile of eventLogRes.records) {
       await this.collectDeprecatedApiCalls(eventLogFile.LogFile);
       counter++;
       WebSocketClient.sendProgressStepMessage(counter, eventLogRes.records.length);
     }
-    WebSocketClient.sendProgressEndMessage();
+    if (ownProgress) {
+      WebSocketClient.sendProgressEndMessage();
+    }
     await this.flushDescriptorErrors();
 
     // Display summary
@@ -226,7 +240,7 @@ export class LegacyApiCallsCollector {
           outputFileIps.push(outputFileIp);
         }
         // Trigger command to open CSV file in VS Code extension
-        if (outputFileIp) {
+        if (outputFileIp && !this.partOfAnotherCommand) {
           WebSocketClient.requestOpenFile(outputFileIp);
         }
       }
@@ -526,13 +540,13 @@ export class LegacyApiCallsCollector {
       await fs.writeFile(this.outputFile, '', 'utf8');
     }
     uxLog("action", this.commandThis, c.cyan(c.italic(t('pleaseSeeDetailedCsvLogIn2', { outputFile: c.bold(this.outputFile) }))));
-    if (!WebSocketClient.isAliveWithLwcUI()) {
+    if (!WebSocketClient.isAliveWithLwcUI() && !this.partOfAnotherCommand) {
       WebSocketClient.requestOpenFile(this.outputFile);
     }
-    WebSocketClient.sendReportFileMessage(this.outputFile, t('legacyApiCallsCsv'), 'report');
+    WebSocketClient.sendReportFileMessage(this.outputFile, t('legacyApiCallsCsv'), 'report', undefined, { main: this.mainReport });
     if (this.totalCsvRows > 0) {
       const result: any = {};
-      await createXlsxFromCsv(this.outputFile, { fileTitle: 'Legacy API Calls' }, result);
+      await createXlsxFromCsv(this.outputFile, { fileTitle: 'Legacy API Calls', mainReport: this.mainReport }, result);
       if (result.xlsxFile) {
         this.xlsxFile = result.xlsxFile;
       }

@@ -4,7 +4,8 @@ import { soqlQuery } from '../utils/apiUtils.js';
 import { generateCsvFile, generateReportPath } from '../utils/filesUtils.js';
 import { t } from '../utils/i18n.js';
 import { getMonitoringDisable } from '../notifProvider/utils/notificationConfig.js';
-import { runAuthChecks } from './authChecks.js';
+import { WebSocketClient } from '../websocketClient.js';
+import { loadLoginHistory, needsLoginHistory, runAuthCheck } from './authChecks.js';
 import { buildMainRow } from './checkResults.js';
 import { checkConnectedAppsToEca } from './connectedAppsCheck.js';
 import { checkLegacyApiVersions } from './legacyApiCheck.js';
@@ -117,18 +118,17 @@ export async function runWhatWillBreak(options: WhatWillBreakOptions): Promise<W
     debugMode: options.debugMode,
   };
   const selected = WHAT_WILL_BREAK_CHECKS.filter((check) => options.checks.includes(check.key));
-  const checks: WhatWillBreakCheckResult[] = await runAuthChecks(
-    context,
-    selected.filter((check) => check.family === 'auth').map((check) => check.key)
-  );
-  if (options.checks.includes('connectedAppsToEca')) {
-    checks.push(await checkConnectedAppsToEca(context));
+  if (needsLoginHistory(selected.map((check) => check.key))) {
+    await withProgress(t('whatWillBreakReadingLoginHistory', { days: context.lookbackDays }), () => loadLoginHistory(context));
   }
-  if (options.checks.includes('legacyApiVersions')) {
-    checks.push(await checkLegacyApiVersions(context));
-  }
-  if (options.checks.includes('releaseUpdates')) {
-    checks.push(await checkReleaseUpdates(context));
+  const checks: WhatWillBreakCheckResult[] = [];
+  for (const [index, check] of selected.entries()) {
+    const progressTitle = t('whatWillBreakCheckProgress', {
+      position: index + 1,
+      total: selected.length,
+      title: getWhatWillBreakCheckTitle(check.key),
+    });
+    checks.push(await withProgress(progressTitle, () => runCheck(context, check)));
   }
   return { checks, metrics: buildMetrics(checks), severity: rollupSeverity(checks), isSandbox: context.isSandbox };
 }
@@ -164,6 +164,31 @@ export async function writeWhatWillBreakReports(result: WhatWillBreakResult): Pr
 async function fetchIsSandbox(options: WhatWillBreakOptions): Promise<boolean> {
   const res = await soqlQuery('SELECT IsSandbox FROM Organization LIMIT 1', options.conn);
   return res.records?.[0]?.IsSandbox === true;
+}
+
+// Show a step as a progress block in the UIs listening to the command (VS Code). A check with known steps sends them itself.
+async function withProgress<T>(title: string, run: () => Promise<T>): Promise<T> {
+  WebSocketClient.sendProgressStartMessage(title);
+  try {
+    return await run();
+  } finally {
+    WebSocketClient.sendProgressEndMessage();
+  }
+}
+
+async function runCheck(context: CheckContext, check: WhatWillBreakCheckDefinition): Promise<WhatWillBreakCheckResult> {
+  switch (check.family) {
+    case 'auth':
+      return runAuthCheck(context, check.key);
+    case 'connectedApps':
+      return checkConnectedAppsToEca(context);
+    case 'apiVersions':
+      return checkLegacyApiVersions(context);
+    case 'releaseUpdates':
+      return checkReleaseUpdates(context);
+    default:
+      throw new SfError(`Unknown check family ${check.family}`);
+  }
 }
 
 function buildMetrics(checks: WhatWillBreakCheckResult[]): Record<string, number> {

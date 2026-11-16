@@ -414,6 +414,7 @@ In agent mode:
     const aggregatedReportPath = await generateReportPath('monitor-errors-summary', '');
     this.aggregatedOutputFilesRes = await generateCsvFile(this.buildAggregatedErrors(), aggregatedReportPath, {
       fileTitle: t('monitorErrorsAggregatedReportTitle'),
+      mainReport: true,
     });
   }
 

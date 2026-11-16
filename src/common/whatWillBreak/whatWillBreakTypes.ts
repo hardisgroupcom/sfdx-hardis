@@ -126,7 +126,7 @@ export interface CheckContext {
   lookbackDays: number;
   idleWarningDays: number;
   ignoreSet: Set<string>;
-  // Read by runAuthChecks, only when a selected check needs the logins
+  // Filled by loadLoginHistory, only when a selected check needs the logins
   logins: LoginContext;
   commandThis?: any;
   debugMode?: boolean;
