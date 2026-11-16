@@ -4,10 +4,16 @@ import { buildMainRow, buildRow, finalizeCheck, notAvailableResult } from './che
 import { getDateLabel, getDateSeverity } from './whatWillBreakDeadlines.js';
 import { CheckContext, WhatWillBreakCheckKey, WhatWillBreakCheckResult, WhatWillBreakDetailRow } from './whatWillBreakTypes.js';
 
-// Release updates that enforce a change one of the authentication checks looks at, by DeveloperName
+// Release updates that enforce the change another check of the report looks at, by DeveloperName:
+// they are merged into the rows of that check instead of having their own row
 const RELEASE_UPDATE_RELATED_CHECKS: Record<string, WhatWillBreakCheckKey> = {
   SoapLoginUserPermEnforcementReleaseUpdate: 'soapLoginPermission',
   OAuthDeviceFlowRestrictionReleaseUpdate: 'deviceFlow',
+  OAuthUsrPassFlowEOLReleaseUpdate: 'usernamePasswordFlow',
+  OAuthUsrAgtFlowsEOLReleaseUpdate: 'usernamePasswordFlow',
+  SoapLoginRetirementNoTestFeatureReleaseUpdate: 'soapLoginRetirement',
+  ConnectedAppHardBlockEOLReleaseUpdate: 'connectedAppsToEca',
+  ApiVersions31to40Retirement: 'legacyApiVersions',
 };
 
 // Release updates not applied yet: each one is a row of the main report, with its own due date

@@ -75,6 +75,15 @@ export interface WhatWillBreakDatedMainRow {
   relatedCheckKey?: WhatWillBreakCheckKey;
 }
 
+// A release update that enforces the change a check looks at: the check rows carry it instead of a row of its own
+export interface WhatWillBreakReleaseUpdateLink {
+  title: string;
+  // YYYY-MM-DD
+  dueDate: string;
+  // The due date as shown in the Date column
+  dueLabel: string;
+}
+
 export interface WhatWillBreakCheckResult {
   key: WhatWillBreakCheckKey;
   status: WhatWillBreakSeverity;
@@ -94,6 +103,10 @@ export interface WhatWillBreakCheckResult {
   detailReportTitle?: string;
   // Report files the check already wrote itself (legacy API calls)
   reportFiles?: string[];
+  // Release updates of the org that enforce the change this check looks at
+  enforcingReleaseUpdates?: WhatWillBreakReleaseUpdateLink[];
+  // What the OK row says was checked, when it is not the default text of the check
+  successWhat?: string;
 }
 
 export interface WhatWillBreakOptions {

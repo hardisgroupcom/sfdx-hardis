@@ -13,6 +13,7 @@ import {
   WhatWillBreakCheckKey,
   WhatWillBreakCheckResult,
   WhatWillBreakDetailRow,
+  WhatWillBreakMainRow,
   WhatWillBreakResult,
 } from '../../../src/common/whatWillBreak/whatWillBreakTypes.js';
 import { markRowSensitiveValues, SENSITIVE_VALUES_KEY } from '../../../src/common/utils/anonymizeUtils.js';
@@ -387,33 +388,29 @@ describe('whatWillBreak', () => {
     });
   });
 
-  describe('release updates checked by another check', () => {
-    it('tells in the release update row what the check of the same change found in this org', async () => {
-      const result = await runWhatWillBreak({
+  describe('release updates that enforce the change of another check', () => {
+    const deviceFlowReleaseUpdate = {
+      Title: 'Restrict the OAuth 2.0 Device Flow to Local External Client Apps',
+      DeveloperName: 'OAuthDeviceFlowRestrictionReleaseUpdate',
+      DueDate: '2026-11-30',
+      StepStage: 'Upcoming',
+      Status: 'Info',
+      Category: 'Security',
+    };
+    const otherReleaseUpdate = {
+      Title: 'Some Other Change',
+      DeveloperName: 'SomeOtherChange',
+      DueDate: '2027-01-01',
+      StepStage: 'Upcoming',
+      Status: 'Info',
+      Category: 'Security',
+    };
+    const run = (pairs: any[]) =>
+      runWhatWillBreak({
         conn: mockConnection({
-          pairs: [
-            {
-              UserId: '005A',
-              LoginSubType: 'OAuth Device',
-              Application: 'Some CLI',
-              ApiVersion: '',
-              SourceIp: '10.0.0.1',
-              Status: 'Success',
-              cnt: 3,
-              lastLogin: '2026-11-10T10:00:00.000Z',
-            },
-          ],
+          pairs,
           users: [{ Id: '005A', Username: 'dev@example.com', IsActive: true }],
-          releaseUpdates: [
-            {
-              Title: 'Restrict the OAuth 2.0 Device Flow to Local External Client Apps',
-              DeveloperName: 'OAuthDeviceFlowRestrictionReleaseUpdate',
-              DueDate: '2026-11-30',
-              StepStage: 'Upcoming',
-              Status: 'Info',
-              Category: 'Security',
-            },
-          ],
+          releaseUpdates: [deviceFlowReleaseUpdate, otherReleaseUpdate],
         }),
         checks: ['deviceFlow', 'releaseUpdates'],
         lookbackDays: 180,
@@ -421,11 +418,37 @@ describe('whatWillBreak', () => {
         ignoreUsers: [],
         today: TODAY,
       });
+
+    it('merges the release update into the rows of the check that found something: no row of its own', async () => {
+      const result = await run([
+        {
+          UserId: '005A',
+          LoginSubType: 'OAuth Device',
+          Application: 'Some CLI',
+          ApiVersion: '',
+          SourceIp: '10.0.0.1',
+          Status: 'Success',
+          cnt: 3,
+          lastLogin: '2026-11-10T10:00:00.000Z',
+        },
+      ]);
       const deviceFlow = result.checks.find((c) => c.key === 'deviceFlow') as WhatWillBreakCheckResult;
       expect(deviceFlow.rows[0].WhatWillBreak).to.contain('dev@example.com');
-      expect(deviceFlow.rows[0].Recommendation).to.contain('External Client App');
-      const releaseUpdates = result.checks.find((c) => c.key === 'releaseUpdates') as WhatWillBreakCheckResult;
-      expect(releaseUpdates.mainRows?.[0].row['What to do']).to.contain(deviceFlow.title);
+      expect(deviceFlow.rows[0].Recommendation).to.contain(deviceFlowReleaseUpdate.Title);
+      const { mainRows } = await writeWhatWillBreakReports(result);
+      expect(mainRows.filter((row) => row['What will break'].includes(deviceFlowReleaseUpdate.Title))).to.have.length(0);
+      // The other release update keeps its own row
+      expect(mainRows.filter((row) => row['What will break'].includes(otherReleaseUpdate.Title))).to.have.length(1);
+    });
+
+    it('says on the OK row of the check that the release update can be enabled now, with its due date', async () => {
+      const result = await run([]);
+      const { mainRows } = await writeWhatWillBreakReports(result);
+      const deviceFlowRow = mainRows.find((row) => row.CheckKey === 'deviceFlow') as WhatWillBreakMainRow;
+      expect(deviceFlowRow.Severity).to.equal('success');
+      expect(deviceFlowRow['What to do']).to.contain(deviceFlowReleaseUpdate.Title);
+      expect(deviceFlowRow.Date).to.contain('2026-11-30');
+      expect(mainRows.filter((row) => row.CheckKey === 'releaseUpdates')).to.have.length(1);
     });
   });
 
