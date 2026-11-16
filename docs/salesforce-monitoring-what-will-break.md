@@ -41,7 +41,7 @@ The **main report** (`what-will-break-<date>.csv` and `.xlsx`) has one row per t
 
 | Column                  | Content                                                                                          |
 |-------------------------|--------------------------------------------------------------------------------------------------|
-| Status                  | ❌ Error, ⚠️ Warning, ℹ️ Info, ⏸️ Not checked (the reason is in What will break) or ✅ OK        |
+| Status                  | ❌ Error, ⚠️ Warning, ℹ️ Info, ⏸️ Not checked (the reason is in What will break) or ✅ OK          |
 | Check                   | The check                                                                                        |
 | What will break         | What fails, for which app, user or data source, and when. On an OK row, what was checked.        |
 | Date                    | When it breaks: a day, "Enforced since", or a Salesforce release such as "Summer '28 (2028-06)"  |
