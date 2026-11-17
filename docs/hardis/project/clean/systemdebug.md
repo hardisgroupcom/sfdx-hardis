@@ -49,6 +49,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The System.debug lines of the Apex classes and triggers of the Helios project commented out](../../../assets/images/commands/project/clean/systemdebug.webp)
+
+_The System.debug lines of the Apex classes and triggers of the Helios project commented out_
+
 ## Parameters
 
 | Name          |  Type   | Description                                                   |  Default  | Required | Options |

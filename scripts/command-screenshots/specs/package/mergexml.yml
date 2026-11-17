@@ -1,0 +1,9 @@
+command: hardis:package:mergexml
+run: sf hardis:package:mergexml
+org: none
+caption: manifest/package.xml and package-no-overwrite.xml of the Helios project merged into one package-merge.xml
+answers:
+  - q: Please select the package\.xml files you want to merge
+    choice: ^manifest[\\/]package(-no-overwrite)?\.xml$
+    shot: true
+    caption: Pick the package.xml files to merge

@@ -1,0 +1,6 @@
+command: hardis:source:deploy
+run: sf hardis:source:deploy -x manifest/package.xml --checkonly --testlevel RunLocalTests
+org: throwaway
+# A draft of deployment actions not assigned to a Pull Request stops any deployment
+before: git rm -q scripts/actions/.sfdx-hardis.draft.yml && git commit -qm "HEL-42 Drop the draft deployment actions" && sf project reset tracking --target-org hardis-shots-throwaway --no-prompt
+caption: The sources of the package.xml validated in a scratch org, with the deployment tips of sfdx-hardis

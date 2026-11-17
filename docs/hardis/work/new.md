@@ -97,6 +97,20 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 <!-- training-links:end -->
 
 
+## Screenshots
+
+![Pick the type of User Story, it gives the prefix of the branch](../../assets/images/commands/work/new-1.webp)
+
+_Pick the type of User Story, it gives the prefix of the branch_
+
+![Choose where the User Story will be built](../../assets/images/commands/work/new-2.webp)
+
+_Choose where the User Story will be built_
+
+![A new User Story branch created from integration, with the developer sandbox it will be built in](../../assets/images/commands/work/new.webp)
+
+_A new User Story branch created from integration, with the developer sandbox it will be built in_
+
 ## Parameters
 
 | Name                  |  Type   | Description                                                                                   | Default | Required | Options |

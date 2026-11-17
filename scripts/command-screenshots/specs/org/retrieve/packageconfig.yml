@@ -1,0 +1,14 @@
+command: hardis:org:retrieve:packageconfig
+run: sf hardis:org:retrieve:packageconfig --target-org helios-prod
+mode: replay
+org: none
+caption: The installed packages of production written to installedPackages in .sfdx-hardis.yml
+answers:
+  - q: "update your project configuration with this list of packages"
+    choice: "Yes"
+  - q: "select packages to add to your project configuration"
+    choice: "^Panel Telemetry"
+  - q: "install configuration for Panel Telemetry"
+    choice: "^Both"
+    shot: true
+    caption: Choose whether the package is installed in scratch orgs, deployed to the major orgs, or both

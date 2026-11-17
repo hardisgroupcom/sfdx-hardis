@@ -47,6 +47,30 @@ sf hardis:org:multi-org-query --agent --query "SELECT Id,Username FROM User" --t
 
 In agent mode, both `--query` (or `--query-template`) and `--target-orgs` flags are required. Interactive query builder and org selection prompts are skipped.
 
+## Screenshots
+
+![Pick a predefined query, or type your own SOQL](../../assets/images/commands/org/multi-org-query-1.webp)
+
+_Pick a predefined query, or type your own SOQL_
+
+![The active users of the Helios org returned by one SOQL query run on each selected org, gathered in a single report](../../assets/images/commands/org/multi-org-query.webp)
+
+_The active users of the Helios org returned by one SOQL query run on each selected org, gathered in a single report_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Query results
+
+One row per record returned by the SOQL query, with the org it comes from, for all the selected orgs together.
+
+Files: `multi-org-query-*.csv`, `xls/multi-org-query-*.xlsx`
+
+![Query results report in Excel](../../assets/images/commands/org/multi-org-query-report-multi-org-query.webp)
+
 ## Parameters
 
 | Name                  |  Type   | Description                                                       | Default | Required |          Options           |

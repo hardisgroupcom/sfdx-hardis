@@ -74,6 +74,74 @@ In agent mode:
 - Stale token deletion prompt is skipped (no tokens are deleted automatically).
 - All other interactive prompts are skipped.
 
+## Screenshots
+
+![OAuth tokens of Connected Apps that are not locked down, and the apps they belong to](../../../assets/images/commands/org/diagnose/unsecure-connected-apps.webp)
+
+_OAuth tokens of Connected Apps that are not locked down, and the apps they belong to_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### OAuth tokens
+
+One row per OAuth token of the org, with its app, user, last used date and a secured or unsecured status.
+
+Files: `unsecured-oauth-tokens-*.csv`, `xls/unsecured-oauth-tokens-*.xlsx`
+
+![OAuth tokens report in Excel](../../../assets/images/commands/org/diagnose/unsecure-connected-apps-report-unsecured-oauth-tokens.webp)
+
+### Unsecured apps
+
+One row per app that has unsecured OAuth tokens, with the number of tokens, its latest usage date and the profiles of the users using it, so you can decide which apps to secure.
+
+Files: `unsecured-connected-apps-*.csv`, `xls/unsecured-connected-apps-*.xlsx`
+
+![Unsecured apps report in Excel](../../../assets/images/commands/org/diagnose/unsecure-connected-apps-report-unsecured-connected-apps.webp)
+
+### Tokens by user
+
+One row per user holding OAuth tokens, with the apps they connected and the last usage date of each.
+
+Files: `oauth-tokens-by-user-*.csv`, `xls/oauth-tokens-by-user-*.xlsx`
+
+![Tokens by user report in Excel](../../../assets/images/commands/org/diagnose/unsecure-connected-apps-report-oauth-tokens-by-user.webp)
+
+### Connected apps usage
+
+One row per app that has OAuth tokens, with its last usage date, its users and whether it must move to an External Client App.
+
+Files: `connected-apps-usage-*.csv`, `xls/connected-apps-usage-*.xlsx`
+
+![Connected apps usage report in Excel](../../../assets/images/commands/org/diagnose/unsecure-connected-apps-report-connected-apps-usage.webp)
+
+### Deletable tokens
+
+One row per unsecured OAuth token of an app that no longer exists in the org, written in interactive mode before you choose which ones to revoke.
+
+Files: `deletable-auth-tokens-*.csv`, `xls/deletable-auth-tokens-*.xlsx`
+
+![Deletable tokens report in Excel](../../../assets/images/commands/org/diagnose/unsecure-connected-apps-report-deletable-auth-tokens.webp)
+
+### Deleted tokens
+
+One row per OAuth token revoked by the command after your confirmation.
+
+Files: `deleted-auth-tokens-*.csv`, `xls/deleted-auth-tokens-*.xlsx`
+
+![Deleted tokens report in Excel](../../../assets/images/commands/org/diagnose/unsecure-connected-apps-report-deleted-auth-tokens.webp)
+
+### Stale tokens of secured apps
+
+One row per unsecured OAuth token of an app that is otherwise secured, written in interactive mode for each such app (the app name ends the file name).
+
+Files: `unsecured-tokens-secured-app-*.csv`, `xls/unsecured-tokens-secured-app-*.xlsx`
+
+![Stale tokens of secured apps report in Excel](../../../assets/images/commands/org/diagnose/unsecure-connected-apps-report-unsecured-tokens-secured-app-.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

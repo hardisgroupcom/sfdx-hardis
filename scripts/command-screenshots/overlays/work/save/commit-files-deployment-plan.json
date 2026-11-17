@@ -1,0 +1,26 @@
+{
+  "mode": "replace",
+  "title": "Files committed with deployment plan updates",
+  "rows": [
+    {
+      "Status": "modified",
+      "File": "config/.sfdx-hardis.yml"
+    },
+    {
+      "Status": "created",
+      "File": "manifest/splits/deploy-flows.xml"
+    },
+    {
+      "Status": "created",
+      "File": "manifest/splits/deploy-permissionsets.xml"
+    },
+    {
+      "Status": "modified",
+      "File": "manifest/package.xml"
+    },
+    {
+      "Status": "created",
+      "File": "manifest/splits/deploy-custom-objects.xml"
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+command: hardis:project:clean:hiddenitems
+run: sf hardis:project:clean:hiddenitems
+org: none
+caption: The hidden files of managed package items looked for in the Helios sources, to remove them before a commit

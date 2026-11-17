@@ -51,6 +51,12 @@ In agent mode:
 - `--target-org` is required; an error is thrown if not provided.
 
 
+## Screenshots
+
+![The deployment of one Apex class simulated in the org, as the extension does from the editor](../../../assets/images/commands/project/deploy/simulate.webp)
+
+_The deployment of one Apex class simulated in the org, as the extension does from the editor_
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

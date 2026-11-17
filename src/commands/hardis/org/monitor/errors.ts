@@ -18,6 +18,7 @@ import { soqlQuery, soqlQueryTooling } from '../../../../common/utils/apiUtils.j
 import { FileDownloader } from '../../../../common/utils/fileDownloader.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -40,6 +41,24 @@ export default class MonitorErrors extends SfCommand<any> {
   ];
 
   public static title = 'Monitor Apex and Flow errors';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'monitor-apex-errors',
+      title: 'Apex errors',
+      description: 'One row per failed Apex job in the period, with its operation, exception, stack trace, start time and user.',
+    },
+    {
+      file: 'monitor-flow-errors',
+      title: 'Flow errors',
+      description: 'One row per Flow interview error in the period, with the flow operation, error step, exception, record and user.',
+    },
+    {
+      file: 'monitor-errors-summary',
+      title: 'Errors summary',
+      description: 'One row per Apex class or Flow that raised errors, with its number of errors, so you can see which ones fail the most.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

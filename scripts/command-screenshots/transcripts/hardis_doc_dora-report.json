@@ -1,0 +1,127 @@
+{
+  "command": "hardis:doc:dora-report",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Generating DORA metrics report for the last 90 days..."
+      }
+    },
+    {
+      "delay": 2200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Computing DORA metrics..."
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[DORA] integration - Deployment Frequency: 6.4 per week | Lead Time for Changes: 0.8 days (p50) | Change Failure Rate: 11% | Mean Time to Recovery: 3.2 hours | Deployment Rework Rate: 8%"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[DORA] uat - Deployment Frequency: 3.1 per week | Lead Time for Changes: 1.6 days (p50) | Change Failure Rate: 7% | Mean Time to Recovery: 2.4 hours | Deployment Rework Rate: 5%"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[DORA] preprod - Deployment Frequency: 1.9 per week | Lead Time for Changes: 3.2 days (p50) | Change Failure Rate: 5% | Mean Time to Recovery: 1.8 hours | Deployment Rework Rate: 4%"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[DORA] main - Deployment Frequency: 1.2 per week | Lead Time for Changes: 6.3 days (p50) | Change Failure Rate: 3% | Mean Time to Recovery: 1.1 hours | Deployment Rework Rate: 2%"
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Generating markdown report with diagrams..."
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "DORA metrics report generated: hardis-report/dora-report-2026-11-17.md"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[DORA] Copied docs/dora/dora-report-2026-11-17.md"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "reportFile",
+        "file": "docs/dora/dora-report-2026-11-17.md",
+        "title": "DORA Metrics Report",
+        "type": "report",
+        "main": true
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Generating CSV data export..."
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/dora-report-data-features__HEL-42-installation-checklist.csv",
+        "title": "DORA Report - Deployment Data (CSV)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 60,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/xls/dora-report-data-features__HEL-42-installation-checklist.xlsx",
+        "title": "DORA Report - Deployment Data (XLSX)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

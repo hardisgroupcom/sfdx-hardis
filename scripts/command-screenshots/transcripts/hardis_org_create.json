@@ -1,0 +1,276 @@
+{
+  "command": "hardis:org:create",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Building custom project-sandbox-def.json..."
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Creating new sandbox org..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf org create sandbox --set-default --definition-file ./config/user/project-sandbox-def-victor-HEL-42_20261117_0912.json --alias victor-HEL-42_20261117_0912 --wait 60 --target-org helios-prod",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf org create sandbox --set-default --definition-file ./config/user/project-sandbox-def-victor-HEL-42_20261117_0912.json --alias victor-HEL-42_20261117_0912 --wait 60 --target-org helios-prod",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "refreshStatus"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf org open --url-only --json",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 700,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf org open --url-only --json",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Created sandbox org victor-HEL-42_20261117_0912 with user victor.martin@helios-solar.demo.victor"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Update / fix sandbox org user victor.martin@helios-solar.demo.victor"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf data get record --sobject User --where \"Username=victor.martin@helios-solar.demo.victor\" --target-org victor-HEL-42_20261117_0912 --json",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 600,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf data get record --sobject User --where \"Username=victor.martin@helios-solar.demo.victor\" --target-org victor-HEL-42_20261117_0912 --json",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf data update record --sobject User --record-id 0050b00000HeliosAAA --values \"LastName='SFDX-HARDIS' FirstName='Sandbox Org'\" --target-org victor-HEL-42_20261117_0912",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 700,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf data update record --sobject User --record-id 0050b00000HeliosAAA --values \"LastName='SFDX-HARDIS' FirstName='Sandbox Org'\" --target-org victor-HEL-42_20261117_0912",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Initializing sandbox victor.martin@helios-solar.demo.victor with 3 step(s)..."
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Step 1/3: Assign permission sets"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf org assign permset --name Helios_Delivery_Crew --name Helios_Delivery_Manager --target-org victor-HEL-42_20261117_0912 --json",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 800,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf org assign permset --name Helios_Delivery_Crew --name Helios_Delivery_Manager --target-org victor-HEL-42_20261117_0912 --json",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Step 2/3: Run sandbox-init.apex"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf apex run --file scripts/apex/sandbox-init.apex --target-org victor-HEL-42_20261117_0912 --json",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf apex run --file scripts/apex/sandbox-init.apex --target-org victor-HEL-42_20261117_0912 --json",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Step 3/3: Load SandboxInit data"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf sfdmu:run --sourceusername csvfile --targetusername victor-HEL-42_20261117_0912 --path scripts/data/SandboxInit --json",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf sfdmu:run --sourceusername csvfile --targetusername victor-HEL-42_20261117_0912 --path scripts/data/SandboxInit --json",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Org initialization steps"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "table",
+        "message": "[{\"step\":\"Assign permission sets\",\"type\":\"assign-permission-sets\",\"status\":\"success\",\"seconds\":6,\"details\":\"\"},{\"step\":\"Run sandbox-init.apex\",\"type\":\"apex\",\"status\":\"success\",\"seconds\":8,\"details\":\"\"},{\"step\":\"Load SandboxInit data\",\"type\":\"data\",\"status\":\"success\",\"seconds\":41,\"details\":\"\"}]"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "victor.martin@helios-solar.demo.victor initialized: 3 succeeded, 0 failed, 0 skipped."
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Registering development org victor-HEL-42_20261117_0912 in the development orgs list..."
+      }
+    },
+    {
+      "delay": 600,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Development org victor-HEL-42_20261117_0912 registered for target branch integration"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

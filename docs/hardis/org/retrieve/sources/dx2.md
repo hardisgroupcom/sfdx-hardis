@@ -43,6 +43,16 @@ Use `--agent` to disable all prompts. Typical usage:
 - Org selection uses the `--target-org` flag value directly.
 
 
+## Screenshots
+
+![Give the package.xml that lists what to retrieve](../../../../assets/images/commands/org/retrieve/sources/dx2-1.webp)
+
+_Give the package.xml that lists what to retrieve_
+
+![The metadata of manifest/package.xml retrieved from the org into the project](../../../../assets/images/commands/org/retrieve/sources/dx2.webp)
+
+_The metadata of manifest/package.xml retrieved from the org into the project_
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

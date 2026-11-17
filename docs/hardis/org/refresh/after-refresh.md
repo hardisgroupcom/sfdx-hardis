@@ -49,6 +49,34 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 </details>
 
 
+## Screenshots
+
+![Pick the backup saved before the refresh](../../../assets/images/commands/org/refresh/after-refresh-1.webp)
+
+_Pick the backup saved before the refresh_
+
+![Pick the External Client Apps to restore with their credentials](../../../assets/images/commands/org/refresh/after-refresh-2.webp)
+
+_Pick the External Client Apps to restore with their credentials_
+
+![The saved certificates, metadata, custom settings and External Client Apps are restored in the refreshed sandbox, with the manual actions listed](../../../assets/images/commands/org/refresh/after-refresh.webp)
+
+_The saved certificates, metadata, custom settings and External Client Apps are restored in the refreshed sandbox, with the manual actions listed_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Refresh actions
+
+One row per restore step or manual action of the sandbox refresh (step, type, name, status, details), kept across runs; the sandbox folder name ends the file name.
+
+Files: `sandbox-refresh-after-actions-*.csv`, `xls/sandbox-refresh-after-actions-*.xlsx`
+
+![Refresh actions report in Excel](../../../assets/images/commands/org/refresh/after-refresh-report-sandbox-refresh-after-actions-.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                                 | Default | Required | Options |

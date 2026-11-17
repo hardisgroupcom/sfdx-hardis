@@ -37,6 +37,12 @@ Required in agent mode: `--id`. Add `--force` to delete a function that deployme
 </details>
 
 
+## Screenshots
+
+![A custom function that a deployment action still uses is only deleted after a confirmation](../../../assets/images/commands/project/function/delete.webp)
+
+_A custom function that a deployment action still uses is only deleted after a confirmation_
+
 ## Parameters
 
 | Name         |  Type   | Description                                                 | Default | Required | Options |

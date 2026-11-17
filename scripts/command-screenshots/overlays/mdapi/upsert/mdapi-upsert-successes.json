@@ -1,0 +1,131 @@
+{
+  "mode": "replace",
+  "title": "Metadata upsert successes",
+  "columns": [
+    "type",
+    "fullName",
+    "action"
+  ],
+  "rows": [
+    {
+      "type": "CustomApplication",
+      "fullName": "Helios_Field_Service",
+      "action": "updated"
+    },
+    {
+      "type": "CustomMetadata",
+      "fullName": "Helios_Setting.Default",
+      "action": "updated"
+    },
+    {
+      "type": "CustomMetadata",
+      "fullName": "Helios_Setting.Allocation_Rules",
+      "action": "updated"
+    },
+    {
+      "type": "CustomMetadata",
+      "fullName": "Panel_Grade.Grade_A",
+      "action": "updated"
+    },
+    {
+      "type": "CustomMetadata",
+      "fullName": "Panel_Grade.Grade_B",
+      "action": "created"
+    },
+    {
+      "type": "CustomObject",
+      "fullName": "Installation__c",
+      "action": "updated"
+    },
+    {
+      "type": "CustomObject",
+      "fullName": "Panel_Batch__c",
+      "action": "updated"
+    },
+    {
+      "type": "CustomObject",
+      "fullName": "Inverter_Model__c",
+      "action": "updated"
+    },
+    {
+      "type": "CustomObject",
+      "fullName": "Account",
+      "action": "updated"
+    },
+    {
+      "type": "CustomTab",
+      "fullName": "Installation__c",
+      "action": "updated"
+    },
+    {
+      "type": "CustomTab",
+      "fullName": "Panel_Batch__c",
+      "action": "updated"
+    },
+    {
+      "type": "CustomTab",
+      "fullName": "Inverter_Model__c",
+      "action": "updated"
+    },
+    {
+      "type": "Layout",
+      "fullName": "Installation__c-Installation Layout",
+      "action": "updated"
+    },
+    {
+      "type": "Layout",
+      "fullName": "Panel_Batch__c-Panel Batch Layout",
+      "action": "updated"
+    },
+    {
+      "type": "Layout",
+      "fullName": "Inverter_Model__c-Inverter Model Layout",
+      "action": "created"
+    },
+    {
+      "type": "Layout",
+      "fullName": "Account-Helios Customer Layout",
+      "action": "updated"
+    },
+    {
+      "type": "PermissionSet",
+      "fullName": "Helios_Delivery_Crew",
+      "action": "updated"
+    },
+    {
+      "type": "PermissionSet",
+      "fullName": "Helios_Delivery_Manager",
+      "action": "updated"
+    },
+    {
+      "type": "PermissionSet",
+      "fullName": "Helios_Panel_Stock_Viewer",
+      "action": "created"
+    },
+    {
+      "type": "PermissionSetGroup",
+      "fullName": "Helios_Field_Team",
+      "action": "created"
+    },
+    {
+      "type": "Profile",
+      "fullName": "Helios Crew",
+      "action": "updated"
+    },
+    {
+      "type": "Profile",
+      "fullName": "Helios Sales",
+      "action": "updated"
+    },
+    {
+      "type": "Profile",
+      "fullName": "Admin",
+      "action": "updated"
+    },
+    {
+      "type": "Profile",
+      "fullName": "Standard User",
+      "action": "updated"
+    }
+  ]
+}

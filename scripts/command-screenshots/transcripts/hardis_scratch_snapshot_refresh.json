@@ -1,0 +1,419 @@
+{
+  "command": "hardis:scratch:snapshot:refresh",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[SOQL Query] SELECT Id, SnapshotName, Status, Error FROM OrgSnapshot WHERE SnapshotName = 'SH3f9a1c2b81d4e'",
+        "query": {
+          "id": "hardis:scratch:snapshot:refresh-q1",
+          "type": "soql",
+          "status": "running"
+        }
+      }
+    },
+    {
+      "delay": 800,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[SOQL Query] Retrieved 0 records",
+        "query": {
+          "id": "hardis:scratch:snapshot:refresh-q1",
+          "type": "soql",
+          "status": "completed",
+          "recordCount": 0,
+          "batchCount": 1
+        }
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Building custom project-scratch-def.json..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf org list",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 800,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf org list",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Creating new scratch org..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf org create scratch --set-default --definition-file ./config/user/project-scratch-def-helios-uat_20261117_0912.json --alias helios-uat_20261117_0912 --wait 15 --target-dev-hub victor.martin@helios-solar.demo --duration-days 30",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf org create scratch --set-default --definition-file ./config/user/project-scratch-def-helios-uat_20261117_0912.json --alias helios-uat_20261117_0912 --wait 15 --target-dev-hub victor.martin@helios-solar.demo --duration-days 30",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Created scratch org helios-uat_20261117_0912 with user victor.martin@hardis-scratch-helios-uat_20261117_0912.com"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Initializing scratch victor.martin@hardis-scratch-helios-uat_20261117_0912.com with 4 step(s)..."
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Step 1/4: Install packages"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Step 2/4: Deploy project sources"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf project deploy start --ignore-conflicts --target-org victor.martin@hardis-scratch-helios-uat_20261117_0912.com",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1200,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf project deploy start --ignore-conflicts --target-org victor.martin@hardis-scratch-helios-uat_20261117_0912.com",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Step 3/4: Run InstallationSeed.apex"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf apex run --file scripts/apex/InstallationSeed.apex --target-org victor.martin@hardis-scratch-helios-uat_20261117_0912.com",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1200,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf apex run --file scripts/apex/InstallationSeed.apex --target-org victor.martin@hardis-scratch-helios-uat_20261117_0912.com",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Step 4/4: Load ScratchInit data"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf sfdmu run --sourceusername csvfile --targetusername victor.martin@hardis-scratch-helios-uat_20261117_0912.com --path scripts/data/ScratchInit",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1200,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf sfdmu run --sourceusername csvfile --targetusername victor.martin@hardis-scratch-helios-uat_20261117_0912.com --path scripts/data/ScratchInit",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Org initialization steps"
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "table",
+        "message": "[{\"step\":\"Install packages\",\"type\":\"install-packages\",\"status\":\"success\",\"seconds\":41,\"details\":\"\"},{\"step\":\"Deploy project sources\",\"type\":\"deploy-sources\",\"status\":\"success\",\"seconds\":187,\"details\":\"\"},{\"step\":\"Run InstallationSeed.apex\",\"type\":\"apex\",\"status\":\"success\",\"seconds\":12,\"details\":\"\"},{\"step\":\"Load ScratchInit data\",\"type\":\"data\",\"status\":\"success\",\"seconds\":38,\"details\":\"\"}]"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "victor.martin@hardis-scratch-helios-uat_20261117_0912.com initialized: 4 succeeded, 0 failed, 0 skipped."
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Taking snapshot SH3f9a1c2b81d4e of branch uat at commit 3f9a1c2e..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf org create snapshot --source-org victor.martin@hardis-scratch-helios-uat_20261117_0912.com --name SH3f9a1c2b81d4e --description \"sfdx-hardis project=HeliosEnergy branch=uat sha=3f9a1c2e7b04d85a91c6f20e4b7d3a18c5e09f64\" --target-dev-hub victor.martin@helios-solar.demo",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1200,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf org create snapshot --source-org victor.martin@hardis-scratch-helios-uat_20261117_0912.com --name SH3f9a1c2b81d4e --description \"sfdx-hardis project=HeliosEnergy branch=uat sha=3f9a1c2e7b04d85a91c6f20e4b7d3a18c5e09f64\" --target-dev-hub victor.martin@helios-solar.demo",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[SOQL Query] SELECT Id, SnapshotName, Status, Error FROM OrgSnapshot WHERE SnapshotName = 'SH3f9a1c2b81d4e'",
+        "query": {
+          "id": "hardis:scratch:snapshot:refresh-q2",
+          "type": "soql",
+          "status": "running"
+        }
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[SOQL Query] Retrieved 1 records",
+        "query": {
+          "id": "hardis:scratch:snapshot:refresh-q2",
+          "type": "soql",
+          "status": "completed",
+          "recordCount": 1,
+          "batchCount": 1
+        }
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Waiting for snapshot SH3f9a1c2b81d4e (status: InProgress)..."
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[SOQL Query] SELECT Id, SnapshotName, Status, Error FROM OrgSnapshot WHERE SnapshotName = 'SH3f9a1c2b81d4e'",
+        "query": {
+          "id": "hardis:scratch:snapshot:refresh-q3",
+          "type": "soql",
+          "status": "running"
+        }
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[SOQL Query] Retrieved 1 records",
+        "query": {
+          "id": "hardis:scratch:snapshot:refresh-q3",
+          "type": "soql",
+          "status": "completed",
+          "recordCount": 1,
+          "batchCount": 1
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Snapshot SH3f9a1c2b81d4e of branch uat is Active"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf org delete scratch --no-prompt --target-org victor.martin@hardis-scratch-helios-uat_20261117_0912.com",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1200,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf org delete scratch --no-prompt --target-org victor.martin@hardis-scratch-helios-uat_20261117_0912.com",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[SOQL Query] SELECT Id, SnapshotName, Description, CreatedDate FROM OrgSnapshot WHERE Status = 'Active' AND Description LIKE 'sfdx-hardis project=HeliosEnergy branch=uat sha=%' ORDER BY CreatedDate DESC",
+        "query": {
+          "id": "hardis:scratch:snapshot:refresh-q4",
+          "type": "soql",
+          "status": "running"
+        }
+      }
+    },
+    {
+      "delay": 700,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[SOQL Query] Retrieved 3 records",
+        "query": {
+          "id": "hardis:scratch:snapshot:refresh-q4",
+          "type": "soql",
+          "status": "completed",
+          "recordCount": 3,
+          "batchCount": 1
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Deleting the older snapshot SH9d1e4a7c02f6b..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf org delete snapshot --snapshot SH9d1e4a7c02f6b --target-dev-hub victor.martin@helios-solar.demo --no-prompt",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1200,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf org delete snapshot --snapshot SH9d1e4a7c02f6b --target-dev-hub victor.martin@helios-solar.demo --no-prompt",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

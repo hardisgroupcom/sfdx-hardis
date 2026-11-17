@@ -1,0 +1,20 @@
+command: hardis:work:new
+run: sf hardis:work:new
+mode: replay
+org: none
+caption: "A new User Story branch created from integration, with the developer sandbox it will be built in"
+answers:
+  - q: "What type of User Story"
+    choice: "^Feature"
+    shot: true
+    caption: "Pick the type of User Story, it gives the prefix of the branch"
+  - q: "What is the name of your new User Story"
+    value: "HEL-42-installation-checklist"
+  - q: "Which Salesforce org do you want to work in"
+    choice: "Sandbox org with source tracking"
+    shot: true
+    caption: "Choose where the User Story will be built"
+  - q: "Select a sandbox org to work in branch"
+    choice: "helios-solar--dev\\.sandbox"
+  - q: "Do you want to open org"
+    choice: "^❌ No$"

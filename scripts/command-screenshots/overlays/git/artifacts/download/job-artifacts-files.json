@@ -1,0 +1,42 @@
+{
+  "mode": "replace",
+  "title": "job-artifacts-files",
+  "rows": [
+    {
+      "file": "apex-coverage-results.json",
+      "sizeKb": 13
+    },
+    {
+      "file": "coverage/coverage-summary.json",
+      "sizeKb": 2
+    },
+    {
+      "file": "coverage/coverage.json",
+      "sizeKb": 6
+    },
+    {
+      "file": "deploy-result-calculated-package-xml.json",
+      "sizeKb": 47
+    },
+    {
+      "file": "deployment-components.csv",
+      "sizeKb": 3
+    },
+    {
+      "file": "junit/junit.xml",
+      "sizeKb": 7
+    },
+    {
+      "file": "test-result-0AfHE00000Q1HelAAA.json",
+      "sizeKb": 38
+    },
+    {
+      "file": "test-result-codecoverage.json",
+      "sizeKb": 10
+    },
+    {
+      "file": "xls/deployment-components.xlsx",
+      "sizeKb": 10
+    }
+  ]
+}

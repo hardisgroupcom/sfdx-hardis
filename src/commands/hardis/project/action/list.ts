@@ -18,12 +18,21 @@ import { ActionForecastItem, findOpenPromotionPullRequest, forecastAction, markI
 import { listMajorOrgs } from '../../../../common/utils/orgConfigUtils.js';
 import { parseWorkflowRunsFromComments, PR_COMMENT_HIDDEN_MARKER } from '../../../../common/gitProvider/utils/prRunSummary.js';
 import { gitProviderBatchSizes, mapInAdaptiveBatchesSettled } from '../../../../common/utils/adaptiveBatch.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class ActionList extends ActionCommandBase {
   public static title = 'List deployment actions';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'deployment-actions',
+      title: 'Deployment actions',
+      description: 'One row per deployment action defined in the project, with its label, type, context and whether a failure is allowed.',
+    },
+  ];
 
   // Read by panels and scripts, never a command somebody follows in VS Code: no command tab
   public static disableWebsocket = true;

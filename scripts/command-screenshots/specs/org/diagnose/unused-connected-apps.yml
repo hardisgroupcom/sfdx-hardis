@@ -1,0 +1,10 @@
+command: hardis:org:diagnose:unused-connected-apps
+run: sf hardis:org:diagnose:unused-connected-apps
+org: showcase
+caption: "Connected Apps of the Helios org with no login and no OAuth token, flagged as candidates for removal"
+pills:
+  - text: "Not Found in Login History"
+    legend: "Why the app is considered unused"
+  - text: "Connected Apps Analysis"
+    legend: "Every Connected App, with its last OAuth usage and a severity reason"
+    button: true

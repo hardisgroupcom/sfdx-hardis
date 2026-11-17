@@ -39,6 +39,16 @@ The command has no prompt: `--type` is required, and `--agent` only confirms the
 </details>
 
 
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Metadata components
+
+One row per component (or folder) of the listed metadata type, with its full name and id; the file name continues with the type and the folder, and it is written only when the list has more than 20 rows.
+
+Files: `list-metadata-*.csv`, `xls/list-metadata-*.xlsx`
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

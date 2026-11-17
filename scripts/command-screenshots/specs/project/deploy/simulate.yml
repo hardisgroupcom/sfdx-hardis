@@ -1,0 +1,7 @@
+command: hardis:project:deploy:simulate
+run: sf hardis:project:deploy:simulate --source-dir force-app/main/default/classes/InstallationScheduler.cls
+org: showcase
+caption: The deployment of one Apex class simulated in the org, as the extension does from the editor
+answers:
+  - q: to simulate deployment of metadata
+    choice: ^✅ Yes$

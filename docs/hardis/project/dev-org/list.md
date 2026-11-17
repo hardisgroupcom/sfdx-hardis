@@ -47,6 +47,12 @@ sf hardis:project:dev-org:list --agent
 The command asks nothing in any mode: `--agent` only states it. Use `--refresh` to list the merged Pull Requests again, `--target-branch` and `--mine` to filter.
 
 
+## Screenshots
+
+![The five development orgs of the Helios project, how many Pull Requests each one misses from its target branch, and the stale one](../../../assets/images/commands/project/dev-org/list.webp)
+
+_The five development orgs of the Helios project, how many Pull Requests each one misses from its target branch, and the stale one_
+
 ## Parameters
 
 | Name          |  Type   | Description                                                                                                   | Default | Required | Options |

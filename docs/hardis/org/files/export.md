@@ -62,6 +62,18 @@ Use `--agent` to disable all prompts. Typical usage:
 - Resume/restart prompt is skipped; resume behavior follows the `--resume` flag (default: restart).
 
 
+## Screenshots
+
+![The number of records and API calls the export will use, before it starts](../../../assets/images/commands/org/files/export-1.webp)
+
+_The number of records and API calls the export will use, before it starts_
+
+![The site surveys and wiring plans of the completed installations, downloaded into one folder per installation](../../../assets/images/commands/org/files/export.webp)
+
+_The site surveys and wiring plans of the completed installations, downloaded into one folder per installation_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
 ## Parameters
 
 | Name                    |  Type   | Description                                                                                                  | Default | Required | Options |

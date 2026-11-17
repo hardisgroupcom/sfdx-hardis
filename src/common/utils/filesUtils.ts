@@ -1821,14 +1821,15 @@ async function buildXlsFromCsvFiles(csvFiles: string[], options: ExcelExportOpti
         }
       });
     }
-    applyWorksheetFormatting(worksheet, options);
-    // Scan only the first row and convert string formulas
+    // Scan only the first row and convert string formulas, before the formatting decides whether
+    // the sheet can be an Excel table
     const firstRow = worksheet.getRow(1);
     firstRow.eachCell((cell) => {
       if (typeof cell.value === 'string' && cell.value.startsWith('=')) {
         cell.value = { formula: cell.value.substring(1) };
       }
     });
+    applyWorksheetFormatting(worksheet, options);
   }
   if (options.postProcessWorkbook) {
     await options.postProcessWorkbook(workbook, { worksheetNameByCsvFile });
@@ -1892,8 +1893,17 @@ export function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: 
 
   const shouldAutoFit = worksheet.rowCount < 10000;
 
+  // The header cells of an Excel table must be plain text: with a formula in its header, Excel
+  // offers to repair the workbook and opens it without the sheet
+  let headerHasFormula = false;
+  headerRow.eachCell((cell) => {
+    if (cell.value && typeof cell.value === 'object' && 'formula' in (cell.value as any)) {
+      headerHasFormula = true;
+    }
+  });
+
   // Add an Excel table (Insert > Table equivalent) for small-to-medium datasets
-  if (shouldAutoFit && worksheet.rowCount > 1 && worksheet.columnCount > 0) {
+  if (shouldAutoFit && !headerHasFormula && worksheet.rowCount > 1 && worksheet.columnCount > 0) {
     const lastCol = worksheet.columnCount;
     const lastRow = worksheet.rowCount;
 

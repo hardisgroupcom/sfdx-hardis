@@ -465,6 +465,14 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 <!-- training-links:end -->
 
 
+## Screenshots
+
+![The Helios sources deployed to a scratch org with their deployment actions, Apex tests and the report of deployed components](../../../assets/images/commands/project/deploy/smart.webp)
+
+_The Helios sources deployed to a scratch org with their deployment actions, Apex tests and the report of deployed components_
+
+- **(1)** The components deployed, in an Excel report
+
 ## Parameters
 
 | Name               |  Type   | Description                                                                                                                                                                                                                            | Default | Required |                                                                          Options                                                                          |

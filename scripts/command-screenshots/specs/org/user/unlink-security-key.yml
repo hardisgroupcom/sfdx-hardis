@@ -1,0 +1,19 @@
+command: hardis:org:user:unlink-security-key
+run: sf hardis:org:user:unlink-security-key --include-totp --target-org helios-prod
+mode: replay
+org: none
+caption: "Security keys and authenticator apps unlinked from 13 of the 24 Helios users listed, with the targets and results reports"
+answers:
+  - q: "Enter the comma-separated list of usernames"
+    value: "victor.martin@helios-solar.demo,mariia.kowalska@helios-solar.demo,romain.lefebvre@helios-solar.demo,lucia.fernandez@helios-solar.demo,tomasz.nowak@helios-solar.demo,amelie.dubois@helios-solar.demo,hugo.perrin@helios-solar.demo,ines.moreau@helios-solar.demo,jakub.zielinski@helios-solar.demo,sofia.marchetti@helios-solar.demo,lena.hoffmann@helios-solar.demo,nils.berger@helios-solar.demo,clara.vidal@helios-solar.demo,pablo.serrano@helios-solar.demo,pablo.serrano.old@helios-solar.demo,oskar.wojcik@helios-solar.demo,julie.garnier@helios-solar.demo,marco.rinaldi@helios-solar.demo,anna.kowalczyk@helios-solar.demo,theo.lambert@helios-solar.demo,nora.jansen@helios-solar.demo,felix.roussel@helios-solar.demo,maya.castillo@helios-solar.demo,emil.sorensen@helios-solar.demo"
+    shot: true
+    caption: "Type the users whose security keys to unlink"
+  - q: "Are you sure you want to unlink security keys"
+    choice: "Yes$"
+pills:
+  - text: "Users targeted by the MFA methods unlink"
+    legend: "One row per username, found or not, active or not"
+    button: true
+  - text: "Unlink security key report (XLSX)"
+    legend: "One row per user: the methods unlinked, the ones not registered, and who ran the command"
+    button: true

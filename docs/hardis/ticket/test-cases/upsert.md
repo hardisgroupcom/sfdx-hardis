@@ -74,6 +74,30 @@ The same applies in CI.
 - **A partial create is not repaired by a rerun:** a failed story link, reported with the tracker id, has to be added by hand, and a ServiceNow test whose version or steps failed, reported with its URL, has to be completed or deleted by hand.
 
 
+## Screenshots
+
+![Confirm before the test cases are written to Xray Cloud](../../../assets/images/commands/ticket/test-cases/upsert-1.webp)
+
+_Confirm before the test cases are written to Xray Cloud_
+
+![Ten test cases pushed to Xray Cloud, seven created and three updated, with the tracker id of each](../../../assets/images/commands/ticket/test-cases/upsert.webp)
+
+_Ten test cases pushed to Xray Cloud, seven created and three updated, with the tracker id of each_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Upserted test cases
+
+One row per test case pushed to the test management provider, with the action taken (or planned in dry run), its tracker id, URL and error.
+
+Files: `test-cases-upsert-*.csv`, `xls/test-cases-upsert-*.xlsx`
+
+![Upserted test cases report in Excel](../../../assets/images/commands/ticket/test-cases/upsert-report-test-cases-upsert.webp)
+
 ## Parameters
 
 | Name                 |  Type   | Description                                                                                                                       | Default | Required |               Options                |

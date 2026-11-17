@@ -1,0 +1,348 @@
+{
+  "command": "hardis:doc:mkdocs-to-confluence",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Confluence client configured for https://helios.atlassian.net (space: HELIOS)."
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Resolving Confluence space ID for key: HELIOS"
+      }
+    },
+    {
+      "delay": 600,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Confluence space resolved: HELIOS (ID: 4128771)"
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Confluence parent page ID 4129123 validated successfully."
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Publishing 8 pages to Confluence..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "progressStart",
+        "title": "Publishing 8 pages to Confluence...",
+        "totalSteps": 8
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Publishing page [Doc] Home (index.md) to Confluence..."
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Image helios-logo.png uploaded as attachment to page index.md."
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Confluence page published: [Doc] Home"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "progressStep",
+        "step": 1,
+        "totalSteps": 8
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Publishing page [Object] Installation__c (objects/Installation__c.md) to Confluence..."
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Image installation-data-model.png uploaded as attachment to page objects/Installation__c.md."
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Confluence page published: [Object] Installation__c"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "progressStep",
+        "step": 2,
+        "totalSteps": 8
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Publishing page [Object] Panel_Batch__c (objects/Panel_Batch__c.md) to Confluence..."
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Confluence page published: [Object] Panel_Batch__c"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "progressStep",
+        "step": 3,
+        "totalSteps": 8
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Publishing page [Flow] Installation_Assign_Crew (flows/Installation_Assign_Crew.md) to Confluence..."
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Image Installation_Assign_Crew-mermaid-1.png uploaded as attachment to page flows/Installation_Assign_Crew.md."
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Confluence page published: [Flow] Installation_Assign_Crew"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "progressStep",
+        "step": 4,
+        "totalSteps": 8
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Publishing page [Flow] Installation_Close_Check (flows/Installation_Close_Check.md) to Confluence..."
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Image Installation_Close_Check-mermaid-1.png uploaded as attachment to page flows/Installation_Close_Check.md."
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Confluence page published: [Flow] Installation_Close_Check"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "progressStep",
+        "step": 5,
+        "totalSteps": 8
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Publishing page [Apex] InstallationScheduler (apex/InstallationScheduler.md) to Confluence..."
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Confluence page published: [Apex] InstallationScheduler"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "progressStep",
+        "step": 6,
+        "totalSteps": 8
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Publishing page [Permissionset] Helios_Delivery_Crew (permissionsets/Helios_Delivery_Crew.md) to Confluence..."
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Confluence page published: [Permissionset] Helios_Delivery_Crew"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "progressStep",
+        "step": 7,
+        "totalSteps": 8
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Publishing page [Permissionset] Helios_Delivery_Manager (permissionsets/Helios_Delivery_Manager.md) to Confluence..."
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Confluence page published: [Permissionset] Helios_Delivery_Manager"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "progressStep",
+        "step": 8,
+        "totalSteps": 8
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "progressEnd",
+        "totalSteps": 8
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/mkdocs-to-confluence-features__HEL-42-installation-checklist.csv",
+        "title": "Confluence Deployment Summary (CSV)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 80,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/xls/mkdocs-to-confluence-features__HEL-42-installation-checklist.xlsx",
+        "title": "Confluence Deployment Summary (XLSX)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Confluence Deployment Summary"
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "table",
+        "message": "[{\"page\":\"[Doc] Home\",\"file\":\"index.md\",\"result\":\"✓ Published\"},{\"page\":\"[Object] Installation__c\",\"file\":\"objects/Installation__c.md\",\"result\":\"✓ Published\"},{\"page\":\"[Object] Panel_Batch__c\",\"file\":\"objects/Panel_Batch__c.md\",\"result\":\"✓ Published\"},{\"page\":\"[Flow] Installation_Assign_Crew\",\"file\":\"flows/Installation_Assign_Crew.md\",\"result\":\"✓ Published\"},{\"page\":\"[Flow] Installation_Close_Check\",\"file\":\"flows/Installation_Close_Check.md\",\"result\":\"✓ Published\"},{\"page\":\"[Apex] InstallationScheduler\",\"file\":\"apex/InstallationScheduler.md\",\"result\":\"✓ Published\"},{\"page\":\"[Permissionset] Helios_Delivery_Crew\",\"file\":\"permissionsets/Helios_Delivery_Crew.md\",\"result\":\"✓ Published\"},{\"page\":\"[Permissionset] Helios_Delivery_Manager\",\"file\":\"permissionsets/Helios_Delivery_Manager.md\",\"result\":\"✓ Published\"}]"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "8 / 8 pages published to Confluence."
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "All 8 pages have been published successfully to Confluence."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

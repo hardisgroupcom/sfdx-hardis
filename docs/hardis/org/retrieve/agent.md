@@ -1,3 +1,7 @@
+---
+title: "hardis:org:retrieve:agent - Retrieve an Agentforce agent"
+description: "Retrieves one version of an Agentforce agent from an org as the authoring bundle of the agent, with the components it needs, and adds them to the package.xml of the project."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:retrieve:agent
 
@@ -49,6 +53,42 @@ In agent mode:
 - No prompt is shown.
 
 
+## Screenshots
+
+![Pick the agent to retrieve](../../../assets/images/commands/org/retrieve/agent-1.webp)
+
+_Pick the agent to retrieve_
+
+![Pick the version, the active one is proposed first](../../../assets/images/commands/org/retrieve/agent-2.webp)
+
+_Pick the version, the active one is proposed first_
+
+![Version 3 of the Helios_Installation_Assistant agent is retrieved with its Flows, Apex classes and prompt templates, and added to package.xml](../../../assets/images/commands/org/retrieve/agent.webp)
+
+_Version 3 of the Helios_Installation_Assistant agent is retrieved with its Flows, Apex classes and prompt templates, and added to package.xml_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Retrieved components
+
+One row per component retrieved with the agent (type and member), all added to the package.xml of the project.
+
+Files: `agent-retrieved-components-*.csv`, `xls/agent-retrieved-components-*.xlsx`
+
+![Retrieved components report in Excel](../../../assets/images/commands/org/retrieve/agent-report-agent-retrieved-components.webp)
+
+### Missing dependencies
+
+One row per component the agent references but that was not retrieved, with the component that references it, to check and add by hand if needed.
+
+Files: `agent-missing-dependencies-*.csv`, `xls/agent-missing-dependencies-*.xlsx`
+
+![Missing dependencies report in Excel](../../../assets/images/commands/org/retrieve/agent-report-agent-missing-dependencies.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  |       Default        | Required | Options |
@@ -58,7 +98,7 @@ In agent mode:
 | flags-dir         | option  | Import flag values from a directory.                                                                         |                      |          |         |
 | json              | boolean | Format output as json.                                                                                       |                      |          |         |
 | name<br/>-n       | option  | API name of the agent to retrieve                                                                            |                      |          |         |
-| package-xml       | option  | package.xml file to add the retrieved components to                                                          | manifest/package.xml |          |         |
+| package-xml       | option  | package.xml file to add the retrieved components to                                                          | manifest\package.xml |          |         |
 | skipauth          | boolean | Skip authentication check when a default username is required                                                |                      |          |         |
 | target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |                      |   true   |         |
 | version           | option  | Version number of the agent to retrieve, or latest (default: latest)                                         |                      |          |         |

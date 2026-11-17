@@ -38,6 +38,7 @@
 ## Commands
 
 - Return `AnyJson` from `run()` method.
+- A command that writes CSV/XLSX reports declares them in `public static reports: CommandReport[]` (prefix, title, description), and every command has a spec under `scripts/command-screenshots/specs/` for its documentation screenshots. See the `command-screenshots` skill.
 - Static `description` must include `## Command Behavior` and `<details>Technical explanations</details>` sections.
 - **Headless / agent mode**: When possible, commands must support a `--agent` boolean flag so they can be called non-interactively by AI agents and automation pipelines.
   - Declare it as: `agent: Flags.boolean({ default: false, description: 'Run in non-interactive mode for agents and automation' })`

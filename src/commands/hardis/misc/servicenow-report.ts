@@ -15,6 +15,7 @@ import { getNotificationButtons, getOrgMarkdown } from '../../../common/utils/no
 import { NotifProvider, NotifSeverity } from '../../../common/notifProvider/index.js';
 import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
 import { t } from '../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -41,6 +42,15 @@ export function splitTicketNumbers(ticketFieldValue: any): string[] {
 /* jscpd:ignore-end */
 export default class ServiceNowReport extends SfCommand<any> {
   public static title = 'ServiceNow Report';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'service-now-report',
+      title: 'ServiceNow cross-report',
+      description: 'One row per Salesforce user story enriched with its ServiceNow ticket, with an "Is Valid" column and the invalid fields; a second file ending with -invalid lists only the invalid rows.',
+    },
+  ];
+
   public static description = `This command retrieves user stories from Salesforce and enriches them with data from ServiceNow.
 
 Define the following environment variables (in CICD variables or locally in a **.env** file):

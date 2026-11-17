@@ -1,0 +1,120 @@
+{
+  "command": "hardis:org:purge:apexlog",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf data query --query \"SELECT Id FROM ApexLog LIMIT 50000\" -t -r \"csv\" > \"tmp\\ApexLogsToDelete_0.5831740126.csv\"",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 2400,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf data query --query \"SELECT Id FROM ApexLog LIMIT 50000\" -t -r \"csv\" > \"tmp\\ApexLogsToDelete_0.5831740126.csv\"",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Do you want to delete all Apex logs in this org?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Do you want to delete all Apex logs in this org?",
+            "description": "All Apex logs in the org will be permanently deleted",
+            "choices": [
+              {
+                "title": "✅ Yes",
+                "value": true
+              },
+              {
+                "title": "❌ No",
+                "value": false
+              }
+            ],
+            "initial": 0,
+            "optionsPerPage": 9999
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "✅ Yes"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Deleting 1248 Apex logs..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf data delete bulk --sobject ApexLog --file tmp\\ApexLogsToDelete_0.5831740126.csv",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 6800,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf data delete bulk --sobject ApexLog --file tmp\\ApexLogsToDelete_0.5831740126.csv",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Successfully deleted Apex logs"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

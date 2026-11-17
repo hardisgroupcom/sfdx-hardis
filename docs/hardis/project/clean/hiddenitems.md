@@ -49,6 +49,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The hidden files of managed package items looked for in the Helios sources, to remove them before a commit](../../../assets/images/commands/project/clean/hiddenitems.webp)
+
+_The hidden files of managed package items looked for in the Helios sources, to remove them before a commit_
+
 ## Parameters
 
 | Name          |  Type   | Description                                                   |  Default  | Required | Options |

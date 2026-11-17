@@ -1,0 +1,35 @@
+{
+  "command": "hardis:ticket:set-label",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[JiraProvider] Using JIRA_EMAIL and JIRA_TOKEN for authentication"
+      }
+    },
+    {
+      "delay": 800,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Label deployed-uat added to HEL-42"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

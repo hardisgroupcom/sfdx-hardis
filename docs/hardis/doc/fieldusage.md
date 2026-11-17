@@ -43,6 +43,26 @@ sf hardis:doc:fieldusage --agent
 In agent mode, all interactive prompts are skipped and default values are used.
 
 
+## Screenshots
+
+![Where each field of the installations and panel batches is used, in layouts, Apex and Flows](../../assets/images/commands/doc/fieldusage.webp)
+
+_Where each field of the installations and panel batches is used, in layouts, Apex and Flows_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Fields usage
+
+One row per metadata component that uses a custom field, with the object, field name, field type, and the type and name of the dependency, to see where a field is used before changing or deleting it.
+
+Files: `fields-usage-*.csv`, `xls/fields-usage-*.xlsx`
+
+![Fields usage report in Excel](../../assets/images/commands/doc/fieldusage-report-fields-usage.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |
@@ -51,7 +71,9 @@ In agent mode, all interactive prompts are skipped and default values are used.
 | flags-dir         | option  | Import flag values from a directory.                                                                         |         |          |         |
 | json              | boolean | Format output as json.                                                                                       |         |          |         |
 | sObjects<br/>-s   | option  | Comma-separated list of sObjects to filter                                                                   |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                |         |          |         |
 | target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

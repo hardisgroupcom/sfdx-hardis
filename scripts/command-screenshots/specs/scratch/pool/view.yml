@@ -1,0 +1,5 @@
+command: hardis:scratch:pool:view
+run: sf hardis:scratch:pool:view
+mode: replay
+org: none
+caption: "The pool configuration, its 5 available scratch orgs with their expiration date, and the link to its dashboard"

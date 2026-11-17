@@ -1,0 +1,14 @@
+command: hardis:package:install
+run: sf hardis:package:install
+mode: replay
+org: none
+caption: "Package version 04t0b000000HeLiOSAA of Helios Core is installed in the org"
+answers:
+  - q: "package you want to install"
+    choice: "^Other$"
+    shot: true
+    caption: "Pick a package from the list, or Other to give a package version id"
+  - q: "id of the Package Version"
+    value: "04t0b000000HeLiOSAA"
+  - q: "password for this package"
+    value: ""

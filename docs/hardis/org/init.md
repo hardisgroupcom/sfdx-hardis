@@ -44,6 +44,18 @@ In agent mode:
 </details>
 
 
+## Screenshots
+
+![Pick the steps to run, the same ones a new scratch org gets](../../assets/images/commands/org/init-1.webp)
+
+_Pick the steps to run, the same ones a new scratch org gets_
+
+![The initialization steps of the Helios project run on a scratch org, with the outcome and duration of each step](../../assets/images/commands/org/init.webp)
+
+_The initialization steps of the Helios project run on a scratch org, with the outcome and duration of each step_
+
+- **(1)** One row per step, with its status
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

@@ -1,0 +1,10 @@
+command: hardis:org:monitor:all
+run: sf hardis:org:monitor:all
+org: showcase
+caption: "Every monitoring command run on the Helios org, with its status, frequency and duration in one summary"
+pills:
+  - text: "Summary of monitoring scripts"
+    legend: "Skipped commands are the ones not due today, or turned off"
+  - text: "Monitoring commands run summary"
+    legend: "One row per monitoring command, with its status and duration"
+    button: true

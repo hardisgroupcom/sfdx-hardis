@@ -11,6 +11,8 @@ sfdx-hardis wrapper for **sf project deploy validate** that displays tips to sol
 
 Note: Use **--json** argument to have better results
 
+The validation always runs Apex tests and never saves anything in the org. Salesforce intends it for production orgs: on a sandbox, which runs no test by default, use [hardis:project:deploy:start](https://sfdx-hardis.cloudity.com/hardis/project/deploy/start/) with `--dry-run --test-level RunLocalTests`.
+
 [![Assisted solving of Salesforce deployments errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](https://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
 
 [See documentation of Salesforce command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_project_commands_unified.htm#cli_reference_project_deploy_validate_unified)
@@ -60,6 +62,12 @@ commandsPostDeploy:
     runOnlyOnceByOrg: true
 ```
 
+### Plugin events
+
+Before anything reads the local sources, the installed sf plugins that listen to `sfdx-hardis:validation-start` are called, so they can prepare the sources (for example recompose decomposed metadata).
+
+As soon as Salesforce returns the result of the validation, the installed sf plugins that listen to `sfdx-hardis:validation-done` receive it, with the path of the Apex code coverage file, before the code coverage check. [More info](https://sfdx-hardis.cloudity.com/sfdx-hardis-plugins/#react-to-sfdx-hardis-events)
+
 ### Agent Mode
 
 Supports non-interactive execution with `--agent`:
@@ -72,6 +80,14 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The Helios sources validated without being deployed, with the deployment actions and Pull Request comments of sfdx-hardis around it](../../assets/images/commands/project/deploy/validate.webp)
+
+_The Helios sources validated without being deployed, with the deployment actions and Pull Request comments of sfdx-hardis around it_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
 ## Parameters
 
 | Name                     |  Type   | Description                                                                                                  | Default | Required | Options |
@@ -81,10 +97,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 | async                    | boolean | async                                                                                                        |         |          |         |
 | coverage-formatters      | option  | coverage-formatters                                                                                          |         |          |         |
 | debug                    | boolean | debug                                                                                                        |         |          |         |
-| dry-run                  | boolean | dry-run                                                                                                      |         |          |         |
 | flags-dir                | option  | Import flag values from a directory.                                                                         |         |          |         |
-| ignore-conflicts<br/>-c  | boolean | ignore-conflicts                                                                                             |         |          |         |
-| ignore-errors<br/>-r     | boolean | ignore-errors                                                                                                |         |          |         |
 | ignore-warnings<br/>-g   | boolean | ignore-warnings                                                                                              |         |          |         |
 | json                     | boolean | Format output as json.                                                                                       |         |          |         |
 | junit                    | boolean | junit                                                                                                        |         |          |         |
@@ -96,11 +109,13 @@ In agent mode, all interactive prompts are skipped and default values are used.
 | purge-on-delete          | boolean | purge-on-delete                                                                                              |         |          |         |
 | results-dir              | option  | results-dir                                                                                                  |         |          |         |
 | single-package           | boolean | single-package                                                                                               |         |          |         |
+| skipauth                 | boolean | Skip authentication check when a default username is required                                                |         |          |         |
 | source-dir<br/>-d        | option  | source-dir                                                                                                   |         |          |         |
 | target-org<br/>-o        | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
 | test-level               | option  | test-level                                                                                                   |         |          |         |
 | tests                    | option  | tests                                                                                                        |         |          |         |
 | wait<br/>-w              | option  | wait                                                                                                         |   33    |          |         |
+| websocket                | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

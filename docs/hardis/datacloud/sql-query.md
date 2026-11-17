@@ -49,6 +49,26 @@ In agent mode:
 - The save-query prompt is skipped.
 
 
+## Screenshots
+
+![The SQL query runs on Data Cloud and the 10 latest Helios accounts are exported to CSV and Excel](../../assets/images/commands/datacloud/sql-query.webp)
+
+_The SQL query runs on Data Cloud and the 10 latest Helios accounts are exported to CSV and Excel_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### SQL query results
+
+One row per record returned by the SQL query run on Data Cloud, with one column per selected field.
+
+Files: `datacloud-sql-query-*.csv`, `xls/datacloud-sql-query-*.xlsx`
+
+![SQL query results report in Excel](../../assets/images/commands/datacloud/sql-query-report-datacloud-sql-query.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

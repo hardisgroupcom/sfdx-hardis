@@ -1,0 +1,102 @@
+{
+  "command": "hardis:org:diagnose:ai-usage",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Checking Agentforce and Data 360 credit usage..."
+      }
+    },
+    {
+      "delay": 2600,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[DataCloudSqlQuery] Retrieved 11 records."
+      }
+    },
+    {
+      "delay": 1400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[DataCloudSqlQuery] Retrieved 2 records."
+      }
+    },
+    {
+      "delay": 1900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[DataCloudSqlQuery] Retrieved 6 records."
+      }
+    },
+    {
+      "delay": 1200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[DataCloudSqlQuery] Retrieved 1 records."
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "table",
+        "message": "[{\"agent\":\"Helios_Service_Agent\",\"action\":\"Answer_Questions_with_Knowledge\",\"usageType\":\"Agentforce_StandardAction\",\"metered\":\"false\",\"credits\":3080,\"events\":154},{\"agent\":\"Helios_Installation_Assistant\",\"action\":\"Answer_Questions_with_Knowledge\",\"usageType\":\"Agentforce_StandardAction\",\"metered\":\"false\",\"credits\":2140,\"events\":107},{\"agent\":\"Helios_Service_Agent\",\"action\":\"Get_Installation_Status\",\"usageType\":\"Agentforce_CustomAction\",\"metered\":\"true\",\"credits\":1460,\"events\":73},{\"agent\":\"Helios_Installation_Assistant\",\"action\":\"Schedule_Installation\",\"usageType\":\"Agentforce_CustomAction\",\"metered\":\"true\",\"credits\":1240,\"events\":62},{\"agent\":\"Helios_Service_Agent\",\"action\":\"Create_Case\",\"usageType\":\"Agentforce_StandardAction\",\"metered\":\"true\",\"credits\":980,\"events\":49},{\"agent\":\"Helios_Installation_Assistant\",\"action\":\"Check_Panel_Batch_Stock\",\"usageType\":\"Agentforce_CustomAction\",\"metered\":\"true\",\"credits\":860,\"events\":43},{\"agent\":\"Helios_Service_Agent\",\"action\":\"Identify_Customer_By_Email\",\"usageType\":\"Agentforce_StandardAction\",\"metered\":\"false\",\"credits\":760,\"events\":38},{\"agent\":\"Helios_Installation_Assistant\",\"action\":\"Get_Inverter_Specs\",\"usageType\":\"Agentforce_CustomAction\",\"metered\":\"true\",\"credits\":520,\"events\":26},{\"agent\":\"Helios_Field_Crew_Agent\",\"action\":\"Summarize_Record\",\"usageType\":\"Agentforce_StandardAction\",\"metered\":\"true\",\"credits\":420,\"events\":21},{\"agent\":\"Helios_Field_Crew_Agent\",\"action\":\"Draft_Crew_Email\",\"usageType\":\"Agentforce_StandardAction\",\"metered\":\"true\",\"credits\":340,\"events\":17},{\"agent\":\"Helios_Field_Crew_Agent\",\"action\":\"Report_Panel_Damage\",\"usageType\":\"Agentforce_CustomAction\",\"metered\":\"true\",\"credits\":180,\"events\":9}]"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/ai-usage-main.csv",
+        "title": "Agentforce and Data 360 Credit Usage (CSV)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/xls/ai-usage-main.xlsx",
+        "title": "Agentforce and Data 360 Credit Usage (XLSX)",
+        "type": "report",
+        "main": true
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "**9420** billed credits over the last 30 days in [helios-solar](https://helios-solar.my.salesforce.com) (**15400** consumed in total, 5980 unmetered)"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[NotifProvider] Handling notification of type AI_USAGE..."
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

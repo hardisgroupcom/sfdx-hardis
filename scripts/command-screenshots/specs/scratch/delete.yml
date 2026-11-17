@@ -1,0 +1,10 @@
+command: hardis:scratch:delete
+run: sf hardis:scratch:delete
+mode: replay
+org: none
+caption: "Two scratch orgs of the Dev Hub are deleted, the one still in use is kept"
+answers:
+  - q: "list of scratch orgs you want to delete"
+    choice: "HEL-57|HEL-61"
+    shot: true
+    caption: "Tick the scratch orgs to delete"

@@ -60,6 +60,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The project documentation is deployed to the org as a static resource shown in a Visualforce page and a custom tab](../../assets/images/commands/doc/mkdocs-to-salesforce.webp)
+
+_The project documentation is deployed to the org as a static resource shown in a Visualforce page and a custom tab_
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required |       Options       |

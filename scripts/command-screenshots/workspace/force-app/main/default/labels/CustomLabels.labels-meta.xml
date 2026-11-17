@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomLabels xmlns="http://soap.sforce.com/2006/04/metadata">
+    <labels>
+        <fullName>Helios_Legacy_Roof_Warning</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Legacy roof warning</shortDescription>
+        <value>This roof type needs a structural survey before the panels are installed.</value>
+    </labels>
+</CustomLabels>

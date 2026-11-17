@@ -1,0 +1,99 @@
+{
+  "command": "hardis:package:version:promote",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Please select a package (this is not a drill, it will promote an official new version!)",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "name": "packageSelected",
+            "type": "select",
+            "message": "🦙 Please select a package (this is not a drill, it will promote an official new version!)",
+            "description": "Choose which package to promote - this will create a new official version that cannot be undone",
+            "placeholder": "Select a package",
+            "choices": [
+              {
+                "title": "Helios Core@1.4.0-1",
+                "value": "Helios Core@1.4.0-1"
+              },
+              {
+                "title": "Helios Reporting@1.1.0-3",
+                "value": "Helios Reporting@1.1.0-3"
+              }
+            ],
+            "optionsPerPage": 9999
+          }
+        ]
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Helios Core@1.4.0-1"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Promoting version of package Helios Core@1.4.0-1"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf package version promote --package \"Helios Core@1.4.0-1\" --no-prompt",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf package version promote --package \"Helios Core@1.4.0-1\" --no-prompt",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Promoted package version Helios Core@1.4.0-1 with id 04t0b000000HeLiOSAA. It is now installable on production orgs"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

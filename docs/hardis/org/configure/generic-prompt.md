@@ -38,6 +38,16 @@ When `--agent` is specified:
 </details>
 
 
+## Screenshots
+
+![Pick the org where the prompt template is deployed](../../../assets/images/commands/org/configure/generic-prompt-1.webp)
+
+_Pick the org where the prompt template is deployed_
+
+![The generic prompt template that sfdx-hardis AI features call is deployed in the org, and its permission set assigned](../../../assets/images/commands/org/configure/generic-prompt.webp)
+
+_The generic prompt template that sfdx-hardis AI features call is deployed in the org, and its permission set assigned_
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

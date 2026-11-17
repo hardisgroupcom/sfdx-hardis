@@ -1,0 +1,619 @@
+{
+  "command": "hardis:org:configure:monitoring",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Monitoring pre-requisites"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "Monitoring pre-requisites documentation: https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-home/#instructions"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "reportFile",
+        "file": "https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-home/#instructions",
+        "title": "Monitoring pre-requisites",
+        "type": "docUrl"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Did you configure the sfdx-hardis monitoring pre-requisites on your Git server ?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Did you configure the sfdx-hardis monitoring pre-requisites on your Git server ?",
+            "description": "Confirm that the CI/CD variables and permissions for monitoring are configured",
+            "choices": [
+              {
+                "title": "✅ Yes",
+                "value": "yes"
+              },
+              {
+                "title": "ℹ️ No, bring me to the documentation!",
+                "value": "no"
+              }
+            ],
+            "optionsPerPage": 9999
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "✅ Yes"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Listing your authenticated orgs..."
+      }
+    },
+    {
+      "delay": 800,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Please select or connect to the org that you want to monitor",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Please select or connect to the org that you want to monitor",
+            "description": "Choose a Salesforce org from the list of authenticated orgs",
+            "choices": [
+              {
+                "title": "🌍 Login to another org",
+                "description": "Connect in your web browser to a sandbox, a scratch org or any other org",
+                "value": {
+                  "otherOrg": true
+                }
+              },
+              {
+                "title": "helios-solar--dev.sandbox.my.salesforce.com (helios-dev)",
+                "description": "Connected with admin@helios-solar.demo.dev",
+                "value": {
+                  "username": "admin@helios-solar.demo.dev",
+                  "alias": "helios-dev",
+                  "instanceUrl": "https://helios-solar--dev.sandbox.my.salesforce.com"
+                }
+              },
+              {
+                "title": "helios-solar--preprod.sandbox.my.salesforce.com (helios-preprod)",
+                "description": "Connected with admin@helios-solar.demo.preprod",
+                "value": {
+                  "username": "admin@helios-solar.demo.preprod",
+                  "alias": "helios-preprod",
+                  "instanceUrl": "https://helios-solar--preprod.sandbox.my.salesforce.com"
+                }
+              },
+              {
+                "title": "helios-solar--uat.sandbox.my.salesforce.com (helios-uat)",
+                "description": "Connected with admin@helios-solar.demo.uat",
+                "value": {
+                  "username": "admin@helios-solar.demo.uat",
+                  "alias": "helios-uat",
+                  "instanceUrl": "https://helios-solar--uat.sandbox.my.salesforce.com"
+                }
+              },
+              {
+                "title": "helios-solar.my.salesforce.com (helios-prod)",
+                "description": "Connected with admin@helios-solar.demo",
+                "value": {
+                  "username": "admin@helios-solar.demo",
+                  "alias": "helios-prod",
+                  "instanceUrl": "https://helios-solar.my.salesforce.com"
+                }
+              },
+              {
+                "title": "😱 I already authenticated my org but I don't see it",
+                "description": "It might be a sfdx-hardis cache issue",
+                "value": {
+                  "clearCache": true
+                }
+              },
+              {
+                "title": "❌ Cancel",
+                "description": "Get out of here 😊",
+                "value": {
+                  "cancel": true
+                }
+              }
+            ],
+            "optionsPerPage": 9999
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "helios-solar.my.salesforce.com (helios-prod)"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Selected Org admin@helios-solar.demo - https://helios-solar.my.salesforce.com"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Handling monitoring git branch monitoring_helios_solar..."
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Checked out git branch monitoring_helios_solar"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Creating sfdx-project..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf project generate --name \"sfdx-hardis-monitoring\"",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1200,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf project generate --name \"sfdx-hardis-monitoring\"",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Deployment repository https://github.com/helios-energy/salesforce stored as deploymentRepository in .sfdx-hardis.yml"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 How do you want to provide the SSL certificate?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 How do you want to provide the SSL certificate?",
+            "description": "Choose between generating a self-signed certificate (default) or using your own CA-signed certificate.",
+            "choices": [
+              {
+                "title": "Generate a self-signed certificate (default)",
+                "value": "selfSigned",
+                "description": "sfdx-hardis generates the key pair, the certificate, and deploys the External Client App for you."
+              },
+              {
+                "title": "Use my own CA-signed certificate",
+                "value": "caSigned",
+                "description": "You create the External Client App yourself and keep your own private key."
+              }
+            ],
+            "optionsPerPage": 9999,
+            "initial": 0
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Generate a self-signed certificate (default)"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Generating SSL certificate..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "openssl x509 -req -sha256 -days 3650 -in server.csr -signkey server.key -out server.crt",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "openssl x509 -req -sha256 -days 3650 -in server.csr -signkey server.key -out server.crt",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Do you want sfdx-hardis to configure the SF CLI External Client App or Connected App on your org ?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Do you want sfdx-hardis to configure the SF CLI External Client App or Connected App on your org ?",
+            "description": "Creates a Connected App required for CI/CD authentication. Choose yes if you are unsure.",
+            "choices": [
+              {
+                "title": "✅ Yes",
+                "value": true
+              },
+              {
+                "title": "❌ No",
+                "value": false
+              }
+            ],
+            "optionsPerPage": 9999,
+            "initial": 0
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "✅ Yes"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Please configure both below variables in your CI/CD platform. They belong to this monitoring repository: store them in its CI/CD variables, not in those of the repository that deploys to the org."
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "- Variable: SFDX_CLIENT_ID_MONITORING_HELIOS_SOLAR\n- Value: <copy>3MVG9HeliosDemoConsumerKey0aB1cD2eF3gH4iJ5kL6mN7oP8qR9sT0uV1wX2yZ3aB4cD5eF6gH7iJ8kL9mN0oP1qR2sT3uV4wX5yZ6aB7cD8eF9gH0</copy>"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "- Variable: SFDX_CLIENT_KEY_MONITORING_HELIOS_SOLAR\n- Value: <copy>9f2c1a7e5b3d48c0a6e1f7b2d9c4835a</copy>"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "On GitHub, sfdx-hardis adds the references to SFDX_CLIENT_ID_MONITORING_HELIOS_SOLAR and SFDX_CLIENT_KEY_MONITORING_HELIOS_SOLAR to the monitoring workflow itself, at the end of this command. On Azure, add them manually in your pipeline YAML definition file (azure-pipelines-*.yml)."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "reportFile",
+        "file": "https://sfdx-hardis.cloudity.com/salesforce-devops-setup-auth/",
+        "title": "Help to configure CI variables",
+        "type": "docUrl"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Please confirm when variables have been set (copy the variable names and values in the section above)",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Please confirm when variables have been set (copy the variable names and values in the section above)",
+            "description": "Confirm when you have configured the required CI/CD environment variables in your deployment platform",
+            "choices": [
+              {
+                "title": "✅ Yes",
+                "value": true
+              },
+              {
+                "title": "❌ No",
+                "value": false
+              }
+            ],
+            "optionsPerPage": 9999,
+            "initial": 0
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "✅ Yes"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 How would you like to name the External Client App?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "text",
+            "name": "value",
+            "message": "🦙 How would you like to name the External Client App?",
+            "description": "Name for the External Client App that will be created in your Salesforce org",
+            "placeholder": "Ex: sfdx_hardis",
+            "initial": "sfdxhardismon_helios_solar"
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "sfdxhardismon_helios_solar"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Deploying External Client App sfdxhardismon_helios_solar into target org admin@helios-solar.demo ..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf project deploy start --metadata-dir ./tmp/eca --target-org admin@helios-solar.demo --json",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf project deploy start --metadata-dir ./tmp/eca --target-org admin@helios-solar.demo --json",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Successfully deployed sfdxhardismon_helios_solar External Client App"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Do you want to save the configuration on the remote server (auto-commit)?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Do you want to save the configuration on the remote server (auto-commit)?",
+            "description": "The configuration files are committed and pushed to the monitoring repository",
+            "choices": [
+              {
+                "title": "✅ Yes",
+                "value": true
+              },
+              {
+                "title": "❌ No",
+                "value": false
+              }
+            ],
+            "optionsPerPage": 9999,
+            "initial": 0
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "✅ Yes"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Saving monitoring configuration on the git server..."
+      }
+    },
+    {
+      "delay": 1200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Your configuration for org monitoring is now ready 😊"
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "The monitoring workflow on main now runs monitoring_helios_solar: GitHub schedules only the workflows of the default branch, and it is also where Run workflow is offered."
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "Configure notifications and Grafana integration in your CI variables"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "reportFile",
+        "file": "https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-slack/",
+        "title": "Slack integration",
+        "type": "docUrl"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "reportFile",
+        "file": "https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-ms-teams/",
+        "title": "Teams integration",
+        "type": "docUrl"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "reportFile",
+        "file": "https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-api/",
+        "title": "Grafana integration",
+        "type": "docUrl"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

@@ -69,6 +69,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The Helios list views set back to the scope Mine in the org through a headless browser, after a deployment switched them to Everything](../../../assets/images/commands/org/fix/listviewmine.webp)
+
+_The Helios list views set back to the scope Mine in the org through a headless browser, after a deployment switched them to Everything_
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                                                                       | Default | Required | Options |

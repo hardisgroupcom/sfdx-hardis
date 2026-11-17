@@ -38,6 +38,16 @@ sf hardis:project:dev-org:remove --agent --org-id 00D000000000001AAA
 In agent mode, `--org-id` or `--target-org` is required, and no confirmation is asked.
 
 
+## Screenshots
+
+![Pick the development org to remove from the list](../../../assets/images/commands/project/dev-org/remove-1.webp)
+
+_Pick the development org to remove from the list_
+
+![The sandbox tomaszdev, nobody uses anymore, removed from the development orgs list](../../../assets/images/commands/project/dev-org/remove.webp)
+
+_The sandbox tomaszdev, nobody uses anymore, removed from the development orgs list_
+
 ## Parameters
 
 | Name              |  Type   | Description                                                   | Default | Required | Options |

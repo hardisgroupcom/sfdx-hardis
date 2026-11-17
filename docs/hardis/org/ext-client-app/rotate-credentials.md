@@ -58,6 +58,16 @@ In agent mode:
 - The new secret is not returned in the `--json` output; capture it from an interactive run instead.
 
 
+## Screenshots
+
+![Pick the External Client App to rotate](../../../assets/images/commands/org/ext-client-app/rotate-credentials-1.webp)
+
+_Pick the External Client App to rotate_
+
+![The credentials of an External Client App are rotated, the new key and secret are shown once, the previous ones stay valid 30 days](../../../assets/images/commands/org/ext-client-app/rotate-credentials.webp)
+
+_The credentials of an External Client App are rotated, the new key and secret are shown once, the previous ones stay valid 30 days_
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                                                                                                         | Default | Required | Options |

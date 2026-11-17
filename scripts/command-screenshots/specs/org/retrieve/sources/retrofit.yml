@@ -1,0 +1,7 @@
+command: hardis:org:retrieve:sources:retrofit
+run: sf hardis:org:retrieve:sources:retrofit
+org: showcase
+caption: "Retrofit is deprecated: the command stops and explains how to recover a change made in a major org as a User Story"
+pills:
+  - text: "This command is deprecated"
+    legend: "Start a branch under integration and retrieve the change with the Metadata Retriever instead"

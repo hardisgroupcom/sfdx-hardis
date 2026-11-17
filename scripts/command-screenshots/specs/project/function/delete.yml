@@ -1,0 +1,10 @@
+command: hardis:project:function:delete
+run: sf hardis:project:function:delete --id notifyCrew
+org: none
+caption: A custom function that a deployment action still uses is only deleted after a confirmation
+allowedStatuses:
+  - completed
+  - error
+answers:
+  - q: Custom function \[notifyCrew\] is still used by deployment act
+    choice: ^❌ No$

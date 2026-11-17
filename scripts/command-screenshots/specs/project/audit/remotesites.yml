@@ -1,0 +1,4 @@
+command: hardis:project:audit:remotesites
+run: sf hardis:project:audit:remotesites
+org: none
+caption: The remote site settings of the Helios project with the URL each one opens, in a CSV report

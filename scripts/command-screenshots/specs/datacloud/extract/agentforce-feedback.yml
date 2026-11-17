@@ -1,0 +1,5 @@
+command: hardis:datacloud:extract:agentforce-feedback
+run: sf hardis:datacloud:extract:agentforce-feedback --last-n-days 30
+mode: replay
+org: none
+caption: "The good and bad feedback left on the Helios Installation Assistant in the last 30 days, with the full conversation of each"

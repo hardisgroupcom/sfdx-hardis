@@ -50,6 +50,16 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![Pick the flows of the project to document](../../assets/images/commands/doc/flow2markdown-1.webp)
+
+_Pick the flows of the project to document_
+
+![The Installation_Assign_Crew flow documented in Markdown, with its diagram and general information, in the VS Code preview](../../assets/images/commands/doc/flow2markdown.webp)
+
+_The Installation_Assign_Crew flow documented in Markdown, with its diagram and general information, in the VS Code preview_
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                    | Default | Required | Options |

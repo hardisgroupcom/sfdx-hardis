@@ -43,6 +43,16 @@ Use `--agent` to disable all interactive prompts. In agent mode:
 All interactive package selection prompts are skipped.
 
 
+## Screenshots
+
+![Pick the package version to promote](../../../assets/images/commands/package/version/promote-1.webp)
+
+_Pick the package version to promote_
+
+![Version 1.4.0-1 of Helios Core is promoted and can now be installed in production orgs](../../../assets/images/commands/package/version/promote.webp)
+
+_Version 1.4.0-1 of Helios Core is promoted and can now be installed in production orgs_
+
 ## Parameters
 
 | Name                  |  Type   | Description                                                                                                       | Default | Required | Options |

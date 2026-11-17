@@ -44,6 +44,26 @@ Use `--agent` to disable all interactive prompts. In agent mode:
 - All interactive branch and status selection prompts are skipped.
 
 
+## Screenshots
+
+![The Pull Requests merged into integration, extracted from GitHub to a CSV and an Excel file](../../../assets/images/commands/git/pull-requests/extract.webp)
+
+_The Pull Requests merged into integration, extracted from GitHub to a CSV and an Excel file_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Pull requests
+
+One row per pull request or merge request returned by the git provider, with its title, author, branches, status and dates.
+
+Files: `pull-requests-*.csv`, `xls/pull-requests-*.xlsx`
+
+![Pull requests report in Excel](../../../assets/images/commands/git/pull-requests/extract-report-pull-requests.webp)
+
 ## Parameters
 
 | Name                 |  Type   | Description                                                       | Default | Required |            Options            |

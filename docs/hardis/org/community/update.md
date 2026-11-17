@@ -46,6 +46,16 @@ Use `--agent` to disable all prompts. Typical usage:
 - The `--name` and `--status` flags are required (same as normal mode).
 
 
+## Screenshots
+
+![Confirm the status change of the communities](../../../assets/images/commands/org/community/update-1.webp)
+
+_Confirm the status change of the communities_
+
+![Two Experience Cloud communities are put in maintenance mode](../../../assets/images/commands/org/community/update.webp)
+
+_Two Experience Cloud communities are put in maintenance mode_
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |
@@ -55,8 +65,10 @@ Use `--agent` to disable all prompts. Typical usage:
 | flags-dir         | option  | Import flag values from a directory.                                                                         |         |          |         |
 | json              | boolean | Format output as json.                                                                                       |         |          |         |
 | name<br/>-n       | option  | List of Networks Names that you want to update, separated by comma                                           |         |   true   |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                |         |          |         |
 | status<br/>-s     | option  | New status for the community, available values are: Live, DownForMaintenance                                 |         |   true   |         |
 | target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

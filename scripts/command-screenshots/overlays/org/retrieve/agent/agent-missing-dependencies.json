@@ -1,0 +1,36 @@
+{
+  "mode": "replace",
+  "title": "Components the agent may need",
+  "rows": [
+    {
+      "Type": "CustomField",
+      "Name": "Installation__c.Roof_Type__c",
+      "Referenced by": "force-app/main/default/aiAuthoringBundles/Helios_Installation_Assistant_3/Helios_Installation_Assistant_3.agent"
+    },
+    {
+      "Type": "CustomField",
+      "Name": "Installation__c.Scheduled_Slot__c",
+      "Referenced by": "force-app/main/default/aiAuthoringBundles/Helios_Installation_Assistant_3/Helios_Installation_Assistant_3.agent"
+    },
+    {
+      "Type": "CustomField",
+      "Name": "Panel_Batch__c.Delivery_Status__c",
+      "Referenced by": "force-app/main/default/aiAuthoringBundles/Helios_Installation_Assistant_3/Helios_Installation_Assistant_3.agent"
+    },
+    {
+      "Type": "CustomObject",
+      "Name": "Installation__c",
+      "Referenced by": "force-app/main/default/aiAuthoringBundles/Helios_Installation_Assistant_3/Helios_Installation_Assistant_3.agent"
+    },
+    {
+      "Type": "CustomObject",
+      "Name": "Panel_Batch__c",
+      "Referenced by": "force-app/main/default/aiAuthoringBundles/Helios_Installation_Assistant_3/Helios_Installation_Assistant_3.agent"
+    },
+    {
+      "Type": "CustomObject",
+      "Name": "Crew_Capacity__c",
+      "Referenced by": "force-app/main/default/aiAuthoringBundles/Helios_Installation_Assistant_3/Helios_Installation_Assistant_3.agent"
+    }
+  ]
+}

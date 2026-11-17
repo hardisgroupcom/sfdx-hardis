@@ -1,0 +1,4 @@
+command: hardis:project:clean:minimizeprofiles
+run: sf hardis:project:clean:minimizeprofiles
+org: none
+caption: The profiles of the Helios project stripped of the access that permission sets already give

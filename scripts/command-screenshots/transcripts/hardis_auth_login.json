@@ -1,0 +1,154 @@
+{
+  "command": "hardis:auth:login",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 What is the base URL or domain or the org you want to connect to, as default org ?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 What is the base URL or domain or the org you want to connect to, as default org ?",
+            "description": "Select the Salesforce environment type or specify a custom URL for authentication",
+            "choices": [
+              {
+                "title": "📝 Custom login URL (Sandbox, DevHub or Production Org)",
+                "value": "custom",
+                "description": "Recommended option 😊 Example: https://myclient--preprod.sandbox.lightning.force.com/"
+              },
+              {
+                "title": "🧪 Sandbox or Scratch org (test.salesforce.com)",
+                "value": "https://test.salesforce.com",
+                "description": "The org I want to connect is a sandbox or a scratch org"
+              },
+              {
+                "title": "☢️ Other: Dev org, Production org or DevHub org (login.salesforce.com)",
+                "value": "https://login.salesforce.com",
+                "description": "The org I want to connect is NOT a sandbox"
+              }
+            ],
+            "optionsPerPage": 9999,
+            "initial": 1
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "🧪 Sandbox or Scratch org (test.salesforce.com)"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Authenticating using web login..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "sf org login web --set-default --instance-url https://test.salesforce.com"
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 What name do you want to give this org?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "text",
+            "name": "value",
+            "message": "🦙 What name do you want to give this org?",
+            "description": "This alias replaces the long username in every list and every command. Keep the suggestion or type your own.",
+            "initial": "helios-solar--uat"
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "helios-uat"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Naming the org helios-uat"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf alias set helios-uat=admin@helios-solar.demo.uat --json",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf alias set helios-uat=admin@helios-solar.demo.uat --json",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Org admin@helios-solar.demo.uat is now known as helios-uat"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

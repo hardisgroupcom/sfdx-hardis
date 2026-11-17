@@ -1,0 +1,14 @@
+command: hardis:package:create
+run: sf hardis:package:create
+mode: replay
+org: none
+caption: "The unlocked package Helios Core is created in the Dev Hub and its package id is printed"
+answers:
+  - q: "name of the package"
+    value: "Helios Core"
+  - q: "path of the package"
+    value: "force-app"
+  - q: "type of the package"
+    choice: "^Unlocked$"
+    shot: true
+    caption: "Choose an unlocked package, meant for internal use"

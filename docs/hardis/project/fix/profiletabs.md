@@ -50,6 +50,20 @@ In agent mode:
 - All interactive prompts are skipped
 
 
+## Screenshots
+
+![Pick the tabs to show or hide](../../../assets/images/commands/project/fix/profiletabs-1.webp)
+
+_Pick the tabs to show or hide_
+
+![Pick the profiles to update](../../../assets/images/commands/project/fix/profiletabs-2.webp)
+
+_Pick the profiles to update_
+
+![The Installations and Panel Batches tabs set visible in the Helios Crew profile of the sources](../../../assets/images/commands/project/fix/profiletabs.webp)
+
+_The Installations and Panel Batches tabs set visible in the Helios Crew profile of the sources_
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  |      Default       | Required | Options |

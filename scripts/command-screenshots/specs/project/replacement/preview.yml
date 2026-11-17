@@ -1,0 +1,4 @@
+command: hardis:project:replacement:preview
+run: sf hardis:project:replacement:preview --target-branch uat --api-version 65.0
+org: none
+caption: The warehouse URL that the replacement rules would write in the remote site setting before a deployment to the uat org

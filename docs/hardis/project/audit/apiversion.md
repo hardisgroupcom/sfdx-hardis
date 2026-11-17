@@ -28,6 +28,26 @@ sf hardis:project:audit:apiversion --agent
 In agent mode, all interactive prompts are skipped and default values are used.
   
 
+## Screenshots
+
+![The API version of the Apex and Visualforce files of the Helios project, checked against a minimum of 65, in a CSV report](../../../assets/images/commands/project/audit/apiversion.webp)
+
+_The API version of the Apex and Visualforce files of the Helios project, checked against a minimum of 65, in a CSV report_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### API versions
+
+One row per metadata file audited, with its API version and whether it is below the minimum version, to find what to upgrade.
+
+Files: `api-versions-*.csv`, `xls/api-versions-*.xlsx`
+
+![API versions report in Excel](../../../assets/images/commands/project/audit/apiversion-report-api-versions.webp)
+
 ## Parameters
 
 | Name                     |  Type   | Description                                                                                                          | Default | Required | Options |

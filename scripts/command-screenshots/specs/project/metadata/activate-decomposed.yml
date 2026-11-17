@@ -1,0 +1,12 @@
+command: hardis:project:metadata:activate-decomposed
+run: sf hardis:project:metadata:activate-decomposed
+org: none
+caption: The permission sets of the Helios project converted to the decomposed source format, one file per access
+answers:
+  - q: "Select metadata types to decompose"
+    choice: "^PermissionSet$"
+    shot: true
+    caption: Pick the metadata types to decompose
+  - q: You can not decompose metadata when default org has source tracking
+    choice: "^✅ Yes$"
+    optional: true

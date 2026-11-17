@@ -32,6 +32,26 @@ sf hardis:org:diagnose:apex-api-version --agent --target-org myorg@example.com
 
 In agent mode, the command runs fully automatically. The API version threshold defaults to 50 (or `DEPRECATED_APEX_API_VERSION` env var) when `--threshold` is not provided.
 
+## Screenshots
+
+![Helios Apex classes and triggers at API version 64 or below, listed with their version to plan the upgrade](../../../assets/images/commands/org/diagnose/apex-api-version.webp)
+
+_Helios Apex classes and triggers at API version 64 or below, listed with their version to plan the upgrade_
+
+- **(1)** One row per class or trigger to upgrade, with its API version
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Deprecated API versions
+
+One row per Apex class or trigger whose API version is at or below the threshold, with its name and API version, to know what to upgrade.
+
+Files: `apex-api-version-*.csv`, `xls/apex-api-version-*.xlsx`
+
+![Deprecated API versions report in Excel](../../../assets/images/commands/org/diagnose/apex-api-version-report-apex-api-version.webp)
+
 ## Parameters
 
 | Name                      |  Type   | Description                                                                                                                       | Default | Required | Options |

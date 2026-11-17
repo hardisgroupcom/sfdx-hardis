@@ -1,0 +1,14 @@
+command: hardis:work:save
+run: sf hardis:work:save
+mode: replay
+org: none
+caption: "A User Story saved: package.xml updated from the git delta, sources cleaned, commits pushed, ready for a Pull Request"
+answers:
+  - q: "Have you already committed the updated metadata"
+    choice: "Yes, my commit"
+    shot: true
+    caption: "Confirm the metadata is committed before the manifest is updated"
+  - q: "Do you want to push your commit"
+    choice: "^✅ Yes$"
+    shot: true
+    caption: "Push the branch to the git server"

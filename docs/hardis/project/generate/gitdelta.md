@@ -49,6 +49,18 @@ The command's technical implementation involves:
 </details>
 
 
+## Screenshots
+
+![Pick the commit the delta starts from](../../../assets/images/commands/project/generate/gitdelta-1.webp)
+
+_Pick the commit the delta starts from_
+
+![The package.xml and destructiveChanges.xml of what the User Story changed since the first commit of the project](../../../assets/images/commands/project/generate/gitdelta.webp)
+
+_The package.xml and destructiveChanges.xml of what the User Story changed since the first commit of the project_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
 ## Parameters
 
 | Name         |  Type   | Description                                                   | Default | Required | Options |

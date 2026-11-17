@@ -1,0 +1,156 @@
+{
+  "mode": "replace",
+  "title": "Users targeted by the MFA methods unlink",
+  "columns": [
+    "Username",
+    "UserId",
+    "IsActive",
+    "PreStatus"
+  ],
+  "rows": [
+    {
+      "Username": "victor.martin@helios-solar.demo",
+      "UserId": "005Hb00000075GLIAY",
+      "IsActive": "true",
+      "PreStatus": "pending"
+    },
+    {
+      "Username": "mariia.kowalska@helios-solar.demo",
+      "UserId": "005Hb00000077K4IAI",
+      "IsActive": "true",
+      "PreStatus": "pending"
+    },
+    {
+      "Username": "romain.lefebvre@helios-solar.demo",
+      "UserId": "005Hb00000079NnIAI",
+      "IsActive": "true",
+      "PreStatus": "pending"
+    },
+    {
+      "Username": "lucia.fernandez@helios-solar.demo",
+      "UserId": "005Hb0000007BRWIA2",
+      "IsActive": "true",
+      "PreStatus": "pending"
+    },
+    {
+      "Username": "tomasz.nowak@helios-solar.demo",
+      "UserId": "005Hb0000007DVFIA2",
+      "IsActive": "true",
+      "PreStatus": "pending"
+    },
+    {
+      "Username": "amelie.dubois@helios-solar.demo",
+      "UserId": "005Hb0000007FYyIAM",
+      "IsActive": "true",
+      "PreStatus": "pending"
+    },
+    {
+      "Username": "hugo.perrin@helios-solar.demo",
+      "UserId": "005Hb0000007HchIAE",
+      "IsActive": "true",
+      "PreStatus": "pending"
+    },
+    {
+      "Username": "ines.moreau@helios-solar.demo",
+      "UserId": "005Hb0000007JgQIAU",
+      "IsActive": "true",
+      "PreStatus": "pending"
+    },
+    {
+      "Username": "jakub.zielinski@helios-solar.demo",
+      "UserId": "005Hb0000007Lk9IAE",
+      "IsActive": "true",
+      "PreStatus": "pending"
+    },
+    {
+      "Username": "sofia.marchetti@helios-solar.demo",
+      "UserId": "005Hb0000007NnsIAE",
+      "IsActive": "false",
+      "PreStatus": "inactive"
+    },
+    {
+      "Username": "lena.hoffmann@helios-solar.demo",
+      "UserId": "005Hb0000007PrbIAE",
+      "IsActive": "true",
+      "PreStatus": "pending"
+    },
+    {
+      "Username": "nils.berger@helios-solar.demo",
+      "UserId": "005Hb0000007RvKIAU",
+      "IsActive": "true",
+      "PreStatus": "pending"
+    },
+    {
+      "Username": "clara.vidal@helios-solar.demo",
+      "UserId": "005Hb0000007Tz3IAE",
+      "IsActive": "true",
+      "PreStatus": "pending"
+    },
+    {
+      "Username": "pablo.serrano@helios-solar.demo",
+      "UserId": "005Hb0000007W2mIAE",
+      "IsActive": "true",
+      "PreStatus": "pending"
+    },
+    {
+      "Username": "pablo.serrano.old@helios-solar.demo",
+      "UserId": "",
+      "IsActive": "false",
+      "PreStatus": "notFound"
+    },
+    {
+      "Username": "oskar.wojcik@helios-solar.demo",
+      "UserId": "005Hb0000007aAEIAY",
+      "IsActive": "true",
+      "PreStatus": "pending"
+    },
+    {
+      "Username": "julie.garnier@helios-solar.demo",
+      "UserId": "005Hb0000007cDxIAI",
+      "IsActive": "true",
+      "PreStatus": "pending"
+    },
+    {
+      "Username": "marco.rinaldi@helios-solar.demo",
+      "UserId": "005Hb0000007eHgIAI",
+      "IsActive": "true",
+      "PreStatus": "pending"
+    },
+    {
+      "Username": "anna.kowalczyk@helios-solar.demo",
+      "UserId": "005Hb0000007gLPIAY",
+      "IsActive": "true",
+      "PreStatus": "pending"
+    },
+    {
+      "Username": "theo.lambert@helios-solar.demo",
+      "UserId": "005Hb0000007iP8IAI",
+      "IsActive": "false",
+      "PreStatus": "inactive"
+    },
+    {
+      "Username": "nora.jansen@helios-solar.demo",
+      "UserId": "005Hb0000007kSrIAI",
+      "IsActive": "true",
+      "PreStatus": "pending"
+    },
+    {
+      "Username": "felix.roussel@helios-solar.demo",
+      "UserId": "005Hb0000007mWaIAI",
+      "IsActive": "true",
+      "PreStatus": "pending"
+    },
+    {
+      "Username": "maya.castillo@helios-solar.demo",
+      "UserId": "005Hb0000007oaJIAQ",
+      "IsActive": "true",
+      "PreStatus": "pending"
+    },
+    {
+      "Username": "emil.sorensen@helios-solar.demo",
+      "UserId": "005Hb0000007qe2IAA",
+      "IsActive": "true",
+      "PreStatus": "pending"
+    }
+  ]
+}

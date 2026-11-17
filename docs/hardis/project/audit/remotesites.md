@@ -46,6 +46,26 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The remote site settings of the Helios project with the URL each one opens, in a CSV report](../../../assets/images/commands/project/audit/remotesites.webp)
+
+_The remote site settings of the Helios project with the URL each one opens, in a CSV report_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Remote Sites
+
+One row per Remote Site Setting, with its protocol, domain, URL and active flag, to review the external endpoints the org can call.
+
+Files: `remote-sites-audit-*.csv`, `xls/remote-sites-audit-*.xlsx`
+
+![Remote Sites report in Excel](../../../assets/images/commands/project/audit/remotesites-report-remote-sites-audit.webp)
+
 ## Parameters
 
 | Name         |  Type   | Description                                                   | Default | Required | Options |

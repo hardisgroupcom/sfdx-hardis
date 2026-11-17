@@ -58,6 +58,32 @@ In agent mode:
 - Pass `--customizedonly` to restrict the workbook to objects that have local customizations (the prompt is skipped).
 
 
+## Screenshots
+
+![Pick the objects to document](../../assets/images/commands/doc/data-dictionary-1.webp)
+
+_Pick the objects to document_
+
+- **(1)** A custom object of the project
+
+![Excel data dictionary of the Installation__c and Panel_Batch__c objects, read live from the Helios org](../../assets/images/commands/doc/data-dictionary.webp)
+
+_Excel data dictionary of the Installation__c and Panel_Batch__c objects, read live from the Helios org_
+
+- **(1)** The workbook: an index sheet, then one sheet of fields per object
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Data dictionary
+
+One Excel workbook with an index sheet (one row per object), one sheet per object listing its fields, and sheets for the validation rules, record types and Data Cloud relationships; each sheet is also written as a CSV file.
+
+Files: `data-dictionary-*.csv`, `xls/data-dictionary-*.xlsx`
+
+![Data dictionary report in Excel](../../assets/images/commands/doc/data-dictionary-report-data-dictionary.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                                                                                                                                         | Default | Required | Options |

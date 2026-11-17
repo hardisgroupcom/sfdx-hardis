@@ -17,6 +17,7 @@ Salesforce DevOps toolbox by Cloudity -- CI/CD pipelines, metadata backup/monito
 | `yarn build:doc`                     | Auto-generate command documentation (all commands)        |
 | `yarn build:doc --commands <id>`     | Regenerate the doc of some commands (ids or `*` patterns) |
 | `yarn build:llms-txt`                | Regenerate `docs/llms.txt` (the pre-commit hook does too) |
+| `yarn screenshots:commands <ids>`    | Regenerate the screenshots of some command pages          |
 | `./bin/dev.js hardis:<cat>:<action>` | Test a command locally (no build needed)                  |
 
 **Package manager**: Yarn only. Do not use npm. Lock file: `yarn.lock`.
@@ -36,6 +37,10 @@ Every step also covers the VS Code extension: see [VS Code Extension](#vs-code-e
 - `grafana-dashboards` skill: rules and workflow for the "Org Monitoring by sfdx-hardis" v2 dashboards (`docs/grafana/dashboards-v2`). Load it for any dashboard or alert-rule work, and for every indicator evolution: **any change to a monitoring indicator must also handle its impact on the Grafana dashboards.**
 - `monitoring-agents-md` skill: the `AGENTS.md` that the monitoring backup writes for coding agents. Load it for any change to what it describes: the backup output, the monitoring pipelines and commands, what is sent to Grafana, monitoring config keys, the CI/CD pipeline behavior, git provider APIs or token variables. **A change that makes it wrong must update it in the same PR.**
 - Generic Grafana skills (`grafana-core:dashboarding`, `grafana-core:promql`, `grafana-core:alerting-irm`, `grafana-lgtm:loki`...) and MegaLinter skills and agents (`megalinter:megalinter-check`, `megalinter:megalinter-fix`, `megalinter:megalinter-runner`...) come from Claude Code plugins enabled for this repository in `.claude/settings.json`: `grafana-core` and `grafana-lgtm` from [grafana/skills](https://github.com/grafana/skills), `megalinter` from [oxsecurity/megalinter](https://github.com/oxsecurity/megalinter). Never copy them into `.claude/`. Update them with `claude plugin update <plugin>@<marketplace>`.
+
+## Command Page Screenshots
+
+- `command-screenshots` skill: every command page shows the command running in VS Code (real runs against orgfarm scratch orgs) and its reports opened in Excel. Load it when a command is created or changed, when a command writes a new report (`static reports`), or when `build:doc` warns about missing screenshots. Regenerate the changed commands with `yarn screenshots:commands <ids>`.
 
 ## End to End Tests
 

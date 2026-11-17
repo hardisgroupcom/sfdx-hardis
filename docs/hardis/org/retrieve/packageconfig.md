@@ -46,6 +46,18 @@ In agent mode:
 - Use `--update-all-config` to update config with all retrieved packages.
 
 
+## Screenshots
+
+![Choose whether the package is installed in scratch orgs, deployed to the major orgs, or both](../../../assets/images/commands/org/retrieve/packageconfig-1.webp)
+
+_Choose whether the package is installed in scratch orgs, deployed to the major orgs, or both_
+
+![The installed packages of production written to installedPackages in .sfdx-hardis.yml](../../../assets/images/commands/org/retrieve/packageconfig.webp)
+
+_The installed packages of production written to installedPackages in .sfdx-hardis.yml_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
 ## Parameters
 
 | Name                   |  Type   | Description                                                                                                          | Default | Required | Options |

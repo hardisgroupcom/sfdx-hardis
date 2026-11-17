@@ -1,0 +1,143 @@
+{
+  "command": "hardis:org:configure:generic-prompt",
+  "exitCode": 0,
+  "events": [
+    { "delay": 0, "message": { "event": "initClient" } },
+    { "delay": 300, "message": { "event": "commandLogLine", "logType": "action", "message": "Listing your authenticated orgs..." } },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Please select the org where you want to deploy the Generic Prompt Template",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "org",
+            "message": "🦙 Please select the org where you want to deploy the Generic Prompt Template",
+            "description": "Choose a Salesforce org from the list of authenticated orgs",
+            "choices": [
+              {
+                "title": "helios-solar.my.salesforce.com (helios-prod)",
+                "value": "admin@helios-solar.demo",
+                "description": "Connected with admin@helios-solar.demo"
+              },
+              {
+                "title": "helios-solar--uat.sandbox.my.salesforce.com (helios-uat)",
+                "value": "admin@helios-solar.demo.uat",
+                "description": "Connected with admin@helios-solar.demo.uat"
+              },
+              {
+                "title": "helios-solar--integ.sandbox.my.salesforce.com (helios-integ)",
+                "value": "admin@helios-solar.demo.integ",
+                "description": "Connected with admin@helios-solar.demo.integ"
+              },
+              {
+                "title": "❌ Cancel",
+                "value": "cancel",
+                "description": "Get out of here 😊"
+              }
+            ],
+            "optionsPerPage": 9999,
+            "initial": 1
+          }
+        ]
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Selected Org admin@helios-solar.demo.uat - https://helios-solar--uat.sandbox.my.salesforce.com"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Do you want to deploy the SfdxHardisGenericPrompt template to the selected org?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Do you want to deploy the SfdxHardisGenericPrompt template to the selected org?",
+            "description": "This will deploy a GenAiPromptTemplate metadata to the org, enabling AI prompt integration features.",
+            "choices": [
+              { "title": "✅ Yes", "value": true },
+              { "title": "❌ No", "value": false }
+            ],
+            "initial": 0
+          }
+        ]
+      }
+    },
+    { "delay": 300, "message": { "event": "commandLogLine", "logType": "action", "message": "Deploying SfdxHardisGenericPrompt template to org..." } },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": { "command": "sf project deploy start --metadata-dir ./tmp/generic-prompt --target-org admin@helios-solar.demo.uat --wait 120", "cwd": "." }
+      }
+    },
+    {
+      "delay": 4200,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf project deploy start --metadata-dir ./tmp/generic-prompt --target-org admin@helios-solar.demo.uat --wait 120",
+          "cwd": ".",
+          "success": true,
+          "result": { "status": 0, "stdout": "Deployed Source\n\n State   Name                    Type                Path\n ─────── ─────────────────────── ─────────────────── ─────────────────────────────────────────────\n Created SfdxHardisGenericPrompt GenAiPromptTemplate genAiPromptTemplates/SfdxHardisGenericPrompt\n" }
+        }
+      }
+    },
+    { "delay": 300, "message": { "event": "commandLogLine", "logType": "success", "message": "SfdxHardisGenericPrompt template deployed successfully" } },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Do you want to assign the EinsteinGPTPromptTemplateUser Permission Set to your user?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Do you want to assign the EinsteinGPTPromptTemplateUser Permission Set to your user?",
+            "description": "This will grant your user access to AI prompt template features.",
+            "choices": [
+              { "title": "✅ Yes", "value": true },
+              { "title": "❌ No", "value": false }
+            ],
+            "initial": 0
+          }
+        ]
+      }
+    },
+    { "delay": 300, "message": { "event": "commandLogLine", "logType": "action", "message": "Assigning EinsteinGPTPromptTemplateUser permission set..." } },
+    { "delay": 1500, "message": { "event": "commandLogLine", "logType": "success", "message": "Successfully assigned EinsteinGPTPromptTemplateUser Permission Set to your user" } },
+    { "delay": 200, "message": { "event": "closeClient", "status": "success" } }
+  ]
+}

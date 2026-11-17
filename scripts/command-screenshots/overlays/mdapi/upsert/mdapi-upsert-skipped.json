@@ -1,0 +1,102 @@
+{
+  "mode": "replace",
+  "title": "Metadata upsert skipped items",
+  "columns": [
+    "type",
+    "fullName"
+  ],
+  "rows": [
+    {
+      "type": "ApexClass",
+      "fullName": "InstallationScheduler"
+    },
+    {
+      "type": "ApexClass",
+      "fullName": "InstallationSchedulerTest"
+    },
+    {
+      "type": "ApexClass",
+      "fullName": "PanelBatchService"
+    },
+    {
+      "type": "ApexClass",
+      "fullName": "PanelBatchServiceTest"
+    },
+    {
+      "type": "ApexClass",
+      "fullName": "InverterModelSelector"
+    },
+    {
+      "type": "ApexClass",
+      "fullName": "InverterModelSelectorTest"
+    },
+    {
+      "type": "ApexClass",
+      "fullName": "CrewAssignmentBatch"
+    },
+    {
+      "type": "ApexClass",
+      "fullName": "CrewAssignmentBatchTest"
+    },
+    {
+      "type": "ApexTrigger",
+      "fullName": "InstallationTrigger"
+    },
+    {
+      "type": "ApexTrigger",
+      "fullName": "PanelBatchTrigger"
+    },
+    {
+      "type": "ApexPage",
+      "fullName": "InstallationPrintout"
+    },
+    {
+      "type": "ApexComponent",
+      "fullName": "HeliosHeader"
+    },
+    {
+      "type": "AuraDefinitionBundle",
+      "fullName": "heliosInstallationMap"
+    },
+    {
+      "type": "LightningComponentBundle",
+      "fullName": "installationTimeline"
+    },
+    {
+      "type": "LightningComponentBundle",
+      "fullName": "panelBatchPicker"
+    },
+    {
+      "type": "LightningComponentBundle",
+      "fullName": "inverterSpecCard"
+    },
+    {
+      "type": "LightningComponentBundle",
+      "fullName": "crewCalendar"
+    },
+    {
+      "type": "LightningComponentBundle",
+      "fullName": "heliosUtils"
+    },
+    {
+      "type": "StaticResource",
+      "fullName": "HeliosLogo"
+    },
+    {
+      "type": "StaticResource",
+      "fullName": "PanelDatasheets"
+    },
+    {
+      "type": "StaticResource",
+      "fullName": "ChartJs"
+    },
+    {
+      "type": "Document",
+      "fullName": "Helios_Documents/Installation_Checklist.pdf"
+    },
+    {
+      "type": "DigitalExperienceBundle",
+      "fullName": "site/Helios_Customer_Portal1"
+    }
+  ]
+}

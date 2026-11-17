@@ -1,0 +1,5 @@
+command: hardis:scratch:pool:localauth
+run: sf hardis:scratch:pool:localauth
+mode: replay
+org: none
+caption: "The workstation is checked: the git provider token and the encryption key allow taking scratch orgs from the pool"

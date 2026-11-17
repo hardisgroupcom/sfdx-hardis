@@ -1,0 +1,150 @@
+{
+  "mode": "replace",
+  "title": "Scratch org pool",
+  "columns": [
+    "alias",
+    "username",
+    "expirationDate",
+    "daysLeft"
+  ],
+  "rows": [
+    {
+      "alias": "PO-k3CI-runner-integration_20261103_0200",
+      "username": "test-8wq3kz1lfa2b@helios-solar.demo",
+      "expirationDate": "2026-12-03",
+      "daysLeft": 16
+    },
+    {
+      "alias": "PO-x7CI-runner-integration_20261103_0307",
+      "username": "test-m2c7hd0xpq4e@helios-solar.demo",
+      "expirationDate": "2026-12-03",
+      "daysLeft": 16
+    },
+    {
+      "alias": "PO-p2CI-runner-integration_20261104_0414",
+      "username": "test-r5t9ya3nub6k@helios-solar.demo",
+      "expirationDate": "2026-12-04",
+      "daysLeft": 17
+    },
+    {
+      "alias": "PO-m9CI-runner-integration_20261104_0521",
+      "username": "test-c1v8gs4ejw0z@helios-solar.demo",
+      "expirationDate": "2026-12-04",
+      "daysLeft": 17
+    },
+    {
+      "alias": "PO-a4CI-runner-integration_20261105_0228",
+      "username": "test-h6p2lx9qmd3f@helios-solar.demo",
+      "expirationDate": "2026-12-05",
+      "daysLeft": 18
+    },
+    {
+      "alias": "PO-t6CI-runner-integration_20261105_0335",
+      "username": "test-y0b4nr7tck5s@helios-solar.demo",
+      "expirationDate": "2026-12-05",
+      "daysLeft": 18
+    },
+    {
+      "alias": "PO-q1CI-runner-integration_20261106_0442",
+      "username": "test-e3k6wf1zgh8v@helios-solar.demo",
+      "expirationDate": "2026-12-06",
+      "daysLeft": 19
+    },
+    {
+      "alias": "PO-z8CI-runner-integration_20261106_0549",
+      "username": "test-u9d2qm5aly7c@helios-solar.demo",
+      "expirationDate": "2026-12-06",
+      "daysLeft": 19
+    },
+    {
+      "alias": "PO-c5CI-runner-integration_20261107_0256",
+      "username": "test-j4s8vb0ref2n@helios-solar.demo",
+      "expirationDate": "2026-12-07",
+      "daysLeft": 20
+    },
+    {
+      "alias": "PO-h2CI-runner-integration_20261107_0303",
+      "username": "test-n7x1ct6kpu3w@helios-solar.demo",
+      "expirationDate": "2026-12-07",
+      "daysLeft": 20
+    },
+    {
+      "alias": "PO-w3CI-runner-integration_20261108_0410",
+      "username": "test-f2g5ze8sjb1q@helios-solar.demo",
+      "expirationDate": "2026-12-08",
+      "daysLeft": 21
+    },
+    {
+      "alias": "PO-n7CI-runner-integration_20261108_0517",
+      "username": "test-t8r3hy4maw6d@helios-solar.demo",
+      "expirationDate": "2026-12-08",
+      "daysLeft": 21
+    },
+    {
+      "alias": "PO-r4CI-runner-integration_20261109_0224",
+      "username": "test-a5l9kv2xnc0e@helios-solar.demo",
+      "expirationDate": "2026-12-09",
+      "daysLeft": 22
+    },
+    {
+      "alias": "PO-e9CI-runner-integration_20261109_0331",
+      "username": "test-q6e1ub7dfs4h@helios-solar.demo",
+      "expirationDate": "2026-12-09",
+      "daysLeft": 22
+    },
+    {
+      "alias": "PO-j6CI-runner-integration_20261110_0438",
+      "username": "test-w3j8pm5ytg9r@helios-solar.demo",
+      "expirationDate": "2026-12-10",
+      "daysLeft": 23
+    },
+    {
+      "alias": "PO-b1CI-runner-integration_20261110_0545",
+      "username": "test-z0c4xn1bha7u@helios-solar.demo",
+      "expirationDate": "2026-12-10",
+      "daysLeft": 23
+    },
+    {
+      "alias": "PO-u5CI-runner-integration_20261111_0252",
+      "username": "test-g9f6rs3qvk2m@helios-solar.demo",
+      "expirationDate": "2026-12-11",
+      "daysLeft": 24
+    },
+    {
+      "alias": "PO-f8CI-runner-integration_20261111_0359",
+      "username": "test-d1y7we8lzp5t@helios-solar.demo",
+      "expirationDate": "2026-12-11",
+      "daysLeft": 24
+    },
+    {
+      "alias": "PO-s2CI-runner-integration_20261112_0406",
+      "username": "test-k4h0tb6cmx3j@helios-solar.demo",
+      "expirationDate": "2026-12-12",
+      "daysLeft": 25
+    },
+    {
+      "alias": "PO-y4CI-runner-integration_20261112_0513",
+      "username": "test-s7q2gl9fne1v@helios-solar.demo",
+      "expirationDate": "2026-12-12",
+      "daysLeft": 25
+    },
+    {
+      "alias": "PO-g7CI-runner-integration_20261113_0220",
+      "username": "test-b8u5dk0arw4y@helios-solar.demo",
+      "expirationDate": "2026-12-13",
+      "daysLeft": 26
+    },
+    {
+      "alias": "PO-d3CI-runner-integration_20261113_0327",
+      "username": "test-p2m6zx3jhs8c@helios-solar.demo",
+      "expirationDate": "2026-12-13",
+      "daysLeft": 26
+    },
+    {
+      "alias": "PO-v6CI-runner-integration_20261114_0434",
+      "username": "test-l5w9ce1tqd7g@helios-solar.demo",
+      "expirationDate": "2026-12-14",
+      "daysLeft": 27
+    }
+  ]
+}

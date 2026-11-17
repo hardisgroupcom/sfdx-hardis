@@ -1,0 +1,14 @@
+command: hardis:org:retrieve:agent
+run: sf hardis:org:retrieve:agent
+mode: replay
+org: none
+caption: Version 3 of the Helios_Installation_Assistant agent is retrieved with its Flows, Apex classes and prompt templates, and added to package.xml
+answers:
+  - q: "Select the agent to retrieve"
+    choice: "^Helios_Installation_Assistant$"
+    shot: true
+    caption: Pick the agent to retrieve
+  - q: "Select the version of"
+    choice: "^3 "
+    shot: true
+    caption: Pick the version, the active one is proposed first

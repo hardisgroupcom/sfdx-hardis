@@ -29,12 +29,26 @@ import {
 } from '../../../../common/utils/agentUtils.js';
 import { resolveDeployApiVersion } from '../../../../common/replacementRules/engine/ruleEngine.js';
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class RetrieveAgent extends SfCommand<any> {
   public static title = 'Retrieve an Agentforce agent';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'agent-retrieved-components',
+      title: 'Retrieved components',
+      description: 'One row per component retrieved with the agent (type and member), all added to the package.xml of the project.',
+    },
+    {
+      file: 'agent-missing-dependencies',
+      title: 'Missing dependencies',
+      description: 'One row per component the agent references but that was not retrieved, with the component that references it, to check and add by hand if needed.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

@@ -1,0 +1,14 @@
+command: hardis:org:configure:grafana-dashboards
+run: sf hardis:org:configure:grafana-dashboards --with-alerts
+mode: replay
+org: none
+caption: The 13 Org Monitoring dashboards and the 8 paused alert rules are installed in a Grafana instance
+answers:
+  - q: "already have a Grafana instance"
+    choice: "Yes"
+  - q: "Grafana instance URL"
+    value: "https://helios-solar.grafana.net"
+    shot: true
+    caption: Give the URL of the Grafana instance
+  - q: "Grafana service account token"
+    value: "glsa_helios_demo_token"

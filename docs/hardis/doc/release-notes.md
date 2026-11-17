@@ -80,6 +80,14 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 <!-- training-links:end -->
 
 
+## Screenshots
+
+![The release notes of what uat will bring to preprod - four Pull Requests, their tickets, the metadata delta and the deployment actions](../../assets/images/commands/doc/release-notes.webp)
+
+_The release notes of what uat will bring to preprod - four Pull Requests, their tickets, the metadata delta and the deployment actions_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
 ## Parameters
 
 | Name                 |  Type   | Description                                                                                                                                                                                                                      | Default | Required |     Options      |

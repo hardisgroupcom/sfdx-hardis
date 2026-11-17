@@ -13,12 +13,26 @@ import { prompts } from '../../../../common/utils/prompts.js';
 import { CONSTANTS } from '../../../../config/index.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class DiagnoseUnusedUsers extends SfCommand<any> {
   public static title = 'Detect unused Users in Salesforce';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'unused-users-',
+      title: 'Unused users',
+      description: 'One row per active user who has not logged in for the chosen number of days, with the last login date, profile and license; the file name continues with the period, for example unused-users-last-180-days.',
+    },
+    {
+      file: 'active-users-',
+      title: 'Active users',
+      description: 'One row per active user who logged in during the chosen period, written instead of the unused users report when the command runs with --returnactiveusers.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

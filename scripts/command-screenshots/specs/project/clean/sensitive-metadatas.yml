@@ -1,0 +1,4 @@
+command: hardis:project:clean:sensitive-metadatas
+run: sf hardis:project:clean:sensitive-metadatas
+org: none
+caption: The certificates of the Helios sources looked for, to replace their content by a placeholder before a commit

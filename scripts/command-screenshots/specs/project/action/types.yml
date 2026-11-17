@@ -1,0 +1,10 @@
+command: hardis:project:action:types
+run: sf hardis:project:action:types
+org: none
+caption: The deployment action types with their phases, default context and flags, the notifyCrew custom function of Helios included
+pills:
+  - text: FLAGS
+    legend: The flags of hardis:project:action:create for each type
+  - text: See more
+    button: true
+    legend: Shows the other types and the custom functions of the project

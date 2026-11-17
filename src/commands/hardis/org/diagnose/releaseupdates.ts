@@ -12,12 +12,21 @@ import { dateHelper } from '../../../../common/utils/dateHelper.js';
 import { CONSTANTS } from '../../../../config/index.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class DiagnoseReleaseUpdates extends SfCommand<any> {
   public static title = 'Check Release Updates of an org';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'release-updates',
+      title: 'Release updates',
+      description: 'One row per upcoming or overdue Release Update of the org, with its title, category, status and due date, so you can plan the ones to activate.',
+    },
+  ];
 
   public static description = `## DEPRECATED
 

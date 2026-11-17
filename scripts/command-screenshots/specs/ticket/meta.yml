@@ -1,0 +1,5 @@
+command: hardis:ticket:meta
+run: sf hardis:ticket:meta --project HEL
+mode: replay
+org: none
+caption: "The issue types and statuses of the HEL Jira project, to build the filters of a ticket search"

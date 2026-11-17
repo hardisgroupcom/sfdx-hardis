@@ -1,0 +1,5 @@
+command: hardis:doc:mkdocs-to-cf
+run: sf hardis:doc:mkdocs-to-cf
+mode: replay
+org: none
+caption: "The project documentation is built with Zensical, uploaded to Cloudflare Pages and protected by a Cloudflare Access policy"

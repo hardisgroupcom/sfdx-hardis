@@ -50,6 +50,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The items of the DocuSign managed package (namespace dsfs) are removed from the project sources](../../../assets/images/commands/project/clean/manageditems.webp)
+
+_The items of the DocuSign managed package (namespace dsfs) are removed from the project sources_
+
 ## Parameters
 
 | Name             |  Type   | Description                                                   |  Default  | Required | Options |

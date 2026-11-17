@@ -11,6 +11,7 @@ import { WebSocketClient } from '../../../common/websocketClient.js';
 import { listOrgSObjects } from '../../../common/utils/orgUtils.js';
 import { isManagedApiName } from '../../../common/utils/projectUtils.js';
 import { t } from '../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../common/docBuilder/commandScreenshots.js';
 
 type FieldUsageRow = {
   sObjectName: string;
@@ -78,6 +79,14 @@ In agent mode:
 - The \`Object:Field1,Field2\` syntax can be used to restrict the analysis to specific fields, with an optional \`(WITH_SUM)\` modifier per numeric field.
 - The API usage confirmation prompt is skipped (proceeds automatically).
 `;
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'object-field-usage',
+      title: 'Field usage',
+      description: 'One Excel workbook with a sheet per analyzed object (one row per field, with its record count and fill rate), a summary sheet and the fields that could not be analyzed; each sheet is also written as a CSV file.',
+    },
+  ];
 
   public static examples = [
     '$ sf hardis:doc:object-field-usage',

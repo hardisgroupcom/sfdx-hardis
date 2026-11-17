@@ -56,6 +56,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The positions of the elements of the Auto-Layout Flows of the Helios project set to 0, to avoid merge conflicts](../../../assets/images/commands/project/clean/flowpositions.webp)
+
+_The positions of the elements of the Auto-Layout Flows of the Helios project set to 0, to avoid merge conflicts_
+
 ## Parameters
 
 | Name          |  Type   | Description                                                                |  Default  | Required | Options |

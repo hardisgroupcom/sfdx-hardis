@@ -63,6 +63,16 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 <!-- training-links:end -->
 
 
+## Screenshots
+
+![Pick the action to update](../../../assets/images/commands/project/action/update-1.webp)
+
+_Pick the action to update_
+
+![The label of a post-deployment action is changed in the project configuration](../../../assets/images/commands/project/action/update.webp)
+
+_The label of a post-deployment action is changed in the project configuration_
+
 ## Parameters
 
 | Name                         |  Type   | Description                                                                                                                                                                                                                                                     | Default | Required |                          Options                          |

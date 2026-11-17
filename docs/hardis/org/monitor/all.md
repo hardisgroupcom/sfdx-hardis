@@ -113,6 +113,27 @@ The default list of commands is the following:
 
 
 
+## Screenshots
+
+![Every monitoring command run on the Helios org, with its status, frequency and duration in one summary](../../../assets/images/commands/org/monitor/all.webp)
+
+_Every monitoring command run on the Helios org, with its status, frequency and duration in one summary_
+
+- **(1)** Skipped commands are the ones not due today, or turned off
+- **(2)** One row per monitoring command, with its status and duration
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Monitoring commands
+
+One row per monitoring command configured for the org, with its status, frequency and duration, written only when there are more than 20 rows.
+
+Files: `monitoring-commands-*.csv`, `xls/monitoring-commands-*.xlsx`
+
+![Monitoring commands report in Excel](../../../assets/images/commands/org/monitor/all-report-monitoring-commands.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

@@ -74,6 +74,22 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 <!-- training-links:end -->
 
 
+## Screenshots
+
+![Choose the User Stories to carry from uat to preprod](../../../assets/images/commands/project/promotion/create-1.webp)
+
+_Choose the User Stories to carry from uat to preprod_
+
+![A cherry-pick conflicts, the recommended answer commits the markers for a coding agent to solve](../../../assets/images/commands/project/promotion/create-2.webp)
+
+_A cherry-pick conflicts, the recommended answer commits the markers for a coding agent to solve_
+
+![A promotion branch assembled from three User Stories of uat, with the Pull Request opened and the conflicts left for a coding agent](../../../assets/images/commands/project/promotion/create.webp)
+
+_A promotion branch assembled from three User Stories of uat, with the Pull Request opened and the conflicts left for a coding agent_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
 ## Parameters
 
 | Name                     |  Type   | Description                                                                                                                                                                                                                                                                                                                    | Default | Required |                        Options                         |

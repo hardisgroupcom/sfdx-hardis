@@ -119,6 +119,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
       default: false,
       description: "debug",
     }),
+    websocket: Flags.string({
+      description: 'Websocket host:port for VsCode SFDX Hardis UI integration',
+    }),
+    skipauth: Flags.boolean({
+      description: 'Skip authentication check when a default username is required',
+    }),
   };
 
   public static requiresProject = true;

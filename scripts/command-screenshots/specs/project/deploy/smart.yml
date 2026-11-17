@@ -1,0 +1,14 @@
+command: hardis:project:deploy:smart
+run: sf hardis:project:deploy:smart
+org: throwaway
+# A draft of deployment actions not assigned to a Pull Request stops any deployment
+before: git rm -q scripts/actions/.sfdx-hardis.draft.yml && git commit -qm "HEL-42 Drop the draft deployment actions"
+caption: The Helios sources deployed to a scratch org with their deployment actions, Apex tests and the report of deployed components
+pills:
+  - text: Deployment components
+    button: true
+    legend: The components deployed, in an Excel report
+answers:
+  - q: "Do you want to use org "
+    choice: "^✅ Yes$"
+    optional: true

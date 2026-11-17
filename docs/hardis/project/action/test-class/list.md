@@ -36,6 +36,12 @@ Required in agent mode:
 </details>
 
 
+## Screenshots
+
+![The Apex test classes declared for the deployments of the project, its branches and its Pull Requests](../../../../assets/images/commands/project/action/test-class/list.webp)
+
+_The Apex test classes declared for the deployments of the project, its branches and its Pull Requests_
+
 ## Parameters
 
 | Name         |  Type   | Description                                                       | Default | Required |          Options          |

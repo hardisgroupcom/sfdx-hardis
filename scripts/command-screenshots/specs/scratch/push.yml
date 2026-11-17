@@ -1,0 +1,4 @@
+command: hardis:scratch:push
+run: sf hardis:scratch:push
+org: throwaway
+caption: The local changes of the project pushed to the scratch org

@@ -1,0 +1,4 @@
+command: hardis:project:replacement:list
+run: sf hardis:project:replacement:list
+org: none
+caption: The replacement rules warehouse-api-url and crew-support-email of the Helios project, next to the built-in rules

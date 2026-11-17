@@ -19,6 +19,7 @@ import {
 import { TestManagementProviderRoot } from '../../../../common/testManagementProvider/testManagementProviderRoot.js';
 import { postTestCasesSummaries } from '../../../../common/testManagementProvider/testCasesSummary.js';
 import { PostCommentResult } from '../../../../common/ticketProvider/utils/ticketComment.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 import { getConfig } from '../../../../config/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -26,6 +27,14 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class TicketTestCasesUpsert extends SfCommand<any> {
   public static title = 'Upsert the test cases of a ticket';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'test-cases-upsert',
+      title: 'Upserted test cases',
+      description: 'One row per test case pushed to the test management provider, with the action taken (or planned in dry run), its tracker id, URL and error.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

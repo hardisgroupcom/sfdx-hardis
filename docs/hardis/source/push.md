@@ -25,6 +25,14 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The deprecated wrapper of sfdx force:source:push, with the notice to move to sf project deploy start](../../assets/images/commands/source/push.webp)
+
+_The deprecated wrapper of sfdx force:source:push, with the notice to move to sf project deploy start_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
 ## Parameters
 
 | Name                  |  Type   | Description                                                                                                  | Default | Required | Options |

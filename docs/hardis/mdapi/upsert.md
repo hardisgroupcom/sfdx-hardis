@@ -45,6 +45,52 @@ sf hardis:mdapi:upsert --source-dir force-app/main/default/profiles --agent
 In agent mode (and in CI), the overwrite confirmation prompt is skipped and the deployment proceeds. The caller owns the risk of the whole-component overwrite.
 
 
+## Screenshots
+
+![Confirm before the components replace their versions in the org](../../assets/images/commands/mdapi/upsert-1.webp)
+
+_Confirm before the components replace their versions in the org_
+
+![The two Helios permission sets overwritten whole in the org with CRUD upserts, with the list of components sent](../../assets/images/commands/mdapi/upsert.webp)
+
+_The two Helios permission sets overwritten whole in the org with CRUD upserts, with the list of components sent_
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Components to overwrite
+
+One row per metadata component that will be overwritten as a whole in the org, listed before the confirmation prompt.
+
+Files: `mdapi-upsert-components-*.csv`, `xls/mdapi-upsert-components-*.xlsx`
+
+![Components to overwrite report in Excel](../../assets/images/commands/mdapi/upsert-report-mdapi-upsert-components.webp)
+
+### Upsert successes
+
+One row per metadata component created or updated in the org.
+
+Files: `mdapi-upsert-successes-*.csv`, `xls/mdapi-upsert-successes-*.xlsx`
+
+![Upsert successes report in Excel](../../assets/images/commands/mdapi/upsert-report-mdapi-upsert-successes.webp)
+
+### Upsert failures
+
+One row per metadata component that could not be upserted, with the error returned by the Metadata API.
+
+Files: `mdapi-upsert-failures-*.csv`, `xls/mdapi-upsert-failures-*.xlsx`
+
+![Upsert failures report in Excel](../../assets/images/commands/mdapi/upsert-report-mdapi-upsert-failures.webp)
+
+### Upsert skipped items
+
+One row per metadata component skipped because its type is not supported by the CRUD-based Metadata API.
+
+Files: `mdapi-upsert-skipped-*.csv`, `xls/mdapi-upsert-skipped-*.xlsx`
+
+![Upsert skipped items report in Excel](../../assets/images/commands/mdapi/upsert-report-mdapi-upsert-skipped.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

@@ -1,0 +1,24 @@
+command: hardis:org:refresh:before-refresh
+run: sf hardis:org:refresh:before-refresh
+mode: replay
+org: none
+caption: Everything a sandbox refresh would erase is saved first, from certificates to the list of manual actions
+answers:
+  - q: "retrieve Certificates"
+    choice: "Yes"
+  - q: "Please check package XML file"
+    choice: "Yes"
+  - q: "Select Custom Settings to retrieve"
+    choice: "."
+  - q: "Have you converted the Connected Apps"
+    choice: "have converted them"
+    shot: true
+    caption: Convert the Connected Apps to External Client Apps before the refresh
+  - q: "Select the External Client Apps you want to save"
+    choice: "Crew_Scheduler|Installer_Mobile|Panel_Telemetry"
+    shot: true
+    caption: Pick the External Client Apps to save with their credentials
+  - q: "delete the External Client Apps"
+    choice: "No$"
+  - q: "still want to save Connected Apps"
+    choice: "No$"

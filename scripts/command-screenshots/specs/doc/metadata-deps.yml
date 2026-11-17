@@ -1,0 +1,13 @@
+command: hardis:doc:metadata-deps
+run: sf hardis:doc:metadata-deps
+org: showcase
+caption: The components that use the InstallationScheduler Apex class, read from the org
+answers:
+  - q: Select the metadata type
+    choice: ^ApexClass$
+    shot: true
+    caption: Pick the type of the component
+  - q: API name of the component
+    value: InstallationScheduler
+    shot: true
+    caption: Give its API name

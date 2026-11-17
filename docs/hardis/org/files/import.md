@@ -44,6 +44,14 @@ Use `--agent` to disable all prompts. Typical usage:
 - The `--path` flag is required in agent mode (no interactive workspace selection).
 
 
+## Screenshots
+
+![The documents of two installations uploaded from the project folder to the matching records](../../../assets/images/commands/org/files/import.webp)
+
+_The documents of two installations uploaded from the project folder to the matching records_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

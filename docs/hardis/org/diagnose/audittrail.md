@@ -149,6 +149,30 @@ sf hardis:org:diagnose:audittrail --agent --target-org myorg@example.com
 
 In agent mode, the audit trail report is generated without interactive prompts, using the default number of days.
 
+## Screenshots
+
+![Pick how far back to look for suspicious setup activities](../../../assets/images/commands/org/diagnose/audittrail-1.webp)
+
+_Pick how far back to look for suspicious setup activities_
+
+![Setup changes of the last 30 days, checked against the actions the team expects](../../../assets/images/commands/org/diagnose/audittrail.webp)
+
+_Setup changes of the last 30 days, checked against the actions the team expects_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Setup audit trail
+
+One row per Setup Audit Trail action of the period, with its date, user, section and action, and the suspect ones flagged.
+
+Files: `audit-trail-*.csv`, `xls/audit-trail-*.xlsx`
+
+![Setup audit trail report in Excel](../../../assets/images/commands/org/diagnose/audittrail-report-audit-trail.webp)
+
 ## Parameters
 
 | Name                |  Type   | Description                                                                                                  | Default | Required | Options |

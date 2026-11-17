@@ -1,0 +1,22 @@
+command: hardis:org:configure:monitoring
+run: sf hardis:org:configure:monitoring --deployment-repository https://github.com/helios-energy/salesforce
+mode: replay
+org: none
+caption: The monitoring of the Helios production org is configured in its own repository, with its certificate, its External Client App and its CI/CD variables
+answers:
+  - q: "monitoring pre-requisites"
+    choice: "Yes"
+  - q: "org that you want to monitor"
+    choice: "helios-prod"
+    shot: true
+    caption: Pick the org to monitor
+  - q: "SSL certificate"
+    choice: "self-signed"
+  - q: "configure the SF CLI External Client App"
+    choice: "Yes"
+  - q: "Please confirm when variables have been set"
+    choice: "Yes"
+  - q: "name the External Client App"
+    value: "__INITIAL__"
+  - q: "save the configuration on the remote server"
+    choice: "Yes"

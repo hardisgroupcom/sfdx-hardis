@@ -1,0 +1,11 @@
+command: hardis:org:select
+run: sf hardis:org:select
+org: showcase
+caption: The helios-dev scratch org becomes the default org of the project
+answers:
+  - q: Please select an org
+    choice: hardis-shots-showcase
+    shot: true
+    caption: Pick one of the orgs you are logged in to, or log in to another one
+  - q: Do you want to set the selected org as your default org
+    choice: ^✅ Yes$

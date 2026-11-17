@@ -1,0 +1,7 @@
+command: hardis:org:retrieve:sources:dx
+run: sf hardis:org:retrieve:sources:dx
+org: showcase
+caption: "Every metadata of the Helios org retrieved, managed items left out, and converted into an SFDX project"
+pills:
+  - text: "Successfully retrieved sfdx project"
+    legend: "The folder where the SFDX project is written"

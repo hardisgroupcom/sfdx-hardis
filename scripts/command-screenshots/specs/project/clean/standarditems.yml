@@ -1,0 +1,4 @@
+command: hardis:project:clean:standarditems
+run: sf hardis:project:clean:standarditems
+org: none
+caption: Standard objects without custom fields and the standard apps removed from the Helios sources after a retrieve

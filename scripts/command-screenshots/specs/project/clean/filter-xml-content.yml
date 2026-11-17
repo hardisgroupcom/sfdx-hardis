@@ -1,0 +1,4 @@
+command: hardis:project:clean:filter-xml-content
+run: sf hardis:project:clean:filter-xml-content --configfile filter-config.json --inputfolder force-app --outputfolder force-app
+org: none
+caption: The field permissions and user permissions the target orgs do not have, removed from the Helios profiles and permission sets

@@ -1,0 +1,90 @@
+{
+  "mode": "replace",
+  "title": "Inactive Metadata Elements",
+  "columns": [
+    "type",
+    "name",
+    "severity",
+    "severityIcon"
+  ],
+  "rows": [
+    {
+      "type": "Approval Process (inactive)",
+      "name": "Installation__c - Installation_Discount_Approval",
+      "severity": "warning",
+      "severityIcon": "⚠️"
+    },
+    {
+      "type": "Approval Process (inactive)",
+      "name": "Panel_Batch__c - Panel_Batch_Write_Off",
+      "severity": "warning",
+      "severityIcon": "⚠️"
+    },
+    {
+      "type": "Assignment Rule (inactive)",
+      "name": "Case",
+      "severity": "warning",
+      "severityIcon": "⚠️"
+    },
+    {
+      "type": "Auto Response Rule (inactive)",
+      "name": "Lead",
+      "severity": "warning",
+      "severityIcon": "⚠️"
+    },
+    {
+      "type": "Flow (draft)",
+      "name": "Installation_Reminder",
+      "severity": "warning",
+      "severityIcon": "⚠️"
+    },
+    {
+      "type": "Flow (draft)",
+      "name": "Inverter_Warranty_Check",
+      "severity": "warning",
+      "severityIcon": "⚠️"
+    },
+    {
+      "type": "Flow (draft)",
+      "name": "Panel_Batch_Allocation",
+      "severity": "warning",
+      "severityIcon": "⚠️"
+    },
+    {
+      "type": "Escalation Rule (inactive)",
+      "name": "Case",
+      "severity": "warning",
+      "severityIcon": "⚠️"
+    },
+    {
+      "type": "Record Type (inactive)",
+      "name": "Installation__c - Commercial_Rooftop",
+      "severity": "warning",
+      "severityIcon": "⚠️"
+    },
+    {
+      "type": "Record Type (inactive)",
+      "name": "Panel_Batch__c - Refurbished",
+      "severity": "warning",
+      "severityIcon": "⚠️"
+    },
+    {
+      "type": "Validation Rule (inactive)",
+      "name": "Installation__c - Roof_Survey_Required",
+      "severity": "warning",
+      "severityIcon": "⚠️"
+    },
+    {
+      "type": "Validation Rule (inactive)",
+      "name": "Inverter_Model__c - Max_Power_Positive",
+      "severity": "warning",
+      "severityIcon": "⚠️"
+    },
+    {
+      "type": "Workflow Rule (inactive)",
+      "name": "Installation__c",
+      "severity": "warning",
+      "severityIcon": "⚠️"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+command: hardis:org:diagnose:flex-queue
+run: sf hardis:org:diagnose:flex-queue
+org: showcase
+caption: "Apex jobs holding in the flex queue of the Helios org, counted against the alert threshold of 90 out of 100"
+pills:
+  - text: "is below threshold 90"
+    legend: "The alert fires at 90 jobs, Salesforce refuses new ones at 100"
+  - text: "Apex flex queue (Holding)"
+    legend: "One row per job waiting in the queue"
+    button: true

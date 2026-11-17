@@ -53,6 +53,20 @@ Use `--agent` to disable all prompts. Typical usage:
 - The workspace content is still displayed, but its confirmation prompt is skipped.
 
 
+## Screenshots
+
+![Pick the data workspace whose records are deleted](../../../assets/images/commands/org/data/delete-1.webp)
+
+_Pick the data workspace whose records are deleted_
+
+![The last confirmation names the org and the data workspace before anything is deleted](../../../assets/images/commands/org/data/delete-2.webp)
+
+_The last confirmation names the org and the data workspace before anything is deleted_
+
+![The panel batches of the scheduled installations deleted from a scratch org, with a data workspace made for deletion](../../../assets/images/commands/org/data/delete.webp)
+
+_The panel batches of the scheduled installations deleted from a scratch org, with a data workspace made for deletion_
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

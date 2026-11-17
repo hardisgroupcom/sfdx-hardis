@@ -8,12 +8,21 @@ import { uxLogTableWithReport } from '../../../../common/utils/filesUtils.js';
 import { downloadJobArtifacts } from '../../../../common/utils/jobArtifactsUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class GitArtifactsDownload extends SfCommand<any> {
   public static title = 'Download job artifacts';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'job-artifacts-files',
+      title: 'Downloaded files',
+      description: 'One row per file extracted from the artifacts of the job, with its path and its size in KB.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

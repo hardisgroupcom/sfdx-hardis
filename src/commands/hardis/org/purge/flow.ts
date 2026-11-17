@@ -9,12 +9,31 @@ import { bulkDelete, bulkDeleteTooling, bulkQuery } from '../../../../common/uti
 import { dedupeFlowInterviewIds, extractBlockingFlowInterviewIds, FLOW_INTERVIEW_BLOCK_MARKER, queryFlowInterviewIdsForFlows } from '../../../../common/utils/flowDeletionUtils.js';
 import { generateCsvFile, generateReportPath, uxLogTableWithReport } from '../../../../common/utils/filesUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class OrgPurgeFlow extends SfCommand<any> {
   public static title = 'Purge Flow versions';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'org-purge-flow-to-delete',
+      title: 'Flow versions to delete',
+      description: 'One row per Flow version selected for deletion, so you can check the list before confirming.',
+    },
+    {
+      file: 'flow-interviews-to-delete',
+      title: 'Flow interviews to delete',
+      description: 'One row per Flow interview that blocks the deletion of a Flow version, with its name, label, status and creator; written only when there are more than 20 rows.',
+    },
+    {
+      file: 'org-purge-flow-deleted',
+      title: 'Deleted records',
+      description: 'One row per Flow version or Flow interview the command tried to delete, with its deletion status and error if any.',
+    },
+  ];
 
   public static description = `
 **Purges old or unwanted Flow versions from a Salesforce org, with an option to delete related Flow Interviews.**
@@ -476,7 +495,8 @@ In agent mode:
         'Name': flow.Name,
         'Label': flow.InterviewLabel,
         'Status': flow.InterviewStatus,
-        'Created By': flow.CreatedBy?.Username ?? '',
+        // Bulk API rows have flat keys ("CreatedBy.Username")
+        'Created By': flow['CreatedBy.Username'] ?? flow.CreatedBy?.Username ?? '',
       })),
       ['Name', 'Label', 'Status', 'Created By'],
       { fileNamePrefix: 'flow-interviews-to-delete', fileTitle: 'Flow Interviews to delete' }

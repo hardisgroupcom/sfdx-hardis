@@ -53,6 +53,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The field permissions and user permissions the target orgs do not have, removed from the Helios profiles and permission sets](../../../assets/images/commands/project/clean/filter-xml-content.webp)
+
+_The field permissions and user permissions the target orgs do not have, removed from the Helios profiles and permission sets_
+
 ## Parameters
 
 | Name                |  Type   | Description                                                   | Default | Required | Options |

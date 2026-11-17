@@ -45,6 +45,12 @@ sf hardis ticket meta --projects --provider azure --agent --json
 ```
 
 
+## Screenshots
+
+![The issue types and statuses of the HEL Jira project, to build the filters of a ticket search](../../assets/images/commands/ticket/meta.webp)
+
+_The issue types and statuses of the HEL Jira project, to build the filters of a ticket search_
+
 ## Parameters
 
 | Name             |  Type   | Description                                                                     | Default | Required |                Options                |

@@ -1,6 +1,7 @@
 import fs from 'fs';
 import * as path from 'path';
 import sortArray from '../utils/sortArray.js';
+import { CommandReport, CommandScreenshotsEntry, docsRelativeLink } from './commandScreenshots.js';
 
 export const GENERATED_PLUGIN_DOC_HEADER =
   "<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->";
@@ -77,8 +78,13 @@ export function listGeneratedCommandPages(docsRoot: string): GeneratedCommandPag
   return pages;
 }
 
-// Markdown page of a single command
-export function buildCommandDocMarkdown(command: any): string {
+/**
+ * Markdown page of a single command. `screenshots` is the entry of the command in
+ * docs/assets/command-screenshots.json, when the project has one: its images go in a Screenshots
+ * section after the description, and the reports the command declares (`static reports`) are
+ * listed before the parameters, each with its image.
+ */
+export function buildCommandDocMarkdown(command: any, screenshots: CommandScreenshotsEntry | null = null): string {
   const lines = [
     buildFrontMatter(
       command.title ? `${command.id} - ${command.title}` : command.id,
@@ -90,6 +96,9 @@ export function buildCommandDocMarkdown(command: any): string {
   lines.push(`# ${command.id}`, '');
   // Description
   lines.push(`## Description`, '', ...(command.description || '').split('\n'), '');
+  const pagePath = getCommandDocRelativePath(command.id);
+  lines.push(...buildScreenshotsMarkdown(command.id, pagePath, screenshots));
+  lines.push(...buildReportsMarkdown(pagePath, command.reports || [], screenshots));
   // Flags
   lines.push(
     `## Parameters`,
@@ -356,6 +365,51 @@ function toMetaDescription(markdown: string): string {
   // A text without any space to cut at is cut at the limit
   const cutIndex = text.lastIndexOf(' ', 297);
   return text.substring(0, cutIndex > 0 ? cutIndex : 297).replace(/[\s,;:.]+$/, '') + '...';
+}
+
+// Screenshots section of a command page: each image, its caption and the legend of its pills
+function buildScreenshotsMarkdown(commandId: string, pagePath: string, screenshots: CommandScreenshotsEntry | null): string[] {
+  const shots = screenshots?.shots || [];
+  if (shots.length === 0) {
+    return [];
+  }
+  const lines = ['## Screenshots', ''];
+  for (const shot of shots) {
+    const caption = (shot.caption || '').trim();
+    const alt = (caption || `${commandId} running in VS Code`).replace(/[[\]]/g, '');
+    lines.push(`![${alt}](${docsRelativeLink(pagePath, shot.image)})`, '');
+    if (caption) {
+      lines.push(`_${caption}_`, '');
+    }
+    const pills = [...(shot.pills || [])].sort((a, b) => a.n - b.n);
+    if (pills.length > 0) {
+      lines.push(...pills.map((pill) => `- **(${pill.n})** ${pill.legend}`), '');
+    }
+  }
+  return lines;
+}
+
+// Reports section of a command page: what each report holds, its files, and its image in Excel
+function buildReportsMarkdown(pagePath: string, reports: CommandReport[], screenshots: CommandScreenshotsEntry | null): string[] {
+  if (reports.length === 0) {
+    return [];
+  }
+  const lines = [
+    '## Reports',
+    '',
+    'The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.',
+    '',
+  ];
+  for (const report of reports) {
+    // A prefix may be declared with the separator that follows it ("unused-users-")
+    const prefix = report.file.replace(/[-_]+$/, '');
+    lines.push(`### ${report.title}`, '', report.description, '', `Files: \`${prefix}-*.csv\`, \`xls/${prefix}-*.xlsx\``, '');
+    const image = screenshots?.reports?.[report.file]?.image;
+    if (image) {
+      lines.push(`![${report.title.replace(/[[\]]/g, '')} report in Excel](${docsRelativeLink(pagePath, image)})`, '');
+    }
+  }
+  return lines;
 }
 
 function escapeRegex(text: string): string {

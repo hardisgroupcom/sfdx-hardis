@@ -1,0 +1,652 @@
+{
+  "command": "hardis:project:configure:auth",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "This command will configure the authentication between a git branch and a Salesforce org."
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Listing your authenticated orgs..."
+      }
+    },
+    {
+      "delay": 800,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Please select or login into the org you want to configure the SF CLI Authentication",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Please select or login into the org you want to configure the SF CLI Authentication",
+            "description": "Choose a Salesforce org from the list of authenticated orgs",
+            "choices": [
+              {
+                "title": "🌍 Login to another org",
+                "description": "Connect in your web browser to a sandbox, a scratch org or any other org",
+                "value": {
+                  "otherOrg": true
+                }
+              },
+              {
+                "title": "helios-solar--dev.sandbox.my.salesforce.com (helios-dev)",
+                "description": "Connected with admin@helios-solar.demo.dev",
+                "value": {
+                  "username": "admin@helios-solar.demo.dev",
+                  "alias": "helios-dev",
+                  "instanceUrl": "https://helios-solar--dev.sandbox.my.salesforce.com"
+                }
+              },
+              {
+                "title": "helios-solar--preprod.sandbox.my.salesforce.com (helios-preprod)",
+                "description": "Connected with admin@helios-solar.demo.preprod",
+                "value": {
+                  "username": "admin@helios-solar.demo.preprod",
+                  "alias": "helios-preprod",
+                  "instanceUrl": "https://helios-solar--preprod.sandbox.my.salesforce.com"
+                }
+              },
+              {
+                "title": "helios-solar--uat.sandbox.my.salesforce.com (helios-uat)",
+                "description": "Connected with admin@helios-solar.demo.uat",
+                "value": {
+                  "username": "admin@helios-solar.demo.uat",
+                  "alias": "helios-uat",
+                  "instanceUrl": "https://helios-solar--uat.sandbox.my.salesforce.com"
+                }
+              },
+              {
+                "title": "helios-solar.my.salesforce.com (helios-prod)",
+                "description": "Connected with admin@helios-solar.demo",
+                "value": {
+                  "username": "admin@helios-solar.demo",
+                  "alias": "helios-prod",
+                  "instanceUrl": "https://helios-solar.my.salesforce.com"
+                }
+              },
+              {
+                "title": "😱 I already authenticated my org but I don't see it",
+                "description": "It might be a sfdx-hardis cache issue",
+                "value": {
+                  "clearCache": true
+                }
+              },
+              {
+                "title": "❌ Cancel",
+                "description": "Get out of here 😊",
+                "value": {
+                  "cancel": true
+                }
+              }
+            ],
+            "optionsPerPage": 9999
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "helios-solar--uat.sandbox.my.salesforce.com (helios-uat)"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Selected Org admin@helios-solar.demo.uat - https://helios-solar--uat.sandbox.my.salesforce.com"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf config set target-org=admin@helios-solar.demo.uat --json",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf config set target-org=admin@helios-solar.demo.uat --json",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 700,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 What is the name of the git branch you want to configure Automated CI/CD deployments from?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 What is the name of the git branch you want to configure Automated CI/CD deployments from?",
+            "description": "Enter the git branch name for this org configuration",
+            "choices": [
+              {
+                "title": "integration",
+                "value": "integration"
+              },
+              {
+                "title": "main",
+                "value": "main"
+              },
+              {
+                "title": "preprod",
+                "value": "preprod"
+              },
+              {
+                "title": "uat",
+                "value": "uat"
+              }
+            ],
+            "optionsPerPage": 9999,
+            "placeholder": "Select the git branch name"
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "uat"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 What is the base URL or domain or the org you want to connect to, as uat related org ?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 What is the base URL or domain or the org you want to connect to, as uat related org ?",
+            "description": "Select the Salesforce environment type or specify a custom URL for authentication",
+            "choices": [
+              {
+                "title": "♻️ https://helios-solar--uat.sandbox.my.salesforce.com",
+                "value": "https://helios-solar--uat.sandbox.my.salesforce.com",
+                "description": "Your current default org"
+              },
+              {
+                "title": "📝 Custom login URL (Sandbox, DevHub or Production Org)",
+                "value": "custom",
+                "description": "Recommended option 😊 Example: https://myclient--preprod.sandbox.lightning.force.com/"
+              },
+              {
+                "title": "🧪 Sandbox or Scratch org (test.salesforce.com)",
+                "value": "https://test.salesforce.com",
+                "description": "The org I want to connect is a sandbox or a scratch org"
+              },
+              {
+                "title": "☢️ Other: Dev org, Production org or DevHub org (login.salesforce.com)",
+                "value": "https://login.salesforce.com",
+                "description": "The org I want to connect is NOT a sandbox"
+              }
+            ],
+            "optionsPerPage": 9999,
+            "initial": 0
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "♻️ https://helios-solar--uat.sandbox.my.salesforce.com"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 What are the target git branches that uat will be able to merge in? (very often a single target branch to select)",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "multiselect",
+            "name": "value",
+            "message": "🦙 What are the target git branches that uat will be able to merge in? (very often a single target branch to select)",
+            "description": "Select the git branches that this branch will be able to merge in (for example, integration can merge into uat, and preprod can merge into main)",
+            "choices": [
+              {
+                "title": "integration",
+                "value": "integration"
+              },
+              {
+                "title": "main",
+                "value": "main"
+              },
+              {
+                "title": "preprod",
+                "value": "preprod"
+              }
+            ],
+            "optionsPerPage": 9999,
+            "placeholder": "Select the target git branches",
+            "initial": []
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "- preprod"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 What is the Salesforce username that will be used for deployments by CI server ? Example: admin.sfdx@myclient.com",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "text",
+            "name": "value",
+            "message": "🦙 What is the Salesforce username that will be used for deployments by CI server ? Example: admin.sfdx@myclient.com",
+            "description": "Enter the Salesforce username for this configuration",
+            "placeholder": "Ex: admin.sfdx@myclient.com",
+            "initial": "admin@helios-solar.demo.uat"
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "admin@helios-solar.demo.uat"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "reportFile",
+        "file": "config/branches/.sfdx-hardis.uat.yml",
+        "title": "Updated uat config file",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "refreshPipeline"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 How do you want to provide the SSL certificate?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 How do you want to provide the SSL certificate?",
+            "description": "Choose between generating a self-signed certificate (default) or using your own CA-signed certificate.",
+            "choices": [
+              {
+                "title": "Generate a self-signed certificate (default)",
+                "value": "selfSigned",
+                "description": "sfdx-hardis generates the key pair, the certificate, and deploys the External Client App for you."
+              },
+              {
+                "title": "Use my own CA-signed certificate",
+                "value": "caSigned",
+                "description": "You create the External Client App yourself and keep your own private key."
+              }
+            ],
+            "optionsPerPage": 9999,
+            "initial": 0
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Generate a self-signed certificate (default)"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Generating SSL certificate..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "openssl x509 -req -sha256 -days 3650 -in server.csr -signkey server.key -out server.crt",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "openssl x509 -req -sha256 -days 3650 -in server.csr -signkey server.key -out server.crt",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Do you want sfdx-hardis to configure the SF CLI External Client App or Connected App on your org ?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Do you want sfdx-hardis to configure the SF CLI External Client App or Connected App on your org ?",
+            "description": "Creates a Connected App required for CI/CD authentication. Choose yes if you are unsure.",
+            "choices": [
+              {
+                "title": "✅ Yes",
+                "value": true
+              },
+              {
+                "title": "❌ No",
+                "value": false
+              }
+            ],
+            "optionsPerPage": 9999,
+            "initial": 0
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "✅ Yes"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Please configure both below variables in your CI/CD platform."
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "- Variable: SFDX_CLIENT_ID_UAT\n- Value: <copy>3MVG9HeliosDemoConsumerKey0aB1cD2eF3gH4iJ5kL6mN7oP8qR9sT0uV1wX2yZ3aB4cD5eF6gH7iJ8kL9mN0oP1qR2sT3uV4wX5yZ6aB7cD8eF9gH0</copy>"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "- Variable: SFDX_CLIENT_KEY_UAT\n- Value: <copy>9f2c1a7e5b3d48c0a6e1f7b2d9c4835a</copy>"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "If you are using GitHub or Azure, you also need to manually add references to SFDX_CLIENT_ID_UAT and SFDX_CLIENT_KEY_UAT in your pipeline YAML definition file (.github/workflows/*.yml or azure-pipelines-*.yml)."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "reportFile",
+        "file": "https://sfdx-hardis.cloudity.com/salesforce-devops-setup-auth/",
+        "title": "Help to configure CI variables",
+        "type": "docUrl"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Please confirm when variables have been set (copy the variable names and values in the section above)",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Please confirm when variables have been set (copy the variable names and values in the section above)",
+            "description": "Confirm when you have configured the required CI/CD environment variables in your deployment platform",
+            "choices": [
+              {
+                "title": "✅ Yes",
+                "value": true
+              },
+              {
+                "title": "❌ No",
+                "value": false
+              }
+            ],
+            "optionsPerPage": 9999,
+            "initial": 0
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "✅ Yes"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 How would you like to name the External Client App?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "text",
+            "name": "value",
+            "message": "🦙 How would you like to name the External Client App?",
+            "description": "Name for the External Client App that will be created in your Salesforce org",
+            "placeholder": "Ex: sfdx_hardis",
+            "initial": "sfdxhardisuat"
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "sfdxhardisuat"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Deploying External Client App sfdxhardisuat into target org admin@helios-solar.demo.uat ..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf project deploy start --metadata-dir ./tmp/eca --target-org admin@helios-solar.demo.uat --json",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf project deploy start --metadata-dir ./tmp/eca --target-org admin@helios-solar.demo.uat --json",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Successfully deployed sfdxhardisuat External Client App"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Branch uat successfully configured for authentication!"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "Make sure you have set the environment variables in your CI/CD platform"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "Don't forget to commit the sfdx-hardis config file and the encrypted certificated key in git!"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

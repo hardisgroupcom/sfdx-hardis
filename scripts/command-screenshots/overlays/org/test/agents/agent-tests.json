@@ -1,0 +1,136 @@
+{
+  "mode": "replace",
+  "title": "Agent Tests Results",
+  "rows": [
+    {
+      "Definition": "Helios_Installation_Assistant_Smoke",
+      "TestCaseNumber": 1,
+      "Utterance": "Where is my installation INS-0042 at?",
+      "Expectation": "topic_assertion",
+      "Result": "PASS",
+      "Score": 1,
+      "ExpectedValue": "Installation_Status",
+      "ActualValue": "Installation_Status"
+    },
+    {
+      "Definition": "Helios_Installation_Assistant_Smoke",
+      "TestCaseNumber": 1,
+      "Utterance": "Where is my installation INS-0042 at?",
+      "Expectation": "actions_assertion",
+      "Result": "PASS",
+      "Score": 1,
+      "ExpectedValue": "[GetInstallationStatus]",
+      "ActualValue": "[GetInstallationStatus]"
+    },
+    {
+      "Definition": "Helios_Installation_Assistant_Smoke",
+      "TestCaseNumber": 2,
+      "Utterance": "Which crew is coming to my house?",
+      "Expectation": "topic_assertion",
+      "Result": "PASS",
+      "Score": 1,
+      "ExpectedValue": "Crew_Assignment",
+      "ActualValue": "Crew_Assignment"
+    },
+    {
+      "Definition": "Helios_Installation_Assistant_Smoke",
+      "TestCaseNumber": 2,
+      "Utterance": "Which crew is coming to my house?",
+      "Expectation": "actions_assertion",
+      "Result": "PASS",
+      "Score": 1,
+      "ExpectedValue": "[GetAssignedCrew]",
+      "ActualValue": "[GetAssignedCrew]"
+    },
+    {
+      "Definition": "Helios_Installation_Assistant_Smoke",
+      "TestCaseNumber": 3,
+      "Utterance": "Is my panel batch PB-2031 delivered yet?",
+      "Expectation": "topic_assertion",
+      "Result": "PASS",
+      "Score": 1,
+      "ExpectedValue": "Panel_Delivery",
+      "ActualValue": "Panel_Delivery"
+    },
+    {
+      "Definition": "Helios_Installation_Assistant_Smoke",
+      "TestCaseNumber": 3,
+      "Utterance": "Is my panel batch PB-2031 delivered yet?",
+      "Expectation": "actions_assertion",
+      "Result": "PASS",
+      "Score": 1,
+      "ExpectedValue": "[GetPanelBatchStatus]",
+      "ActualValue": "[GetPanelBatchStatus]"
+    },
+    {
+      "Definition": "Helios_Installation_Assistant_Scheduling",
+      "TestCaseNumber": 1,
+      "Utterance": "Can you move my installation to next Tuesday?",
+      "Expectation": "topic_assertion",
+      "Result": "PASS",
+      "Score": 1,
+      "ExpectedValue": "Installation_Scheduling",
+      "ActualValue": "Installation_Scheduling"
+    },
+    {
+      "Definition": "Helios_Installation_Assistant_Scheduling",
+      "TestCaseNumber": 1,
+      "Utterance": "Can you move my installation to next Tuesday?",
+      "Expectation": "actions_assertion",
+      "Result": "PASS",
+      "Score": 1,
+      "ExpectedValue": "[FindAvailableSlots, RescheduleInstallation]",
+      "ActualValue": "[FindAvailableSlots, RescheduleInstallation]"
+    },
+    {
+      "Definition": "Helios_Installation_Assistant_Scheduling",
+      "TestCaseNumber": 2,
+      "Utterance": "Which slots are free in March?",
+      "Expectation": "topic_assertion",
+      "Result": "PASS",
+      "Score": 1,
+      "ExpectedValue": "Installation_Scheduling",
+      "ActualValue": "Installation_Scheduling"
+    },
+    {
+      "Definition": "Helios_Installation_Assistant_Scheduling",
+      "TestCaseNumber": 2,
+      "Utterance": "Which slots are free in March?",
+      "Expectation": "actions_assertion",
+      "Result": "PASS",
+      "Score": 1,
+      "ExpectedValue": "[FindAvailableSlots]",
+      "ActualValue": "[FindAvailableSlots]"
+    },
+    {
+      "Definition": "Helios_Installation_Assistant_Scheduling",
+      "TestCaseNumber": 3,
+      "Utterance": "I want to cancel my installation",
+      "Expectation": "topic_assertion",
+      "Result": "PASS",
+      "Score": 1,
+      "ExpectedValue": "Escalation",
+      "ActualValue": "Escalation"
+    },
+    {
+      "Definition": "Helios_Installation_Assistant_Scheduling",
+      "TestCaseNumber": 3,
+      "Utterance": "I want to cancel my installation",
+      "Expectation": "actions_assertion",
+      "Result": "PASS",
+      "Score": 1,
+      "ExpectedValue": "[CreateEscalationCase]",
+      "ActualValue": "[CreateEscalationCase]"
+    },
+    {
+      "Definition": "Helios_Installation_Assistant_Scheduling",
+      "TestCaseNumber": 4,
+      "Utterance": "Thanks, that is all",
+      "Expectation": "output_validation",
+      "Result": "PASS",
+      "Score": 0.94,
+      "ExpectedValue": "A polite closing from Helios Energy",
+      "ActualValue": "You are welcome! The Helios Energy crew will see you on the day of your installation."
+    }
+  ]
+}

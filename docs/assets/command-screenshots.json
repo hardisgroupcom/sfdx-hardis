@@ -1,0 +1,3725 @@
+{
+  "_comment": "Screenshots of the command pages, written by scripts/command-screenshots/run.mjs (yarn screenshots:commands) and read by hardis:doc:plugin:generate. Image paths are relative to docs/. Pill coordinates are percentages of the image, legends are shown under it as (n).",
+  "commands": {
+    "hardis:auth:login": {
+      "shots": [
+        {
+          "image": "assets/images/commands/auth/login-1.webp",
+          "caption": "Pick the type of org to log in to",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/auth/login-2.webp",
+          "caption": "Give the org a short alias",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/auth/login.webp",
+          "caption": "Log in to the Helios UAT sandbox from the browser, then give it the alias helios-uat",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:cache:clear": {
+      "skip": "It runs without the VS Code command runner: the extension calls it in the background."
+    },
+    "hardis:config:get": {
+      "skip": "The extension reads it in the background to build its panels: it shows nothing of its own."
+    },
+    "hardis:config:monitoring-defaults": {
+      "skip": "The extension reads it in the background to build the Org Monitoring panel: it shows nothing of its own."
+    },
+    "hardis:config:org-init": {
+      "skip": "The extension reads it in the background to build the Org Initialization panel: it shows nothing of its own."
+    },
+    "hardis:datacloud:extract:agentforce-conversations": {
+      "shots": [
+        {
+          "image": "assets/images/commands/datacloud/extract/agentforce-conversations.webp",
+          "caption": "The Helios Installation Assistant conversations of the last 30 days are exported with their transcript, feedback and a link to each one",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 18,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "datacloud-agentforce-conversations": {
+          "image": "assets/images/commands/datacloud/extract/agentforce-conversations-report-datacloud-agentforce-conversations.webp"
+        }
+      }
+    },
+    "hardis:datacloud:extract:agentforce-feedback": {
+      "shots": [
+        {
+          "image": "assets/images/commands/datacloud/extract/agentforce-feedback.webp",
+          "caption": "The good and bad feedback left on the Helios Installation Assistant in the last 30 days, with the full conversation of each",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 16.3,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "datacloud-agentforce-feedback": {
+          "image": "assets/images/commands/datacloud/extract/agentforce-feedback-report-datacloud-agentforce-feedback.webp"
+        }
+      }
+    },
+    "hardis:datacloud:sql-query": {
+      "shots": [
+        {
+          "image": "assets/images/commands/datacloud/sql-query.webp",
+          "caption": "The SQL query runs on Data Cloud and the 10 latest Helios accounts are exported to CSV and Excel",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 15.1,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "datacloud-sql-query": {
+          "image": "assets/images/commands/datacloud/sql-query-report-datacloud-sql-query.webp"
+        }
+      }
+    },
+    "hardis:doc:data-dictionary": {
+      "shots": [
+        {
+          "image": "assets/images/commands/doc/data-dictionary-1.webp",
+          "caption": "Pick the objects to document",
+          "pills": [
+            {
+              "n": 1,
+              "x": 7.8,
+              "y": 33.3,
+              "w": 89.1,
+              "h": 42.4,
+              "legend": "A custom object of the project"
+            }
+          ]
+        },
+        {
+          "image": "assets/images/commands/doc/data-dictionary.webp",
+          "caption": "Excel data dictionary of the Installation__c and Panel_Batch__c objects, read live from the Helios org",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 12.7,
+              "h": 5,
+              "legend": "The workbook: an index sheet, then one sheet of fields per object"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "data-dictionary": {
+          "image": "assets/images/commands/doc/data-dictionary-report-data-dictionary.webp"
+        }
+      }
+    },
+    "hardis:doc:dora-report": {
+      "shots": [
+        {
+          "image": "assets/images/commands/doc/dora-report.webp",
+          "caption": "The DORA metrics of the four major branches over 90 days, with the markdown report and the deployment data behind it",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 12.7,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "dora-report-data": {
+          "image": "assets/images/commands/doc/dora-report-report-dora-report-data.webp"
+        }
+      }
+    },
+    "hardis:doc:extract:permsetgroups": {
+      "shots": [
+        {
+          "image": "assets/images/commands/doc/extract/permsetgroups.webp",
+          "caption": "The permission set groups of the Helios project and the permission sets they contain, as a CSV file and a Markdown page",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:doc:fieldusage": {
+      "shots": [
+        {
+          "image": "assets/images/commands/doc/fieldusage.webp",
+          "caption": "Where each field of the installations and panel batches is used, in layouts, Apex and Flows",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.8,
+              "y": 108,
+              "w": 11.2,
+              "h": 5.4,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "fields-usage": {
+          "image": "assets/images/commands/doc/fieldusage-report-fields-usage.webp"
+        }
+      }
+    },
+    "hardis:doc:flow2markdown": {
+      "shots": [
+        {
+          "image": "assets/images/commands/doc/flow2markdown-1.webp",
+          "caption": "Pick the flows of the project to document",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/doc/flow2markdown.webp",
+          "caption": "The Installation_Assign_Crew flow documented in Markdown, with its diagram and general information, in the VS Code preview",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:doc:metadata-deps": {
+      "shots": [
+        {
+          "image": "assets/images/commands/doc/metadata-deps-1.webp",
+          "caption": "Pick the type of the component",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/doc/metadata-deps-2.webp",
+          "caption": "Give its API name",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/doc/metadata-deps.webp",
+          "caption": "The components that use the InstallationScheduler Apex class, read from the org",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 12.8,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:doc:mkdocs-to-cf": {
+      "shots": [
+        {
+          "image": "assets/images/commands/doc/mkdocs-to-cf.webp",
+          "caption": "The project documentation is built with Zensical, uploaded to Cloudflare Pages and protected by a Cloudflare Access policy",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:doc:mkdocs-to-confluence": {
+      "shots": [
+        {
+          "image": "assets/images/commands/doc/mkdocs-to-confluence.webp",
+          "caption": "Every page of the project documentation is published to the HELIOS Confluence space, with its images and diagrams",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 17,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "mkdocs-to-confluence": {
+          "image": "assets/images/commands/doc/mkdocs-to-confluence-report-mkdocs-to-confluence.webp"
+        }
+      }
+    },
+    "hardis:doc:mkdocs-to-salesforce": {
+      "shots": [
+        {
+          "image": "assets/images/commands/doc/mkdocs-to-salesforce.webp",
+          "caption": "The project documentation is deployed to the org as a static resource shown in a Visualforce page and a custom tab",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:doc:object-field-usage": {
+      "shots": [
+        {
+          "image": "assets/images/commands/doc/object-field-usage-1.webp",
+          "caption": "Pick the objects whose fields are measured",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/doc/object-field-usage.webp",
+          "caption": "How many Installation__c and Panel_Batch__c records fill each custom field, with the most and least populated fields",
+          "pills": [
+            {
+              "n": 1,
+              "x": 95.7,
+              "y": 66.2,
+              "w": 0.6,
+              "h": 1.1,
+              "legend": "The custom field the fewest records use, a candidate for cleanup"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "object-field-usage": {
+          "image": "assets/images/commands/doc/object-field-usage-report-object-field-usage.webp"
+        }
+      }
+    },
+    "hardis:doc:override-prompts": {
+      "shots": [
+        {
+          "image": "assets/images/commands/doc/override-prompts.webp",
+          "caption": "The 28 AI prompt templates and variables copied to config/prompt-templates of the Helios project, ready to be edited",
+          "pills": [
+            {
+              "n": 1,
+              "x": 7.8,
+              "y": 27.1,
+              "w": 90.4,
+              "h": 21.1,
+              "legend": "Edit these files to change what the AI writes in the documentation"
+            }
+          ]
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:doc:packagexml2markdown": {
+      "shots": [
+        {
+          "image": "assets/images/commands/doc/packagexml2markdown.webp",
+          "caption": "The manifest/package.xml of the Helios project as a Markdown page, its 35 metadata grouped by type",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:doc:plugin:generate": {
+      "skip": "It builds this documentation site and runs without the VS Code command runner."
+    },
+    "hardis:doc:project2markdown": {
+      "shots": [
+        {
+          "image": "assets/images/commands/doc/project2markdown.webp",
+          "caption": "Markdown pages of the Helios project, one per package.xml, flow and object, here the content of package-no-overwrite.xml",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:doc:release-notes": {
+      "shots": [
+        {
+          "image": "assets/images/commands/doc/release-notes.webp",
+          "caption": "The release notes of what uat will bring to preprod - four Pull Requests, their tickets, the metadata delta and the deployment actions",
+          "pills": [
+            {
+              "n": 1,
+              "x": 25,
+              "y": 90.2,
+              "w": 14.1,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:doctor": {
+      "shots": [
+        {
+          "image": "assets/images/commands/doctor.webp",
+          "caption": "Versions of Salesforce CLI and its plugins on the machine, with a warning on each one that has a newer release",
+          "pills": [
+            {
+              "n": 1,
+              "x": 94.7,
+              "y": 29.2,
+              "w": 0.6,
+              "h": 1.1,
+              "legend": "A warning sign shows the newer version to install"
+            }
+          ]
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:git:artifacts:download": {
+      "shots": [
+        {
+          "image": "assets/images/commands/git/artifacts/download.webp",
+          "caption": "The files of a deployment job downloaded from GitHub Actions, listed with their size",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 10.2,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "job-artifacts-files": {
+          "image": "assets/images/commands/git/artifacts/download-report-job-artifacts-files.webp"
+        }
+      }
+    },
+    "hardis:git:pull-requests:extract": {
+      "shots": [
+        {
+          "image": "assets/images/commands/git/pull-requests/extract.webp",
+          "caption": "The Pull Requests merged into integration, extracted from GitHub to a CSV and an Excel file",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 9.3,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "pull-requests": {
+          "image": "assets/images/commands/git/pull-requests/extract-report-pull-requests.webp"
+        }
+      }
+    },
+    "hardis:lint:access": {
+      "shots": [
+        {
+          "image": "assets/images/commands/lint/access-1.webp",
+          "caption": "The command offers to add the missing accesses to permission sets",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/lint/access.webp",
+          "caption": "An Apex class that no permission set gives access to, found in the project sources",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 89.8,
+              "w": 13.6,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "lint-access": {
+          "image": "assets/images/commands/lint/access-report-lint-access.webp"
+        }
+      }
+    },
+    "hardis:lint:metadatastatus": {
+      "shots": [
+        {
+          "image": "assets/images/commands/lint/metadatastatus.webp",
+          "caption": "Draft flows and inactive validation rules searched in the Helios project sources, before they reach production",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 14.5,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "lint-metadatastatus": {
+          "image": "assets/images/commands/lint/metadatastatus-report-lint-metadatastatus.webp"
+        }
+      }
+    },
+    "hardis:lint:missingattributes": {
+      "shots": [
+        {
+          "image": "assets/images/commands/lint/missingattributes.webp",
+          "caption": "Custom fields of the Helios objects checked for a missing description",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 10.7,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "lint-missingattributes": {
+          "image": "assets/images/commands/lint/missingattributes-report-lint-missingattributes.webp"
+        }
+      }
+    },
+    "hardis:lint:unusedmetadatas": {
+      "shots": [
+        {
+          "image": "assets/images/commands/lint/unusedmetadatas.webp",
+          "caption": "Custom labels and custom permissions of the Helios project that no Apex, Flow or component uses",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 11.2,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "lint-unusedmetadatas": {
+          "image": "assets/images/commands/lint/unusedmetadatas-report-lint-unusedmetadatas.webp"
+        }
+      }
+    },
+    "hardis:mdapi:deploy": {
+      "shots": [
+        {
+          "image": "assets/images/commands/mdapi/deploy.webp",
+          "caption": "A folder in Metadata API format validated in a scratch org, with the deployment tips of sfdx-hardis",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:mdapi:read": {
+      "shots": [
+        {
+          "image": "assets/images/commands/mdapi/read.webp",
+          "caption": "The Installation__c object read with the CRUD-based Metadata API",
+          "pills": []
+        }
+      ],
+      "reports": {
+        "mdapi-read-successes": {
+          "image": "assets/images/commands/mdapi/read-report-mdapi-read-successes.webp"
+        },
+        "mdapi-read-failures": {
+          "image": "assets/images/commands/mdapi/read-report-mdapi-read-failures.webp"
+        },
+        "mdapi-read-skipped": {
+          "image": "assets/images/commands/mdapi/read-report-mdapi-read-skipped.webp"
+        }
+      }
+    },
+    "hardis:mdapi:upsert": {
+      "shots": [
+        {
+          "image": "assets/images/commands/mdapi/upsert-1.webp",
+          "caption": "Confirm before the components replace their versions in the org",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/mdapi/upsert.webp",
+          "caption": "The two Helios permission sets overwritten whole in the org with CRUD upserts, with the list of components sent",
+          "pills": []
+        }
+      ],
+      "reports": {
+        "mdapi-upsert-components": {
+          "image": "assets/images/commands/mdapi/upsert-report-mdapi-upsert-components.webp"
+        },
+        "mdapi-upsert-successes": {
+          "image": "assets/images/commands/mdapi/upsert-report-mdapi-upsert-successes.webp"
+        },
+        "mdapi-upsert-failures": {
+          "image": "assets/images/commands/mdapi/upsert-report-mdapi-upsert-failures.webp"
+        },
+        "mdapi-upsert-skipped": {
+          "image": "assets/images/commands/mdapi/upsert-report-mdapi-upsert-skipped.webp"
+        }
+      }
+    },
+    "hardis:misc:custom-label-translations": {
+      "shots": [
+        {
+          "image": "assets/images/commands/misc/custom-label-translations.webp",
+          "caption": "Custom Label Translations",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:misc:purge-references": {
+      "shots": [
+        {
+          "image": "assets/images/commands/misc/purge-references-1.webp",
+          "caption": "Give the field, class or object to remove from the sources",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/misc/purge-references.webp",
+          "caption": "Every reference to the Crew_Size__c field is removed from the project sources before deleting it",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:misc:servicenow-report": {
+      "shots": [
+        {
+          "image": "assets/images/commands/misc/servicenow-report-1.webp",
+          "caption": "Choose which deployments to check against ServiceNow",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/misc/servicenow-report.webp",
+          "caption": "The user stories of UAT are cross-checked with their ServiceNow change requests, all valid, with a report of the matches",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 89.8,
+              "w": 13.4,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "service-now-report": {
+          "image": "assets/images/commands/misc/servicenow-report-report-service-now-report.webp"
+        }
+      }
+    },
+    "hardis:misc:toml2csv": {
+      "shots": [
+        {
+          "image": "assets/images/commands/misc/toml2csv.webp",
+          "caption": "A legacy export split into one CSV file per section, with 5 lines in error out of 386",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:org:community:update": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/community/update-1.webp",
+          "caption": "Confirm the status change of the communities",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/community/update.webp",
+          "caption": "Two Experience Cloud communities are put in maintenance mode",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:org:configure:data": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/configure/data-1.webp",
+          "caption": "Start from a template, or from a blank workspace",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/configure/data.webp",
+          "caption": "A new SFDMU data workspace to copy the installations and their panel batches between orgs",
+          "pills": [
+            {
+              "n": 1,
+              "x": 12.8,
+              "y": 89.8,
+              "w": 16.4,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:org:configure:files": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/configure/files-1.webp",
+          "caption": "Type the query of the records whose files are exported",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/configure/files.webp",
+          "caption": "A files export configuration for the documents attached to the Helios installations, saved in scripts/files",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 89.8,
+              "w": 17.1,
+              "h": 5,
+              "legend": "The export.json written for this configuration"
+            }
+          ]
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:org:configure:generic-prompt": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/configure/generic-prompt-1.webp",
+          "caption": "Pick the org where the prompt template is deployed",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/configure/generic-prompt.webp",
+          "caption": "The generic prompt template that sfdx-hardis AI features call is deployed in the org, and its permission set assigned",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:org:configure:grafana-dashboards": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/configure/grafana-dashboards-1.webp",
+          "caption": "Give the URL of the Grafana instance",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/configure/grafana-dashboards.webp",
+          "caption": "The 13 Org Monitoring dashboards and the 8 paused alert rules are installed in a Grafana instance",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:org:configure:monitoring": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/configure/monitoring-1.webp",
+          "caption": "Pick the org to monitor",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/configure/monitoring.webp",
+          "caption": "The monitoring of the Helios production org is configured in its own repository, with its certificate, its External Client App and its CI/CD variables",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:org:connect": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/connect-1.webp",
+          "caption": "Pick one of the authenticated orgs, or log in to another one",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/connect.webp",
+          "caption": "Connect to the Helios UAT sandbox without changing the default org, then open it in the browser",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:org:create": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/create.webp",
+          "caption": "A developer sandbox is created from the production org, initialized with its steps, and registered for the integration branch",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:org:data:delete": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/data/delete-1.webp",
+          "caption": "Pick the data workspace whose records are deleted",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/data/delete-2.webp",
+          "caption": "The last confirmation names the org and the data workspace before anything is deleted",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/data/delete.webp",
+          "caption": "The panel batches of the scheduled installations deleted from a scratch org, with a data workspace made for deletion",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:org:data:export": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/data/export-1.webp",
+          "caption": "Pick the data workspace that lists the objects and fields to export",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/data/export.webp",
+          "caption": "Accounts, contacts, opportunities, installations and panel batches of the Helios org exported to CSV files with SFDMU",
+          "pills": [
+            {
+              "n": 1,
+              "x": 6.3,
+              "y": 47.8,
+              "w": 10.7,
+              "h": 2.9,
+              "legend": "The CSV files are written in scripts/data/HeliosBaseline"
+            }
+          ]
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:org:data:import": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/data/import-1.webp",
+          "caption": "Pick the data workspace whose CSV files are loaded",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/data/import.webp",
+          "caption": "Accounts, contacts, opportunities, installations and panel batches of the HeliosBaseline workspace upserted into an org with SFDMU",
+          "pills": [
+            {
+              "n": 1,
+              "x": 6.3,
+              "y": 47.8,
+              "w": 10.7,
+              "h": 2.9,
+              "legend": "Records are upserted, so the import can run again without duplicates"
+            }
+          ]
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:org:diagnose:ai-usage": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/diagnose/ai-usage.webp",
+          "caption": "Credits consumed by the Agentforce agents of the Helios production org over 30 days: 9420 billed out of 15400, with the report buttons",
+          "pills": []
+        }
+      ],
+      "reports": {
+        "ai-usage": {
+          "image": "assets/images/commands/org/diagnose/ai-usage-report-ai-usage.webp"
+        }
+      }
+    },
+    "hardis:org:diagnose:apex-api-version": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/diagnose/apex-api-version.webp",
+          "caption": "Helios Apex classes and triggers at API version 64 or below, listed with their version to plan the upgrade",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 15.8,
+              "h": 5,
+              "legend": "One row per class or trigger to upgrade, with its API version"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "apex-api-version": {
+          "image": "assets/images/commands/org/diagnose/apex-api-version-report-apex-api-version.webp"
+        }
+      }
+    },
+    "hardis:org:diagnose:audittrail": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/diagnose/audittrail-1.webp",
+          "caption": "Pick how far back to look for suspicious setup activities",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/diagnose/audittrail.webp",
+          "caption": "Setup changes of the last 30 days, checked against the actions the team expects",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 89.8,
+              "w": 10.1,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "audit-trail": {
+          "image": "assets/images/commands/org/diagnose/audittrail-report-audit-trail.webp"
+        }
+      }
+    },
+    "hardis:org:diagnose:consumption-alerts": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/diagnose/consumption-alerts.webp",
+          "caption": "Three consumption cards in alert on the Helios production org, the Platform Services card at 100% of its allowance",
+          "pills": []
+        }
+      ],
+      "reports": {
+        "consumption-alerts": {
+          "image": "assets/images/commands/org/diagnose/consumption-alerts-report-consumption-alerts.webp"
+        }
+      }
+    },
+    "hardis:org:diagnose:deployments": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/diagnose/deployments-1.webp",
+          "caption": "Type how many days back to analyze",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/diagnose/deployments.webp",
+          "caption": "Deployments and validations of the last 30 days, with their duration and status",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 14.1,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "deployments": {
+          "image": "assets/images/commands/org/diagnose/deployments-report-deployments.webp"
+        }
+      }
+    },
+    "hardis:org:diagnose:flex-queue": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/diagnose/flex-queue.webp",
+          "caption": "Apex jobs holding in the flex queue of the Helios org, counted against the alert threshold of 90 out of 100",
+          "pills": [
+            {
+              "n": 1,
+              "x": 7.8,
+              "y": 26,
+              "w": 19.4,
+              "h": 2.7,
+              "legend": "The alert fires at 90 jobs, Salesforce refuses new ones at 100"
+            },
+            {
+              "n": 2,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 16.4,
+              "h": 5,
+              "legend": "One row per job waiting in the queue"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "flex-queue-holding": {
+          "image": "assets/images/commands/org/diagnose/flex-queue-report-flex-queue-holding.webp"
+        }
+      }
+    },
+    "hardis:org:diagnose:instanceupgrade": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/diagnose/instanceupgrade.webp",
+          "caption": "Instance of the Helios org, the date of its next major Salesforce upgrade and the release it moves to",
+          "pills": [
+            {
+              "n": 1,
+              "x": 7.8,
+              "y": 22.3,
+              "w": 51.3,
+              "h": 2.7,
+              "legend": "Instance, upgrade date and target release"
+            }
+          ]
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:org:diagnose:legacyapi": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/diagnose/legacyapi.webp",
+          "caption": "Calls to retired API versions found in the Helios org event logs, counted by retirement wave: none here",
+          "pills": [
+            {
+              "n": 1,
+              "x": 12.8,
+              "y": 90.2,
+              "w": 13.4,
+              "h": 5,
+              "legend": "One row per legacy call, with the client and the API version it used"
+            },
+            {
+              "n": 2,
+              "x": 28.5,
+              "y": 90.2,
+              "w": 8.5,
+              "h": 5,
+              "legend": "How to fix the calls before the retirement"
+            }
+          ]
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:org:diagnose:licenses": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/diagnose/licenses.webp",
+          "caption": "The licenses of the org, with the report buttons at the end of the run",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 10.6,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "licenses": {
+          "image": "assets/images/commands/org/diagnose/licenses-report-licenses.webp"
+        }
+      }
+    },
+    "hardis:org:diagnose:mfa": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/diagnose/mfa.webp",
+          "caption": "MFA audit of the Helios org: each setting to change in Setup, with the users and settings it affects",
+          "pills": [
+            {
+              "n": 1,
+              "x": 7.8,
+              "y": 79.2,
+              "w": 21.1,
+              "h": 2.7,
+              "legend": "The verdict: some logins of the org are not covered by MFA"
+            },
+            {
+              "n": 2,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 12.9,
+              "h": 5,
+              "legend": "One row per finding of the six MFA checks, with its recommendation"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "mfa-config": {
+          "image": "assets/images/commands/org/diagnose/mfa-report-mfa-config.webp"
+        }
+      }
+    },
+    "hardis:org:diagnose:minimalpermsets": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/diagnose/minimalpermsets.webp",
+          "caption": "Permission sets of the Helios project with 16 permissions or fewer, candidates to merge into another one",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 13.4,
+              "h": 5,
+              "legend": "One row per permission set, with its file and its number of permissions"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "minimal-permission-sets": {
+          "image": "assets/images/commands/org/diagnose/minimalpermsets-report-minimal-permission-sets.webp"
+        }
+      }
+    },
+    "hardis:org:diagnose:releaseupdates": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/diagnose/releaseupdates.webp",
+          "caption": "Release Updates of the Helios org still to check, with their status, category and the date Salesforce enforces them",
+          "pills": [
+            {
+              "n": 1,
+              "x": 95.7,
+              "y": 29.2,
+              "w": 0.6,
+              "h": 1.1,
+              "legend": "Salesforce enforces the update on this date"
+            },
+            {
+              "n": 2,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 14.2,
+              "h": 5,
+              "legend": "Every Release Update to check, beyond the first rows shown here"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "release-updates": {
+          "image": "assets/images/commands/org/diagnose/releaseupdates-report-release-updates.webp"
+        }
+      }
+    },
+    "hardis:org:diagnose:storage-stats": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/diagnose/storage-stats-1.webp",
+          "caption": "Pick the objects to count",
+          "pills": [
+            {
+              "n": 1,
+              "x": 7.8,
+              "y": 41.3,
+              "w": 89.1,
+              "h": 42.4,
+              "legend": "A custom object of the project"
+            }
+          ]
+        },
+        {
+          "image": "assets/images/commands/org/diagnose/storage-stats.webp",
+          "caption": "Records of the Helios objects by year of creation, to see what fills the data storage",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 23.1,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "storage-stats-by-": {
+          "image": "assets/images/commands/org/diagnose/storage-stats-report-storage-stats-by-.webp"
+        }
+      }
+    },
+    "hardis:org:diagnose:underusedpermsets": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/diagnose/underusedpermsets.webp",
+          "caption": "Permission sets and groups of the Helios org assigned to no user, or to 5 users or fewer",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 14.6,
+              "h": 5,
+              "legend": "One row per permission set or group, with its number of assigned users"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "underused-permission-sets": {
+          "image": "assets/images/commands/org/diagnose/underusedpermsets-report-underused-permission-sets.webp"
+        }
+      }
+    },
+    "hardis:org:diagnose:unsecure-connected-apps": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/diagnose/unsecure-connected-apps.webp",
+          "caption": "OAuth tokens of Connected Apps that are not locked down, and the apps they belong to",
+          "pills": [
+            {
+              "n": 1,
+              "x": 30.3,
+              "y": 85.2,
+              "w": 15.4,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "unsecured-oauth-tokens": {
+          "image": "assets/images/commands/org/diagnose/unsecure-connected-apps-report-unsecured-oauth-tokens.webp"
+        },
+        "unsecured-connected-apps": {
+          "image": "assets/images/commands/org/diagnose/unsecure-connected-apps-report-unsecured-connected-apps.webp"
+        },
+        "oauth-tokens-by-user": {
+          "image": "assets/images/commands/org/diagnose/unsecure-connected-apps-report-oauth-tokens-by-user.webp"
+        },
+        "connected-apps-usage": {
+          "image": "assets/images/commands/org/diagnose/unsecure-connected-apps-report-connected-apps-usage.webp"
+        },
+        "deletable-auth-tokens": {
+          "image": "assets/images/commands/org/diagnose/unsecure-connected-apps-report-deletable-auth-tokens.webp"
+        },
+        "deleted-auth-tokens": {
+          "image": "assets/images/commands/org/diagnose/unsecure-connected-apps-report-deleted-auth-tokens.webp"
+        },
+        "unsecured-tokens-secured-app-": {
+          "image": "assets/images/commands/org/diagnose/unsecure-connected-apps-report-unsecured-tokens-secured-app-.webp"
+        }
+      }
+    },
+    "hardis:org:diagnose:unsecure-permissions": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/diagnose/unsecure-permissions.webp",
+          "caption": "Dangerous permissions such as Modify All Data granted by profiles and permission sets, with the active users holding them",
+          "pills": [
+            {
+              "n": 1,
+              "x": 6.3,
+              "y": 39.1,
+              "w": 36.1,
+              "h": 2.9,
+              "legend": "Grants found and the number of active users they reach"
+            },
+            {
+              "n": 2,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 18.2,
+              "h": 5,
+              "legend": "A sheet each for profiles, permission sets, groups and users, with a criticality tier"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "unsecure-permissions": {
+          "image": "assets/images/commands/org/diagnose/unsecure-permissions-report-unsecure-permissions.webp"
+        }
+      }
+    },
+    "hardis:org:diagnose:unused-apex-classes": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/diagnose/unused-apex-classes.webp",
+          "caption": "Batch, Queueable and Schedulable Apex classes of the Helios org not run for 365 days: none here",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 14.9,
+              "h": 5,
+              "legend": "One row per async class, with the date of its latest job"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "unused-apex-classes": {
+          "image": "assets/images/commands/org/diagnose/unused-apex-classes-report-unused-apex-classes.webp"
+        }
+      }
+    },
+    "hardis:org:diagnose:unused-connected-apps": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/diagnose/unused-connected-apps.webp",
+          "caption": "Connected Apps of the Helios org with no login and no OAuth token, flagged as candidates for removal",
+          "pills": [
+            {
+              "n": 1,
+              "x": 3.2,
+              "y": 3.6,
+              "w": 96.8,
+              "h": 92.9,
+              "legend": "Why the app is considered unused"
+            },
+            {
+              "n": 2,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 13.6,
+              "h": 5,
+              "legend": "Every Connected App, with its last OAuth usage and a severity reason"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "connected-apps": {
+          "image": "assets/images/commands/org/diagnose/unused-connected-apps-report-connected-apps.webp"
+        }
+      }
+    },
+    "hardis:org:diagnose:unusedlicenses": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/diagnose/unusedlicenses.webp",
+          "caption": "Permission Set Licenses assigned to active users who hold no permission set needing them: none on this org",
+          "pills": []
+        }
+      ],
+      "reports": {
+        "unused-ps-license-assignments": {
+          "image": "assets/images/commands/org/diagnose/unusedlicenses-report-unused-ps-license-assignments.webp"
+        },
+        "failed-delete-ps-license-assignments": {
+          "image": "assets/images/commands/org/diagnose/unusedlicenses-report-failed-delete-ps-license-assignments.webp"
+        },
+        "deleted-ps-license-assignments": {
+          "image": "assets/images/commands/org/diagnose/unusedlicenses-report-deleted-ps-license-assignments.webp"
+        }
+      }
+    },
+    "hardis:org:diagnose:unusedusers": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/diagnose/unusedusers-1.webp",
+          "caption": "Pick the period without login",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/diagnose/unusedusers.webp",
+          "caption": "Active users who did not log in for 6 months, to free their licenses",
+          "pills": []
+        }
+      ],
+      "reports": {
+        "unused-users-": {
+          "image": "assets/images/commands/org/diagnose/unusedusers-report-unused-users-.webp"
+        },
+        "active-users-": {
+          "image": "assets/images/commands/org/diagnose/unusedusers-report-active-users-.webp"
+        }
+      }
+    },
+    "hardis:org:diagnose:usage-entitlements": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/diagnose/usage-entitlements.webp",
+          "caption": "Usage-based entitlements of the Helios org with their allowance, consumption and period, none close to its limit",
+          "pills": [
+            {
+              "n": 1,
+              "x": 7.8,
+              "y": 76.2,
+              "w": 14.1,
+              "h": 2.7,
+              "legend": "The verdict: no entitlement is consumed faster than its period allows"
+            },
+            {
+              "n": 2,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 14.1,
+              "h": 5,
+              "legend": "One row per entitlement, with its allowance and consumption"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "usage-entitlements": {
+          "image": "assets/images/commands/org/diagnose/usage-entitlements-report-usage-entitlements.webp"
+        }
+      }
+    },
+    "hardis:org:diagnose:what-will-break": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/diagnose/what-will-break-1.webp",
+          "caption": "Every check is selected by default",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/diagnose/what-will-break.webp",
+          "caption": "What dated Salesforce changes will break in the org, when, and what to do before",
+          "pills": [
+            {
+              "n": 1,
+              "x": 71.4,
+              "y": 30,
+              "w": 1.5,
+              "h": 3.1,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "what-will-break": {
+          "image": "assets/images/commands/org/diagnose/what-will-break-report-what-will-break.webp"
+        }
+      }
+    },
+    "hardis:org:ext-client-app:rotate-credentials": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/ext-client-app/rotate-credentials-1.webp",
+          "caption": "Pick the External Client App to rotate",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/ext-client-app/rotate-credentials.webp",
+          "caption": "The credentials of an External Client App are rotated, the new key and secret are shown once, the previous ones stay valid 30 days",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:org:files:export": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/files/export-1.webp",
+          "caption": "The number of records and API calls the export will use, before it starts",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/files/export.webp",
+          "caption": "The site surveys and wiring plans of the completed installations, downloaded into one folder per installation",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 89.8,
+              "w": 11.7,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:org:files:import": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/files/import.webp",
+          "caption": "The documents of two installations uploaded from the project folder to the matching records",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 11.6,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:org:fix:listviewmine": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/fix/listviewmine.webp",
+          "caption": "The Helios list views set back to the scope Mine in the org through a headless browser, after a deployment switched them to Everything",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:org:generate:packagexmlfull": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/generate/packagexmlfull.webp",
+          "caption": "A package.xml listing every metadata of the Helios org, written to hardis-report and opened from its button",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 12.1,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:org:init": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/init-1.webp",
+          "caption": "Pick the steps to run, the same ones a new scratch org gets",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/init.webp",
+          "caption": "The initialization steps of the Helios project run on a scratch org, with the outcome and duration of each step",
+          "pills": [
+            {
+              "n": 1,
+              "x": 6.3,
+              "y": 39.1,
+              "w": 8.9,
+              "h": 2.9,
+              "legend": "One row per step, with its status"
+            }
+          ]
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:org:list:metadata": {
+      "skip": "The extension reads it in the background for the Metadata Retriever panel: it shows nothing of its own."
+    },
+    "hardis:org:monitor:all": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/monitor/all.webp",
+          "caption": "Every monitoring command run on the Helios org, with its status, frequency and duration in one summary",
+          "pills": [
+            {
+              "n": 1,
+              "x": 6.3,
+              "y": 18.1,
+              "w": 12.1,
+              "h": 2.9,
+              "legend": "Skipped commands are the ones not due today, or turned off"
+            },
+            {
+              "n": 2,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 17.6,
+              "h": 5,
+              "legend": "One row per monitoring command, with its status and duration"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "monitoring-commands": {
+          "image": "assets/images/commands/org/monitor/all-report-monitoring-commands.webp"
+        }
+      }
+    },
+    "hardis:org:monitor:backup": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/monitor/backup.webp",
+          "caption": "Metadata of the Helios org retrieved into the monitoring repository, with the files changed since the last backup",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 11.5,
+              "h": 5,
+              "legend": "One row per file added, modified, renamed or deleted since the previous backup"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "backup-updated-files": {
+          "image": "assets/images/commands/org/monitor/backup-report-backup-updated-files.webp"
+        }
+      }
+    },
+    "hardis:org:monitor:errors": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/monitor/errors-1.webp",
+          "caption": "Pick how many days of errors to collect",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/monitor/errors.webp",
+          "caption": "Apex and Flow errors of the last 7 days in the Helios org, summed up by type and operation",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 22.6,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "monitor-apex-errors": {
+          "image": "assets/images/commands/org/monitor/errors-report-monitor-apex-errors.webp"
+        },
+        "monitor-flow-errors": {
+          "image": "assets/images/commands/org/monitor/errors-report-monitor-flow-errors.webp"
+        },
+        "monitor-errors-summary": {
+          "image": "assets/images/commands/org/monitor/errors-report-monitor-errors-summary.webp"
+        }
+      }
+    },
+    "hardis:org:monitor:health-check": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/monitor/health-check.webp",
+          "caption": "Security Health Check score of the Helios org, then every setting below the Salesforce baseline by severity",
+          "pills": [
+            {
+              "n": 1,
+              "x": 7.8,
+              "y": 46.8,
+              "w": 14,
+              "h": 2.7,
+              "legend": "The score Salesforce shows in Setup > Health Check"
+            },
+            {
+              "n": 2,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 12.5,
+              "h": 5,
+              "legend": "One row per indicator, with the org value and the baseline value"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "org-health-check": {
+          "image": "assets/images/commands/org/monitor/health-check-report-org-health-check.webp"
+        }
+      }
+    },
+    "hardis:org:monitor:limits": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/monitor/limits.webp",
+          "caption": "Limits of the Helios org with their maximum, remaining value and percent used, none close to its maximum",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 7.9,
+              "h": 5,
+              "legend": "Every limit of the org, beyond the first rows shown here"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "org-limits": {
+          "image": "assets/images/commands/org/monitor/limits-report-org-limits.webp"
+        }
+      }
+    },
+    "hardis:org:multi-org-query": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/multi-org-query-1.webp",
+          "caption": "Pick a predefined query, or type your own SOQL",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/multi-org-query.webp",
+          "caption": "The active users of the Helios org returned by one SOQL query run on each selected org, gathered in a single report",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 89.8,
+              "w": 13.5,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "multi-org-query": {
+          "image": "assets/images/commands/org/multi-org-query-report-multi-org-query.webp"
+        }
+      }
+    },
+    "hardis:org:purge:apexlog": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/purge/apexlog-1.webp",
+          "caption": "Confirm the deletion of every Apex debug log of the org",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/purge/apexlog.webp",
+          "caption": "1248 Apex debug logs of the Helios UAT sandbox deleted with the Bulk API",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:org:purge:flow": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/purge/flow-1.webp",
+          "caption": "Pick the statuses of the Flow versions to delete",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/purge/flow.webp",
+          "caption": "Draft, inactive and obsolete Flow versions deleted from the Helios test org, with the list before and the result after",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 13,
+              "h": 5,
+              "legend": "The versions selected, to check before confirming"
+            },
+            {
+              "n": 2,
+              "x": 25.4,
+              "y": 90.2,
+              "w": 15.8,
+              "h": 5,
+              "legend": "The deletion status of each version"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "org-purge-flow-to-delete": {
+          "image": "assets/images/commands/org/purge/flow-report-org-purge-flow-to-delete.webp"
+        },
+        "flow-interviews-to-delete": {
+          "image": "assets/images/commands/org/purge/flow-report-flow-interviews-to-delete.webp"
+        },
+        "org-purge-flow-deleted": {
+          "image": "assets/images/commands/org/purge/flow-report-org-purge-flow-deleted.webp"
+        }
+      }
+    },
+    "hardis:org:purge:profile": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/purge/profile-1.webp",
+          "caption": "The muted profile is deployed back to the org once you confirm",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/purge/profile.webp",
+          "caption": "The accesses that permission sets now give are removed from the Helios Crew profile, which is deployed back to the org",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 89.8,
+              "w": 16.3,
+              "h": 5,
+              "legend": "Every attribute muted in the profile, in an Excel report"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "profile-muted-attributes": {
+          "image": "assets/images/commands/org/purge/profile-report-profile-muted-attributes.webp"
+        }
+      }
+    },
+    "hardis:org:refresh:after-refresh": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/refresh/after-refresh-1.webp",
+          "caption": "Pick the backup saved before the refresh",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/refresh/after-refresh-2.webp",
+          "caption": "Pick the External Client Apps to restore with their credentials",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/refresh/after-refresh.webp",
+          "caption": "The saved certificates, metadata, custom settings and External Client Apps are restored in the refreshed sandbox, with the manual actions listed",
+          "pills": [
+            {
+              "n": 1,
+              "x": 51,
+              "y": 89.8,
+              "w": 16.2,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "sandbox-refresh-after-actions-": {
+          "image": "assets/images/commands/org/refresh/after-refresh-report-sandbox-refresh-after-actions-.webp"
+        }
+      }
+    },
+    "hardis:org:refresh:before-refresh": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/refresh/before-refresh-1.webp",
+          "caption": "Convert the Connected Apps to External Client Apps before the refresh",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/refresh/before-refresh-2.webp",
+          "caption": "Pick the External Client Apps to save with their credentials",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/refresh/before-refresh.webp",
+          "caption": "Everything a sandbox refresh would erase is saved first, from certificates to the list of manual actions",
+          "pills": [
+            {
+              "n": 1,
+              "x": 55.5,
+              "y": 89.8,
+              "w": 11.4,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "connected-apps-not-converted": {
+          "image": "assets/images/commands/org/refresh/before-refresh-report-connected-apps-not-converted.webp"
+        },
+        "sandbox-refresh-before-actions": {
+          "image": "assets/images/commands/org/refresh/before-refresh-report-sandbox-refresh-before-actions.webp"
+        }
+      }
+    },
+    "hardis:org:retrieve:agent": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/retrieve/agent-1.webp",
+          "caption": "Pick the agent to retrieve",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/retrieve/agent-2.webp",
+          "caption": "Pick the version, the active one is proposed first",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/retrieve/agent.webp",
+          "caption": "Version 3 of the Helios_Installation_Assistant agent is retrieved with its Flows, Apex classes and prompt templates, and added to package.xml",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 89.8,
+              "w": 14.9,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "agent-retrieved-components": {
+          "image": "assets/images/commands/org/retrieve/agent-report-agent-retrieved-components.webp"
+        },
+        "agent-missing-dependencies": {
+          "image": "assets/images/commands/org/retrieve/agent-report-agent-missing-dependencies.webp"
+        }
+      }
+    },
+    "hardis:org:retrieve:packageconfig": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/retrieve/packageconfig-1.webp",
+          "caption": "Choose whether the package is installed in scratch orgs, deployed to the major orgs, or both",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/retrieve/packageconfig.webp",
+          "caption": "The installed packages of production written to installedPackages in .sfdx-hardis.yml",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 89.8,
+              "w": 16.9,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:org:retrieve:sources:analytics": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/retrieve/sources/analytics.webp",
+          "caption": "The CRM Analytics apps, dashboards, datasets and recipes of the org are retrieved into the project",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:org:retrieve:sources:dx": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/retrieve/sources/dx.webp",
+          "caption": "Every metadata of the Helios org retrieved, managed items left out, and converted into an SFDX project",
+          "pills": [
+            {
+              "n": 1,
+              "x": 7.8,
+              "y": 39.3,
+              "w": 26.8,
+              "h": 2.7,
+              "legend": "The folder where the SFDX project is written"
+            }
+          ]
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:org:retrieve:sources:dx2": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/retrieve/sources/dx2-1.webp",
+          "caption": "Give the package.xml that lists what to retrieve",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/retrieve/sources/dx2.webp",
+          "caption": "The metadata of manifest/package.xml retrieved from the org into the project",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:org:retrieve:sources:metadata": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/retrieve/sources/metadata.webp",
+          "caption": "Every metadata of the Helios org retrieved in Metadata API format, managed package items left out",
+          "pills": [
+            {
+              "n": 1,
+              "x": 6.3,
+              "y": 19,
+              "w": 20.9,
+              "h": 2.9,
+              "legend": "Items of managed packages are not retrieved"
+            }
+          ]
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:org:retrieve:sources:retrofit": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/retrieve/sources/retrofit.webp",
+          "caption": "Retrofit is deprecated: the command stops and explains how to recover a change made in a major org as a User Story",
+          "pills": [
+            {
+              "n": 1,
+              "x": 7.8,
+              "y": 19.7,
+              "w": 89.5,
+              "h": 5.1,
+              "legend": "Start a branch under integration and retrieve the change with the Metadata Retriever instead"
+            }
+          ]
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:org:select": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/select-1.webp",
+          "caption": "Pick one of the orgs you are logged in to, or log in to another one",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/select.webp",
+          "caption": "The helios-dev scratch org becomes the default org of the project",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:org:test:agents": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/test/agents-1.webp",
+          "caption": "Pick the agent tests to run",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/test/agents.webp",
+          "caption": "Seven test cases of the Helios_Installation_Assistant agent pass, with the report buttons",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 11.6,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "agent-tests": {
+          "image": "assets/images/commands/org/test/agents-report-agent-tests.webp"
+        }
+      }
+    },
+    "hardis:org:test:apex": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/test/apex.webp",
+          "caption": "Local Apex tests of the Helios org run with RunLocalTests, and the org-wide coverage checked against the 80% minimum",
+          "pills": [
+            {
+              "n": 1,
+              "x": 7.8,
+              "y": 26.1,
+              "w": 18.7,
+              "h": 2.7,
+              "legend": "Org-wide coverage, compared with the minimum the deployments require"
+            },
+            {
+              "n": 2,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 13.3,
+              "h": 5,
+              "legend": "Coverage of each Apex class, as Salesforce returns it"
+            }
+          ]
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:org:user:activateinvalid": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/user/activateinvalid-1.webp",
+          "caption": "Restore every email, or pick the users by profile or one by one",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/user/activateinvalid.webp",
+          "caption": "After a sandbox refresh, the emails ending with .invalid are restored for the users picked",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 10.9,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "reactivated-users": {
+          "image": "assets/images/commands/org/user/activateinvalid-report-reactivated-users.webp"
+        }
+      }
+    },
+    "hardis:org:user:freeze": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/user/freeze-1.webp",
+          "caption": "Pick the profiles whose users to freeze",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/user/freeze.webp",
+          "caption": "Field technicians with the Chatter Free User profile frozen in the Helios test org, with the list of users frozen",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 13.5,
+              "h": 5,
+              "legend": "One row per user frozen, with username, name and profile"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "users-to-freeze": {
+          "image": "assets/images/commands/org/user/freeze-report-users-to-freeze.webp"
+        }
+      }
+    },
+    "hardis:org:user:unfreeze": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/user/unfreeze-1.webp",
+          "caption": "Pick the profiles whose users to unfreeze",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/user/unfreeze.webp",
+          "caption": "Field technicians with the Chatter Free User profile unfrozen in the Helios test org, with the update results",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 14.4,
+              "h": 5,
+              "legend": "One row per user unfrozen, with username, name and profile"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "users-to-unfreeze": {
+          "image": "assets/images/commands/org/user/unfreeze-report-users-to-unfreeze.webp"
+        }
+      }
+    },
+    "hardis:org:user:unlink-security-key": {
+      "shots": [
+        {
+          "image": "assets/images/commands/org/user/unlink-security-key-1.webp",
+          "caption": "Type the users whose security keys to unlink",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/org/user/unlink-security-key.webp",
+          "caption": "Security keys and authenticator apps unlinked from 13 of the 24 Helios users listed, with the targets and results reports",
+          "pills": [
+            {
+              "n": 1,
+              "x": 26.9,
+              "y": 90.2,
+              "w": 20,
+              "h": 5,
+              "legend": "One row per username, found or not, active or not"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "unlink-security-key-targets": {
+          "image": "assets/images/commands/org/user/unlink-security-key-report-unlink-security-key-targets.webp"
+        },
+        "users-security-key-unlink": {
+          "image": "assets/images/commands/org/user/unlink-security-key-report-users-security-key-unlink.webp"
+        }
+      }
+    },
+    "hardis:package:create": {
+      "shots": [
+        {
+          "image": "assets/images/commands/package/create-1.webp",
+          "caption": "Choose an unlocked package, meant for internal use",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/package/create.webp",
+          "caption": "The unlocked package Helios Core is created in the Dev Hub and its package id is printed",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:package:install": {
+      "shots": [
+        {
+          "image": "assets/images/commands/package/install-1.webp",
+          "caption": "Pick a package from the list, or Other to give a package version id",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/package/install.webp",
+          "caption": "Package version 04t0b000000HeLiOSAA of Helios Core is installed in the org",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:package:mergexml": {
+      "shots": [
+        {
+          "image": "assets/images/commands/package/mergexml-1.webp",
+          "caption": "Pick the package.xml files to merge",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/package/mergexml.webp",
+          "caption": "manifest/package.xml and package-no-overwrite.xml of the Helios project merged into one package-merge.xml",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:package:version:create": {
+      "shots": [
+        {
+          "image": "assets/images/commands/package/version/create-1.webp",
+          "caption": "Pick the package to create a new version of",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/package/version/create.webp",
+          "caption": "A new version of the Helios Core unlocked package is created, with code coverage computed",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:package:version:list": {
+      "shots": [
+        {
+          "image": "assets/images/commands/package/version/list.webp",
+          "caption": "The versions of the Helios packages listed from the Dev Hub, with their install ids and aliases",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:package:version:promote": {
+      "shots": [
+        {
+          "image": "assets/images/commands/package/version/promote-1.webp",
+          "caption": "Pick the package version to promote",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/package/version/promote.webp",
+          "caption": "Version 1.4.0-1 of Helios Core is promoted and can now be installed in production orgs",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:packagexml:append": {
+      "shots": [
+        {
+          "image": "assets/images/commands/packagexml/append.webp",
+          "caption": "Two package.xml files merged into one",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:packagexml:remove": {
+      "shots": [
+        {
+          "image": "assets/images/commands/packagexml/remove.webp",
+          "caption": "The items of package-no-overwrite.xml removed from the package.xml of the project",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:packagexml:remove-managed": {
+      "shots": [
+        {
+          "image": "assets/images/commands/packagexml/remove-managed.webp",
+          "caption": "The items of managed packages, found by their namespace, removed from a package.xml",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:action:create": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/action/create-1.webp",
+          "caption": "Declare the action for every deployment, one branch, or one Pull Request",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/project/action/create-2.webp",
+          "caption": "Pick the type of action",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/project/action/create.webp",
+          "caption": "A post-deployment action that assigns the crew permission set is added to the project configuration",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:action:delete": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/action/delete-1.webp",
+          "caption": "Pick the action to delete",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/project/action/delete.webp",
+          "caption": "The manual action that checks the inverter catalog is removed from the project configuration",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:action:link-pull-request": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/action/link-pull-request.webp",
+          "caption": "The draft deployment actions of the branch renamed after the Pull Request #118 they now belong to",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:action:list": {
+      "skip": "The extension reads it in the background for the Deployment Actions tab: it shows nothing of its own."
+    },
+    "hardis:project:action:reorder": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/action/reorder.webp",
+          "caption": "The crew notification now runs first among the post-deployment actions",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:action:run": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/action/run-1.webp",
+          "caption": "Pick the deployment action of the User Story to try in your org",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/project/action/run.webp",
+          "caption": "The pre-deployment Apex action of a User Story tried in a scratch org before its Pull Request exists",
+          "pills": []
+        }
+      ],
+      "reports": {
+        "deployment-actions-run": {
+          "image": "assets/images/commands/project/action/run-report-deployment-actions-run.webp"
+        }
+      }
+    },
+    "hardis:project:action:set-status": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/action/set-status-1.webp",
+          "caption": "Pick the failed, stopped or manual action to record as done in uat",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/project/action/set-status.webp",
+          "caption": "A deployment action that failed in uat is recorded as done by hand in Pull Request",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:action:test-class:add": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/action/test-class/add-1.webp",
+          "caption": "Declare the test class for every deployment, one branch, or one Pull Request",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/project/action/test-class/add.webp",
+          "caption": "A test class is added to the ones that run with every deployment of the project",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:action:test-class:list": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/action/test-class/list.webp",
+          "caption": "The Apex test classes declared for the deployments of the project, its branches and its Pull Requests",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:action:test-class:remove": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/action/test-class/remove.webp",
+          "caption": "The InstallationSchedulerTest class no longer runs with every deployment of the project",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:action:types": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/action/types.webp",
+          "caption": "The deployment action types with their phases, default context and flags, the notifyCrew custom function of Helios included",
+          "pills": [
+            {
+              "n": 1,
+              "x": 95.7,
+              "y": 21.1,
+              "w": 0.6,
+              "h": 1.1,
+              "legend": "The flags of hardis:project:action:create for each type"
+            },
+            {
+              "n": 2,
+              "x": 49.3,
+              "y": 60.4,
+              "w": 6.4,
+              "h": 5,
+              "legend": "Shows the other types and the custom functions of the project"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "deployment-action-types": {
+          "image": "assets/images/commands/project/action/types-report-deployment-action-types.webp"
+        }
+      }
+    },
+    "hardis:project:action:update": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/action/update-1.webp",
+          "caption": "Pick the action to update",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/project/action/update.webp",
+          "caption": "The label of a post-deployment action is changed in the project configuration",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:audit:apiversion": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/audit/apiversion.webp",
+          "caption": "The API version of the Apex and Visualforce files of the Helios project, checked against a minimum of 65, in a CSV report",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 18.4,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "api-versions": {
+          "image": "assets/images/commands/project/audit/apiversion-report-api-versions.webp"
+        }
+      }
+    },
+    "hardis:project:audit:callincallout": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/audit/callincallout.webp",
+          "caption": "The inbound web services and outbound HTTP calls found in the Apex code of the Helios project, in a CSV report",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 13.9,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "callins-callouts-audit": {
+          "image": "assets/images/commands/project/audit/callincallout-report-callins-callouts-audit.webp"
+        }
+      }
+    },
+    "hardis:project:audit:duplicatefiles": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/audit/duplicatefiles.webp",
+          "caption": "The files of the Helios project that share their name with another one, such as the two package.xml manifests",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:audit:remotesites": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/audit/remotesites.webp",
+          "caption": "The remote site settings of the Helios project with the URL each one opens, in a CSV report",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 11.3,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "remote-sites-audit": {
+          "image": "assets/images/commands/project/audit/remotesites-report-remote-sites-audit.webp"
+        }
+      }
+    },
+    "hardis:project:clean:agents-deployment-actions": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/clean/agents-deployment-actions.webp",
+          "caption": "No Agentforce agent changed in the User Story, so no publication or activation action is added to its Pull Request",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:clean:emptyitems": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/clean/emptyitems.webp",
+          "caption": "The empty sharing rules files of standard objects removed from the Helios sources after a retrieve",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:clean:filter-xml-content": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/clean/filter-xml-content.webp",
+          "caption": "The field permissions and user permissions the target orgs do not have, removed from the Helios profiles and permission sets",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:clean:flowpositions": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/clean/flowpositions.webp",
+          "caption": "The positions of the elements of the Auto-Layout Flows of the Helios project set to 0, to avoid merge conflicts",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:clean:hiddenitems": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/clean/hiddenitems.webp",
+          "caption": "The hidden files of managed package items looked for in the Helios sources, to remove them before a commit",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:clean:listviews": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/clean/listviews.webp",
+          "caption": "A list view of the Helios sources switched from scope Mine to Everything, so that its deployment passes",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:clean:manageditems": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/clean/manageditems.webp",
+          "caption": "The items of the DocuSign managed package (namespace dsfs) are removed from the project sources",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:clean:minimizeprofiles": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/clean/minimizeprofiles.webp",
+          "caption": "The profiles of the Helios project stripped of the access that permission sets already give",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:clean:orgmissingitems": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/clean/orgmissingitems-1.webp",
+          "caption": "Pick the org that the sources are compared with",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/project/clean/orgmissingitems.webp",
+          "caption": "The items that the target org does not have are removed from the project sources",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:clean:profiles-extract": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/clean/profiles-extract-1.webp",
+          "caption": "Pick the objects to document",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.9,
+              "y": 72.8,
+              "w": 82.9,
+              "h": 3.7,
+              "legend": "A custom object of the Helios project"
+            }
+          ]
+        },
+        {
+          "image": "assets/images/commands/project/clean/profiles-extract.webp",
+          "caption": "An Excel workbook to define the access of 3 personas to Installation__c and Panel_Batch__c, built from the org",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 12.6,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "profiles-extract": {
+          "image": "assets/images/commands/project/clean/profiles-extract-report-profiles-extract.webp"
+        }
+      }
+    },
+    "hardis:project:clean:references": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/clean/references-1.webp",
+          "caption": "Pick the cleanings to run on the sources",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/project/clean/references.webp",
+          "caption": "A cleaning picked in the list run on the Helios sources, here the check that every custom item is in a permission set",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 13.6,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:clean:retrievefolders": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/clean/retrievefolders.webp",
+          "caption": "The report, dashboard, document and email template folders of the Helios sources retrieved again from the org",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:clean:sensitive-metadatas": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/clean/sensitive-metadatas.webp",
+          "caption": "The certificates of the Helios sources looked for, to replace their content by a placeholder before a commit",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:clean:standarditems": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/clean/standarditems.webp",
+          "caption": "Standard objects without custom fields and the standard apps removed from the Helios sources after a retrieve",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:clean:systemdebug": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/clean/systemdebug.webp",
+          "caption": "The System.debug lines of the Apex classes and triggers of the Helios project commented out",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:clean:xml": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/clean/xml.webp",
+          "caption": "The activity panel removed from the Lightning pages of the Helios project, with an XPath given on the command line",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:configure:auth": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/configure/auth-1.webp",
+          "caption": "Pick the org that the branch deploys to",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/project/configure/auth-2.webp",
+          "caption": "Pick the git branch to configure",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/project/configure/auth-3.webp",
+          "caption": "Pick the branches the uat branch merges into",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/project/configure/auth.webp",
+          "caption": "The uat branch is linked to its sandbox, with its branch config file, certificate, External Client App and CI/CD variables",
+          "pills": [
+            {
+              "n": 1,
+              "x": 12.8,
+              "y": 89.8,
+              "w": 12.5,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:convert:profilestopermsets": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/convert/profilestopermsets.webp",
+          "caption": "Three Helios profiles converted into the permission sets PS_Helios_Crew, PS_Helios_Dispatcher and PS_Helios_Field_Manager",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:create": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/create.webp",
+          "caption": "A new sfdx-hardis project for sandbox development, with its integration branch and default cleaning",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:deploy:notify": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/deploy/notify.webp",
+          "caption": "The notifications of a successful deployment to helios-uat - Pull Request comment, Jira tickets commented and labelled, Slack message",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:deploy:quick": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/deploy/quick.webp",
+          "caption": "A validated deployment quick deployed to helios-preprod without running the tests again, then the deployment notifications",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:deploy:simulate": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/deploy/simulate.webp",
+          "caption": "The deployment of one Apex class simulated in the org, as the extension does from the editor",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:deploy:smart": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/deploy/smart.webp",
+          "caption": "The Helios sources deployed to a scratch org with their deployment actions, Apex tests and the report of deployed components",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 13.5,
+              "h": 5,
+              "legend": "The components deployed, in an Excel report"
+            }
+          ]
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:deploy:sources:metadata": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/deploy/sources/metadata.webp",
+          "caption": "A folder in Metadata API format, with its package.xml, deployed to a scratch org",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:deploy:start": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/deploy/start.webp",
+          "caption": "The Helios sources deployed with sf project deploy start, with the deployment actions and Pull Request comments of sfdx-hardis around it",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:deploy:validate": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/deploy/validate.webp",
+          "caption": "The Helios sources validated without being deployed, with the deployment actions and Pull Request comments of sfdx-hardis around it",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 13.3,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:dev-org:list": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/dev-org/list.webp",
+          "caption": "The five development orgs of the Helios project, how many Pull Requests each one misses from its target branch, and the stale one",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:dev-org:register": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/dev-org/register-1.webp",
+          "caption": "Name the owner, who is told when the org needs a backpromote",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/project/dev-org/register.webp",
+          "caption": "The sandbox victordev registered in the development orgs list for the integration branch",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:dev-org:remove": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/dev-org/remove-1.webp",
+          "caption": "Pick the development org to remove from the list",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/project/dev-org/remove.webp",
+          "caption": "The sandbox tomaszdev, nobody uses anymore, removed from the development orgs list",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:fix:profiletabs": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/fix/profiletabs-1.webp",
+          "caption": "Pick the tabs to show or hide",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/project/fix/profiletabs-2.webp",
+          "caption": "Pick the profiles to update",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/project/fix/profiletabs.webp",
+          "caption": "The Installations and Panel Batches tabs set visible in the Helios Crew profile of the sources",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:fix:v53flexipages": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/fix/v53flexipages.webp",
+          "caption": "The component instances of the Lightning pages of the Helios project checked for the identifier that API 53 requires",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:function:create": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/function/create-1.webp",
+          "caption": "The id of the function is the type of the deployment actions that use it",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/project/function/create-2.webp",
+          "caption": "Pick the runtime of the script",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/project/function/create.webp",
+          "caption": "A custom function that posts a message to the crew channel becomes a new deployment action type",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:function:delete": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/function/delete.webp",
+          "caption": "A custom function that a deployment action still uses is only deleted after a confirmation",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:function:list": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/function/list.webp",
+          "caption": "The notifyCrew custom function of the Helios project, its script, its channel input and whether its Node.js runtime is installed",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:function:update": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/function/update.webp",
+          "caption": "The label of the notifyCrew custom function is updated in the project configuration, the other values kept as they are",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:generate:bypass": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/generate/bypass-1.webp",
+          "caption": "Pick the objects whose automations can be bypassed",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/project/generate/bypass-2.webp",
+          "caption": "Pick the kinds of automation to bypass",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/project/generate/bypass.webp",
+          "caption": "Bypass custom permissions for Installation__c and Panel_Batch__c, applied to their Flows and validation rules",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 17.8,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "project-generate-bypass-generation": {
+          "image": "assets/images/commands/project/generate/bypass-report-project-generate-bypass-generation.webp"
+        },
+        "project-generate-bypass-implementation": {
+          "image": "assets/images/commands/project/generate/bypass-report-project-generate-bypass-implementation.webp"
+        }
+      }
+    },
+    "hardis:project:generate:flow-git-diff": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/generate/flow-git-diff-1.webp",
+          "caption": "Pick the Flow to compare",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/project/generate/flow-git-diff-2.webp",
+          "caption": "Pick the state before the change, a commit or a branch",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/project/generate/flow-git-diff.webp",
+          "caption": "The visual diff of the Installation_Crew_Warning Flow between main and the User Story branch, opened in VS Code",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:generate:gitdelta": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/generate/gitdelta-1.webp",
+          "caption": "Pick the commit the delta starts from",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/project/generate/gitdelta.webp",
+          "caption": "The package.xml and destructiveChanges.xml of what the User Story changed since the first commit of the project",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 89.8,
+              "w": 13.6,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:lint": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/lint.webp",
+          "caption": "The MegaLinter summary of the Salesforce flavor, run in Docker, with every linter passing on the Helios project",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:metadata:activate-decomposed": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/metadata/activate-decomposed-1.webp",
+          "caption": "Pick the metadata types to decompose",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/project/metadata/activate-decomposed.webp",
+          "caption": "The permission sets of the Helios project converted to the decomposed source format, one file per access",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:metadata:findduplicates": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/metadata/findduplicates.webp",
+          "caption": "The metadata files of the Helios project checked for values listed twice, such as a field placed twice in a layout",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:pipeline:describe": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/pipeline/describe.webp",
+          "caption": "The major branches of the Helios pipeline, the org each one deploys to and the branch it is merged into",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:promotion:create": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/promotion/create-1.webp",
+          "caption": "Choose the User Stories to carry from uat to preprod",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/project/promotion/create-2.webp",
+          "caption": "A cherry-pick conflicts, the recommended answer commits the markers for a coding agent to solve",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/project/promotion/create.webp",
+          "caption": "A promotion branch assembled from three User Stories of uat, with the Pull Request opened and the conflicts left for a coding agent",
+          "pills": [
+            {
+              "n": 1,
+              "x": 31,
+              "y": 89.8,
+              "w": 24.8,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:promotion:list-candidates": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/promotion/list-candidates.webp",
+          "caption": "The four Pull Requests merged in uat and waiting for promotion to preprod, one already carried by another promotion",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 24.8,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:replacement:create": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/replacement/create-1.webp",
+          "caption": "Store the rule in the project config, a branch config file, or a git provider issue",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/project/replacement/create-2.webp",
+          "caption": "Pick what the rule does",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/project/replacement/create.webp",
+          "caption": "A replacement rule sets the sender address of the crew email templates",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:replacement:delete": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/replacement/delete-1.webp",
+          "caption": "Pick the rule to delete",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/project/replacement/delete.webp",
+          "caption": "The crew-support-email replacement rule is removed from the project configuration",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:replacement:list": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/replacement/list.webp",
+          "caption": "The replacement rules warehouse-api-url and crew-support-email of the Helios project, next to the built-in rules",
+          "pills": []
+        }
+      ],
+      "reports": {
+        "replacement-rules": {
+          "image": "assets/images/commands/project/replacement/list-report-replacement-rules.webp"
+        }
+      }
+    },
+    "hardis:project:replacement:preview": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/replacement/preview.webp",
+          "caption": "The warehouse URL that the replacement rules would write in the remote site setting before a deployment to the uat org",
+          "pills": []
+        }
+      ],
+      "reports": {
+        "replacement-rules-preview": {
+          "image": "assets/images/commands/project/replacement/preview-report-replacement-rules-preview.webp"
+        }
+      }
+    },
+    "hardis:project:replacement:update": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/replacement/update.webp",
+          "caption": "The warehouse-api-url replacement rule now sends the sandboxes to the warehouse system of the uat org",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:project:skills:import": {
+      "shots": [
+        {
+          "image": "assets/images/commands/project/skills/import-1.webp",
+          "caption": "Type the URL of the git repository that holds the skills",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/project/skills/import.webp",
+          "caption": "The Helios Energy skills, agents and rules copied into the .claude folder of the project",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:scratch:create": {
+      "shots": [
+        {
+          "image": "assets/images/commands/scratch/create.webp",
+          "caption": "The scratch org helios-HEL-42 is created from the Dev Hub and initialized with the Helios project steps",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 12.2,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:scratch:delete": {
+      "shots": [
+        {
+          "image": "assets/images/commands/scratch/delete-1.webp",
+          "caption": "Tick the scratch orgs to delete",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/scratch/delete.webp",
+          "caption": "Two scratch orgs of the Dev Hub are deleted, the one still in use is kept",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:scratch:pool:create": {
+      "shots": [
+        {
+          "image": "assets/images/commands/scratch/pool/create-1.webp",
+          "caption": "Choose where the pool is stored",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/scratch/pool/create.webp",
+          "caption": "The scratch org pool is configured, its dashboard is created in the git provider and the CI variables to define are listed",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:scratch:pool:localauth": {
+      "shots": [
+        {
+          "image": "assets/images/commands/scratch/pool/localauth.webp",
+          "caption": "The workstation is checked: the git provider token and the encryption key allow taking scratch orgs from the pool",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:scratch:pool:refresh": {
+      "shots": [
+        {
+          "image": "assets/images/commands/scratch/pool/refresh.webp",
+          "caption": "The scratch org expiring soon is deleted from the pool and two new ones are created to fill it back to 5",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:scratch:pool:reset": {
+      "shots": [
+        {
+          "image": "assets/images/commands/scratch/pool/reset.webp",
+          "caption": "Every scratch org of the pool is deleted, so the next refresh fills the pool again from scratch",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:scratch:pool:view": {
+      "shots": [
+        {
+          "image": "assets/images/commands/scratch/pool/view.webp",
+          "caption": "The pool configuration, its 5 available scratch orgs with their expiration date, and the link to its dashboard",
+          "pills": []
+        }
+      ],
+      "reports": {
+        "scratch-org-pool": {
+          "image": "assets/images/commands/scratch/pool/view-report-scratch-org-pool.webp"
+        }
+      }
+    },
+    "hardis:scratch:pull": {
+      "shots": [
+        {
+          "image": "assets/images/commands/scratch/pull.webp",
+          "caption": "The Apex classes, fields and app changed in the scratch org pulled into the Helios sources, ready to commit",
+          "pills": [
+            {
+              "n": 1,
+              "x": 31.2,
+              "y": 90.2,
+              "w": 16,
+              "h": 5,
+              "legend": "The pulled metadata, in an Excel report"
+            },
+            {
+              "n": 2,
+              "x": 16.7,
+              "y": 90.2,
+              "w": 14.2,
+              "h": 5,
+              "legend": "The next step, committing the pulled files"
+            }
+          ]
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:scratch:push": {
+      "shots": [
+        {
+          "image": "assets/images/commands/scratch/push.webp",
+          "caption": "The local changes of the project pushed to the scratch org",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:scratch:snapshot:refresh": {
+      "shots": [
+        {
+          "image": "assets/images/commands/scratch/snapshot/refresh.webp",
+          "caption": "A snapshot of the uat branch is taken from a fresh scratch org, then the oldest snapshot is pruned",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:source:deploy": {
+      "shots": [
+        {
+          "image": "assets/images/commands/source/deploy.webp",
+          "caption": "The sources of the package.xml validated in a scratch org, with the deployment tips of sfdx-hardis",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:source:push": {
+      "shots": [
+        {
+          "image": "assets/images/commands/source/push.webp",
+          "caption": "The deprecated wrapper of sfdx force:source:push, with the notice to move to sf project deploy start",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 13.3,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:source:retrieve": {
+      "shots": [
+        {
+          "image": "assets/images/commands/source/retrieve.webp",
+          "caption": "The metadata of manifest/package.xml retrieved from the org into the project",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:ticket:get": {
+      "shots": [
+        {
+          "image": "assets/images/commands/ticket/get.webp",
+          "caption": "Ticket HEL-42 read from Jira, with its status, comments, attachments and a warning about a manual step found in its text",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:ticket:list": {
+      "shots": [
+        {
+          "image": "assets/images/commands/ticket/list.webp",
+          "caption": "The 12 open tickets of the HEL Jira project, listed with their type, status, priority and assignee",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 7.4,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "ticket-list": {
+          "image": "assets/images/commands/ticket/list-report-ticket-list.webp"
+        }
+      }
+    },
+    "hardis:ticket:meta": {
+      "shots": [
+        {
+          "image": "assets/images/commands/ticket/meta.webp",
+          "caption": "The issue types and statuses of the HEL Jira project, to build the filters of a ticket search",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:ticket:post-comment": {
+      "shots": [
+        {
+          "image": "assets/images/commands/ticket/post-comment.webp",
+          "caption": "One deployment comment posted on nine Jira tickets, the two already commented ones skipped",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 10.5,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "ticket-post-comment": {
+          "image": "assets/images/commands/ticket/post-comment-report-ticket-post-comment.webp"
+        }
+      }
+    },
+    "hardis:ticket:set-label": {
+      "shots": [
+        {
+          "image": "assets/images/commands/ticket/set-label.webp",
+          "caption": "The label deployed-uat added to the Jira ticket HEL-42",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:ticket:test-cases:init": {
+      "shots": [
+        {
+          "image": "assets/images/commands/ticket/test-cases/init.webp",
+          "caption": "A functional test notebook for HEL-42, ten test cases written to Excel with the tester columns left empty",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 11.8,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "test-cases": {
+          "image": "assets/images/commands/ticket/test-cases/init-report-test-cases.webp"
+        }
+      }
+    },
+    "hardis:ticket:test-cases:upsert": {
+      "shots": [
+        {
+          "image": "assets/images/commands/ticket/test-cases/upsert-1.webp",
+          "caption": "Confirm before the test cases are written to Xray Cloud",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/ticket/test-cases/upsert.webp",
+          "caption": "Ten test cases pushed to Xray Cloud, seven created and three updated, with the tracker id of each",
+          "pills": [
+            {
+              "n": 1,
+              "x": 10.2,
+              "y": 90.2,
+              "w": 10.7,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "test-cases-upsert": {
+          "image": "assets/images/commands/ticket/test-cases/upsert-report-test-cases-upsert.webp"
+        }
+      }
+    },
+    "hardis:ticket:whoami": {
+      "shots": [
+        {
+          "image": "assets/images/commands/ticket/whoami.webp",
+          "caption": "The Jira account the credentials of the project belong to",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:work:backpromote": {
+      "shots": [
+        {
+          "image": "assets/images/commands/work/backpromote-1.webp",
+          "caption": "Pick the first Pull Request the sandbox does not have yet",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/work/backpromote-2.webp",
+          "caption": "Untick what must not reach the sandbox",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/work/backpromote.webp",
+          "caption": "The metadata merged in integration since Pull Request #122 deployed to the sandbox helios-dev, with its deployment action",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:work:new": {
+      "shots": [
+        {
+          "image": "assets/images/commands/work/new-1.webp",
+          "caption": "Pick the type of User Story, it gives the prefix of the branch",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/work/new-2.webp",
+          "caption": "Choose where the User Story will be built",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/work/new.webp",
+          "caption": "A new User Story branch created from integration, with the developer sandbox it will be built in",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:work:refresh": {
+      "shots": [
+        {
+          "image": "assets/images/commands/work/refresh.webp",
+          "caption": "The refresh command is deprecated and points to sf hardis:work:backpromote",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:work:resetselection": {
+      "shots": [
+        {
+          "image": "assets/images/commands/work/resetselection-1.webp",
+          "caption": "Confirm the soft reset of the User Story branch",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/work/resetselection.webp",
+          "caption": "The three commits of the User Story reset softly, so the files can be selected and committed again",
+          "pills": []
+        }
+      ],
+      "reports": {}
+    },
+    "hardis:work:save": {
+      "shots": [
+        {
+          "image": "assets/images/commands/work/save-1.webp",
+          "caption": "Confirm the metadata is committed before the manifest is updated",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/work/save-2.webp",
+          "caption": "Push the branch to the git server",
+          "pills": []
+        },
+        {
+          "image": "assets/images/commands/work/save.webp",
+          "caption": "A User Story saved: package.xml updated from the git delta, sources cleaned, commits pushed, ready for a Pull Request",
+          "pills": [
+            {
+              "n": 1,
+              "x": 4.3,
+              "y": 89.8,
+              "w": 13.6,
+              "h": 5,
+              "legend": "The report of the run: the button opens it in Excel, the arrow lists its other files"
+            }
+          ]
+        }
+      ],
+      "reports": {
+        "commit-files-package-xml-updates": {
+          "image": "assets/images/commands/work/save-report-commit-files-package-xml-updates.webp"
+        },
+        "commit-files-cleaned-sources": {
+          "image": "assets/images/commands/work/save-report-commit-files-cleaned-sources.webp"
+        },
+        "commit-files-deployment-plan": {
+          "image": "assets/images/commands/work/save-report-commit-files-deployment-plan.webp"
+        }
+      }
+    },
+    "hardis:work:ws": {
+      "skip": "Technical command the extension uses to talk to sfdx-hardis: it shows nothing of its own."
+    },
+    "hello:world": {
+      "skip": "Sample command of the plugin template, never run by users"
+    }
+  }
+}

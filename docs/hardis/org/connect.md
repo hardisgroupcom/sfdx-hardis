@@ -45,6 +45,16 @@ In agent mode:
 - The browser open prompt is skipped.
 
 
+## Screenshots
+
+![Pick one of the authenticated orgs, or log in to another one](../../assets/images/commands/org/connect-1.webp)
+
+_Pick one of the authenticated orgs, or log in to another one_
+
+![Connect to the Helios UAT sandbox without changing the default org, then open it in the browser](../../assets/images/commands/org/connect.webp)
+
+_Connect to the Helios UAT sandbox without changing the default org, then open it in the browser_
+
 ## Parameters
 
 | Name         |  Type   | Description                                                   | Default | Required | Options |

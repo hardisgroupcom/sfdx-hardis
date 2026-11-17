@@ -49,6 +49,26 @@ sf hardis:org:diagnose:licenses --agent --target-org myorg@example.com
 
 In agent mode, the command runs fully automatically with no interactive prompts.
 
+## Screenshots
+
+![The licenses of the org, with the report buttons at the end of the run](../../../assets/images/commands/org/diagnose/licenses.webp)
+
+_The licenses of the org, with the report buttons at the end of the run_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Licenses
+
+One row per license of the org (user licenses, permission set licenses), with the number of licenses bought and used.
+
+Files: `licenses-*.csv`, `xls/licenses-*.xlsx`
+
+![Licenses report in Excel](../../../assets/images/commands/org/diagnose/licenses-report-licenses.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

@@ -2,6 +2,22 @@
 
 ## [beta] (main)
 
+- [hardis:project:deploy:start](https://sfdx-hardis.cloudity.com/hardis/project/deploy/start/), [hardis:project:deploy:validate](https://sfdx-hardis.cloudity.com/hardis/project/deploy/validate/) and [hardis:project:deploy:quick](https://sfdx-hardis.cloudity.com/hardis/project/deploy/quick/): no longer fail with an unknown flag error when run from VS Code.
+- [hardis:org:diagnose:instanceupgrade](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/instanceupgrade/): the days left before the Salesforce upgrade are no longer shown as a negative number, the log line shows the org URL instead of raw markdown, and the notification is a warning only in the last 15 days.
+- [hardis:org:diagnose:unusedlicenses](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedlicenses/): the reports of deleted and failed assignments no longer overwrite the report of unused assignments.
+- [hardis:doc:plugin:generate](https://sfdx-hardis.cloudity.com/hardis/doc/plugin/generate/): command pages can show screenshots of the command and list the reports it writes.
+- [hardis:doc:fieldusage](https://sfdx-hardis.cloudity.com/hardis/doc/fieldusage/): no longer fails with an unknown flag error when run from VS Code.
+- [hardis:org:community:update](https://sfdx-hardis.cloudity.com/hardis/org/community/update/): no longer fails with an unknown flag error when run from VS Code.
+- [hardis:org:purge:apexlog](https://sfdx-hardis.cloudity.com/hardis/org/purge/apexlog/): the Apex logs are purged in the org given with `--target-org`, not in the default org, and their count no longer includes the CSV header.
+- [hardis:org:purge:flow](https://sfdx-hardis.cloudity.com/hardis/org/purge/flow/): the Flow interviews report fills its Created By column.
+- [hardis:org:purge:profile](https://sfdx-hardis.cloudity.com/hardis/org/purge/profile/): the profiles given with `--profiles` are used without asking again, and the run ends in error when the muted profiles cannot be deployed.
+- [hardis:org:user:freeze](https://sfdx-hardis.cloudity.com/hardis/org/user/freeze/) and [hardis:org:user:unfreeze](https://sfdx-hardis.cloudity.com/hardis/org/user/unfreeze/): the report fills the Profile column of each user.
+- [hardis:package:version:list](https://sfdx-hardis.cloudity.com/hardis/package/version/list/): lists the versions of the Dev Hub given with `--target-dev-hub`, not only of the default one.
+- [hardis:project:create](https://sfdx-hardis.cloudity.com/hardis/project/create/): the org type, project name and development branch given as flags are used without asking again.
+- [hardis:project:clean:profiles-extract](https://sfdx-hardis.cloudity.com/hardis/project/clean/profiles-extract/): the workbook opens in Excel without asking to repair it.
+- [hardis:project:generate:gitdelta](https://sfdx-hardis.cloudity.com/hardis/project/generate/gitdelta/): no longer crashes when HEAD or the oldest commit of the branch is picked as the starting commit, and the delta up to the local files not committed yet works again.
+- Doc: every command page shows the command running in VS Code, and the reports it writes opened in Excel.
+
 ## [8.25.0] 2026-11-16
 
 - **What will break** ([doc](https://sfdx-hardis.cloudity.com/salesforce-monitoring-what-will-break/)): one report tells what dated Salesforce changes will break in your org, when, and what to do before, and confirms when nothing will.

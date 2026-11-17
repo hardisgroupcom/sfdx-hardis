@@ -78,6 +78,28 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 <!-- training-links:end -->
 
 
+## Screenshots
+
+![Pick the deployment action of the User Story to try in your org](../../../assets/images/commands/project/action/run-1.webp)
+
+_Pick the deployment action of the User Story to try in your org_
+
+![The pre-deployment Apex action of a User Story tried in a scratch org before its Pull Request exists](../../../assets/images/commands/project/action/run.webp)
+
+_The pre-deployment Apex action of a User Story tried in a scratch org before its Pull Request exists_
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Actions run
+
+One row per deployment action run, with its label and final status (and the Pull Request it comes from when run for a Pull Request).
+
+Files: `deployment-actions-run-*.csv`, `xls/deployment-actions-run-*.xlsx`
+
+![Actions run report in Excel](../../../assets/images/commands/project/action/run-report-deployment-actions-run.webp)
+
 ## Parameters
 
 | Name                  |  Type   | Description                                                                                                                           | Default | Required |       Options        |

@@ -1,0 +1,13 @@
+command: hardis:project:replacement:delete
+run: sf hardis:project:replacement:delete
+org: none
+caption: The crew-support-email replacement rule is removed from the project configuration
+answers:
+  - q: Where do you want to store the rule
+    choice: ^Project config$
+  - q: Replacement rule
+    choice: ^crew-support-email
+    shot: true
+    caption: Pick the rule to delete
+  - q: Delete the replacement rule crew-support-email from config/\.
+    choice: ^❌ No$

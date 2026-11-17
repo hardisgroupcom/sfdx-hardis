@@ -86,6 +86,12 @@ sf hardis:project:deploy:notify --agent
 In agent mode, all interactive prompts are skipped and default values are used.
 
 
+## Screenshots
+
+![The notifications of a successful deployment to helios-uat - Pull Request comment, Jira tickets commented and labelled, Slack message](../../../assets/images/commands/project/deploy/notify.webp)
+
+_The notifications of a successful deployment to helios-uat - Pull Request comment, Jira tickets commented and labelled, Slack message_
+
 ## Parameters
 
 | Name                 |  Type   | Description                                                                                                            | Default | Required |            Options            |

@@ -47,6 +47,16 @@ Use `--agent` to disable all interactive prompts. Required flags in agent mode:
 All interactive package selection and installation key prompts are skipped.
 
 
+## Screenshots
+
+![Pick the package to create a new version of](../../../assets/images/commands/package/version/create-1.webp)
+
+_Pick the package to create a new version of_
+
+![A new version of the Helios Core unlocked package is created, with code coverage computed](../../../assets/images/commands/package/version/create.webp)
+
+_A new version of the Helios Core unlocked package is created, with code coverage computed_
+
 ## Parameters
 
 | Name                  |  Type   | Description                                                                                                       | Default | Required | Options |

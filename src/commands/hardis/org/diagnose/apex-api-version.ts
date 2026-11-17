@@ -6,6 +6,7 @@ import c from 'chalk';
 import { uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { soqlQueryTooling } from '../../../../common/utils/apiUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 import { getSeverityIcon } from '../../../../common/utils/notifUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { prepareOrgNotificationContext } from '../../../../common/utils/orgNotificationContext.js';
@@ -19,6 +20,14 @@ const DEFAULT_DEPRECATED_APEX_API_VERSION = 50;
 
 export default class DiagnoseApexApiVersion extends SfCommand<any> {
   public static title = 'Check Apex classes and triggers for deprecated API versions';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'apex-api-version',
+      title: 'Deprecated API versions',
+      description: 'One row per Apex class or trigger whose API version is at or below the threshold, with its name and API version, to know what to upgrade.',
+    },
+  ];
 
   public static description = `Detects Apex classes and triggers deployed with API versions at or below a configurable threshold.
 

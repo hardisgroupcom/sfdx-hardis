@@ -1,0 +1,16 @@
+command: hardis:org:data:export
+run: sf hardis:org:data:export
+org: showcase
+caption: Accounts, contacts, opportunities, installations and panel batches of the Helios org exported to CSV files with SFDMU
+answers:
+  - q: Do you want to use org
+    choice: ^✅ Yes$
+  - q: Select the data workspace to export
+    choice: ^📁 \[HeliosBaseline\]$
+    shot: true
+    caption: Pick the data workspace that lists the objects and fields to export
+  - q: Do you confirm you want to export the data of \[HeliosBaseline\]
+    choice: ^✅ Yes$
+pills:
+  - text: Successfully exported data
+    legend: The CSV files are written in scripts/data/HeliosBaseline

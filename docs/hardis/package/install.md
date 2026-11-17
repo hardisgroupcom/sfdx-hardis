@@ -21,6 +21,16 @@ Use `--agent` to disable all interactive prompts. Required flags in agent mode:
 All interactive package selection prompts are skipped. The `managePackageConfig` step is also skipped.
 
 
+## Screenshots
+
+![Pick a package from the list, or Other to give a package version id](../../assets/images/commands/package/install-1.webp)
+
+_Pick a package from the list, or Other to give a package version id_
+
+![Package version 04t0b000000HeLiOSAA of Helios Core is installed in the org](../../assets/images/commands/package/install.webp)
+
+_Package version 04t0b000000HeLiOSAA of Helios Core is installed in the org_
+
 ## Parameters
 
 | Name                   |  Type   | Description                                                                                                  | Default | Required | Options |

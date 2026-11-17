@@ -62,7 +62,7 @@ export function pillColor(n) {
 }
 
 // Width and height straight out of the PNG IHDR chunk, so this needs no image library
-function pngSize(file) {
+export function pngSize(file) {
   const fd = fs.openSync(file, "r");
   const head = Buffer.alloc(24);
   fs.readSync(fd, head, 0, 24, 0);
@@ -115,7 +115,7 @@ function isCurrent(item, stamp) {
   );
 }
 
-function buildHtml(dataUri, size, marks, scale) {
+export function buildHtml(dataUri, size, marks, scale) {
   const shapes = marks
     .map((mark) => {
       const color = mark.color || pillColor(mark.n);
@@ -153,7 +153,7 @@ function workItem(key, entry) {
   return { rel: key, entry, source, out: path.join(OUT_ROOT, outRel), hash: specHash(source, entry) };
 }
 
-async function launchBrowser() {
+export async function launchBrowser() {
   const { default: puppeteer } = await import("puppeteer-core");
   // Its own headless Chrome, never the user's browser: this only renders local
   // files, so it needs no session, and an isolated instance cannot be blocked by
@@ -227,17 +227,7 @@ async function main() {
   try {
     const page = await browser.newPage();
     for (const item of work) {
-      const size = pngSize(item.source);
-      const dataUri = `data:image/png;base64,${fs.readFileSync(item.source).toString("base64")}`;
-      // A very large viewport is slow, so wide screenshots are drawn at a scale
-      // that keeps them workable
-      const scale = Math.min(1, 1600 / size.width);
-      const vw = Math.ceil(size.width * scale);
-      const vh = Math.ceil(size.height * scale);
-      await page.setViewport({ width: vw, height: vh });
-      await page.setContent(buildHtml(dataUri, size, item.entry.pills || [], scale), { waitUntil: "load" });
-      fs.mkdirSync(path.dirname(item.out), { recursive: true });
-      await page.screenshot({ path: item.out, clip: { x: 0, y: 0, width: vw, height: vh } });
+      await renderAnnotated(page, item.source, item.entry.pills || [], item.out);
       // Saved after every image: a failure halfway keeps the work already done
       kept[item.rel] = { spec: item.hash, out: sha1(fs.readFileSync(item.out)) };
       saveStamps();
@@ -248,6 +238,30 @@ async function main() {
   }
   saveStamps();
   console.log(`\n${work.length} screenshot(s) annotated into docs/assets/images/annotated/.`);
+}
+
+/**
+ * Draws the pills on a PNG and writes the result to `out`, as PNG or WebP (from the extension of
+ * `out`). `page` is a page of launchBrowser(). The command screenshots of
+ * scripts/command-screenshots draw their pills with it too.
+ */
+export async function renderAnnotated(page, source, pills, out, { quality = 90 } = {}) {
+  const size = pngSize(source);
+  const dataUri = `data:image/png;base64,${fs.readFileSync(source).toString("base64")}`;
+  // A very large viewport is slow, so wide screenshots are drawn at a scale
+  // that keeps them workable
+  const scale = Math.min(1, 1600 / size.width);
+  const vw = Math.ceil(size.width * scale);
+  const vh = Math.ceil(size.height * scale);
+  await page.setViewport({ width: vw, height: vh });
+  await page.setContent(buildHtml(dataUri, size, pills, scale), { waitUntil: "load" });
+  fs.mkdirSync(path.dirname(out), { recursive: true });
+  const webp = out.toLowerCase().endsWith(".webp");
+  await page.screenshot({
+    path: out,
+    clip: { x: 0, y: 0, width: vw, height: vh },
+    ...(webp ? { type: "webp", quality } : {}),
+  });
 }
 
 // Only when this file is the command being run: check-doc-pills.mjs imports the

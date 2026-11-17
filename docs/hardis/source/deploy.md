@@ -85,6 +85,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The sources of the package.xml validated in a scratch org, with the deployment tips of sfdx-hardis](../../assets/images/commands/source/deploy.webp)
+
+_The sources of the package.xml validated in a scratch org, with the deployment tips of sfdx-hardis_
+
 ## Parameters
 
 | Name                            |  Type   | Description                                                                                                  |  Default  | Required |                                Options                                 |

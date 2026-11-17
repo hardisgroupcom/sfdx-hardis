@@ -1,0 +1,10 @@
+command: hardis:doctor
+run: sf hardis:doctor
+org: none
+caption: Versions of Salesforce CLI and its plugins on the machine, with a warning on each one that has a newer release
+pills:
+  - text: Latest
+    legend: A warning sign shows the newer version to install
+answers:
+  - q: Open the GitHub new issue page in your browser now\?
+    choice: ^❌ No$

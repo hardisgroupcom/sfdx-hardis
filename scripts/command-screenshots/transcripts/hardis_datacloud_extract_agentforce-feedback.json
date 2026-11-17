@@ -1,0 +1,125 @@
+{
+  "command": "hardis:datacloud:extract:agentforce-feedback",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Querying Feedbacks table..."
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[DataCloudSqlQuery] Submitting initial query to https://helios-solar.my.salesforce.com/services/data/v67.0/ssot/query-sql?dataspace=default&workloadName=sfdx-hardis-cli:\nWITH feedback_cte AS (\n  SELECT\n    COALESCE(usr.ssot__username__c, gar.userId__c) AS userName,\n    ggn.timestamp__c AS conversationDate,\n    gaf.feedback__c AS feedbackSentiment,\n    gfd.feedbackText__c AS feedbackMessage,\n    gat.tagValue__c AS userUtterance,\n    ggn.responseText__c AS agentResponse,\n    gar.generationGroupId__c AS conversationId,\n    gar.gatewayRequestId__c AS gatewayRequestId\n  FROM GenAIGeneration__dlm ggn\n  JOIN GenAIGatewayResponse__dlm grs ON ggn.generationResponseId__c = grs.generationResponseId__c\n  JOIN GenAIGatewayRequest__dlm gar ON grs.generationRequestId__c = gar.gatewayRequestId__c\n  JOIN GenAIGatewayRequestTag__dlm gat ON gar.gatewayRequestId__c = gat.parent__c AND gat.tag__c = 'user_utterance'\n  LEFT JOIN GenAIFeedback__dlm gaf ON gar.generationGroupId__c = gaf.generationGroupId__c\n  LEFT JOIN GenAIFeedbackDetail__dlm gfd ON gaf.feedbackId__c = gfd.parent__c\n  LEFT JOIN ssot__User__dlm usr ON usr.ssot__Id__c = gar.userId__c\n  WHERE gaf.feedback__c IN ('GOOD','BAD') AND ggn.timestamp__c >= TIMESTAMP '2026-10-18T09:12:44.318Z' AND ggn.timestamp__c <= TIMESTAMP '2026-11-17T09:12:44.318Z'\n), session_lookup AS (\n  SELECT\n    ais.ssot__GenAiGatewayRequestId__c AS gatewayRequestId,\n    ai.ssot__AiAgentSessionId__c AS sessionId,\n    ROW_NUMBER() OVER (\n      PARTITION BY ais.ssot__GenAiGatewayRequestId__c\n      ORDER BY ais.ssot__StartTimestamp__c DESC\n    ) AS rowNum\n  FROM ssot__AiAgentInteractionStep__dlm ais\n  JOIN ssot__AiAgentInteraction__dlm ai ON ai.ssot__Id__c = ais.ssot__AiAgentInteractionId__c\n), session_agent_info AS (\n  SELECT\n    part.ssot__AiAgentSessionId__c AS sessionId,\n    MAX(part.ssot__AiAgentApiName__c) AS agentApiName\n  FROM ssot__AiAgentSessionParticipant__dlm part\n  WHERE part.ssot__AiAgentApiName__c IS NOT NULL\n  GROUP BY part.ssot__AiAgentSessionId__c\n)\nSELECT\n  fb.userName,\n  fb.conversationDate,\n  fb.feedbackSentiment,\n  fb.feedbackMessage,\n  fb.userUtterance,\n  fb.agentResponse,\n  fb.conversationId,\n  fb.gatewayRequestId,\n  sess.sessionId,\n  agent.agentApiName AS agentApiName\nFROM feedback_cte fb\nLEFT JOIN (SELECT gatewayRequestId, sessionId FROM session_lookup WHERE rowNum = 1) sess ON sess.gatewayRequestId = fb.gatewayRequestId\nLEFT JOIN session_agent_info agent ON agent.sessionId = sess.sessionId\n\nORDER BY fb.conversationDate DESC\n;",
+        "query": {
+          "id": "hardis:datacloud:extract:agentforce-feedback-q1",
+          "type": "datacloud",
+          "status": "running"
+        }
+      }
+    },
+    {
+      "delay": 1100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[DataCloudSqlQuery] Retrieved 12 records.",
+        "query": {
+          "id": "hardis:datacloud:extract:agentforce-feedback-q1",
+          "type": "datacloud",
+          "status": "completed",
+          "recordCount": 12,
+          "batchCount": 1
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Fetching full conversations transcripts..."
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[DataCloudSqlQuery] Submitting initial query to https://helios-solar.my.salesforce.com/services/data/v67.0/ssot/query-sql?dataspace=default&workloadName=sfdx-hardis-cli:\nSELECT\n\t\t\t\tai.ssot__AiAgentSessionId__c AS sessionId,\n\t\t\t\tmsg.ssot__MessageSentTimestamp__c AS messageTimestamp,\n\t\t\t\tmsg.ssot__AiAgentInteractionMessageType__c AS messageType,\n\t\t\t\tmsg.ssot__ContentText__c AS messageText,\n\t\t\t\tpart.ssot__AiAgentSessionParticipantRole__c AS participantRole\n\t\t\t\tFROM ssot__AiAgentInteractionMessage__dlm msg\n\t\t\t\tJOIN ssot__AiAgentInteraction__dlm ai ON ai.ssot__Id__c = msg.ssot__AiAgentInteractionId__c\n\t\t\t\tLEFT JOIN ssot__AiAgentSessionParticipant__dlm part ON part.ssot__Id__c = msg.ssot__AiAgentSessionParticipantId__c\n\t\t\t\tWHERE ai.ssot__AiAgentSessionId__c IN ('019bde04-b640-7c51-9531-206b5881293f', '019b96c7-f669-7ae0-9b38-8ccfeb78be5e', '019b5eb5-c0bb-7fb3-9f97-0be0d098f553', '019b55b1-6ddd-7c8a-976d-2757a60f6936', '019b4c72-e4dc-781f-99e9-0281f245666d', '019b9076-d91c-767d-90ce-005bba5c2cab', '019b1485-99d5-7f00-9dd2-2d7eb1d32ace', '019bc967-c60c-7d15-9f7a-608cb78f2e67', '019b3264-1fbe-7aad-9c00-17ade0eaff83', '019b0ece-07b0-7739-9aa4-3669c869ab9d', '019bbc3f-2df3-77ee-9e38-07689217a4bc', '019b03f8-9f1e-7921-9625-d3fa607ddb1d')\n\t\t\t\tORDER BY ai.ssot__AiAgentSessionId__c, msg.ssot__MessageSentTimestamp__c",
+        "query": {
+          "id": "hardis:datacloud:extract:agentforce-feedback-q2",
+          "type": "datacloud",
+          "status": "running"
+        }
+      }
+    },
+    {
+      "delay": 1000,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[DataCloudSqlQuery] Retrieved 32 records.",
+        "query": {
+          "id": "hardis:datacloud:extract:agentforce-feedback-q2",
+          "type": "datacloud",
+          "status": "completed",
+          "recordCount": 32,
+          "batchCount": 1
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Aggregating and filtering data..."
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/datacloud-agentforce-feedback-features__HEL-42-installation-checklist.csv",
+        "title": "DataCloud Agentforce Feedback (CSV)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 80,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/xls/datacloud-agentforce-feedback-features__HEL-42-installation-checklist.xlsx",
+        "title": "DataCloud Agentforce Feedback (XLSX)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Agentforce feedback summary: **8** GOOD / **4** BAD (total **12**).\nWindow: 2026-10-18T09:12:44.318Z → 2026-11-17T09:12:44.318Z"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

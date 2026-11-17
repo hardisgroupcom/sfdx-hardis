@@ -32,6 +32,26 @@ sf hardis:org:diagnose:unused-apex-classes --agent --target-org myorg@example.co
 
 In agent mode, the command runs fully automatically. The inactivity threshold defaults to 365 days when `--days` is not provided.
 
+## Screenshots
+
+![Batch, Queueable and Schedulable Apex classes of the Helios org not run for 365 days: none here](../../../assets/images/commands/org/diagnose/unused-apex-classes.webp)
+
+_Batch, Queueable and Schedulable Apex classes of the Helios org not run for 365 days: none here_
+
+- **(1)** One row per async class, with the date of its latest job
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Unused Apex classes
+
+One row per batch, queueable or schedulable Apex class, with the date of its latest job and its creation date and author, so you can spot the ones not run for a long time.
+
+Files: `unused-apex-classes-*.csv`, `xls/unused-apex-classes-*.xlsx`
+
+![Unused Apex classes report in Excel](../../../assets/images/commands/org/diagnose/unused-apex-classes-report-unused-apex-classes.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

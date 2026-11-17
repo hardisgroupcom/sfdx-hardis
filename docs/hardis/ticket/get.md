@@ -72,6 +72,12 @@ sf hardis ticket get --id ACME-4567 --agent --json
 ```
 
 
+## Screenshots
+
+![Ticket HEL-42 read from Jira, with its status, comments, attachments and a warning about a manual step found in its text](../../assets/images/commands/ticket/get.webp)
+
+_Ticket HEL-42 read from Jira, with its status, comments, attachments and a warning about a manual step found in its text_
+
 ## Parameters
 
 | Name                |  Type   | Description                                                                                                                                                                  | Default | Required |                Options                |

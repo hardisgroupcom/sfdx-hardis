@@ -1,0 +1,10 @@
+command: hardis:ticket:test-cases:upsert
+run: sf hardis:ticket:test-cases:upsert --notebook hardis-report/test-cases-HEL-42-functional-2026-11-17_10-24-08.xlsx --provider xray
+mode: replay
+org: none
+caption: "Ten test cases pushed to Xray Cloud, seven created and three updated, with the tracker id of each"
+answers:
+  - q: "Upsert 10 test case"
+    choice: "^✅ Yes$"
+    shot: true
+    caption: "Confirm before the test cases are written to Xray Cloud"

@@ -1,0 +1,5 @@
+command: hardis:datacloud:sql-query
+run: 'sf hardis:datacloud:sql-query --query "SELECT ssot__Name__c, ssot__CreatedDate__c FROM ssot__Account__dlm ORDER BY ssot__CreatedDate__c DESC LIMIT 10"'
+mode: replay
+org: none
+caption: "The SQL query runs on Data Cloud and the 10 latest Helios accounts are exported to CSV and Excel"

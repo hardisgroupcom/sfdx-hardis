@@ -1,0 +1,5 @@
+command: hardis:doc:mkdocs-to-salesforce
+run: sf hardis:doc:mkdocs-to-salesforce
+mode: replay
+org: none
+caption: "The project documentation is deployed to the org as a static resource shown in a Visualforce page and a custom tab"

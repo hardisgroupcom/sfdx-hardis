@@ -37,6 +37,12 @@ Required in agent mode: `--id`. Every other flag is optional, and every prompt i
 </details>
 
 
+## Screenshots
+
+![The label of the notifyCrew custom function is updated in the project configuration, the other values kept as they are](../../../assets/images/commands/project/function/update.webp)
+
+_The label of the notifyCrew custom function is updated in the project configuration, the other values kept as they are_
+
 ## Parameters
 
 | Name             |  Type   | Description                                                                                                                           | Default | Required |              Options               |

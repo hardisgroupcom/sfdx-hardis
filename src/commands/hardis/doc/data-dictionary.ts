@@ -7,6 +7,7 @@ import { prompts } from '../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { listOrgSObjects } from '../../../common/utils/orgUtils.js';
 import { t } from '../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../common/docBuilder/commandScreenshots.js';
 import {
   collectDataCloudDictionaries,
   collectObjectDictionary,
@@ -74,6 +75,14 @@ In agent mode:
 - No other prompt is displayed; the workbook is generated directly.
 - Pass \`--customizedonly\` to restrict the workbook to objects that have local customizations (the prompt is skipped).
 `;
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'data-dictionary',
+      title: 'Data dictionary',
+      description: 'One Excel workbook with an index sheet (one row per object), one sheet per object listing its fields, and sheets for the validation rules, record types and Data Cloud relationships; each sheet is also written as a CSV file.',
+    },
+  ];
 
   public static examples = [
     '$ sf hardis:doc:data-dictionary',

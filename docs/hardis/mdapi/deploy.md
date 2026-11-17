@@ -49,6 +49,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![A folder in Metadata API format validated in a scratch org, with the deployment tips of sfdx-hardis](../../assets/images/commands/mdapi/deploy.webp)
+
+_A folder in Metadata API format validated in a scratch org, with the deployment tips of sfdx-hardis_
+
 ## Parameters
 
 | Name                            |  Type   | Description                                                                                                  |  Default  | Required |                                Options                                 |

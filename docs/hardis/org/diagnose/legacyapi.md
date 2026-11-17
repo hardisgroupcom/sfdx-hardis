@@ -31,6 +31,15 @@ sf hardis:org:diagnose:legacyapi --agent --target-org myorg@example.com
 
 In agent mode, the command runs fully automatically with no interactive prompts.
 
+## Screenshots
+
+![Calls to retired API versions found in the Helios org event logs, counted by retirement wave: none here](../../../assets/images/commands/org/diagnose/legacyapi.webp)
+
+_Calls to retired API versions found in the Helios org event logs, counted by retirement wave: none here_
+
+- **(1)** One row per legacy call, with the client and the API version it used
+- **(2)** How to fix the calls before the retirement
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  |    Default    | Required | Options |

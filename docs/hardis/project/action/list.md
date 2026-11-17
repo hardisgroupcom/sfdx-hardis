@@ -42,6 +42,16 @@ Required in agent mode:
 </details>
 
 
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Deployment actions
+
+One row per deployment action defined in the project, with its label, type, context and whether a failure is allowed.
+
+Files: `deployment-actions-*.csv`, `xls/deployment-actions-*.xlsx`
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                                            | Default | Required |          Options           |

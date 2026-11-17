@@ -1,0 +1,31 @@
+command: hardis:org:configure:files
+run: sf hardis:org:configure:files
+org: none
+caption: A files export configuration for the documents attached to the Helios installations, saved in scripts/files
+answers:
+  - q: Please select a Files import/export template, or the blank one
+    choice: ^📄 Blank template$
+  - q: Please input the files export config folder name \(PascalCase
+    value: InstallationPhotos
+  - q: Please input a label for the files export configuration
+    value: Installation photos
+  - q: Please input a description of the files export configuration
+    value: Site photos attached to the Helios installations
+  - q: Please input the main SOQL Query to fetch the parent records
+    value: SELECT Id,Name FROM Installation__c
+    shot: true
+    caption: Type the query of the records whose files are exported
+  - q: Please input the field to use to build the name of the folder
+    value: Name
+  - q: Please select the format of output files names
+    choice: ^title_id
+  - q: Do you want to try to download files attached to a parent record
+    choice: ^✅ Yes$
+  - q: Do you want to overwrite file that has already been previously
+    choice: ^❌ No$
+  - q: Please input the minimum file size in KB \(0 = no minimum\)
+    value: 0
+pills:
+  - text: Edit your Files export configuration
+    button: true
+    legend: The export.json written for this configuration

@@ -1,0 +1,13 @@
+command: hardis:project:action:delete
+run: sf hardis:project:action:delete
+org: none
+caption: The manual action that checks the inverter catalog is removed from the project configuration
+answers:
+  - q: Select the configuration scope
+    choice: ^Project$
+  - q: Select when the action runs
+    choice: ^Post-deploy$
+  - q: "(Select|Pick).*action"
+    choice: Check the inverter catalog
+    shot: true
+    caption: Pick the action to delete

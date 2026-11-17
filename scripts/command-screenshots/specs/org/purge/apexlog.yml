@@ -1,0 +1,10 @@
+command: hardis:org:purge:apexlog
+run: sf hardis:org:purge:apexlog --target-org helios-uat
+mode: replay
+org: none
+caption: "1248 Apex debug logs of the Helios UAT sandbox deleted with the Bulk API"
+answers:
+  - q: "Do you want to delete all Apex logs"
+    choice: "Yes$"
+    shot: true
+    caption: "Confirm the deletion of every Apex debug log of the org"

@@ -60,6 +60,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![A legacy export split into one CSV file per section, with 5 lines in error out of 386](../../assets/images/commands/misc/toml2csv.webp)
+
+_A legacy export split into one CSV file per section, with 5 lines in error out of 386_
+
 ## Parameters
 
 | Name                  |  Type   | Description                                                                                                  | Default | Required | Options |

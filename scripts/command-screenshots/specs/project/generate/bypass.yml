@@ -1,0 +1,17 @@
+command: hardis:project:generate:bypass
+run: sf hardis:project:generate:bypass
+org: showcase
+caption: Bypass custom permissions for Installation__c and Panel_Batch__c, applied to their Flows and validation rules
+answers:
+  - q: Select sObjects for bypass
+    choice: '^(Installation|Panel Batch) \('
+    shot: true
+    caption: Pick the objects whose automations can be bypassed
+  - q: Select which automations to bypass
+    choice: '^(Flows|Validation Rules)$'
+    shot: true
+    caption: Pick the kinds of automation to bypass
+  - q: Where do you wish to have the bypass applied
+    choice: '^(Flows|Validation Rules) \('
+  - q: Where do you want to get the elements to apply bypass to
+    choice: '^Use local elements in the project$'

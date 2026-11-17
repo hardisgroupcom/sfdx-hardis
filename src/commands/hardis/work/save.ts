@@ -40,12 +40,31 @@ import { t } from '../../../common/utils/i18n.js';
 import { getPromotionBranchConfig, isPromotionBranchName } from '../../../common/utils/promotionBranchUtils.js';
 import { isBackpromoteBranchName, parseBackpromoteBranchName } from '../../../common/utils/backpromoteRules.js';
 import { registerDevOrgUsage } from '../../../common/utils/devOrgsRegistry.js';
+import type { CommandReport } from '../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class SaveTask extends SfCommand<any> {
   public static title = 'Save User Story';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'commit-files-package-xml-updates',
+      title: 'Package.xml updates',
+      description: 'One row per file committed with the package.xml updates, with its status (created, modified or deleted).',
+    },
+    {
+      file: 'commit-files-cleaned-sources',
+      title: 'Cleaned files',
+      description: 'One row per source file cleaned and committed by the save, so the cleaning is visible in the User Story.',
+    },
+    {
+      file: 'commit-files-deployment-plan',
+      title: 'Deployment plan files',
+      description: 'One row per file committed with the deployment plan updates, with its status (created, modified or deleted).',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

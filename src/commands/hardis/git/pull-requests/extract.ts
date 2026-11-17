@@ -9,12 +9,21 @@ import { GitProvider } from '../../../../common/gitProvider/index.js';
 import { dateHelper } from '../../../../common/utils/dateHelper.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class GitPullRequestsExtract extends SfCommand<any> {
   public static title = 'Extract pull requests';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'pull-requests',
+      title: 'Pull requests',
+      description: 'One row per pull request or merge request returned by the git provider, with its title, author, branches, status and dates.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

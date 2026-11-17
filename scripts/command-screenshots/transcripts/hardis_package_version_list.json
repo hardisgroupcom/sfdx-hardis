@@ -1,0 +1,30 @@
+{
+  "command": "hardis:package:version:list",
+  "exitCode": 0,
+  "events": [
+    { "delay": 0, "message": { "event": "initClient" } },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": { "command": "sf package version list --target-dev-hub devhub@helios-solar.demo", "cwd": "." }
+      }
+    },
+    {
+      "delay": 1800,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf package version list --target-dev-hub devhub@helios-solar.demo",
+          "cwd": ".",
+          "success": true,
+          "result": {
+            "status": 0,
+            "stdout": "=== Package Versions [5]\n\n Package Name     Namespace Version Name  Version  Subscriber Package Version Id Alias                  Installation Key Released Validation Skipped Ancestor  Ancestor Version Branch\n ──────────────── ───────── ───────────── ──────── ────────────────────────────── ────────────────────── ──────────────── ──────── ────────────────── ───────── ──────────────── ──────\n Helios Core                Winter 2026   1.2.0.1  04t0b000000HeLiOS1           Helios Core@1.2.0-1    false            true     false              N/A       N/A\n Helios Core                Spring 2026   1.3.0.2  04t0b000000HeLiOS2           Helios Core@1.3.0-2    false            true     false              N/A       N/A\n Helios Core                Summer 2026   1.4.0.1  04t0b000000HeLiOSA           Helios Core@1.4.0-1    false            true     false              N/A       N/A\n Helios Reporting           First release 1.0.0.2  04t0b000000HeLiRP1           Helios Reporting@1.0.0-2 false          true     false              N/A       N/A\n Helios Reporting           Crew charts   1.1.0.3  04t0b000000HeLiRP3           Helios Reporting@1.1.0-3 false          false    false              N/A       N/A\n"
+          }
+        }
+      }
+    },
+    { "delay": 200, "message": { "event": "closeClient", "status": "success" } }
+  ]
+}

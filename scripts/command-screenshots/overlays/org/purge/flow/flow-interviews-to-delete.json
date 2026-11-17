@@ -1,0 +1,168 @@
+{
+  "mode": "replace",
+  "title": "Flow Interviews to delete",
+  "columns": [
+    "Name",
+    "Label",
+    "Status",
+    "Created By"
+  ],
+  "rows": [
+    {
+      "Name": "Installation Reminder 10/11/2026, 8:54 AM",
+      "Label": "Installation Reminder 10/11/2026, 8:54 AM",
+      "Status": "Paused",
+      "Created By": "lucia.fernandez@helios-solar.demo"
+    },
+    {
+      "Name": "Installation Reminder 10/12/2026, 11:33 AM",
+      "Label": "Installation Reminder 10/12/2026, 11:33 AM",
+      "Status": "Waiting",
+      "Created By": "jakub.zielinski@helios-solar.demo"
+    },
+    {
+      "Name": "Installation Reminder 10/14/2026, 2:12 PM",
+      "Label": "Installation Reminder 10/14/2026, 2:12 PM",
+      "Status": "Paused",
+      "Created By": "lucia.fernandez@helios-solar.demo"
+    },
+    {
+      "Name": "Installation Reminder 10/2/2026, 8:00 AM",
+      "Label": "Installation Reminder 10/2/2026, 8:00 AM",
+      "Status": "Paused",
+      "Created By": "lucia.fernandez@helios-solar.demo"
+    },
+    {
+      "Name": "Installation Reminder 10/3/2026, 11:39 AM",
+      "Label": "Installation Reminder 10/3/2026, 11:39 AM",
+      "Status": "Waiting",
+      "Created By": "jakub.zielinski@helios-solar.demo"
+    },
+    {
+      "Name": "Installation Reminder 10/5/2026, 2:18 PM",
+      "Label": "Installation Reminder 10/5/2026, 2:18 PM",
+      "Status": "Paused",
+      "Created By": "lucia.fernandez@helios-solar.demo"
+    },
+    {
+      "Name": "Installation Reminder 10/6/2026, 8:57 AM",
+      "Label": "Installation Reminder 10/6/2026, 8:57 AM",
+      "Status": "Waiting",
+      "Created By": "jakub.zielinski@helios-solar.demo"
+    },
+    {
+      "Name": "Installation Reminder 10/8/2026, 11:36 AM",
+      "Label": "Installation Reminder 10/8/2026, 11:36 AM",
+      "Status": "Paused",
+      "Created By": "lucia.fernandez@helios-solar.demo"
+    },
+    {
+      "Name": "Installation Reminder 10/9/2026, 2:15 PM",
+      "Label": "Installation Reminder 10/9/2026, 2:15 PM",
+      "Status": "Waiting",
+      "Created By": "jakub.zielinski@helios-solar.demo"
+    },
+    {
+      "Name": "Inverter Warranty Check 10/10/2026, 4:41 PM",
+      "Label": "Inverter Warranty Check 10/10/2026, 4:41 PM",
+      "Status": "Error",
+      "Created By": "clara.vidal@helios-solar.demo"
+    },
+    {
+      "Name": "Inverter Warranty Check 10/12/2026, 10:20 AM",
+      "Label": "Inverter Warranty Check 10/12/2026, 10:20 AM",
+      "Status": "Error",
+      "Created By": "amelie.dubois@helios-solar.demo"
+    },
+    {
+      "Name": "Inverter Warranty Check 10/13/2026, 1:59 PM",
+      "Label": "Inverter Warranty Check 10/13/2026, 1:59 PM",
+      "Status": "Error",
+      "Created By": "clara.vidal@helios-solar.demo"
+    },
+    {
+      "Name": "Inverter Warranty Check 10/3/2026, 10:26 AM",
+      "Label": "Inverter Warranty Check 10/3/2026, 10:26 AM",
+      "Status": "Error",
+      "Created By": "amelie.dubois@helios-solar.demo"
+    },
+    {
+      "Name": "Inverter Warranty Check 10/4/2026, 1:05 PM",
+      "Label": "Inverter Warranty Check 10/4/2026, 1:05 PM",
+      "Status": "Error",
+      "Created By": "clara.vidal@helios-solar.demo"
+    },
+    {
+      "Name": "Inverter Warranty Check 10/6/2026, 4:44 PM",
+      "Label": "Inverter Warranty Check 10/6/2026, 4:44 PM",
+      "Status": "Error",
+      "Created By": "amelie.dubois@helios-solar.demo"
+    },
+    {
+      "Name": "Inverter Warranty Check 10/7/2026, 10:23 AM",
+      "Label": "Inverter Warranty Check 10/7/2026, 10:23 AM",
+      "Status": "Error",
+      "Created By": "clara.vidal@helios-solar.demo"
+    },
+    {
+      "Name": "Inverter Warranty Check 10/9/2026, 1:02 PM",
+      "Label": "Inverter Warranty Check 10/9/2026, 1:02 PM",
+      "Status": "Error",
+      "Created By": "amelie.dubois@helios-solar.demo"
+    },
+    {
+      "Name": "Panel Batch Allocation 10/10/2026, 3:28 PM",
+      "Label": "Panel Batch Allocation 10/10/2026, 3:28 PM",
+      "Status": "Paused",
+      "Created By": "romain.lefebvre@helios-solar.demo"
+    },
+    {
+      "Name": "Panel Batch Allocation 10/11/2026, 9:07 AM",
+      "Label": "Panel Batch Allocation 10/11/2026, 9:07 AM",
+      "Status": "Paused",
+      "Created By": "tomasz.nowak@helios-solar.demo"
+    },
+    {
+      "Name": "Panel Batch Allocation 10/13/2026, 12:46 PM",
+      "Label": "Panel Batch Allocation 10/13/2026, 12:46 PM",
+      "Status": "Paused",
+      "Created By": "romain.lefebvre@helios-solar.demo"
+    },
+    {
+      "Name": "Panel Batch Allocation 10/14/2026, 3:25 PM",
+      "Label": "Panel Batch Allocation 10/14/2026, 3:25 PM",
+      "Status": "Paused",
+      "Created By": "tomasz.nowak@helios-solar.demo"
+    },
+    {
+      "Name": "Panel Batch Allocation 10/2/2026, 9:13 AM",
+      "Label": "Panel Batch Allocation 10/2/2026, 9:13 AM",
+      "Status": "Paused",
+      "Created By": "tomasz.nowak@helios-solar.demo"
+    },
+    {
+      "Name": "Panel Batch Allocation 10/4/2026, 12:52 PM",
+      "Label": "Panel Batch Allocation 10/4/2026, 12:52 PM",
+      "Status": "Paused",
+      "Created By": "romain.lefebvre@helios-solar.demo"
+    },
+    {
+      "Name": "Panel Batch Allocation 10/5/2026, 3:31 PM",
+      "Label": "Panel Batch Allocation 10/5/2026, 3:31 PM",
+      "Status": "Paused",
+      "Created By": "tomasz.nowak@helios-solar.demo"
+    },
+    {
+      "Name": "Panel Batch Allocation 10/7/2026, 9:10 AM",
+      "Label": "Panel Batch Allocation 10/7/2026, 9:10 AM",
+      "Status": "Paused",
+      "Created By": "romain.lefebvre@helios-solar.demo"
+    },
+    {
+      "Name": "Panel Batch Allocation 10/8/2026, 12:49 PM",
+      "Label": "Panel Batch Allocation 10/8/2026, 12:49 PM",
+      "Status": "Paused",
+      "Created By": "tomasz.nowak@helios-solar.demo"
+    }
+  ]
+}

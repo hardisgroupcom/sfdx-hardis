@@ -15,6 +15,11 @@ import {
   sanitizeTableCell,
   selectCommands,
 } from '../../../src/common/docBuilder/pluginDocUtils.js';
+import {
+  docsRelativeLink,
+  listMissingCommandScreenshots,
+  readCommandScreenshotsManifest,
+} from '../../../src/common/docBuilder/commandScreenshots.js';
 
 const COMMAND_IDS = [
   'hardis:org:monitor:backup',
@@ -239,5 +244,97 @@ describe('plugin doc: generated pages on disk', () => {
 
   it('returns nothing when there is no docs folder yet', () => {
     assert.deepEqual(listGeneratedCommandPages(path.join(docsRoot, 'missing')), []);
+  });
+});
+
+describe('plugin doc: screenshots and reports', () => {
+  const command = {
+    id: 'hardis:org:diagnose:licenses',
+    title: 'List licenses',
+    description: 'Lists the licenses.',
+    flags: {},
+    examples: [],
+    reports: [{ file: 'licenses', title: 'Licenses', description: 'One row per license.' }],
+  };
+  const entry = {
+    shots: [
+      {
+        image: 'assets/images/commands/org/diagnose/licenses.webp',
+        caption: 'The licenses of the org',
+        pills: [
+          { n: 2, x: 1, y: 2, w: 3, h: 4, legend: 'The report' },
+          { n: 1, x: 1, y: 2, w: 3, h: 4, legend: 'The table' },
+        ],
+      },
+    ],
+    reports: { licenses: { image: 'assets/images/commands/org/diagnose/licenses-report-licenses.webp' } },
+  };
+
+  it('shows the screenshots after the description, with their caption and pill legends in order', () => {
+    const markdown = buildCommandDocMarkdown(command, entry);
+    const screenshots = markdown.indexOf('## Screenshots');
+    assert.ok(screenshots > markdown.indexOf('## Description'));
+    assert.ok(markdown.includes('![The licenses of the org](../../../assets/images/commands/org/diagnose/licenses.webp)'));
+    assert.ok(markdown.includes('_The licenses of the org_'));
+    assert.ok(markdown.indexOf('- **(1)** The table') < markdown.indexOf('- **(2)** The report'));
+  });
+
+  it('lists the declared reports before the parameters, with their files and Excel image', () => {
+    const markdown = buildCommandDocMarkdown(command, entry);
+    const reports = markdown.indexOf('## Reports');
+    assert.ok(reports > markdown.indexOf('## Screenshots') && reports < markdown.indexOf('## Parameters'));
+    assert.ok(markdown.includes('### Licenses\n\nOne row per license.'));
+    assert.ok(markdown.includes('Files: `licenses-*.csv`, `xls/licenses-*.xlsx`'));
+    assert.ok(markdown.includes('![Licenses report in Excel](../../../assets/images/commands/org/diagnose/licenses-report-licenses.webp)'));
+  });
+
+  it('writes no screenshot section without images, and lists reports without their image', () => {
+    const markdown = buildCommandDocMarkdown(command, null);
+    assert.ok(!markdown.includes('## Screenshots'));
+    assert.ok(markdown.includes('### Licenses'));
+    assert.ok(!markdown.includes('report in Excel'));
+    assert.ok(!buildCommandDocMarkdown({ ...command, reports: undefined }).includes('## Reports'));
+  });
+
+  it('links images from a page at any depth', () => {
+    assert.equal(docsRelativeLink('hardis/work/save.md', 'assets/images/a.webp'), '../../assets/images/a.webp');
+    assert.equal(docsRelativeLink('index.md', 'assets/images/a.webp'), 'assets/images/a.webp');
+  });
+});
+
+describe('plugin doc: missing screenshots', () => {
+  let docsRoot: string;
+
+  beforeEach(() => {
+    docsRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-doc-shots-'));
+    fs.mkdirSync(path.join(docsRoot, 'assets', 'images'), { recursive: true });
+    fs.writeFileSync(path.join(docsRoot, 'assets', 'images', 'ok.webp'), '');
+  });
+
+  afterEach(() => {
+    fs.rmSync(docsRoot, { recursive: true, force: true });
+  });
+
+  it('lists commands without an image on disk and reports without image, and trusts a skip', () => {
+    const manifest = {
+      commands: {
+        'hardis:a': { shots: [{ image: 'assets/images/ok.webp' }], reports: {} },
+        'hardis:b': { shots: [{ image: 'assets/images/gone.webp' }] },
+        'hardis:c': { skip: 'no UI' },
+      },
+    };
+    const missing = listMissingCommandScreenshots(docsRoot, manifest, [
+      { id: 'hardis:a', reports: [{ file: 'rep', title: 'Rep', description: 'Rows' }] },
+      { id: 'hardis:b' },
+      { id: 'hardis:c', reports: [{ file: 'other', title: 'Other', description: 'Rows' }] },
+      { id: 'hardis:d' },
+    ]);
+    assert.deepEqual(missing, { commands: ['hardis:b', 'hardis:d'], reports: ['hardis:a (rep)'] });
+  });
+
+  it('reads no manifest when the project has none', () => {
+    assert.equal(readCommandScreenshotsManifest(docsRoot), null);
+    fs.writeFileSync(path.join(docsRoot, 'assets', 'command-screenshots.json'), JSON.stringify({ commands: { 'hardis:a': { skip: 'x' } } }));
+    assert.deepEqual(readCommandScreenshotsManifest(docsRoot), { commands: { 'hardis:a': { skip: 'x' } } });
   });
 });

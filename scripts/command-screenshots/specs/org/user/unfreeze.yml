@@ -1,0 +1,15 @@
+command: hardis:org:user:unfreeze
+run: sf hardis:org:user:unfreeze
+org: throwaway
+caption: "Field technicians with the Chatter Free User profile unfrozen in the Helios test org, with the update results"
+answers:
+  - q: "Please select profiles that you do you want to unfreeze users"
+    choice: "^Chatter Free User$"
+    shot: true
+    caption: "Pick the profiles whose users to unfreeze"
+  - q: "Are you sure you want to unfreeze these"
+    choice: "Yes$"
+pills:
+  - text: "Extract of users to unfreeze"
+    legend: "One row per user unfrozen, with username, name and profile"
+    button: true

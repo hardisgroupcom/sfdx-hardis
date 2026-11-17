@@ -1,0 +1,7 @@
+command: hardis:org:generate:packagexmlfull
+run: sf hardis:org:generate:packagexmlfull
+org: showcase
+caption: A package.xml listing every metadata of the Helios org, written to hardis-report and opened from its button
+answers:
+  - q: Do you want to use org
+    choice: ^✅ Yes$

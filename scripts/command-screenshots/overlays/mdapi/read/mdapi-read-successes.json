@@ -1,0 +1,141 @@
+{
+  "mode": "replace",
+  "title": "Metadata read successes",
+  "columns": [
+    "type",
+    "fullName",
+    "status"
+  ],
+  "rows": [
+    {
+      "type": "CustomObject",
+      "fullName": "Installation__c",
+      "status": "OK"
+    },
+    {
+      "type": "CustomObject",
+      "fullName": "Panel_Batch__c",
+      "status": "OK"
+    },
+    {
+      "type": "CustomObject",
+      "fullName": "Inverter_Model__c",
+      "status": "OK"
+    },
+    {
+      "type": "CustomObject",
+      "fullName": "Crew_Assignment__c",
+      "status": "OK"
+    },
+    {
+      "type": "Layout",
+      "fullName": "Installation__c-Installation Layout",
+      "status": "OK"
+    },
+    {
+      "type": "Layout",
+      "fullName": "Panel_Batch__c-Panel Batch Layout",
+      "status": "OK"
+    },
+    {
+      "type": "Layout",
+      "fullName": "Account-Helios Customer Layout",
+      "status": "OK"
+    },
+    {
+      "type": "PermissionSet",
+      "fullName": "Helios_Delivery",
+      "status": "OK"
+    },
+    {
+      "type": "PermissionSet",
+      "fullName": "Helios_Delivery_Crew",
+      "status": "OK"
+    },
+    {
+      "type": "PermissionSet",
+      "fullName": "Helios_Delivery_Manager",
+      "status": "OK"
+    },
+    {
+      "type": "PermissionSet",
+      "fullName": "Helios_Panel_Stock_Viewer",
+      "status": "OK"
+    },
+    {
+      "type": "PermissionSet",
+      "fullName": "Helios_Quote_Desk",
+      "status": "OK"
+    },
+    {
+      "type": "PermissionSet",
+      "fullName": "Helios_Warranty_Desk",
+      "status": "OK"
+    },
+    {
+      "type": "PermissionSetGroup",
+      "fullName": "Helios_Field_Team",
+      "status": "OK"
+    },
+    {
+      "type": "Profile",
+      "fullName": "Helios Crew",
+      "status": "OK"
+    },
+    {
+      "type": "Profile",
+      "fullName": "Helios Sales",
+      "status": "OK"
+    },
+    {
+      "type": "Profile",
+      "fullName": "Helios Warehouse",
+      "status": "OK"
+    },
+    {
+      "type": "Profile",
+      "fullName": "Helios Support",
+      "status": "OK"
+    },
+    {
+      "type": "Profile",
+      "fullName": "Helios Read Only",
+      "status": "OK"
+    },
+    {
+      "type": "CustomApplication",
+      "fullName": "Helios_Field_Service",
+      "status": "OK"
+    },
+    {
+      "type": "CustomApplication",
+      "fullName": "Helios_Warehouse",
+      "status": "OK"
+    },
+    {
+      "type": "CustomTab",
+      "fullName": "Installation__c",
+      "status": "OK"
+    },
+    {
+      "type": "CustomTab",
+      "fullName": "Panel_Batch__c",
+      "status": "OK"
+    },
+    {
+      "type": "CustomMetadata",
+      "fullName": "Helios_Setting.Default",
+      "status": "OK"
+    },
+    {
+      "type": "CustomMetadata",
+      "fullName": "Panel_Grade.Grade_A",
+      "status": "OK"
+    },
+    {
+      "type": "CustomMetadata",
+      "fullName": "Panel_Grade.Grade_B",
+      "status": "OK"
+    }
+  ]
+}

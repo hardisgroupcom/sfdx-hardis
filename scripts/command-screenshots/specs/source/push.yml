@@ -1,0 +1,4 @@
+command: hardis:source:push
+run: sf hardis:source:push
+org: throwaway
+caption: The deprecated wrapper of sfdx force:source:push, with the notice to move to sf project deploy start

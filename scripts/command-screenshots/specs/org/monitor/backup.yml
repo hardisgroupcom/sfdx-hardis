@@ -1,0 +1,14 @@
+command: hardis:org:monitor:backup
+run: sf hardis:org:monitor:backup
+org: showcase
+caption: "Metadata of the Helios org retrieved into the monitoring repository, with the files changed since the last backup"
+answers:
+  - q: "Do you want to generate project documentation now"
+    choice: "No$"
+  - q: "Do you want to rebuild the full documentation"
+    choice: "No$"
+    optional: true
+pills:
+  - text: "Updated Metadatas"
+    legend: "One row per file added, modified, renamed or deleted since the previous backup"
+    button: true

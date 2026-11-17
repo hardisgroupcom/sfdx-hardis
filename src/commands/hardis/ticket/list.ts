@@ -19,6 +19,7 @@ import {
 } from '../../../common/ticketProvider/utils/ticketOperations.js';
 import { isProjectAllowed, parseAllowedProjects, scopeSearchProjects } from '../../../common/ticketProvider/utils/ticketQualify.js';
 import { t } from '../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -48,6 +49,14 @@ function splitList(value: string | undefined): string[] | undefined {
 
 export default class TicketList extends SfCommand<any> {
   public static title = 'List tickets';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'ticket-list',
+      title: 'Tickets',
+      description: 'One row per ticket found, with its type, status, priority, assignee and subject.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

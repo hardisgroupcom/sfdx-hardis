@@ -1,0 +1,358 @@
+{
+  "command": "hardis:scratch:create",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Building custom project-scratch-def.json..."
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Project scratch def: \n{\n  \"orgName\": \"helios-HEL-42\",\n  \"edition\": \"Developer\",\n  \"features\": [\n    \"EnableSetPasswordInApi\",\n    \"StateAndCountryPicklist\"\n  ],\n  \"settings\": {\n    \"lightningExperienceSettings\": {\n      \"enableS1DesktopEnabled\": true\n    },\n    \"mobileSettings\": {\n      \"enableS1EncryptedStoragePref2\": false\n    }\n  },\n  \"adminEmail\": \"victor.martin@helios-solar.demo\",\n  \"username\": \"victor.martin@hardis-scratch-helios-HEL-42.com\"\n}"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "reportFile",
+        "file": "config/user/project-scratch-def-helios-HEL-42.json",
+        "title": "Scratch Org definition",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf org list",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf org list",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Creating new scratch org..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf org create scratch --set-default --definition-file ./config/user/project-scratch-def-helios-HEL-42.json --alias helios-HEL-42 --wait 15 --target-dev-hub helios-devhub --duration-days 30",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf org create scratch --set-default --definition-file ./config/user/project-scratch-def-helios-HEL-42.json --alias helios-HEL-42 --wait 15 --target-dev-hub helios-devhub --duration-days 30",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf org generate password --target-org victor.martin@hardis-scratch-helios-HEL-42.com",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 800,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf org generate password --target-org victor.martin@hardis-scratch-helios-HEL-42.com",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf org open --url-only",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 700,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf org open --url-only",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Created scratch org helios-HEL-42 with user victor.martin@hardis-scratch-helios-HEL-42.com"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Update / fix scratch org user victor.martin@hardis-scratch-helios-HEL-42.com"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf data get record --sobject User --where \"Username=victor.martin@hardis-scratch-helios-HEL-42.com\" --target-org helios-HEL-42",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf data get record --sobject User --where \"Username=victor.martin@hardis-scratch-helios-HEL-42.com\" --target-org helios-HEL-42",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf data update record --sobject User --record-id 0050b00000HeLiOAAA --values \"LastName='SFDX-HARDIS' FirstName='Scratch Org' Email='victor.martin@helios-solar.demo' CountryCode='FR' Country='France'\" --target-org helios-HEL-42",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf data update record --sobject User --record-id 0050b00000HeLiOAAA --values \"LastName='SFDX-HARDIS' FirstName='Scratch Org' Email='victor.martin@helios-solar.demo' CountryCode='FR' Country='France'\" --target-org helios-HEL-42",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Initializing scratch victor.martin@hardis-scratch-helios-HEL-42.com with 5 step(s)..."
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Step 1/5: Install packages"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Step 2/5: Deploy project sources"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf project deploy start --ignore-conflicts --target-org victor.martin@hardis-scratch-helios-HEL-42.com",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1200,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf project deploy start --ignore-conflicts --target-org victor.martin@hardis-scratch-helios-HEL-42.com",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Step 3/5: Assign permission sets"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf org assign permset --name Helios_Delivery_Crew --target-org victor.martin@hardis-scratch-helios-HEL-42.com",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1200,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf org assign permset --name Helios_Delivery_Crew --target-org victor.martin@hardis-scratch-helios-HEL-42.com",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Step 4/5: Run InstallationSeed.apex"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf apex run --file scripts/apex/InstallationSeed.apex --target-org victor.martin@hardis-scratch-helios-HEL-42.com",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1200,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf apex run --file scripts/apex/InstallationSeed.apex --target-org victor.martin@hardis-scratch-helios-HEL-42.com",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Step 5/5: Load ScratchInit data"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf sfdmu run --sourceusername csvfile --targetusername victor.martin@hardis-scratch-helios-HEL-42.com --path scripts/data/ScratchInit",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1200,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf sfdmu run --sourceusername csvfile --targetusername victor.martin@hardis-scratch-helios-HEL-42.com --path scripts/data/ScratchInit",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Org initialization steps"
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "table",
+        "message": "[{\"step\":\"Install packages\",\"type\":\"install-packages\",\"status\":\"success\",\"seconds\":41,\"details\":\"\"},{\"step\":\"Deploy project sources\",\"type\":\"deploy-sources\",\"status\":\"success\",\"seconds\":187,\"details\":\"\"},{\"step\":\"Assign permission sets\",\"type\":\"assign-permission-sets\",\"status\":\"success\",\"seconds\":5,\"details\":\"\"},{\"step\":\"Run InstallationSeed.apex\",\"type\":\"apex\",\"status\":\"success\",\"seconds\":12,\"details\":\"\"},{\"step\":\"Load ScratchInit data\",\"type\":\"data\",\"status\":\"success\",\"seconds\":38,\"details\":\"\"}]"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "victor.martin@hardis-scratch-helios-HEL-42.com initialized: 5 succeeded, 0 failed, 0 skipped."
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "You can connect to your scratch using username victor.martin@hardis-scratch-helios-HEL-42.com and password Hl7!demoPass"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

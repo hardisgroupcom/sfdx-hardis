@@ -48,6 +48,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The manifest/package.xml of the Helios project as a Markdown page, its 35 metadata grouped by type](../../assets/images/commands/doc/packagexml2markdown.webp)
+
+_The manifest/package.xml of the Helios project as a Markdown page, its 35 metadata grouped by type_
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                          | Default | Required | Options |

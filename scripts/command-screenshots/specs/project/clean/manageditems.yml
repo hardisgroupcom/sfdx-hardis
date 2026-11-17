@@ -1,0 +1,4 @@
+command: hardis:project:clean:manageditems
+run: sf hardis:project:clean:manageditems --namespace dsfs
+org: none
+caption: The items of the DocuSign managed package (namespace dsfs) are removed from the project sources
