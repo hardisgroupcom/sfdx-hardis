@@ -3,9 +3,7 @@ import ExcelJS from 'exceljs';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-// @ts-expect-error plain ESM module without types
 import { selectSpecs, slugOf, specFileOf, validateSpec } from '../scripts/command-screenshots/lib/specs.mjs';
-// @ts-expect-error plain ESM module without types
 import { findReportXlsx, prepareRealReport } from '../scripts/command-screenshots/lib/reports.mjs';
 
 const COMMANDS_DIR = path.join(process.cwd(), 'src', 'commands');
