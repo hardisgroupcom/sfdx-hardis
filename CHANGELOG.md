@@ -17,6 +17,7 @@
 - [hardis:project:clean:profiles-extract](https://sfdx-hardis.cloudity.com/hardis/project/clean/profiles-extract/): the workbook opens in Excel without asking to repair it.
 - [hardis:project:generate:gitdelta](https://sfdx-hardis.cloudity.com/hardis/project/generate/gitdelta/): no longer crashes when HEAD or the oldest commit of the branch is picked as the starting commit, and the delta up to the local files not committed yet works again.
 - Doc: every command page shows the command running in VS Code, and the reports it writes opened in Excel.
+- Doc: the site is built with the command pages of the merged code, not with those of the previous beta.
 
 ## [8.25.0] 2026-11-16
 
