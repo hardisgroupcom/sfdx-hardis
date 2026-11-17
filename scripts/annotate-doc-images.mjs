@@ -40,7 +40,7 @@ const STAMPS = path.join(OUT_ROOT, ".stamps.json");
 const FORCE = process.argv.includes("--force");
 const CHECK = process.argv.includes("--check");
 
-// One colour per number, so "the 3" is findable in a busy screenshot even before
+// One color per number, so "the 3" is findable in a busy screenshot even before
 // you read the digit. Deliberately high contrast against both VS Code themes.
 // Same values as the training: docs/stylesheets/extra.css repeats them for the
 // (n) references in the text, and check-doc-pills.mjs proves the two agree.
@@ -180,7 +180,7 @@ async function main() {
       continue;
     }
     // Past the palette, pill 11 would be drawn red like pill 1 while its (11)
-    // in the text has no colour at all
+    // in the text has no color at all
     for (const pill of entry.pills || []) {
       const n = Number(pill.n);
       if (!Number.isInteger(n) || n < 1 || n > PILL_PALETTE.length) {
