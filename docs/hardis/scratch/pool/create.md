@@ -55,6 +55,16 @@ In agent mode:
 - `--max-scratch-orgs` defaults to 5.
 
 
+## Screenshots
+
+![Choose where the pool is stored](../../../assets/images/commands/scratch/pool/create-1.webp)
+
+_Choose where the pool is stored_
+
+![The scratch org pool is configured, its dashboard is created in the git provider and the CI variables to define are listed](../../../assets/images/commands/scratch/pool/create.webp)
+
+_The scratch org pool is configured, its dashboard is created in the git provider and the CI variables to define are listed_
+
 ## Parameters
 
 | Name                  |  Type   | Description                                                                                                       | Default | Required |                 Options                  |

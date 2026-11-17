@@ -1,0 +1,29 @@
+command: hardis:project:replacement:create
+run: sf hardis:project:replacement:create
+org: none
+caption: A replacement rule sets the sender address of the crew email templates
+answers:
+  - q: Where do you want to store the rule
+    choice: ^Project config$
+    shot: true
+    caption: Store the rule in the project config, a branch config file, or a git provider issue
+  - q: Id of the rule
+    value: crew-sender-email
+  - q: What should the rule do
+    choice: ^Find and replace a text
+    shot: true
+    caption: Pick what the rule does
+  - q: Description, shown in logs and Pull Request comments
+    value: Sender address of the crew notifications
+  - q: Files the rule applies to
+    value: '**/email/**/*.email'
+  - q: (Text|text).*(find|search|replace)
+    value: crews-test@helios-solar.demo
+  - q: Where does the value come from
+    choice: ^The same value for every org$
+  - q: Value for every org
+    value: crews@helios-solar.demo
+  - q: Warn in the Pull Request comment
+    choice: ^❌ No$
+  - q: Is it a regular expression\?
+    choice: ^❌ No$

@@ -1,0 +1,51 @@
+{
+  "command": "hardis:scratch:pool:view",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Pool config: {\n  \"maxScratchOrgsNumber\": 5,\n  \"storageService\": \"gitProvider\"\n}"
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "table",
+        "message": "[{\"alias\":\"PO-k2runner-uat_20261112_0300\",\"username\":\"devops@hardis-scratch-PO-k2runner-uat_20261112_0300.com\",\"expirationDate\":\"2026-12-12\",\"daysLeft\":25},{\"alias\":\"PO-9xrunner-uat_20261112_0300\",\"username\":\"devops@hardis-scratch-PO-9xrunner-uat_20261112_0300.com\",\"expirationDate\":\"2026-12-12\",\"daysLeft\":25},{\"alias\":\"PO-m4runner-uat_20261114_0300\",\"username\":\"devops@hardis-scratch-PO-m4runner-uat_20261114_0300.com\",\"expirationDate\":\"2026-12-14\",\"daysLeft\":27},{\"alias\":\"PO-c3runner-uat_20261117_0300\",\"username\":\"devops@hardis-scratch-PO-c3runner-uat_20261117_0300.com\",\"expirationDate\":\"2026-12-17\",\"daysLeft\":30},{\"alias\":\"PO-w7runner-uat_20261117_0300\",\"username\":\"devops@hardis-scratch-PO-w7runner-uat_20261117_0300.com\",\"expirationDate\":\"2026-12-17\",\"daysLeft\":30}]"
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Scratch org pool dashboard: https://github.com/helios-energy/salesforce/issues/131"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "There are 5 available scratch orgs"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

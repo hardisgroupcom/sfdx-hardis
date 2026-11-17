@@ -48,6 +48,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The metadata of manifest/package.xml retrieved from the org into the project](../../assets/images/commands/source/retrieve.webp)
+
+_The metadata of manifest/package.xml retrieved from the org into the project_
+
 ## Parameters
 
 | Name                  |  Type   | Description                                                                                                  | Default | Required | Options |

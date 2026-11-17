@@ -1,0 +1,12 @@
+command: hardis:org:connect
+run: sf hardis:org:connect
+mode: replay
+org: none
+caption: Connect to the Helios UAT sandbox without changing the default org, then open it in the browser
+answers:
+  - q: "Please select an org"
+    choice: "helios-uat"
+    shot: true
+    caption: Pick one of the authenticated orgs, or log in to another one
+  - q: "open this org in your web browser"
+    choice: "Yes"

@@ -1,0 +1,9 @@
+command: hardis:misc:custom-label-translations
+run: sf hardis:misc:custom-label-translations
+org: none
+caption: Custom Label Translations
+answers:
+  - q: How would you like to extract custom label translations\?
+    choice: ^Select labels manually$
+  - q: Please select the Custom Labels you want to extract from tra
+    choice: ^Helios_Legacy_Roof_Warning$

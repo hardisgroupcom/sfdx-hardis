@@ -44,6 +44,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The MegaLinter summary of the Salesforce flavor, run in Docker, with every linter passing on the Helios project](../../assets/images/commands/project/lint.webp)
+
+_The MegaLinter summary of the Salesforce flavor, run in Docker, with every linter passing on the Helios project_
+
 ## Parameters
 
 | Name              |  Type   | Description                                                   | Default | Required | Options |

@@ -1,0 +1,4 @@
+command: hardis:org:diagnose:licenses
+run: sf hardis:org:diagnose:licenses
+org: showcase
+caption: The licenses of the org, with the report buttons at the end of the run

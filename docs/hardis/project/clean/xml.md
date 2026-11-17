@@ -34,6 +34,12 @@ In agent mode:
 
   
 
+## Screenshots
+
+![The activity panel removed from the Lightning pages of the Helios project, with an XPath given on the command line](../../../assets/images/commands/project/clean/xml.webp)
+
+_The activity panel removed from the Lightning pages of the Helios project, with an XPath given on the command line_
+
 ## Parameters
 
 | Name               |  Type   | Description                                                                                                         |                 Default                 | Required | Options |

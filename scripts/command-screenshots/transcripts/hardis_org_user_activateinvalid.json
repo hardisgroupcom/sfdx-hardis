@@ -1,0 +1,135 @@
+{
+  "command": "hardis:org:user:activateinvalid",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Querying User records with email ending with .invalid..."
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[SOQL Query] SELECT Id,Name,Username,Email,ProfileId FROM User WHERE Email LIKE %.invalid and IsActive=true",
+        "query": {
+          "id": "q1",
+          "type": "soql",
+          "status": "running"
+        }
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[SOQL Query] Retrieved 12 records",
+        "query": {
+          "id": "q1",
+          "type": "soql",
+          "status": "completed",
+          "recordCount": 12,
+          "batchCount": 1
+        }
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Do you want to replace invalid mails by valid mails for all 12 found users in org admin@helios-solar.demo.uat?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Do you want to replace invalid mails by valid mails for all 12 found users in org admin@helios-solar.demo.uat?",
+            "description": "Choose whether to update email addresses for all found users or select specific ones",
+            "choices": [
+              {
+                "title": "Yes, all 12 users",
+                "value": "all"
+              },
+              {
+                "title": "No, I want to manually select by profile(s)",
+                "value": "selectProfiles"
+              },
+              {
+                "title": "No, I want to manually select user(s)",
+                "value": "select"
+              }
+            ],
+            "initial": 0
+          }
+        ]
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Reactivating 12 user(s)..."
+      }
+    },
+    {
+      "delay": 2500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Results of the reactivation of 12 users by removing the .invalid from their email"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/reactivated-users.csv",
+        "title": "Reactivated users (CSV)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/reactivated-users.xls",
+        "title": "Reactivated users (CSV)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "12 users have been reactivated by removing the .invalid from their email"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

@@ -41,6 +41,16 @@ Defaults applied: validates each class exists in sources before adding.
 </details>
 
 
+## Screenshots
+
+![Declare the test class for every deployment, one branch, or one Pull Request](../../../../assets/images/commands/project/action/test-class/add-1.webp)
+
+_Declare the test class for every deployment, one branch, or one Pull Request_
+
+![A test class is added to the ones that run with every deployment of the project](../../../../assets/images/commands/project/action/test-class/add.webp)
+
+_A test class is added to the ones that run with every deployment of the project_
+
 ## Parameters
 
 | Name         |  Type   | Description                                                                              | Default | Required |          Options          |

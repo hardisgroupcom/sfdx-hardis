@@ -69,6 +69,20 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 <!-- training-links:end -->
 
 
+## Screenshots
+
+![Pick the first Pull Request the sandbox does not have yet](../../assets/images/commands/work/backpromote-1.webp)
+
+_Pick the first Pull Request the sandbox does not have yet_
+
+![Untick what must not reach the sandbox](../../assets/images/commands/work/backpromote-2.webp)
+
+_Untick what must not reach the sandbox_
+
+![The metadata merged in integration since Pull Request #122 deployed to the sandbox helios-dev, with its deployment action](../../assets/images/commands/work/backpromote.webp)
+
+_The metadata merged in integration since Pull Request #122 deployed to the sandbox helios-dev, with its deployment action_
+
 ## Parameters
 
 | Name                 |  Type   | Description                                                                                                                                                                             | Default | Required |        Options        |

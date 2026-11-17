@@ -36,12 +36,21 @@ import { DeploymentActionRef, loadDeploymentActionsState } from '../../../../com
 import { GitProvider } from '../../../../common/gitProvider/index.js';
 import { BackpromoteCommentStore } from '../../../../common/utils/backpromoteCommentUtils.js';
 import { getRecordedActionStatus } from '../../../../common/utils/prePostCommandUtils.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class ActionRun extends SfCommand<any> {
   public static title = 'Run a deployment action';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'deployment-actions-run',
+      title: 'Actions run',
+      description: 'One row per deployment action run, with its label and final status (and the Pull Request it comes from when run for a Pull Request).',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

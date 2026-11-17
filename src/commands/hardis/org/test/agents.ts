@@ -16,12 +16,21 @@ import {
   listAgentTestDefinitions,
   runAgentTest,
 } from '../../../../common/utils/agentTestUtils.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class OrgTestAgents extends SfCommand<any> {
   public static title = 'Run agent tests';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'agent-tests',
+      title: 'Agent tests results',
+      description: 'One row per assertion of the agent tests run, with its result, to find the failing test cases.',
+    },
+  ];
 
   public static description = `Run Agentforce agent tests (AiEvaluationDefinition metadata) in a Salesforce org.
 

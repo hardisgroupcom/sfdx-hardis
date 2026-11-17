@@ -53,6 +53,27 @@ sf hardis:org:monitor:health-check --agent --target-org myorg@example.com
 
 In agent mode, the command runs fully automatically with no interactive prompts.
 
+## Screenshots
+
+![Security Health Check score of the Helios org, then every setting below the Salesforce baseline by severity](../../../assets/images/commands/org/monitor/health-check.webp)
+
+_Security Health Check score of the Helios org, then every setting below the Salesforce baseline by severity_
+
+- **(1)** The score Salesforce shows in Setup > Health Check
+- **(2)** One row per indicator, with the org value and the baseline value
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Security health check
+
+One row per Salesforce Health Check setting, with the value set in the org, the standard value and the risk level, so you can fix the risky settings.
+
+Files: `org-health-check-*.csv`, `xls/org-health-check-*.xlsx`
+
+![Security health check report in Excel](../../../assets/images/commands/org/monitor/health-check-report-org-health-check.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

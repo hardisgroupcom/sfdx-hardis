@@ -57,6 +57,40 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 <!-- training-links:end -->
 
 
+## Screenshots
+
+![The Installation__c object read with the CRUD-based Metadata API](../../assets/images/commands/mdapi/read.webp)
+
+_The Installation__c object read with the CRUD-based Metadata API_
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Read successes
+
+One row per metadata component read from the org and written to the output folder.
+
+Files: `mdapi-read-successes-*.csv`, `xls/mdapi-read-successes-*.xlsx`
+
+![Read successes report in Excel](../../assets/images/commands/mdapi/read-report-mdapi-read-successes.webp)
+
+### Read failures
+
+One row per metadata component that could not be read, with the error returned by the Metadata API.
+
+Files: `mdapi-read-failures-*.csv`, `xls/mdapi-read-failures-*.xlsx`
+
+![Read failures report in Excel](../../assets/images/commands/mdapi/read-report-mdapi-read-failures.webp)
+
+### Read skipped items
+
+One row per metadata component skipped because its type is not supported by the CRUD-based Metadata API.
+
+Files: `mdapi-read-skipped-*.csv`, `xls/mdapi-read-skipped-*.xlsx`
+
+![Read skipped items report in Excel](../../assets/images/commands/mdapi/read-report-mdapi-read-skipped.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                                                                                                            | Default | Required | Options |

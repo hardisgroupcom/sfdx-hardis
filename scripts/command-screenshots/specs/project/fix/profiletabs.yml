@@ -1,0 +1,15 @@
+command: hardis:project:fix:profiletabs
+run: sf hardis:project:fix:profiletabs
+org: showcase
+caption: The Installations and Panel Batches tabs set visible in the Helios Crew profile of the sources
+answers:
+  - q: Please select the tabs you want to display or hide in Profile
+    choice: '^(Installations|Panel Batches) \('
+    shot: true
+    caption: Pick the tabs to show or hide
+  - q: Please select the flag you want the tabs to be applied on
+    choice: '^Visible \(DefaultOn\)$'
+  - q: Please select the profiles you want to update to apply tabs
+    choice: '^Helios Crew$'
+    shot: true
+    caption: Pick the profiles to update

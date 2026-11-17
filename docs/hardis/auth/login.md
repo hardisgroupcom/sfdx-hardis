@@ -88,6 +88,20 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![Pick the type of org to log in to](../../assets/images/commands/auth/login-1.webp)
+
+_Pick the type of org to log in to_
+
+![Give the org a short alias](../../assets/images/commands/auth/login-2.webp)
+
+_Give the org a short alias_
+
+![Log in to the Helios UAT sandbox from the browser, then give it the alias helios-uat](../../assets/images/commands/auth/login.webp)
+
+_Log in to the Helios UAT sandbox from the browser, then give it the alias helios-uat_
+
 ## Parameters
 
 | Name                |  Type   | Description                                                                                                                                                                                                                                                            | Default | Required | Options |

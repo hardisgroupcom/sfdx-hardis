@@ -53,6 +53,16 @@ In agent mode:
 - The source retrieval confirmation prompt is skipped (sources are assumed up-to-date).
 
 
+## Screenshots
+
+![Give the field, class or object to remove from the sources](../../assets/images/commands/misc/purge-references-1.webp)
+
+_Give the field, class or object to remove from the sources_
+
+![Every reference to the Crew_Size__c field is removed from the project sources before deleting it](../../assets/images/commands/misc/purge-references.webp)
+
+_Every reference to the Crew_Size__c field is removed from the project sources before deleting it_
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

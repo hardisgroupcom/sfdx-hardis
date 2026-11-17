@@ -1,0 +1,14 @@
+{
+  "filters": [
+    {
+      "name": "RemoveLegacyRegionAccess",
+      "description": "The Legacy Region field does not exist in the orgs the Helios profiles are deployed to",
+      "folders": ["force-app/main/default/profiles", "force-app/main/default/permissionsets"],
+      "file_extensions": [".profile-meta.xml", ".permissionset-meta.xml"],
+      "exclude_list": [
+        { "type_tag": "fieldPermissions", "identifier_tag": "field", "values": ["Installation__c.Legacy_*", "Panel_Batch__c.Warranty_Code__c"] },
+        { "type_tag": "userPermissions", "identifier_tag": "name", "values": ["ViewAllForecasts", "ManageSharedListViews"] }
+      ]
+    }
+  ]
+}

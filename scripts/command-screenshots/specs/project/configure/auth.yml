@@ -1,0 +1,30 @@
+command: hardis:project:configure:auth
+run: sf hardis:project:configure:auth
+mode: replay
+org: none
+caption: The uat branch is linked to its sandbox, with its branch config file, certificate, External Client App and CI/CD variables
+answers:
+  - q: "select or login into the org"
+    choice: "helios-uat"
+    shot: true
+    caption: Pick the org that the branch deploys to
+  - q: "name of the git branch"
+    choice: "^uat$"
+    shot: true
+    caption: Pick the git branch to configure
+  - q: "base URL or domain"
+    choice: "helios-solar--uat"
+  - q: "target git branches that uat will be able to merge in"
+    choice: "preprod"
+    shot: true
+    caption: Pick the branches the uat branch merges into
+  - q: "Salesforce username that will be used for deployments"
+    value: "__INITIAL__"
+  - q: "SSL certificate"
+    choice: "self-signed"
+  - q: "configure the SF CLI External Client App"
+    choice: "Yes"
+  - q: "Please confirm when variables have been set"
+    choice: "Yes"
+  - q: "name the External Client App"
+    value: "__INITIAL__"

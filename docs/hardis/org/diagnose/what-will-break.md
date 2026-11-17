@@ -79,6 +79,30 @@ The command's implementation:
 </details>
 
 
+## Screenshots
+
+![Every check is selected by default](../../../assets/images/commands/org/diagnose/what-will-break-1.webp)
+
+_Every check is selected by default_
+
+![What dated Salesforce changes will break in the org, when, and what to do before](../../../assets/images/commands/org/diagnose/what-will-break.webp)
+
+_What dated Salesforce changes will break in the org, when, and what to do before_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### What will break
+
+One row per dated Salesforce change, with what will break, its date and how to fix it, what breaks first coming first; each check that found something also writes a detail report named after the check, linked from this one.
+
+Files: `what-will-break-*.csv`, `xls/what-will-break-*.xlsx`
+
+![What will break report in Excel](../../../assets/images/commands/org/diagnose/what-will-break-report-what-will-break.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                                                                                                                                                                                                                                          | Default | Required | Options |

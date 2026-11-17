@@ -40,6 +40,12 @@ Required in agent mode:
 </details>
 
 
+## Screenshots
+
+![The InstallationSchedulerTest class no longer runs with every deployment of the project](../../../../assets/images/commands/project/action/test-class/remove.webp)
+
+_The InstallationSchedulerTest class no longer runs with every deployment of the project_
+
 ## Parameters
 
 | Name         |  Type   | Description                                                                       | Default | Required |          Options          |

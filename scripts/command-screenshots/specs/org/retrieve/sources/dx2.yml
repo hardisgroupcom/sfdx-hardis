@@ -1,0 +1,11 @@
+command: hardis:org:retrieve:sources:dx2
+run: sf hardis:org:retrieve:sources:dx2
+org: showcase
+# The scratch org tracks its changes: earlier commands leave tracking out of step with the reset sources
+before: sf project reset tracking --target-org hardis-shots-showcase --no-prompt
+caption: The metadata of manifest/package.xml retrieved from the org into the project
+answers:
+  - q: Please input the path to the package.xml file
+    value: manifest/package.xml
+    shot: true
+    caption: Give the package.xml that lists what to retrieve

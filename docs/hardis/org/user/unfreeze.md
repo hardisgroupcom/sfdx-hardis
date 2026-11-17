@@ -53,6 +53,30 @@ The command's technical implementation involves:
 </details>
 
 
+## Screenshots
+
+![Pick the profiles whose users to unfreeze](../../../assets/images/commands/org/user/unfreeze-1.webp)
+
+_Pick the profiles whose users to unfreeze_
+
+![Field technicians with the Chatter Free User profile unfrozen in the Helios test org, with the update results](../../../assets/images/commands/org/user/unfreeze.webp)
+
+_Field technicians with the Chatter Free User profile unfrozen in the Helios test org, with the update results_
+
+- **(1)** One row per user unfrozen, with username, name and profile
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Users to unfreeze
+
+One row per user whose login is about to be unfrozen, with username, name and profile.
+
+Files: `users-to-unfreeze-*.csv`, `xls/users-to-unfreeze-*.xlsx`
+
+![Users to unfreeze report in Excel](../../../assets/images/commands/org/user/unfreeze-report-users-to-unfreeze.webp)
+
 ## Parameters
 
 | Name                   |  Type   | Description                                                                                                  | Default | Required | Options |

@@ -1,0 +1,13 @@
+command: hardis:project:function:update
+run: sf hardis:project:function:update --id notifyCrew --label "Notify the installation crew on Slack"
+org: none
+caption: The label of the notifyCrew custom function is updated in the project configuration, the other values kept as they are
+answers:
+  - q: Select the script runtime
+    choice: ^node$
+  - q: 'Enter the script path \(ex: scripts/functions/notify-slack\.js'
+    value: __INITIAL__
+  - q: 'Add an input\? Current inputs: channel \(string\)'
+    choice: ^❌ No$
+  - q: 'Add an output\? Current outputs: none'
+    choice: ^❌ No$

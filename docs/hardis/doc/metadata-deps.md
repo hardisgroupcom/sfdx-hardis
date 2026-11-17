@@ -58,6 +58,22 @@ In agent mode, pass either `--source-file`, `--id`, or both `--type` and `--name
 </details>
 
 
+## Screenshots
+
+![Pick the type of the component](../../assets/images/commands/doc/metadata-deps-1.webp)
+
+_Pick the type of the component_
+
+![Give its API name](../../assets/images/commands/doc/metadata-deps-2.webp)
+
+_Give its API name_
+
+![The components that use the InstallationScheduler Apex class, read from the org](../../assets/images/commands/doc/metadata-deps.webp)
+
+_The components that use the InstallationScheduler Apex class, read from the org_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                                      | Default | Required |     Options      |

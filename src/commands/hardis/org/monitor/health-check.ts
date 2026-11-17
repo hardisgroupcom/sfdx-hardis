@@ -13,6 +13,7 @@ import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { soqlQueryTooling } from '../../../../common/utils/apiUtils.js';
 import sortArray from '../../../../common/utils/sortArray.js';
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -49,6 +50,14 @@ interface MonitorHealthCheckResult extends JsonMap {
 
 export default class MonitorHealthCheck extends SfCommand<any> {
   public static title = 'Check org security health';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'org-health-check',
+      title: 'Security health check',
+      description: 'One row per Salesforce Health Check setting, with the value set in the org, the standard value and the risk level, so you can fix the risky settings.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

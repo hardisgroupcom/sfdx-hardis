@@ -20,12 +20,21 @@ import { getMonitoringDisable, resolveMonitoringCommands, shouldRunCommandNow } 
 import { getTitleI18nKey, monitoringCommandsDefault } from '../../../../common/monitoring/monitoringDefaults.js';
 import { computeHealthScore } from '../../../../common/monitoring/healthScore.js';
 import type { MonitoringCommandEntry } from '../../../../common/notifProvider/types.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class MonitorAll extends SfCommand<any> {
   public static title = 'Monitor org';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'monitoring-commands',
+      title: 'Monitoring commands',
+      description: 'One row per monitoring command configured for the org, with its status, frequency and duration, written only when there are more than 20 rows.',
+    },
+  ];
 
   // Re-export the shared default list for plugin / extension consumers that historically read this static property.
   public static monitoringCommandsDefault: MonitoringCommandEntry[] = monitoringCommandsDefault;

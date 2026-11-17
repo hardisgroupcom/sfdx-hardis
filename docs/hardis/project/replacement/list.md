@@ -41,6 +41,24 @@ No prompt: the command is read-only. `--skip-issue` avoids the call to the git p
 </details>
 
 
+## Screenshots
+
+![The replacement rules warehouse-api-url and crew-support-email of the Helios project, next to the built-in rules](../../../assets/images/commands/project/replacement/list.webp)
+
+_The replacement rules warehouse-api-url and crew-support-email of the Helios project, next to the built-in rules_
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Replacement rules
+
+One row per replacement rule, with its place, type, files, value and whether it is enabled.
+
+Files: `replacement-rules-*.csv`, `xls/replacement-rules-*.xlsx`
+
+![Replacement rules report in Excel](../../../assets/images/commands/project/replacement/list-report-replacement-rules.webp)
+
 ## Parameters
 
 | Name          |  Type   | Description                                               | Default | Required | Options |

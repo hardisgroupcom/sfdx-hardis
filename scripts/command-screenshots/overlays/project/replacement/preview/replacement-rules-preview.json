@@ -1,0 +1,156 @@
+{
+  "mode": "replace",
+  "title": "replacement-rules-preview",
+  "columns": [
+    "file",
+    "rule",
+    "result",
+    "detail"
+  ],
+  "rows": [
+    {
+      "file": "force-app/main/default/classes/InstallationScheduler.cls",
+      "rule": "scheduler-cron-host",
+      "result": "changed",
+      "detail": "2 matches"
+    },
+    {
+      "file": "force-app/main/default/classes/PanelBatchService.cls",
+      "rule": "panel-batch-service-host",
+      "result": "changed",
+      "detail": "3 matches"
+    },
+    {
+      "file": "force-app/main/default/customMetadata/Helios_Setting.Default.md-meta.xml",
+      "rule": "portal-site-url",
+      "result": "changed",
+      "detail": "1 matches"
+    },
+    {
+      "file": "force-app/main/default/emailservices/Helios_Support.xml",
+      "rule": "support-email-routing",
+      "result": "unchanged",
+      "detail": ""
+    },
+    {
+      "file": "force-app/main/default/flows/Installation_Reminder.flow-meta.xml",
+      "rule": "builtin-flow-groups",
+      "result": "changed",
+      "detail": "2 elements removed for API 61.0: groups Crew_Notifications, groups Reminder_Scheduling"
+    },
+    {
+      "file": "force-app/main/default/flows/Installation_Reminder.flow-meta.xml",
+      "rule": "crew-email-sender",
+      "result": "changed",
+      "detail": "1 values set in Flow/actionCalls/inputParameters[name=senderAddress]/value/stringValue"
+    },
+    {
+      "file": "force-app/main/default/flows/Installation_Reminder.flow-meta.xml",
+      "rule": "builtin-flow-get-records-limit",
+      "result": "changed",
+      "detail": "1 elements removed for API 61.0: recordLookups Get_Pending_Installations: limit"
+    },
+    {
+      "file": "force-app/main/default/flows/Inverter_Warranty_Check.flow-meta.xml",
+      "rule": "builtin-flow-custom-properties",
+      "result": "changed",
+      "detail": "1 elements removed for API 61.0: customProperties ScreenProgressIndicator"
+    },
+    {
+      "file": "force-app/main/default/flows/Panel_Batch_Allocation.flow-meta.xml",
+      "rule": "builtin-flow-groups",
+      "result": "changed",
+      "detail": "1 elements removed for API 61.0: groups Allocation_Steps"
+    },
+    {
+      "file": "force-app/main/default/flows/Panel_Batch_Allocation.flow-meta.xml",
+      "rule": "builtin-flow-upsert",
+      "result": "changed",
+      "detail": "2 elements removed for API 61.0: recordCreates Create_Allocation: doesUpsert, recordCreates Create_Allocation: upsertExternalIdField"
+    },
+    {
+      "file": "force-app/main/default/flows/Panel_Batch_Allocation.flow-meta.xml",
+      "rule": "builtin-flow-schedule-days-of-week",
+      "result": "risky-element",
+      "detail": "Flow/start/schedule/daysOfWeekToRun: start/schedule/daysOfWeekToRun, start/schedule/daysOfWeekToRun"
+    },
+    {
+      "file": "force-app/main/default/namedCredentials/Helios_ERP.namedCredential-meta.xml",
+      "rule": "erp-api-endpoint",
+      "result": "changed",
+      "detail": "1 values set in NamedCredential/endpoint"
+    },
+    {
+      "file": "force-app/main/default/namedCredentials/Helios_ERP.namedCredential-meta.xml",
+      "rule": "erp-api-password",
+      "result": "changed",
+      "detail": "1 values set in NamedCredential/password"
+    },
+    {
+      "file": "force-app/main/default/namedCredentials/Helios_Weather.namedCredential-meta.xml",
+      "rule": "weather-api-endpoint",
+      "result": "unchanged",
+      "detail": ""
+    },
+    {
+      "file": "force-app/main/default/permissionsets/Helios_Delivery_Crew.permissionset-meta.xml",
+      "rule": "builtin-view-all-fields-false",
+      "result": "changed",
+      "detail": "3 elements removed for API 61.0: objectPermissions Installation__c: viewAllFields, objectPermissions Panel_Batch__c: viewAllFields, objectPermissions Inverter_Model__c: viewAllFields"
+    },
+    {
+      "file": "force-app/main/default/permissionsets/Helios_Delivery_Crew.permissionset-meta.xml",
+      "rule": "builtin-unknown-user-permissions",
+      "result": "changed",
+      "detail": "2 elements removed for API 61.0: userPermissions AccessEinsteinAutofill, userPermissions CanExitFlowViaAPI"
+    },
+    {
+      "file": "force-app/main/default/permissionsets/Helios_Delivery_Manager.permissionset-meta.xml",
+      "rule": "builtin-view-all-fields-false",
+      "result": "changed",
+      "detail": "2 elements removed for API 61.0: objectPermissions Installation__c: viewAllFields, objectPermissions Panel_Batch__c: viewAllFields"
+    },
+    {
+      "file": "force-app/main/default/permissionsets/Helios_Delivery_Manager.permissionset-meta.xml",
+      "rule": "builtin-agent-accesses",
+      "result": "changed",
+      "detail": "1 elements removed for API 61.0: agentAccesses"
+    },
+    {
+      "file": "force-app/main/default/permissionsets/Helios_Delivery_Manager.permissionset-meta.xml",
+      "rule": "builtin-unknown-user-permissions",
+      "result": "changed",
+      "detail": "1 elements removed for API 61.0: userPermissions EinsteinAgentPlatformBuilder"
+    },
+    {
+      "file": "force-app/main/default/profiles/Admin.profile-meta.xml",
+      "rule": "builtin-unknown-user-permissions",
+      "result": "changed",
+      "detail": "4 elements removed for API 61.0: userPermissions AIWorkbenchUser, userPermissions CanDoActAsUser, userPermissions CanExitFlowViaAPI, userPermissions ManageMyExternalUsers"
+    },
+    {
+      "file": "force-app/main/default/profiles/Helios Crew.profile-meta.xml",
+      "rule": "builtin-view-all-fields-false",
+      "result": "changed",
+      "detail": "3 elements removed for API 61.0: objectPermissions Installation__c: viewAllFields, objectPermissions Panel_Batch__c: viewAllFields, objectPermissions Inverter_Model__c: viewAllFields"
+    },
+    {
+      "file": "force-app/main/default/profiles/Helios Crew.profile-meta.xml",
+      "rule": "remove-view-setup-in-production",
+      "result": "changed",
+      "detail": "1 elements removed: userPermissions ViewSetup"
+    },
+    {
+      "file": "force-app/main/default/profiles/Standard User.profile-meta.xml",
+      "rule": "remove-view-setup-in-production",
+      "result": "changed",
+      "detail": "1 elements removed: userPermissions ViewSetup"
+    },
+    {
+      "file": "force-app/main/default/remoteSiteSettings/Helios_ERP.remoteSite-meta.xml",
+      "rule": "remote-site-erp",
+      "result": "changed",
+      "detail": "1 values set in RemoteSiteSetting/url"
+    }
+  ]
+}

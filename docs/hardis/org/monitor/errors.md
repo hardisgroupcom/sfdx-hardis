@@ -34,6 +34,46 @@ In agent mode:
 - The number of days defaults to 1 when `--days` is not provided.
 - All interactive prompts are skipped.
 
+## Screenshots
+
+![Pick how many days of errors to collect](../../../assets/images/commands/org/monitor/errors-1.webp)
+
+_Pick how many days of errors to collect_
+
+![Apex and Flow errors of the last 7 days in the Helios org, summed up by type and operation](../../../assets/images/commands/org/monitor/errors.webp)
+
+_Apex and Flow errors of the last 7 days in the Helios org, summed up by type and operation_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Apex errors
+
+One row per failed Apex job in the period, with its operation, exception, stack trace, start time and user.
+
+Files: `monitor-apex-errors-*.csv`, `xls/monitor-apex-errors-*.xlsx`
+
+![Apex errors report in Excel](../../../assets/images/commands/org/monitor/errors-report-monitor-apex-errors.webp)
+
+### Flow errors
+
+One row per Flow interview error in the period, with the flow operation, error step, exception, record and user.
+
+Files: `monitor-flow-errors-*.csv`, `xls/monitor-flow-errors-*.xlsx`
+
+![Flow errors report in Excel](../../../assets/images/commands/org/monitor/errors-report-monitor-flow-errors.webp)
+
+### Errors summary
+
+One row per Apex class or Flow that raised errors, with its number of errors, so you can see which ones fail the most.
+
+Files: `monitor-errors-summary-*.csv`, `xls/monitor-errors-summary-*.xlsx`
+
+![Errors summary report in Excel](../../../assets/images/commands/org/monitor/errors-report-monitor-errors-summary.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

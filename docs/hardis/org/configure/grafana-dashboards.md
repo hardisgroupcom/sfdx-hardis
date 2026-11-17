@@ -49,6 +49,16 @@ In agent mode:
 </details>
 
 
+## Screenshots
+
+![Give the URL of the Grafana instance](../../../assets/images/commands/org/configure/grafana-dashboards-1.webp)
+
+_Give the URL of the Grafana instance_
+
+![The 13 Org Monitoring dashboards and the 8 paused alert rules are installed in a Grafana instance](../../../assets/images/commands/org/configure/grafana-dashboards.webp)
+
+_The 13 Org Monitoring dashboards and the 8 paused alert rules are installed in a Grafana instance_
+
 ## Parameters
 
 | Name          |  Type   | Description                                                                                                     | Default | Required | Options |

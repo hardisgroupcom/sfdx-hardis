@@ -25,12 +25,21 @@ import { getBranchMarkdown, getNotificationButtons, getSeverityIcon } from '../.
 import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
 import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
 import { t } from '../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class LintAccess extends SfCommand<any> {
   public static title = 'check permission access';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'lint-access',
+      title: 'Missing access',
+      description: 'One row per metadata element (Apex class or custom field) that no permission set or profile gives access to, or that is declared several times in a permission set.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

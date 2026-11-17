@@ -50,6 +50,26 @@ sf hardis:org:monitor:limits --agent --target-org myorg@example.com
 
 In agent mode, the command runs fully automatically with no interactive prompts.
 
+## Screenshots
+
+![Limits of the Helios org with their maximum, remaining value and percent used, none close to its maximum](../../../assets/images/commands/org/monitor/limits.webp)
+
+_Limits of the Helios org with their maximum, remaining value and percent used, none close to its maximum_
+
+- **(1)** Every limit of the org, beyond the first rows shown here
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Org limits
+
+One row per org limit (API requests, storage, Apex characters...), with the maximum, the amount used and the percentage used, so you can see which limits are close to being reached.
+
+Files: `org-limits-*.csv`, `xls/org-limits-*.xlsx`
+
+![Org limits report in Excel](../../../assets/images/commands/org/monitor/limits-report-org-limits.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

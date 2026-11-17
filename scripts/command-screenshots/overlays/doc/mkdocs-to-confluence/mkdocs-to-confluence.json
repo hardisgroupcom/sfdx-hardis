@@ -1,0 +1,118 @@
+{
+  "mode": "replace",
+  "title": "Confluence Deployment Summary",
+  "rows": [
+    {
+      "type": "image",
+      "pageName": "[Doc] Home",
+      "file": "helios-logo.png",
+      "status": "success",
+      "failureReason": "",
+      "url": ""
+    },
+    {
+      "type": "page",
+      "pageName": "[Doc] Home",
+      "file": "index.md",
+      "status": "success",
+      "failureReason": "",
+      "url": "https://helios.atlassian.net/wiki/spaces/HELIOS/pages/4129200"
+    },
+    {
+      "type": "image",
+      "pageName": "[Object] Installation__c",
+      "file": "installation-data-model.png",
+      "status": "success",
+      "failureReason": "",
+      "url": ""
+    },
+    {
+      "type": "page",
+      "pageName": "[Object] Installation__c",
+      "file": "objects/Installation__c.md",
+      "status": "success",
+      "failureReason": "",
+      "url": "https://helios.atlassian.net/wiki/spaces/HELIOS/pages/4129203"
+    },
+    {
+      "type": "page",
+      "pageName": "[Object] Panel_Batch__c",
+      "file": "objects/Panel_Batch__c.md",
+      "status": "success",
+      "failureReason": "",
+      "url": "https://helios.atlassian.net/wiki/spaces/HELIOS/pages/4129206"
+    },
+    {
+      "type": "mermaid",
+      "pageName": "[Flow] Installation_Assign_Crew",
+      "file": "Installation_Assign_Crew-mermaid-1.png",
+      "status": "success",
+      "failureReason": "",
+      "url": ""
+    },
+    {
+      "type": "image",
+      "pageName": "[Flow] Installation_Assign_Crew",
+      "file": "Installation_Assign_Crew-mermaid-1.png",
+      "status": "success",
+      "failureReason": "",
+      "url": ""
+    },
+    {
+      "type": "page",
+      "pageName": "[Flow] Installation_Assign_Crew",
+      "file": "flows/Installation_Assign_Crew.md",
+      "status": "success",
+      "failureReason": "",
+      "url": "https://helios.atlassian.net/wiki/spaces/HELIOS/pages/4129209"
+    },
+    {
+      "type": "mermaid",
+      "pageName": "[Flow] Installation_Close_Check",
+      "file": "Installation_Close_Check-mermaid-1.png",
+      "status": "success",
+      "failureReason": "",
+      "url": ""
+    },
+    {
+      "type": "image",
+      "pageName": "[Flow] Installation_Close_Check",
+      "file": "Installation_Close_Check-mermaid-1.png",
+      "status": "success",
+      "failureReason": "",
+      "url": ""
+    },
+    {
+      "type": "page",
+      "pageName": "[Flow] Installation_Close_Check",
+      "file": "flows/Installation_Close_Check.md",
+      "status": "success",
+      "failureReason": "",
+      "url": "https://helios.atlassian.net/wiki/spaces/HELIOS/pages/4129212"
+    },
+    {
+      "type": "page",
+      "pageName": "[Apex] InstallationScheduler",
+      "file": "apex/InstallationScheduler.md",
+      "status": "success",
+      "failureReason": "",
+      "url": "https://helios.atlassian.net/wiki/spaces/HELIOS/pages/4129215"
+    },
+    {
+      "type": "page",
+      "pageName": "[Permissionset] Helios_Delivery_Crew",
+      "file": "permissionsets/Helios_Delivery_Crew.md",
+      "status": "success",
+      "failureReason": "",
+      "url": "https://helios.atlassian.net/wiki/spaces/HELIOS/pages/4129218"
+    },
+    {
+      "type": "page",
+      "pageName": "[Permissionset] Helios_Delivery_Manager",
+      "file": "permissionsets/Helios_Delivery_Manager.md",
+      "status": "success",
+      "failureReason": "",
+      "url": "https://helios.atlassian.net/wiki/spaces/HELIOS/pages/4129221"
+    }
+  ]
+}

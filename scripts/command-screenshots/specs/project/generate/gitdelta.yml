@@ -1,0 +1,11 @@
+command: hardis:project:generate:gitdelta
+run: sf hardis:project:generate:gitdelta --branch features/HEL-42-installation-checklist
+org: none
+caption: The package.xml and destructiveChanges.xml of what the User Story changed since the first commit of the project
+answers:
+  - q: Please select the commit that you want to start from
+    choice: ^Helios Energy project$
+    shot: true
+    caption: Pick the commit the delta starts from
+  - q: Please select the commit hash that you want to go to
+    choice: ^current$

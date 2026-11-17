@@ -1,0 +1,4 @@
+command: hardis:lint:unusedmetadatas
+run: sf hardis:lint:unusedmetadatas
+org: none
+caption: Custom labels and custom permissions of the Helios project that no Apex, Flow or component uses

@@ -52,6 +52,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The profiles of the Helios project stripped of the access that permission sets already give](../../../assets/images/commands/project/clean/minimizeprofiles.webp)
+
+_The profiles of the Helios project stripped of the access that permission sets already give_
+
 ## Parameters
 
 | Name          |  Type   | Description                                                   |  Default  | Required | Options |

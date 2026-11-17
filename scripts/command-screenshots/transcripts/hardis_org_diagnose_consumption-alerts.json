@@ -1,0 +1,86 @@
+{
+  "command": "hardis:org:diagnose:consumption-alerts",
+  "exitCode": 1,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Checking consumption utilization alerts..."
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[SOQL Query] SELECT Id, Name, AlertType, AlertScope, AlertSubScope1, AlertSubScope2, AlertStatus, TriggerValue, TriggerType, IsNotificationSent, AlertTimestamp FROM TenantConsumptionAlert WHERE AlertStatus = 'Active' ORDER BY AlertTimestamp DESC"
+      }
+    },
+    {
+      "delay": 1300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[SOQL Query] Retrieved 9 records"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "table",
+        "message": "[{\"name\":\"TCA-00000009\",\"alertType\":\"sf__ConsumptionThreshold\",\"alertScope\":\"PlatformServicesCard\",\"alertSubScope1\":\"Production\",\"alertSubScope2\":\"PrePurchased\",\"alertStatus\":\"Active\",\"triggerValue\":100,\"triggerType\":\"ThresholdPercent\",\"notificationSent\":true,\"alertTimestamp\":\"2026-11-12T06:41:18.000+0000\",\"severity\":\"critical\",\"severityIcon\":\"⛔\"},{\"name\":\"TCA-00000008\",\"alertType\":\"sf__ConsumptionThreshold\",\"alertScope\":\"SegmentationsActivations\",\"alertSubScope1\":\"Production\",\"alertSubScope2\":\"PrePurchased\",\"alertStatus\":\"Active\",\"triggerValue\":75,\"triggerType\":\"ThresholdPercent\",\"notificationSent\":true,\"alertTimestamp\":\"2026-10-28T03:12:54.000+0000\",\"severity\":\"error\",\"severityIcon\":\"❌\"},{\"name\":\"TCA-00000007\",\"alertType\":\"sf__ConsumptionThreshold\",\"alertScope\":\"PlatformServicesCard\",\"alertSubScope1\":\"Production\",\"alertSubScope2\":\"PrePurchased\",\"alertStatus\":\"Active\",\"triggerValue\":75,\"triggerType\":\"ThresholdPercent\",\"notificationSent\":true,\"alertTimestamp\":\"2026-10-03T22:05:31.000+0000\",\"severity\":\"error\",\"severityIcon\":\"❌\"},{\"name\":\"TCA-00000006\",\"alertType\":\"sf__ConsumptionThreshold\",\"alertScope\":\"PlatformServicesCard\",\"alertSubScope1\":\"Sandbox\",\"alertSubScope2\":\"PrePurchased\",\"alertStatus\":\"Active\",\"triggerValue\":50,\"triggerType\":\"ThresholdPercent\",\"notificationSent\":true,\"alertTimestamp\":\"2026-09-21T14:27:09.000+0000\",\"severity\":\"warning\",\"severityIcon\":\"⚠️\"},{\"name\":\"TCA-00000005\",\"alertType\":\"sf__ConsumptionThreshold\",\"alertScope\":\"SegmentationsActivations\",\"alertSubScope1\":\"Production\",\"alertSubScope2\":\"PrePurchased\",\"alertStatus\":\"Active\",\"triggerValue\":50,\"triggerType\":\"ThresholdPercent\",\"notificationSent\":true,\"alertTimestamp\":\"2026-08-30T01:48:22.000+0000\",\"severity\":\"warning\",\"severityIcon\":\"⚠️\"},{\"name\":\"TCA-00000004\",\"alertType\":\"sf__ConsumptionThreshold\",\"alertScope\":\"PlatformServicesCard\",\"alertSubScope1\":\"Production\",\"alertSubScope2\":\"PrePurchased\",\"alertStatus\":\"Active\",\"triggerValue\":50,\"triggerType\":\"ThresholdPercent\",\"notificationSent\":true,\"alertTimestamp\":\"2026-08-11T23:03:45.000+0000\",\"severity\":\"warning\",\"severityIcon\":\"⚠️\"},{\"name\":\"TCA-00000003\",\"alertType\":\"sf__ConsumptionThreshold\",\"alertScope\":\"PlatformServicesCard\",\"alertSubScope1\":\"Sandbox\",\"alertSubScope2\":\"PrePurchased\",\"alertStatus\":\"Active\",\"triggerValue\":25,\"triggerType\":\"ThresholdPercent\",\"notificationSent\":true,\"alertTimestamp\":\"2026-07-16T09:55:40.000+0000\",\"severity\":\"warning\",\"severityIcon\":\"⚠️\"},{\"name\":\"TCA-00000002\",\"alertType\":\"sf__ConsumptionThreshold\",\"alertScope\":\"SegmentationsActivations\",\"alertSubScope1\":\"Production\",\"alertSubScope2\":\"PrePurchased\",\"alertStatus\":\"Active\",\"triggerValue\":25,\"triggerType\":\"ThresholdPercent\",\"notificationSent\":true,\"alertTimestamp\":\"2026-06-24T22:04:01.000+0000\",\"severity\":\"warning\",\"severityIcon\":\"⚠️\"},{\"name\":\"TCA-00000001\",\"alertType\":\"sf__ConsumptionThreshold\",\"alertScope\":\"PlatformServicesCard\",\"alertSubScope1\":\"Production\",\"alertSubScope2\":\"PrePurchased\",\"alertStatus\":\"Active\",\"triggerValue\":25,\"triggerType\":\"ThresholdPercent\",\"notificationSent\":true,\"alertTimestamp\":\"2026-06-02T22:06:14.000+0000\",\"severity\":\"warning\",\"severityIcon\":\"⚠️\"}]"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/consumption-alerts-main.csv",
+        "title": "Consumption Utilization Alerts (CSV)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/xls/consumption-alerts-main.xlsx",
+        "title": "Consumption Utilization Alerts (XLSX)",
+        "type": "report",
+        "main": true
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "error",
+        "message": "**3** consumption card(s) in alert in [helios-solar](https://helios-solar.my.salesforce.com), highest at **100%** of the allowance\n**Consumption cards in alert**\n- PlatformServicesCard / Production / PrePurchased at **100%** (4 thresholds crossed)\n- SegmentationsActivations / Production / PrePurchased at **75%** (3 thresholds crossed)\n- PlatformServicesCard / Sandbox / PrePurchased at **50%** (2 thresholds crossed)"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[NotifProvider] Handling notification of type CONSUMPTION_ALERTS..."
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

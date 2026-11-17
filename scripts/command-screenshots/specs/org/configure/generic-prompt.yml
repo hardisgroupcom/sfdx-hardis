@@ -1,0 +1,14 @@
+command: hardis:org:configure:generic-prompt
+run: sf hardis:org:configure:generic-prompt
+mode: replay
+org: none
+caption: The generic prompt template that sfdx-hardis AI features call is deployed in the org, and its permission set assigned
+answers:
+  - q: Please select the org where you want to deploy
+    choice: helios-uat
+    shot: true
+    caption: Pick the org where the prompt template is deployed
+  - q: Do you want to deploy the SfdxHardisGenericPrompt template
+    choice: ^✅ Yes$
+  - q: Do you want to assign the EinsteinGPTPromptTemplateUser
+    choice: ^✅ Yes$

@@ -57,6 +57,16 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 <!-- training-links:end -->
 
 
+## Screenshots
+
+![Pick the org to monitor](../../../assets/images/commands/org/configure/monitoring-1.webp)
+
+_Pick the org to monitor_
+
+![The monitoring of the Helios production org is configured in its own repository, with its certificate, its External Client App and its CI/CD variables](../../../assets/images/commands/org/configure/monitoring.webp)
+
+_The monitoring of the Helios production org is configured in its own repository, with its certificate, its External Client App and its CI/CD variables_
+
 ## Parameters
 
 | Name                  |  Type   | Description                                                                                                                                                | Default | Required | Options |

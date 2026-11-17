@@ -48,6 +48,32 @@ In agent mode:
 </details>
 
 
+## Screenshots
+
+![Pick the objects to document](../../../assets/images/commands/project/clean/profiles-extract-1.webp)
+
+_Pick the objects to document_
+
+- **(1)** A custom object of the Helios project
+
+![An Excel workbook to define the access of 3 personas to Installation__c and Panel_Batch__c, built from the org](../../../assets/images/commands/project/clean/profiles-extract.webp)
+
+_An Excel workbook to define the access of 3 personas to Installation__c and Panel_Batch__c, built from the org_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Profiles extract
+
+One workbook with a sheet per extract (objects, fields, field access, record types, applications, permissions, tabs, permission sets, personas), one row per element, to define the access of each persona.
+
+Files: `profiles-extract-*.csv`, `xls/profiles-extract-*.xlsx`
+
+![Profiles extract report in Excel](../../../assets/images/commands/project/clean/profiles-extract-report-profiles-extract.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                   | Default | Required | Options |

@@ -1,0 +1,162 @@
+{
+  "command": "hardis:scratch:delete",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf org list",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1000,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf org list",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Please select the list of scratch orgs you want to delete",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "name": "value",
+            "type": "multiselect",
+            "message": "🦙 Please select the list of scratch orgs you want to delete",
+            "description": "Choose which scratch orgs to permanently delete (this action cannot be undone)",
+            "choices": [
+              {
+                "title": "victor.martin@hardis-scratch-helios-HEL-42.com",
+                "description": "https://helios-solar-4821-dev-ed.scratch.my.salesforce.com, last used on 11/16/2026",
+                "value": {
+                  "username": "victor.martin@hardis-scratch-helios-HEL-42.com",
+                  "alias": "helios-HEL-42",
+                  "instanceUrl": "https://helios-solar-4821-dev-ed.scratch.my.salesforce.com",
+                  "devHubUsername": "victor.martin@helios-solar.demo"
+                }
+              },
+              {
+                "title": "victor.martin@hardis-scratch-helios-HEL-57.com",
+                "description": "https://helios-solar-5530-dev-ed.scratch.my.salesforce.com, last used on 11/12/2026",
+                "value": {
+                  "username": "victor.martin@hardis-scratch-helios-HEL-57.com",
+                  "alias": "helios-HEL-57",
+                  "instanceUrl": "https://helios-solar-5530-dev-ed.scratch.my.salesforce.com",
+                  "devHubUsername": "victor.martin@helios-solar.demo"
+                }
+              },
+              {
+                "title": "victor.martin@hardis-scratch-helios-HEL-61.com",
+                "description": "https://helios-solar-7102-dev-ed.scratch.my.salesforce.com, last used on 11/9/2026",
+                "value": {
+                  "username": "victor.martin@hardis-scratch-helios-HEL-61.com",
+                  "alias": "helios-HEL-61",
+                  "instanceUrl": "https://helios-solar-7102-dev-ed.scratch.my.salesforce.com",
+                  "devHubUsername": "victor.martin@helios-solar.demo"
+                }
+              }
+            ],
+            "optionsPerPage": 9999
+          }
+        ]
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "victor.martin@hardis-scratch-helios-HEL-57.com\nvictor.martin@hardis-scratch-helios-HEL-61.com"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf org delete scratch --no-prompt --target-org victor.martin@hardis-scratch-helios-HEL-57.com",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf org delete scratch --no-prompt --target-org victor.martin@hardis-scratch-helios-HEL-57.com",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Scratch org victor.martin@hardis-scratch-helios-HEL-57.com at https://helios-solar-5530-dev-ed.scratch.my.salesforce.com has been deleted"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf org delete scratch --no-prompt --target-org victor.martin@hardis-scratch-helios-HEL-61.com",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf org delete scratch --no-prompt --target-org victor.martin@hardis-scratch-helios-HEL-61.com",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Scratch org victor.martin@hardis-scratch-helios-HEL-61.com at https://helios-solar-7102-dev-ed.scratch.my.salesforce.com has been deleted"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

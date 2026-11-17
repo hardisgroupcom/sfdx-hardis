@@ -6,6 +6,7 @@ import c from 'chalk';
 import { uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 import { getSeverityIcon } from '../../../../common/utils/notifUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { prepareOrgNotificationContext } from '../../../../common/utils/orgNotificationContext.js';
@@ -24,6 +25,14 @@ const HOLDING_JOBS_SOQL =
 
 export default class DiagnoseFlexQueue extends SfCommand<any> {
   public static title = 'Monitor Apex flex queue (AsyncApexJob Holding)';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'flex-queue-holding',
+      title: 'Flex queue jobs',
+      description: 'One row per Apex job in Holding status, with its Apex class, job type and creation date.',
+    },
+  ];
 
   public static description = `Counts **AsyncApexJob** records with **Status = 'Holding'** (Apex flex queue), including **ApexClass.Name**, **JobType**, and **CreatedDate** for each job. The org can hold at most **${APEX_FLEX_QUEUE_MAX_JOBS}** such jobs; when the queue is full, new queueable/batch work can fail or stall.
 

@@ -1,0 +1,206 @@
+{
+  "mode": "replace",
+  "title": "replacement-rules",
+  "columns": [
+    "id",
+    "place",
+    "type",
+    "files",
+    "value",
+    "enabled"
+  ],
+  "rows": [
+    {
+      "id": "erp-api-endpoint",
+      "place": "project",
+      "type": "xml-value",
+      "files": "**/namedCredentials/Helios_ERP.namedCredential-meta.xml",
+      "value": "default, uat, preprod, main",
+      "enabled": "yes"
+    },
+    {
+      "id": "erp-api-password",
+      "place": "project",
+      "type": "xml-value",
+      "files": "**/namedCredentials/Helios_ERP.namedCredential-meta.xml",
+      "value": "secret HELIOS_ERP_API_PASSWORD",
+      "enabled": "yes"
+    },
+    {
+      "id": "weather-api-endpoint",
+      "place": "project",
+      "type": "xml-value",
+      "files": "**/namedCredentials/Helios_Weather.namedCredential-meta.xml",
+      "value": "default, main",
+      "enabled": "yes"
+    },
+    {
+      "id": "weather-api-key",
+      "place": "project",
+      "type": "xml-value",
+      "files": "**/externalCredentials/Helios_Weather.externalCredential-meta.xml",
+      "value": "secret HELIOS_WEATHER_API_KEY",
+      "enabled": "yes"
+    },
+    {
+      "id": "remove-view-setup-in-production",
+      "place": "project",
+      "type": "xml-remove",
+      "files": "**/profiles/*.profile-meta.xml",
+      "value": "",
+      "enabled": "yes"
+    },
+    {
+      "id": "remove-modify-all-data-crew",
+      "place": "project",
+      "type": "xml-remove",
+      "files": "**/permissionsets/Helios_Delivery_Crew.permissionset-meta.xml",
+      "value": "",
+      "enabled": "yes"
+    },
+    {
+      "id": "scheduler-cron-host",
+      "place": "project",
+      "type": "text",
+      "files": "**/classes/InstallationScheduler.cls",
+      "value": "default, main",
+      "enabled": "yes"
+    },
+    {
+      "id": "panel-batch-service-host",
+      "place": "project",
+      "type": "text",
+      "files": "**/classes/PanelBatchService.cls",
+      "value": "default, uat, main",
+      "enabled": "yes"
+    },
+    {
+      "id": "crew-email-sender",
+      "place": "project",
+      "type": "xml-value",
+      "files": "**/flows/Installation_Reminder.flow-meta.xml",
+      "value": "default, main",
+      "enabled": "yes"
+    },
+    {
+      "id": "support-email-routing",
+      "place": "project",
+      "type": "xml-value",
+      "files": "**/emailservices/Helios_Support.xml",
+      "value": "default, preprod, main",
+      "enabled": "yes"
+    },
+    {
+      "id": "portal-site-url",
+      "place": "project",
+      "type": "text",
+      "files": "**/customMetadata/Helios_Setting.Default.md-meta.xml",
+      "value": "default, uat, preprod, main",
+      "enabled": "yes"
+    },
+    {
+      "id": "remote-site-erp",
+      "place": "project",
+      "type": "xml-value",
+      "files": "**/remoteSiteSettings/Helios_ERP.remoteSite-meta.xml",
+      "value": "default, uat, main",
+      "enabled": "yes"
+    },
+    {
+      "id": "builtin-flow-get-records-limit",
+      "place": "project",
+      "type": "override of builtin",
+      "files": "",
+      "value": "",
+      "enabled": "yes"
+    },
+    {
+      "id": "builtin-flow-upsert",
+      "place": "project",
+      "type": "override of builtin",
+      "files": "",
+      "value": "",
+      "enabled": "yes"
+    },
+    {
+      "id": "builtin-flow-ends",
+      "place": "project",
+      "type": "override of builtin",
+      "files": "",
+      "value": "",
+      "enabled": "no"
+    },
+    {
+      "id": "erp-api-endpoint",
+      "place": "branch uat",
+      "type": "override of project",
+      "files": "",
+      "value": "https://erp-uat.helios-solar.demo/api",
+      "enabled": "yes"
+    },
+    {
+      "id": "remove-view-setup-in-production",
+      "place": "branch uat",
+      "type": "override of project",
+      "files": "",
+      "value": "",
+      "enabled": "no"
+    },
+    {
+      "id": "weather-api-endpoint",
+      "place": "branch uat",
+      "type": "override of project",
+      "files": "",
+      "value": "https://weather-test.helios-solar.demo/v2",
+      "enabled": "yes"
+    },
+    {
+      "id": "erp-api-endpoint",
+      "place": "branch preprod",
+      "type": "override of project",
+      "files": "",
+      "value": "https://erp-preprod.helios-solar.demo/api",
+      "enabled": "yes"
+    },
+    {
+      "id": "remove-view-setup-in-production",
+      "place": "branch preprod",
+      "type": "override of project",
+      "files": "",
+      "value": "",
+      "enabled": "no"
+    },
+    {
+      "id": "remove-modify-all-data-crew",
+      "place": "branch main",
+      "type": "override of project",
+      "files": "",
+      "value": "",
+      "enabled": "yes"
+    },
+    {
+      "id": "builtin-view-all-fields-true",
+      "place": "branch main",
+      "type": "override of builtin",
+      "files": "",
+      "value": "",
+      "enabled": "yes"
+    },
+    {
+      "id": "crew-email-sender",
+      "place": "issue",
+      "type": "override of project",
+      "files": "",
+      "value": "default, uat",
+      "enabled": "yes"
+    },
+    {
+      "id": "temp-disable-reminder-flow",
+      "place": "issue",
+      "type": "xml-value",
+      "files": "**/flows/Installation_Reminder.flow-meta.xml",
+      "value": "default",
+      "enabled": "yes"
+    }
+  ]
+}

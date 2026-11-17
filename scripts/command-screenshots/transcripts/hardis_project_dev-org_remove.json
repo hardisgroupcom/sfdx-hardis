@@ -1,0 +1,132 @@
+{
+  "command": "hardis:project:dev-org:remove",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Which development org do you want to remove?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "orgId",
+            "message": "🦙 Which development org do you want to remove?",
+            "description": "Remove an org that was deleted, or that nobody uses anymore",
+            "choices": [
+              {
+                "title": "victordev (integration)",
+                "description": "Victor Martin - https://helios-solar--victordev.sandbox.my.salesforce.com",
+                "value": "00DHL000000VcTr2AK"
+              },
+              {
+                "title": "mariiadev (integration)",
+                "description": "Mariia Kowalska - https://helios-solar--mariiadev.sandbox.my.salesforce.com",
+                "value": "00DHL000000MkWs2AK"
+              },
+              {
+                "title": "tomaszdev (integration)",
+                "description": "Tomasz Nowak - https://helios-solar--tomaszdev.sandbox.my.salesforce.com",
+                "value": "00DHL000000TnWz2AK"
+              },
+              {
+                "title": "luciafix (preprod)",
+                "description": "Lucia Fernandez - https://helios-solar--luciafix.sandbox.my.salesforce.com",
+                "value": "00DHL000000LfZx2AK"
+              }
+            ],
+            "optionsPerPage": 9999
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "tomaszdev (integration)"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Remove tomaszdev from the development orgs list?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Remove tomaszdev from the development orgs list?",
+            "description": "Nothing is done in the org itself: it only leaves the list",
+            "choices": [
+              {
+                "title": "✅ Yes",
+                "value": true
+              },
+              {
+                "title": "❌ No",
+                "value": false
+              }
+            ],
+            "initial": 1,
+            "optionsPerPage": 9999
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "✅ Yes"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Removing the development org 00DHL000000TnWz2AK from the development orgs list..."
+      }
+    },
+    {
+      "delay": 1600,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Development org tomaszdev removed from the development orgs list"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

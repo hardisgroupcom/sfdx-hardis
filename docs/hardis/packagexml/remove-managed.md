@@ -49,6 +49,12 @@ In agent mode all interactive prompts are skipped and default values are used.
 The command is fully non-interactive regardless of this flag.
 
 
+## Screenshots
+
+![The items of managed packages, found by their namespace, removed from a package.xml](../../assets/images/commands/packagexml/remove-managed.webp)
+
+_The items of managed packages, found by their namespace, removed from a package.xml_
+
 ## Parameters
 
 | Name                |  Type   | Description                                                                                                                                                                                                                        |   Default   | Required |             Options             |

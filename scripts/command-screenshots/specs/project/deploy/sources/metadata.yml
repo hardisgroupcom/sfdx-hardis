@@ -1,0 +1,4 @@
+command: hardis:project:deploy:sources:metadata
+run: sf hardis:project:deploy:sources:metadata --deploydir mdapi-deploy --packagexml mdapi-deploy/package.xml
+org: throwaway
+caption: A folder in Metadata API format, with its package.xml, deployed to a scratch org

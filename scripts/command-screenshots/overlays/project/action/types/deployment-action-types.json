@@ -1,0 +1,144 @@
+{
+  "mode": "replace",
+  "title": "Deployment action types",
+  "columns": [
+    "type",
+    "when",
+    "context",
+    "flags"
+  ],
+  "rows": [
+    {
+      "type": "command",
+      "when": "pre-deploy, post-deploy",
+      "context": "process-deployment-only",
+      "flags": "--command"
+    },
+    {
+      "type": "data",
+      "when": "pre-deploy, post-deploy",
+      "context": "process-deployment-only",
+      "flags": "--sfdmu-project"
+    },
+    {
+      "type": "apex",
+      "when": "pre-deploy, post-deploy",
+      "context": "process-deployment-only",
+      "flags": "--apex-script"
+    },
+    {
+      "type": "publish-community",
+      "when": "pre-deploy, post-deploy",
+      "context": "process-deployment-only",
+      "flags": "--community-name"
+    },
+    {
+      "type": "manual",
+      "when": "pre-deploy, post-deploy",
+      "context": "process-deployment-only",
+      "flags": "--instructions"
+    },
+    {
+      "type": "schedule-batch",
+      "when": "pre-deploy, post-deploy",
+      "context": "process-deployment-only",
+      "flags": "--class-name --cron-expression --job-name (optional)"
+    },
+    {
+      "type": "run-batch",
+      "when": "pre-deploy, post-deploy",
+      "context": "process-deployment-only",
+      "flags": "--class-name --run-mode (optional) --batch-size (optional) --wait-timeout (optional) --success-even-if-batch-errors (optional)"
+    },
+    {
+      "type": "remove-packagexml-items",
+      "when": "pre-deploy",
+      "context": "all",
+      "flags": "--packagexml-items"
+    },
+    {
+      "type": "user-access-policy",
+      "when": "post-deploy",
+      "context": "process-deployment-only",
+      "flags": "--policies --activate (optional) --apply-to-all (optional)"
+    },
+    {
+      "type": "agent-activate",
+      "when": "post-deploy",
+      "context": "process-deployment-only",
+      "flags": "--agent-name"
+    },
+    {
+      "type": "agent-publish",
+      "when": "post-deploy",
+      "context": "process-deployment-only",
+      "flags": "--agent-name"
+    },
+    {
+      "type": "agent-running-user",
+      "when": "pre-deploy",
+      "context": "all",
+      "flags": "--agent-name"
+    },
+    {
+      "type": "browser",
+      "when": "pre-deploy, post-deploy",
+      "context": "all",
+      "flags": "--browser-setting --browser-config"
+    },
+    {
+      "type": "notifyInstallCrew",
+      "when": "post-deploy",
+      "context": "process-deployment-only",
+      "flags": "--function-input channel=... --function-input message=..."
+    },
+    {
+      "type": "refreshPanelBatchCache",
+      "when": "post-deploy",
+      "context": "process-deployment-only",
+      "flags": "--function-input batchSize=..."
+    },
+    {
+      "type": "loadInverterCatalog",
+      "when": "pre-deploy, post-deploy",
+      "context": "process-deployment-only",
+      "flags": "--function-input catalogFile=... --function-input dryRun=..."
+    },
+    {
+      "type": "pauseInstallationReminders",
+      "when": "pre-deploy",
+      "context": "process-deployment-only",
+      "flags": ""
+    },
+    {
+      "type": "resumeInstallationReminders",
+      "when": "post-deploy",
+      "context": "process-deployment-only",
+      "flags": ""
+    },
+    {
+      "type": "syncCrewCalendar",
+      "when": "post-deploy",
+      "context": "process-deployment-only",
+      "flags": "--function-input calendarId=..."
+    },
+    {
+      "type": "checkErpEndpoint",
+      "when": "pre-deploy",
+      "context": "all",
+      "flags": "--function-input endpointUrl=... --function-input timeoutSeconds=..."
+    },
+    {
+      "type": "archiveOldQuotes",
+      "when": "post-deploy",
+      "context": "process-deployment-only",
+      "flags": "--function-input olderThanDays=..."
+    },
+    {
+      "type": "updateReleaseWiki",
+      "when": "post-deploy",
+      "context": "process-deployment-only",
+      "flags": "--function-input pageId=... --function-input releaseName=..."
+    }
+  ]
+}

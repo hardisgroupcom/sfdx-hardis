@@ -1,0 +1,75 @@
+{
+  "command": "hardis:project:dev-org:list",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 1800,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "5 development orgs listed"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "table",
+        "message": "[{\"org\":\"victordev\",\"type\":\"sandbox\",\"targetBranch\":\"integration\",\"owner\":\"Victor Martin\",\"users\":\"Mariia Kowalska, Romain Lefebvre\",\"behind\":\"3\",\"lastBackpromote\":\"2026-11-03\",\"lastActivity\":\"2026-11-14\",\"stale\":\"\"},{\"org\":\"mariiadev\",\"type\":\"sandbox\",\"targetBranch\":\"integration\",\"owner\":\"Mariia Kowalska\",\"users\":\"\",\"behind\":\"7\",\"lastBackpromote\":\"2026-10-21\",\"lastActivity\":\"2026-11-13\",\"stale\":\"\"},{\"org\":\"romaindev\",\"type\":\"sandbox\",\"targetBranch\":\"uat\",\"owner\":\"Romain Lefebvre\",\"users\":\"Lucia Fernandez\",\"behind\":\"0\",\"lastBackpromote\":\"2026-11-12\",\"lastActivity\":\"2026-11-16\",\"stale\":\"\"},{\"org\":\"amelie-HEL-63\",\"type\":\"scratch\",\"targetBranch\":\"integration\",\"owner\":\"Amelie Dubois\",\"users\":\"\",\"behind\":\"1\",\"lastBackpromote\":\"\",\"lastActivity\":\"2026-11-15\",\"stale\":\"\"},{\"org\":\"luciadev\",\"type\":\"sandbox\",\"targetBranch\":\"integration\",\"owner\":\"Lucia Fernandez\",\"users\":\"Tomasz Nowak\",\"behind\":\"12\",\"lastBackpromote\":\"2026-09-22\",\"lastActivity\":\"2026-10-08\",\"stale\":\"yes\"}]"
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "victordev: 3 Pull Requests merged into integration since 2026-11-03"
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "mariiadev: 7 Pull Requests merged into integration since 2026-10-21"
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "amelie-HEL-63: 1 Pull Requests merged into integration since 2026-11-10"
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "luciadev: 12 Pull Requests merged into integration since 2026-09-22"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Development orgs dashboard: https://github.com/helios-energy/salesforce/issues/57"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

@@ -12,12 +12,21 @@ import { generateCsvFile, generateReportPath } from '../../../../common/utils/fi
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { getApexCharacterLimitUsage } from '../../../../common/utils/apexLimitUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class MonitorLimits extends SfCommand<any> {
   public static title = 'Check org limits';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'org-limits',
+      title: 'Org limits',
+      description: 'One row per org limit (API requests, storage, Apex characters...), with the maximum, the amount used and the percentage used, so you can see which limits are close to being reached.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

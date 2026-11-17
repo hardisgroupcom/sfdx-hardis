@@ -1,0 +1,85 @@
+{
+  "command": "hardis:ticket:post-comment",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Posting the comment on HEL-42, HEL-45, HEL-48, HEL-52, HEL-57, HEL-58, HEL-61, HEL-63, HEL-66..."
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[JiraProvider] Using JIRA_EMAIL and JIRA_TOKEN for authentication"
+      }
+    },
+    {
+      "delay": 1100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[TicketPostComment] HEL-52: HEL-52 is already marked (label or prefixed comment of this account): nothing was written."
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[TicketPostComment] HEL-63: HEL-63 is already marked (label or prefixed comment of this account): nothing was written."
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "table",
+        "message": "[{\"ticketId\":\"HEL-42\",\"provider\":\"JIRA\",\"action\":\"created\",\"url\":\"https://helios.atlassian.net/browse/HEL-42?focusedCommentId=10231\",\"error\":\"\"},{\"ticketId\":\"HEL-45\",\"provider\":\"JIRA\",\"action\":\"created\",\"url\":\"https://helios.atlassian.net/browse/HEL-45?focusedCommentId=10232\",\"error\":\"\"},{\"ticketId\":\"HEL-48\",\"provider\":\"JIRA\",\"action\":\"created\",\"url\":\"https://helios.atlassian.net/browse/HEL-48?focusedCommentId=10233\",\"error\":\"\"},{\"ticketId\":\"HEL-52\",\"provider\":\"JIRA\",\"action\":\"skipped\",\"url\":\"\",\"error\":\"HEL-52 is already marked (label or prefixed comment of this account): nothing was written.\"},{\"ticketId\":\"HEL-57\",\"provider\":\"JIRA\",\"action\":\"created\",\"url\":\"https://helios.atlassian.net/browse/HEL-57?focusedCommentId=10234\",\"error\":\"\"},{\"ticketId\":\"HEL-58\",\"provider\":\"JIRA\",\"action\":\"created\",\"url\":\"https://helios.atlassian.net/browse/HEL-58?focusedCommentId=10235\",\"error\":\"\"},{\"ticketId\":\"HEL-61\",\"provider\":\"JIRA\",\"action\":\"created\",\"url\":\"https://helios.atlassian.net/browse/HEL-61?focusedCommentId=10236\",\"error\":\"\"},{\"ticketId\":\"HEL-63\",\"provider\":\"JIRA\",\"action\":\"skipped\",\"url\":\"\",\"error\":\"HEL-63 is already marked (label or prefixed comment of this account): nothing was written.\"},{\"ticketId\":\"HEL-66\",\"provider\":\"JIRA\",\"action\":\"created\",\"url\":\"https://helios.atlassian.net/browse/HEL-66?focusedCommentId=10237\",\"error\":\"\"}]"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/ticket-post-comment-features__HEL-42-installation-checklist.csv",
+        "title": "Ticket comments (CSV)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 60,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/xls/ticket-post-comment-features__HEL-42-installation-checklist.xlsx",
+        "title": "Ticket comments (XLSX)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "7 comment(s) posted, 0 updated, 2 skipped, 0 failed"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

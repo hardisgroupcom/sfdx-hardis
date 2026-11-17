@@ -74,6 +74,18 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 <!-- training-links:end -->
 
 
+## Screenshots
+
+![Pick the data workspace whose CSV files are loaded](../../../assets/images/commands/org/data/import-1.webp)
+
+_Pick the data workspace whose CSV files are loaded_
+
+![Accounts, contacts, opportunities, installations and panel batches of the HeliosBaseline workspace upserted into an org with SFDMU](../../../assets/images/commands/org/data/import.webp)
+
+_Accounts, contacts, opportunities, installations and panel batches of the HeliosBaseline workspace upserted into an org with SFDMU_
+
+- **(1)** Records are upserted, so the import can run again without duplicates
+
 ## Parameters
 
 | Name                |  Type   | Description                                                                                                  | Default | Required | Options |

@@ -1,0 +1,126 @@
+{
+  "mode": "replace",
+  "title": "Deleted PSL assignments",
+  "columns": [
+    "Id",
+    "PermissionsSetLicense",
+    "User",
+    "Reason",
+    "severity",
+    "severityIcon"
+  ],
+  "rows": [
+    {
+      "Id": "2LAHb0000003lFlOAI",
+      "PermissionsSetLicense": "Field Service Dispatcher",
+      "User": "ines.moreau@helios-solar.demo",
+      "Reason": "Related PS assignment not found",
+      "severity": "warning",
+      "severityIcon": "⚠️"
+    },
+    {
+      "Id": "2LAHb0000003nJUOAY",
+      "PermissionsSetLicense": "Field Service Dispatcher",
+      "User": "nils.berger@helios-solar.demo",
+      "Reason": "Related PS assignment not found",
+      "severity": "warning",
+      "severityIcon": "⚠️"
+    },
+    {
+      "Id": "2LAHb0000003pNDOAY",
+      "PermissionsSetLicense": "Field Service Mobile",
+      "User": "lucia.fernandez@helios-solar.demo",
+      "Reason": "Related PS assignment not found",
+      "severity": "warning",
+      "severityIcon": "⚠️"
+    },
+    {
+      "Id": "2LAHb0000003xc7OAA",
+      "PermissionsSetLicense": "Field Service Mobile",
+      "User": "oskar.wojcik@helios-solar.demo",
+      "Reason": "Related PS assignment not found",
+      "severity": "warning",
+      "severityIcon": "⚠️"
+    },
+    {
+      "Id": "2LAHb0000003vYOOAY",
+      "PermissionsSetLicense": "Field Service Mobile",
+      "User": "pablo.serrano@helios-solar.demo",
+      "Reason": "Related PS assignment not found",
+      "severity": "warning",
+      "severityIcon": "⚠️"
+    },
+    {
+      "Id": "2LAHb0000003tUfOAI",
+      "PermissionsSetLicense": "Field Service Mobile",
+      "User": "sofia.marchetti@helios-solar.demo",
+      "Reason": "Related PS assignment not found",
+      "severity": "warning",
+      "severityIcon": "⚠️"
+    },
+    {
+      "Id": "2LAHb0000003rQwOAI",
+      "PermissionsSetLicense": "Field Service Mobile",
+      "User": "tomasz.nowak@helios-solar.demo",
+      "Reason": "Related PS assignment not found",
+      "severity": "warning",
+      "severityIcon": "⚠️"
+    },
+    {
+      "Id": "2LAHb00000041jZOAQ",
+      "PermissionsSetLicense": "Field Service Scheduling",
+      "User": "lena.hoffmann@helios-solar.demo",
+      "Reason": "Related PS assignment not found",
+      "severity": "warning",
+      "severityIcon": "⚠️"
+    },
+    {
+      "Id": "2LAHb0000003zfqOAA",
+      "PermissionsSetLicense": "Field Service Scheduling",
+      "User": "romain.lefebvre@helios-solar.demo",
+      "Reason": "Related PS assignment not found",
+      "severity": "warning",
+      "severityIcon": "⚠️"
+    },
+    {
+      "Id": "2LAHb00000047ukOAA",
+      "PermissionsSetLicense": "Sales User",
+      "User": "anna.kowalczyk@helios-solar.demo",
+      "Reason": "Related PS assignment not found",
+      "severity": "warning",
+      "severityIcon": "⚠️"
+    },
+    {
+      "Id": "2LAHb00000043nIOAQ",
+      "PermissionsSetLicense": "Sales User",
+      "User": "hugo.perrin@helios-solar.demo",
+      "Reason": "Related PS assignment not found",
+      "severity": "warning",
+      "severityIcon": "⚠️"
+    },
+    {
+      "Id": "2LAHb00000045r1OAA",
+      "PermissionsSetLicense": "Sales User",
+      "User": "julie.garnier@helios-solar.demo",
+      "Reason": "Related PS assignment not found",
+      "severity": "warning",
+      "severityIcon": "⚠️"
+    },
+    {
+      "Id": "2LAHb00000049yTOAQ",
+      "PermissionsSetLicense": "Salesforce Scheduler Resource",
+      "User": "clara.vidal@helios-solar.demo",
+      "Reason": "Related PS assignment not found",
+      "severity": "warning",
+      "severityIcon": "⚠️"
+    },
+    {
+      "Id": "2LAHb0000004C2COAU",
+      "PermissionsSetLicense": "Salesforce Scheduler Resource",
+      "User": "marco.rinaldi@helios-solar.demo",
+      "Reason": "Related PS assignment not found",
+      "severity": "warning",
+      "severityIcon": "⚠️"
+    }
+  ]
+}

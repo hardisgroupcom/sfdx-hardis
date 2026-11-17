@@ -1,0 +1,384 @@
+{
+  "command": "hardis:work:new",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Creating a new User Story (dev or config) with SFDX Hardis CI/CD"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "When unsure, press ENTER to use the default value"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Automatically selected target branch is integration"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 What type of User Story do you want to create?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 60,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "name": "value",
+            "type": "select",
+            "message": "🦙 What type of User Story do you want to create?",
+            "description": "Select the category of work that best describes your User Story",
+            "placeholder": "Select User Story type",
+            "initial": 0,
+            "choices": [
+              {
+                "title": "Feature: a new capability or an improvement",
+                "value": "features"
+              },
+              {
+                "title": "Fix: correct something that is broken",
+                "value": "fix"
+              },
+              {
+                "title": "Retrofit: merge production back down into the pipeline after a hotfix (release manager)",
+                "value": "retrofit"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Feature: a new capability or an improvement"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 What is the name of your new User Story? Please avoid accents and special characters.",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 60,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "name": "taskName",
+            "type": "text",
+            "message": "🦙 What is the name of your new User Story? Please avoid accents and special characters.",
+            "description": "Enter a descriptive name for your User Story that will be used in the git branch name",
+            "placeholder": "Ex: HEL-42-installation-checklist"
+          }
+        ]
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "HEL-42-installation-checklist"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Checking out latest version of branch integration from https://github.com/helios-energy/salesforce.git..."
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Creating new branch features/HEL-42-installation-checklist..."
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "git fetch origin integration",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 800,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "git fetch origin integration",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "git checkout -b features/HEL-42-installation-checklist --no-track origin/integration",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 700,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "git checkout -b features/HEL-42-installation-checklist --no-track origin/integration",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Which Salesforce org do you want to work in?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 60,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "name": "value",
+            "type": "select",
+            "message": "🦙 Which Salesforce org do you want to work in?",
+            "description": "Choose the type of Salesforce org to use for your development work",
+            "placeholder": "Select org type",
+            "initial": 0,
+            "choices": [
+              {
+                "title": "🌎 Sandbox org with source tracking",
+                "value": "sandbox",
+                "description": "Work in a developer sandbox provided by your Release Manager"
+              },
+              {
+                "title": "🪐 Scratch org",
+                "value": "scratch",
+                "description": "Scratch orgs are configured on my project so I want to create or reuse one"
+              },
+              {
+                "title": "😎 Current org helios-solar--dev.sandbox.my.salesforce.com",
+                "value": "currentOrg",
+                "description": "Use your default org with username victor.martin@helios-solar.demo.dev"
+              },
+              {
+                "title": "🤠 I'm hardcore, I don't need an org !",
+                "value": "noOrg",
+                "description": "Work with XML and sfdx-hardis configuration only"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "🌎 Sandbox org with source tracking"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Select a sandbox org to work in branch features/HEL-42-installation-checklist",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 60,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "name": "value",
+            "type": "select",
+            "message": "🦙 Select a sandbox org to work in branch features/HEL-42-installation-checklist",
+            "description": "Choose an existing sandbox or connect to a new one for this branch",
+            "placeholder": "Select sandbox",
+            "choices": [
+              {
+                "title": "🌐 Connect to a sandbox not in this list",
+                "value": "connectSandbox",
+                "description": "Authenticate to a sandbox that is not listed yet"
+              },
+              {
+                "title": "https://helios-solar--dev.sandbox.my.salesforce.com",
+                "value": "helios-dev",
+                "description": "☁️ Use sandbox org victor.martin@helios-solar.demo.dev"
+              },
+              {
+                "title": "https://helios-solar--dev2.sandbox.my.salesforce.com",
+                "value": "helios-dev2",
+                "description": "☁️ Use sandbox org mariia.kowalska@helios-solar.demo.dev2"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "https://helios-solar--dev.sandbox.my.salesforce.com"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Setting https://helios-solar--dev.sandbox.my.salesforce.com (victor.martin@helios-solar.demo.dev) as default org..."
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf config set target-org=victor.martin@helios-solar.demo.dev",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf config set target-org=victor.martin@helios-solar.demo.dev",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "To bring the metadata the team merged in integration into your sandbox, run a backpromote (Backpromote panel in VS Code, or sf hardis:work:backpromote): https://sfdx-hardis.cloudity.com/salesforce-devops-backpromote/"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Do you want to open org victor.martin@helios-solar.demo.dev in your browser?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 60,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "name": "value",
+            "type": "select",
+            "message": "🦙 Do you want to open org victor.martin@helios-solar.demo.dev in your browser?",
+            "description": "Open the sandbox org in your web browser",
+            "choices": [
+              {
+                "title": "✅ Yes",
+                "value": true
+              },
+              {
+                "title": "❌ No",
+                "value": false
+              }
+            ],
+            "initial": 0
+          }
+        ]
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "❌ No"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Ready to work in branch features/HEL-42-installation-checklist"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Use your default org with username victor.martin@helios-solar.demo.dev"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Your current org URL is https://helios-solar--dev.sandbox.my.salesforce.com"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

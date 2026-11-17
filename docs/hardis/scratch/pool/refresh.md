@@ -48,6 +48,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The scratch org expiring soon is deleted from the pool and two new ones are created to fill it back to 5](../../../assets/images/commands/scratch/pool/refresh.webp)
+
+_The scratch org expiring soon is deleted from the pool and two new ones are created to fill it back to 5_
+
 ## Parameters
 
 | Name                  |  Type   | Description                                                                                                       | Default | Required | Options |

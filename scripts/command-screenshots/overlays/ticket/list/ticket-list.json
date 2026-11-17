@@ -1,0 +1,102 @@
+{
+  "mode": "replace",
+  "title": "ticket-list",
+  "rows": [
+    {
+      "id": "HEL-42",
+      "type": "Story",
+      "status": "In Progress",
+      "priority": "High",
+      "assignee": "Mariia Kowalska",
+      "subject": "Installation checklist"
+    },
+    {
+      "id": "HEL-45",
+      "type": "Story",
+      "status": "In Review",
+      "priority": "Medium",
+      "assignee": "Romain Lefebvre",
+      "subject": "Crew assignment flow"
+    },
+    {
+      "id": "HEL-48",
+      "type": "Story",
+      "status": "To Do",
+      "priority": "Medium",
+      "assignee": "Lucia Fernandez",
+      "subject": "Panel batch traceability"
+    },
+    {
+      "id": "HEL-52",
+      "type": "Story",
+      "status": "In Progress",
+      "priority": "Medium",
+      "assignee": "Romain Lefebvre",
+      "subject": "Warranty term on panel batch"
+    },
+    {
+      "id": "HEL-57",
+      "type": "Story",
+      "status": "In Review",
+      "priority": "High",
+      "assignee": "Lucia Fernandez",
+      "subject": "Installation scheduler batch"
+    },
+    {
+      "id": "HEL-58",
+      "type": "Bug",
+      "status": "In Progress",
+      "priority": "Highest",
+      "assignee": "Tomasz Nowak",
+      "subject": "Duplicate crew assignment on reschedule"
+    },
+    {
+      "id": "HEL-61",
+      "type": "Story",
+      "status": "To Do",
+      "priority": "Medium",
+      "assignee": "Tomasz Nowak",
+      "subject": "Installation close check"
+    },
+    {
+      "id": "HEL-63",
+      "type": "Task",
+      "status": "To Do",
+      "priority": "Low",
+      "assignee": "Victor Martin",
+      "subject": "Review the Helios_Delivery_Manager permission set"
+    },
+    {
+      "id": "HEL-66",
+      "type": "Story",
+      "status": "In Progress",
+      "priority": "Medium",
+      "assignee": "Amelie Dubois",
+      "subject": "Gate code of a site"
+    },
+    {
+      "id": "HEL-69",
+      "type": "Story",
+      "status": "To Do",
+      "priority": "Low",
+      "assignee": "Amelie Dubois",
+      "subject": "Roof pitch on the installation"
+    },
+    {
+      "id": "HEL-71",
+      "type": "Story",
+      "status": "To Do",
+      "priority": "Medium",
+      "assignee": "Mariia Kowalska",
+      "subject": "SMS reminder the day before an installation"
+    },
+    {
+      "id": "HEL-74",
+      "type": "Story",
+      "status": "To Do",
+      "priority": "Low",
+      "assignee": "Unassigned",
+      "subject": "Inspection photos on the installation"
+    }
+  ]
+}

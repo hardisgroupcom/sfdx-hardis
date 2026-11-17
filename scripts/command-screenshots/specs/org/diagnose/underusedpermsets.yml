@@ -1,0 +1,8 @@
+command: hardis:org:diagnose:underusedpermsets
+run: sf hardis:org:diagnose:underusedpermsets
+org: showcase
+caption: "Permission sets and groups of the Helios org assigned to no user, or to 5 users or fewer"
+pills:
+  - text: "Underused Permission Sets"
+    legend: "One row per permission set or group, with its number of assigned users"
+    button: true

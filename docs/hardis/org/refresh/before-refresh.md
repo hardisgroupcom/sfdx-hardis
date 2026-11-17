@@ -50,6 +50,42 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 </details>
 
 
+## Screenshots
+
+![Convert the Connected Apps to External Client Apps before the refresh](../../../assets/images/commands/org/refresh/before-refresh-1.webp)
+
+_Convert the Connected Apps to External Client Apps before the refresh_
+
+![Pick the External Client Apps to save with their credentials](../../../assets/images/commands/org/refresh/before-refresh-2.webp)
+
+_Pick the External Client Apps to save with their credentials_
+
+![Everything a sandbox refresh would erase is saved first, from certificates to the list of manual actions](../../../assets/images/commands/org/refresh/before-refresh.webp)
+
+_Everything a sandbox refresh would erase is saved first, from certificates to the list of manual actions_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Connected Apps to convert
+
+One row per Connected App not yet converted to an External Client App, with its last update date and author, to convert before the refresh.
+
+Files: `connected-apps-not-converted-*.csv`, `xls/connected-apps-not-converted-*.xlsx`
+
+![Connected Apps to convert report in Excel](../../../assets/images/commands/org/refresh/before-refresh-report-connected-apps-not-converted.webp)
+
+### Before refresh actions
+
+One row per backup or check step run before the refresh, with its type, name, status and details. The file name ends with the name of the sandbox folder.
+
+Files: `sandbox-refresh-before-actions-*.csv`, `xls/sandbox-refresh-before-actions-*.xlsx`
+
+![Before refresh actions report in Excel](../../../assets/images/commands/org/refresh/before-refresh-report-sandbox-refresh-before-actions.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                                                                                       | Default | Required | Options |

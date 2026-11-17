@@ -46,6 +46,14 @@ sf hardis:org:diagnose:instanceupgrade --agent --target-org myorg@example.com
 
 In agent mode, the command runs fully automatically with no interactive prompts.
 
+## Screenshots
+
+![Instance of the Helios org, the date of its next major Salesforce upgrade and the release it moves to](../../../assets/images/commands/org/diagnose/instanceupgrade.webp)
+
+_Instance of the Helios org, the date of its next major Salesforce upgrade and the release it moves to_
+
+- **(1)** Instance, upgrade date and target release
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

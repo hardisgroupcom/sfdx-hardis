@@ -1,0 +1,4 @@
+command: hardis:packagexml:remove
+run: sf hardis:packagexml:remove --packagexml manifest/package.xml --removepackagexml manifest/package-no-overwrite.xml --outputfile manifest/package-to-deploy.xml
+org: none
+caption: The items of package-no-overwrite.xml removed from the package.xml of the project

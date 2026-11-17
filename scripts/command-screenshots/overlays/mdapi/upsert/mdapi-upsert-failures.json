@@ -1,0 +1,121 @@
+{
+  "mode": "replace",
+  "title": "Metadata upsert failures",
+  "columns": [
+    "type",
+    "fullName",
+    "error"
+  ],
+  "rows": [
+    {
+      "type": "CustomObject",
+      "fullName": "Installation__c",
+      "error": "In field: field - no CustomField named Installation__c.Legacy_Region__c found"
+    },
+    {
+      "type": "CustomObject",
+      "fullName": "Panel_Batch__c",
+      "error": "Field Supplier__c: referenced object Helios_Supplier__c does not exist"
+    },
+    {
+      "type": "Layout",
+      "fullName": "Installation__c-Installation Layout",
+      "error": "In field: field - no CustomField named Installation__c.Legacy_Region__c found"
+    },
+    {
+      "type": "Layout",
+      "fullName": "Panel_Batch__c-Panel Batch Layout",
+      "error": "In field: QuickAction - no QuickAction named Panel_Batch__c.Split_Batch found"
+    },
+    {
+      "type": "Layout",
+      "fullName": "Account-Helios Customer Layout",
+      "error": "In field: relatedList - no RelatedList named Installations__r found"
+    },
+    {
+      "type": "PermissionSet",
+      "fullName": "Helios_Delivery_Crew",
+      "error": "In field: field - no CustomField named Installation__c.Legacy_Region__c found"
+    },
+    {
+      "type": "PermissionSet",
+      "fullName": "Helios_Delivery_Manager",
+      "error": "In field: apexClass - no ApexClass named PanelBatchLegacyService found"
+    },
+    {
+      "type": "PermissionSet",
+      "fullName": "Helios_Panel_Stock_Viewer",
+      "error": "Unknown user permission: ViewAllForecasts"
+    },
+    {
+      "type": "PermissionSet",
+      "fullName": "Helios_Inverter_Specialist",
+      "error": "In field: tab - no CustomTab named Inverter_Firmware__c found"
+    },
+    {
+      "type": "PermissionSet",
+      "fullName": "Helios_Quote_Desk",
+      "error": "In field: recordType - no RecordType named Installation__c.Commercial_Rooftop found"
+    },
+    {
+      "type": "PermissionSet",
+      "fullName": "Helios_Warranty_Desk",
+      "error": "In field: field - no CustomField named Panel_Batch__c.Warranty_Code__c found"
+    },
+    {
+      "type": "PermissionSetGroup",
+      "fullName": "Helios_Field_Team",
+      "error": "Permission set Helios_Inverter_Specialist does not exist"
+    },
+    {
+      "type": "Profile",
+      "fullName": "Helios Crew",
+      "error": "In field: field - no CustomField named Installation__c.Legacy_Region__c found"
+    },
+    {
+      "type": "Profile",
+      "fullName": "Helios Sales",
+      "error": "In field: layout - no Layout named Installation__c-Installation Legacy Layout found"
+    },
+    {
+      "type": "Profile",
+      "fullName": "Helios Warehouse",
+      "error": "In field: field - no CustomField named Panel_Batch__c.Warranty_Code__c found"
+    },
+    {
+      "type": "Profile",
+      "fullName": "Helios Support",
+      "error": "Unknown user permission: ManageSharedListViews"
+    },
+    {
+      "type": "Profile",
+      "fullName": "Helios Partner Installer",
+      "error": "In field: apexPage - no ApexPage named InstallationPrintout found"
+    },
+    {
+      "type": "Profile",
+      "fullName": "Helios Read Only",
+      "error": "In field: tab - no CustomTab named Inverter_Firmware__c found"
+    },
+    {
+      "type": "Profile",
+      "fullName": "Standard User",
+      "error": "In field: recordType - no RecordType named Installation__c.Commercial_Rooftop found"
+    },
+    {
+      "type": "CustomTab",
+      "fullName": "Inverter_Firmware__c",
+      "error": "Inverter_Firmware__c: no CustomObject named Inverter_Firmware__c found"
+    },
+    {
+      "type": "CustomMetadata",
+      "fullName": "Panel_Grade.Grade_C",
+      "error": "Panel_Grade.Grade_C: field Minimum_Efficiency__c does not exist on Panel_Grade__mdt"
+    },
+    {
+      "type": "CustomApplication",
+      "fullName": "Helios_Warehouse",
+      "error": "In field: tab - no CustomTab named Inverter_Firmware__c found"
+    }
+  ]
+}

@@ -46,6 +46,16 @@ sf hardis:project:dev-org:register --agent --target-org my-dev-sandbox --target-
 In agent mode, nothing is asked: the target branch is `--target-branch`, else the registered one, else `developmentBranch`; the owner of a new entry is `--owner`, else the git user of the checkout; the users only change with `--users`, `--add-user` or `--remove-user`.
 
 
+## Screenshots
+
+![Name the owner, who is told when the org needs a backpromote](../../../assets/images/commands/project/dev-org/register-1.webp)
+
+_Name the owner, who is told when the org needs a backpromote_
+
+![The sandbox victordev registered in the development orgs list for the integration branch](../../../assets/images/commands/project/dev-org/register.webp)
+
+_The sandbox victordev registered in the development orgs list for the integration branch_
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                              | Default | Required | Options |

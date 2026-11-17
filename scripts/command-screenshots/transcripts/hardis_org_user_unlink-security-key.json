@@ -1,0 +1,722 @@
+{
+  "command": "hardis:org:user:unlink-security-key",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Enter the comma-separated list of usernames whose security keys should be unlinked",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "text",
+            "name": "value",
+            "message": "🦙 Enter the comma-separated list of usernames whose security keys should be unlinked",
+            "description": "This will disconnect the selected MFA methods from each user. They will need to re-register on next login."
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "victor.martin@helios-solar.demo,mariia.kowalska@helios-solar.demo,romain.lefebvre@helios-solar.demo,lucia.fernandez@helios-solar.demo,tomasz.nowak@helios-solar.demo,amelie.dubois@helios-solar.demo,hugo.perrin@helios-solar.demo,ines.moreau@helios-solar.demo,jakub.zielinski@helios-solar.demo,sofia.marchetti@helios-solar.demo,lena.hoffmann@helios-solar.demo,nils.berger@helios-solar.demo,clara.vidal@helios-solar.demo,pablo.serrano@helios-solar.demo,pablo.serrano.old@helios-solar.demo,oskar.wojcik@helios-solar.demo,julie.garnier@helios-solar.demo,marco.rinaldi@helios-solar.demo,anna.kowalczyk@helios-solar.demo,theo.lambert@helios-solar.demo,nora.jansen@helios-solar.demo,felix.roussel@helios-solar.demo,maya.castillo@helios-solar.demo,emil.sorensen@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Querying user records matching 24 username(s)..."
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[SOQL Query] SELECT Id,Name,Username,IsActive FROM User WHERE Username IN ('victor.martin@helios-solar.demo','mariia.kowalska@helios-solar.demo','romain.lefebvre@helios-solar.demo','lucia.fernandez@helios-solar.demo','tomasz.nowak@helios-solar.demo','amelie.dubois@helios-solar.demo','hugo.perrin@helios-solar.demo','ines.moreau@helios-solar.demo','jakub.zielinski@helios-solar.demo','sofia.marchetti@helios-solar.demo','lena.hoffmann@helios-solar.demo','nils.berger@helios-solar.demo','clara.vidal@helios-solar.d..."
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[SOQL Query] Retrieved 23 records"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "table",
+        "message": "[{\"Username\":\"victor.martin@helios-solar.demo\",\"UserId\":\"005Hb00000075GLIAY\",\"IsActive\":\"true\",\"PreStatus\":\"pending\"},{\"Username\":\"mariia.kowalska@helios-solar.demo\",\"UserId\":\"005Hb00000077K4IAI\",\"IsActive\":\"true\",\"PreStatus\":\"pending\"},{\"Username\":\"romain.lefebvre@helios-solar.demo\",\"UserId\":\"005Hb00000079NnIAI\",\"IsActive\":\"true\",\"PreStatus\":\"pending\"},{\"Username\":\"lucia.fernandez@helios-solar.demo\",\"UserId\":\"005Hb0000007BRWIA2\",\"IsActive\":\"true\",\"PreStatus\":\"pending\"},{\"Username\":\"tomasz.nowak@helios-solar.demo\",\"UserId\":\"005Hb0000007DVFIA2\",\"IsActive\":\"true\",\"PreStatus\":\"pending\"},{\"Username\":\"amelie.dubois@helios-solar.demo\",\"UserId\":\"005Hb0000007FYyIAM\",\"IsActive\":\"true\",\"PreStatus\":\"pending\"},{\"Username\":\"hugo.perrin@helios-solar.demo\",\"UserId\":\"005Hb0000007HchIAE\",\"IsActive\":\"true\",\"PreStatus\":\"pending\"},{\"Username\":\"ines.moreau@helios-solar.demo\",\"UserId\":\"005Hb0000007JgQIAU\",\"IsActive\":\"true\",\"PreStatus\":\"pending\"},{\"Username\":\"jakub.zielinski@helios-solar.demo\",\"UserId\":\"005Hb0000007Lk9IAE\",\"IsActive\":\"true\",\"PreStatus\":\"pending\"},{\"Username\":\"sofia.marchetti@helios-solar.demo\",\"UserId\":\"005Hb0000007NnsIAE\",\"IsActive\":\"false\",\"PreStatus\":\"inactive\"},{\"Username\":\"lena.hoffmann@helios-solar.demo\",\"UserId\":\"005Hb0000007PrbIAE\",\"IsActive\":\"true\",\"PreStatus\":\"pending\"},{\"Username\":\"nils.berger@helios-solar.demo\",\"UserId\":\"005Hb0000007RvKIAU\",\"IsActive\":\"true\",\"PreStatus\":\"pending\"},{\"Username\":\"clara.vidal@helios-solar.demo\",\"UserId\":\"005Hb0000007Tz3IAE\",\"IsActive\":\"true\",\"PreStatus\":\"pending\"},{\"Username\":\"pablo.serrano@helios-solar.demo\",\"UserId\":\"005Hb0000007W2mIAE\",\"IsActive\":\"true\",\"PreStatus\":\"pending\"},{\"Username\":\"pablo.serrano.old@helios-solar.demo\",\"UserId\":\"\",\"IsActive\":\"false\",\"PreStatus\":\"notFound\"},{\"Username\":\"oskar.wojcik@helios-solar.demo\",\"UserId\":\"005Hb0000007aAEIAY\",\"IsActive\":\"true\",\"PreStatus\":\"pending\"},{\"Username\":\"julie.garnier@helios-solar.demo\",\"UserId\":\"005Hb0000007cDxIAI\",\"IsActive\":\"true\",\"PreStatus\":\"pending\"},{\"Username\":\"marco.rinaldi@helios-solar.demo\",\"UserId\":\"005Hb0000007eHgIAI\",\"IsActive\":\"true\",\"PreStatus\":\"pending\"},{\"Username\":\"anna.kowalczyk@helios-solar.demo\",\"UserId\":\"005Hb0000007gLPIAY\",\"IsActive\":\"true\",\"PreStatus\":\"pending\"},{\"Username\":\"theo.lambert@helios-solar.demo\",\"UserId\":\"005Hb0000007iP8IAI\",\"IsActive\":\"false\",\"PreStatus\":\"inactive\"},{\"sfdxHardisTruncatedMessage\":\"Truncated to the first 20 lines on 24 total lines, see full report for more details.\",\"returnedNumber\":20,\"totalNumber\":24}]"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/unlink-security-key-targets-main.csv",
+        "title": "Users targeted by the MFA methods unlink (CSV)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/xls/unlink-security-key-targets-main.xlsx",
+        "title": "Users targeted by the MFA methods unlink (XLSX)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Are you sure you want to unlink security keys for 24 user(s) from org victor.martin@helios-solar.demo?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Are you sure you want to unlink security keys for 24 user(s) from org victor.martin@helios-solar.demo?",
+            "description": "This will disconnect the selected MFA methods from each user. They will need to re-register on next login.",
+            "choices": [
+              {
+                "title": "✅ Yes",
+                "value": true
+              },
+              {
+                "title": "❌ No",
+                "value": false
+              }
+            ],
+            "initial": 0,
+            "optionsPerPage": 9999
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "✅ Yes"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Launching browser to disconnect security keys via Salesforce Setup..."
+      }
+    },
+    {
+      "delay": 2500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Processing user victor.martin@helios-solar.demo..."
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Method Security Key (U2F or WebAuthn) is not registered for user victor.martin@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Method One-Time Password Authenticator (TOTP) is not registered for user victor.martin@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Processing user mariia.kowalska@helios-solar.demo..."
+      }
+    },
+    {
+      "delay": 1100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Disconnected method Security Key (U2F or WebAuthn) for user mariia.kowalska@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Method One-Time Password Authenticator (TOTP) is not registered for user mariia.kowalska@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Processing user romain.lefebvre@helios-solar.demo..."
+      }
+    },
+    {
+      "delay": 1100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Disconnected method Security Key (U2F or WebAuthn) for user romain.lefebvre@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 1100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Disconnected method One-Time Password Authenticator (TOTP) for user romain.lefebvre@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Processing user lucia.fernandez@helios-solar.demo..."
+      }
+    },
+    {
+      "delay": 1100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Disconnected method Security Key (U2F or WebAuthn) for user lucia.fernandez@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Method One-Time Password Authenticator (TOTP) is not registered for user lucia.fernandez@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Processing user tomasz.nowak@helios-solar.demo..."
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Method Security Key (U2F or WebAuthn) is not registered for user tomasz.nowak@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Method One-Time Password Authenticator (TOTP) is not registered for user tomasz.nowak@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Processing user amelie.dubois@helios-solar.demo..."
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Method Security Key (U2F or WebAuthn) is not registered for user amelie.dubois@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 1100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Disconnected method One-Time Password Authenticator (TOTP) for user amelie.dubois@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Processing user hugo.perrin@helios-solar.demo..."
+      }
+    },
+    {
+      "delay": 1100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Disconnected method Security Key (U2F or WebAuthn) for user hugo.perrin@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Method One-Time Password Authenticator (TOTP) is not registered for user hugo.perrin@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Processing user ines.moreau@helios-solar.demo..."
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Method Security Key (U2F or WebAuthn) is not registered for user ines.moreau@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Method One-Time Password Authenticator (TOTP) is not registered for user ines.moreau@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Processing user jakub.zielinski@helios-solar.demo..."
+      }
+    },
+    {
+      "delay": 1100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Disconnected method Security Key (U2F or WebAuthn) for user jakub.zielinski@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Method One-Time Password Authenticator (TOTP) is not registered for user jakub.zielinski@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Processing user lena.hoffmann@helios-solar.demo..."
+      }
+    },
+    {
+      "delay": 1100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Disconnected method Security Key (U2F or WebAuthn) for user lena.hoffmann@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Method One-Time Password Authenticator (TOTP) is not registered for user lena.hoffmann@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Processing user nils.berger@helios-solar.demo..."
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Method Security Key (U2F or WebAuthn) is not registered for user nils.berger@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Method One-Time Password Authenticator (TOTP) is not registered for user nils.berger@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Processing user clara.vidal@helios-solar.demo..."
+      }
+    },
+    {
+      "delay": 1100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Disconnected method Security Key (U2F or WebAuthn) for user clara.vidal@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 1100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Disconnected method One-Time Password Authenticator (TOTP) for user clara.vidal@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Processing user pablo.serrano@helios-solar.demo..."
+      }
+    },
+    {
+      "delay": 1100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Disconnected method Security Key (U2F or WebAuthn) for user pablo.serrano@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Method One-Time Password Authenticator (TOTP) is not registered for user pablo.serrano@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Processing user oskar.wojcik@helios-solar.demo..."
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Method Security Key (U2F or WebAuthn) is not registered for user oskar.wojcik@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Method One-Time Password Authenticator (TOTP) is not registered for user oskar.wojcik@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Processing user julie.garnier@helios-solar.demo..."
+      }
+    },
+    {
+      "delay": 1100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Disconnected method Security Key (U2F or WebAuthn) for user julie.garnier@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Method One-Time Password Authenticator (TOTP) is not registered for user julie.garnier@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Processing user marco.rinaldi@helios-solar.demo..."
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Method Security Key (U2F or WebAuthn) is not registered for user marco.rinaldi@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Method One-Time Password Authenticator (TOTP) is not registered for user marco.rinaldi@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Processing user anna.kowalczyk@helios-solar.demo..."
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Method Security Key (U2F or WebAuthn) is not registered for user anna.kowalczyk@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 1100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Disconnected method One-Time Password Authenticator (TOTP) for user anna.kowalczyk@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Processing user nora.jansen@helios-solar.demo..."
+      }
+    },
+    {
+      "delay": 1100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Disconnected method Security Key (U2F or WebAuthn) for user nora.jansen@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Method One-Time Password Authenticator (TOTP) is not registered for user nora.jansen@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Processing user felix.roussel@helios-solar.demo..."
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Method Security Key (U2F or WebAuthn) is not registered for user felix.roussel@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Method One-Time Password Authenticator (TOTP) is not registered for user felix.roussel@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Processing user maya.castillo@helios-solar.demo..."
+      }
+    },
+    {
+      "delay": 1100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Disconnected method Security Key (U2F or WebAuthn) for user maya.castillo@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Method One-Time Password Authenticator (TOTP) is not registered for user maya.castillo@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Processing user emil.sorensen@helios-solar.demo..."
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Method Security Key (U2F or WebAuthn) is not registered for user emil.sorensen@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Method One-Time Password Authenticator (TOTP) is not registered for user emil.sorensen@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 600,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "table",
+        "message": "[{\"Username\":\"pablo.serrano.old@helios-solar.demo\",\"UserId\":\"\",\"Status\":\"notFound\",\"Unlinked\":\"\",\"NotLinked\":\"\",\"Message\":\"User pablo.serrano.old@helios-solar.demo not found in org\",\"TriggeredBy\":\"Victor Martin (victor.martin@helios-solar.demo)\"},{\"Username\":\"sofia.marchetti@helios-solar.demo\",\"UserId\":\"005Hb0000007NnsIAE\",\"Status\":\"inactive\",\"Unlinked\":\"\",\"NotLinked\":\"\",\"Message\":\"User sofia.marchetti@helios-solar.demo is inactive, skipping\",\"TriggeredBy\":\"Victor Martin (victor.martin@helios-solar.demo)\"},{\"Username\":\"theo.lambert@helios-solar.demo\",\"UserId\":\"005Hb0000007iP8IAI\",\"Status\":\"inactive\",\"Unlinked\":\"\",\"NotLinked\":\"\",\"Message\":\"User theo.lambert@helios-solar.demo is inactive, skipping\",\"TriggeredBy\":\"Victor Martin (victor.martin@helios-solar.demo)\"},{\"Username\":\"victor.martin@helios-solar.demo\",\"UserId\":\"005Hb00000075GLIAY\",\"Status\":\"notLinked\",\"Unlinked\":\"\",\"NotLinked\":\"securityKey, totp\",\"Message\":\"Method securityKey, totp is not registered for user victor.martin@helios-solar.demo\",\"TriggeredBy\":\"Victor Martin (victor.martin@helios-solar.demo)\"},{\"Username\":\"mariia.kowalska@helios-solar.demo\",\"UserId\":\"005Hb00000077K4IAI\",\"Status\":\"unlinked\",\"Unlinked\":\"securityKey\",\"NotLinked\":\"totp\",\"Message\":\"Disconnected method securityKey for user mariia.kowalska@helios-solar.demo\",\"TriggeredBy\":\"Victor Martin (victor.martin@helios-solar.demo)\"},{\"Username\":\"romain.lefebvre@helios-solar.demo\",\"UserId\":\"005Hb00000079NnIAI\",\"Status\":\"unlinked\",\"Unlinked\":\"securityKey, totp\",\"NotLinked\":\"\",\"Message\":\"Disconnected method securityKey, totp for user romain.lefebvre@helios-solar.demo\",\"TriggeredBy\":\"Victor Martin (victor.martin@helios-solar.demo)\"},{\"Username\":\"lucia.fernandez@helios-solar.demo\",\"UserId\":\"005Hb0000007BRWIA2\",\"Status\":\"unlinked\",\"Unlinked\":\"securityKey\",\"NotLinked\":\"totp\",\"Message\":\"Disconnected method securityKey for user lucia.fernandez@helios-solar.demo\",\"TriggeredBy\":\"Victor Martin (victor.martin@helios-solar.demo)\"},{\"Username\":\"tomasz.nowak@helios-solar.demo\",\"UserId\":\"005Hb0000007DVFIA2\",\"Status\":\"notLinked\",\"Unlinked\":\"\",\"NotLinked\":\"securityKey, totp\",\"Message\":\"Method securityKey, totp is not registered for user tomasz.nowak@helios-solar.demo\",\"TriggeredBy\":\"Victor Martin (victor.martin@helios-solar.demo)\"},{\"Username\":\"amelie.dubois@helios-solar.demo\",\"UserId\":\"005Hb0000007FYyIAM\",\"Status\":\"unlinked\",\"Unlinked\":\"totp\",\"NotLinked\":\"securityKey\",\"Message\":\"Disconnected method totp for user amelie.dubois@helios-solar.demo\",\"TriggeredBy\":\"Victor Martin (victor.martin@helios-solar.demo)\"},{\"Username\":\"hugo.perrin@helios-solar.demo\",\"UserId\":\"005Hb0000007HchIAE\",\"Status\":\"unlinked\",\"Unlinked\":\"securityKey\",\"NotLinked\":\"totp\",\"Message\":\"Disconnected method securityKey for user hugo.perrin@helios-solar.demo\",\"TriggeredBy\":\"Victor Martin (victor.martin@helios-solar.demo)\"},{\"Username\":\"ines.moreau@helios-solar.demo\",\"UserId\":\"005Hb0000007JgQIAU\",\"Status\":\"notLinked\",\"Unlinked\":\"\",\"NotLinked\":\"securityKey, totp\",\"Message\":\"Method securityKey, totp is not registered for user ines.moreau@helios-solar.demo\",\"TriggeredBy\":\"Victor Martin (victor.martin@helios-solar.demo)\"},{\"Username\":\"jakub.zielinski@helios-solar.demo\",\"UserId\":\"005Hb0000007Lk9IAE\",\"Status\":\"unlinked\",\"Unlinked\":\"securityKey\",\"NotLinked\":\"totp\",\"Message\":\"Disconnected method securityKey for user jakub.zielinski@helios-solar.demo\",\"TriggeredBy\":\"Victor Martin (victor.martin@helios-solar.demo)\"},{\"Username\":\"lena.hoffmann@helios-solar.demo\",\"UserId\":\"005Hb0000007PrbIAE\",\"Status\":\"unlinked\",\"Unlinked\":\"securityKey\",\"NotLinked\":\"totp\",\"Message\":\"Disconnected method securityKey for user lena.hoffmann@helios-solar.demo\",\"TriggeredBy\":\"Victor Martin (victor.martin@helios-solar.demo)\"},{\"Username\":\"nils.berger@helios-solar.demo\",\"UserId\":\"005Hb0000007RvKIAU\",\"Status\":\"notLinked\",\"Unlinked\":\"\",\"NotLinked\":\"securityKey, totp\",\"Message\":\"Method securityKey, totp is not registered for user nils.berger@helios-solar.demo\",\"TriggeredBy\":\"Victor Martin (victor.martin@helios-solar.demo)\"},{\"Username\":\"clara.vidal@helios-solar.demo\",\"UserId\":\"005Hb0000007Tz3IAE\",\"Status\":\"unlinked\",\"Unlinked\":\"securityKey, totp\",\"NotLinked\":\"\",\"Message\":\"Disconnected method securityKey, totp for user clara.vidal@helios-solar.demo\",\"TriggeredBy\":\"Victor Martin (victor.martin@helios-solar.demo)\"},{\"Username\":\"pablo.serrano@helios-solar.demo\",\"UserId\":\"005Hb0000007W2mIAE\",\"Status\":\"unlinked\",\"Unlinked\":\"securityKey\",\"NotLinked\":\"totp\",\"Message\":\"Disconnected method securityKey for user pablo.serrano@helios-solar.demo\",\"TriggeredBy\":\"Victor Martin (victor.martin@helios-solar.demo)\"},{\"Username\":\"oskar.wojcik@helios-solar.demo\",\"UserId\":\"005Hb0000007aAEIAY\",\"Status\":\"notLinked\",\"Unlinked\":\"\",\"NotLinked\":\"securityKey, totp\",\"Message\":\"Method securityKey, totp is not registered for user oskar.wojcik@helios-solar.demo\",\"TriggeredBy\":\"Victor Martin (victor.martin@helios-solar.demo)\"},{\"Username\":\"julie.garnier@helios-solar.demo\",\"UserId\":\"005Hb0000007cDxIAI\",\"Status\":\"unlinked\",\"Unlinked\":\"securityKey\",\"NotLinked\":\"totp\",\"Message\":\"Disconnected method securityKey for user julie.garnier@helios-solar.demo\",\"TriggeredBy\":\"Victor Martin (victor.martin@helios-solar.demo)\"},{\"Username\":\"marco.rinaldi@helios-solar.demo\",\"UserId\":\"005Hb0000007eHgIAI\",\"Status\":\"notLinked\",\"Unlinked\":\"\",\"NotLinked\":\"securityKey, totp\",\"Message\":\"Method securityKey, totp is not registered for user marco.rinaldi@helios-solar.demo\",\"TriggeredBy\":\"Victor Martin (victor.martin@helios-solar.demo)\"},{\"Username\":\"anna.kowalczyk@helios-solar.demo\",\"UserId\":\"005Hb0000007gLPIAY\",\"Status\":\"unlinked\",\"Unlinked\":\"totp\",\"NotLinked\":\"securityKey\",\"Message\":\"Disconnected method totp for user anna.kowalczyk@helios-solar.demo\",\"TriggeredBy\":\"Victor Martin (victor.martin@helios-solar.demo)\"},{\"sfdxHardisTruncatedMessage\":\"Truncated to the first 20 lines on 24 total lines, see full report for more details.\",\"returnedNumber\":20,\"totalNumber\":24}]"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Unlink security key summary: 13 unlinked, 8 not linked, 1 not found, 2 inactive, 0 errors"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/users-security-key-unlink-2026-11-17.csv",
+        "title": "Unlink security key report (CSV)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/users-security-key-unlink-2026-11-17.xlsx",
+        "title": "Unlink security key report (XLSX)",
+        "type": "report",
+        "main": true
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Unlink security key report"
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "- CSV: C:\\projects\\helios-solar\\hardis-report\\users-security-key-unlink-2026-11-17.csv"
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "- XLS: C:\\projects\\helios-solar\\hardis-report\\users-security-key-unlink-2026-11-17.xlsx"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[NotifProvider] Handling notification of type SECURITY_KEY_UNLINK..."
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

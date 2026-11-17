@@ -1,0 +1,41 @@
+{
+  "mode": "replace",
+  "title": "Failed PSL assignments deletions",
+  "columns": [
+    "sf__Id",
+    "sf__Error",
+    "Id"
+  ],
+  "rows": [
+    {
+      "sf__Id": "2LAHb0000003pNDOAY",
+      "sf__Error": "FIELD_INTEGRITY_EXCEPTION:Can't remove this permission set license: the user is assigned a permission set that requires it (Helios_Delivery_Crew):--",
+      "Id": "2LAHb0000003pNDOAY"
+    },
+    {
+      "sf__Id": "2LAHb0000003vYOOAY",
+      "sf__Error": "FIELD_INTEGRITY_EXCEPTION:Can't remove this permission set license: the user is assigned a permission set that requires it (Helios_Delivery_Crew):--",
+      "Id": "2LAHb0000003vYOOAY"
+    },
+    {
+      "sf__Id": "2LAHb0000003rQwOAI",
+      "sf__Error": "UNABLE_TO_LOCK_ROW:unable to obtain exclusive access to this record:--",
+      "Id": "2LAHb0000003rQwOAI"
+    },
+    {
+      "sf__Id": "2LAHb0000003zfqOAA",
+      "sf__Error": "FIELD_INTEGRITY_EXCEPTION:Can't remove this permission set license: the user is assigned a permission set that requires it (Helios_Delivery_Manager):--",
+      "Id": "2LAHb0000003zfqOAA"
+    },
+    {
+      "sf__Id": "2LAHb00000043nIOAQ",
+      "sf__Error": "ENTITY_IS_DELETED:entity is deleted:--",
+      "Id": "2LAHb00000043nIOAQ"
+    },
+    {
+      "sf__Id": "2LAHb00000049yTOAQ",
+      "sf__Error": "UNABLE_TO_LOCK_ROW:unable to obtain exclusive access to this record:--",
+      "Id": "2LAHb00000049yTOAQ"
+    }
+  ]
+}

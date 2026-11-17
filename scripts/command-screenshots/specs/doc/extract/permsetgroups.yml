@@ -1,0 +1,4 @@
+command: hardis:doc:extract:permsetgroups
+run: sf hardis:doc:extract:permsetgroups
+org: none
+caption: The permission set groups of the Helios project and the permission sets they contain, as a CSV file and a Markdown page

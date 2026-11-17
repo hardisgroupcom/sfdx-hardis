@@ -1,0 +1,10 @@
+command: hardis:org:test:apex
+run: sf hardis:org:test:apex
+org: showcase
+caption: "Local Apex tests of the Helios org run with RunLocalTests, and the org-wide coverage checked against the 80% minimum"
+pills:
+  - text: "Test run coverage"
+    legend: "Org-wide coverage, compared with the minimum the deployments require"
+  - text: "Coverage Results JSON"
+    legend: "Coverage of each Apex class, as Salesforce returns it"
+    button: true

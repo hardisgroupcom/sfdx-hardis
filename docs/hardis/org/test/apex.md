@@ -49,6 +49,15 @@ In agent mode, all interactive prompts are skipped and default values are used.
 </details>
 
 
+## Screenshots
+
+![Local Apex tests of the Helios org run with RunLocalTests, and the org-wide coverage checked against the 80% minimum](../../../assets/images/commands/org/test/apex.webp)
+
+_Local Apex tests of the Helios org run with RunLocalTests, and the org-wide coverage checked against the 80% minimum_
+
+- **(1)** Org-wide coverage, compared with the minimum the deployments require
+- **(2)** Coverage of each Apex class, as Salesforce returns it
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  |    Default    | Required |                                Options                                 |

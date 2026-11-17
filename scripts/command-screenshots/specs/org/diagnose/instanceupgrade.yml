@@ -1,0 +1,7 @@
+command: hardis:org:diagnose:instanceupgrade
+run: sf hardis:org:diagnose:instanceupgrade
+org: devhub
+caption: "Instance of the Helios org, the date of its next major Salesforce upgrade and the release it moves to"
+pills:
+  - text: "will be upgraded on"
+    legend: "Instance, upgrade date and target release"

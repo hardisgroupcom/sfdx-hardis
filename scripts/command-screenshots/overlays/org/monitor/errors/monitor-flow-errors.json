@@ -1,0 +1,58 @@
+{
+  "mode": "replace",
+  "title": "Flow errors",
+  "columns": [
+    "Source",
+    "Status",
+    "JobType",
+    "Operation",
+    "Exception",
+    "StackTrace",
+    "ErrorStep",
+    "StartTime",
+    "RecordId",
+    "UserName",
+    "UserEmail"
+  ],
+  "rows": [
+    {
+      "Source": "FlowInterview",
+      "Status": "Error",
+      "JobType": "",
+      "Operation": "Installation Crew Warning 16/11/2026 14:03",
+      "Exception": "This error occurred when the flow tried to update records: Crew_Size__c is required.",
+      "StackTrace": "",
+      "ErrorStep": "Update_Installation",
+      "StartTime": "2026-11-16T14:03:27.000Z",
+      "RecordId": "0FocU0000HelF01",
+      "UserName": "Amelie Dubois",
+      "UserEmail": "amelie.dubois@helios-solar.demo"
+    },
+    {
+      "Source": "FlowInterview",
+      "Status": "Error",
+      "JobType": "",
+      "Operation": "Panel Batch Arrival 15/11/2026 08:41",
+      "Exception": "The flow failed to access the value for $Record.Installation__r.Account__c because it hasn't been set.",
+      "StackTrace": "",
+      "ErrorStep": "Get_Account",
+      "StartTime": "2026-11-15T08:41:09.000Z",
+      "RecordId": "0FocU0000HelF02",
+      "UserName": "Tomasz Nowak",
+      "UserEmail": "tomasz.nowak@helios-solar.demo"
+    },
+    {
+      "Source": "FlowInterview",
+      "Status": "Error",
+      "JobType": "",
+      "Operation": "Installation Crew Warning 14/11/2026 17:22",
+      "Exception": "This error occurred when the flow tried to update records: Crew_Size__c is required.",
+      "StackTrace": "",
+      "ErrorStep": "Update_Installation",
+      "StartTime": "2026-11-14T17:22:45.000Z",
+      "RecordId": "0FocU0000HelF03",
+      "UserName": "Romain Lefebvre",
+      "UserEmail": "romain.lefebvre@helios-solar.demo"
+    }
+  ]
+}

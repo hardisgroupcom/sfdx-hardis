@@ -1,0 +1,9 @@
+command: hardis:org:diagnose:ai-usage
+run: sf hardis:org:diagnose:ai-usage --days 30 --target-org helios-prod
+mode: replay
+org: none
+caption: "Credits consumed by the Agentforce agents of the Helios production org over 30 days: 9420 billed out of 15400, with the report buttons"
+pills:
+  - text: "Agentforce and Data 360 Credit Usage (XLSX)"
+    legend: "One row per agent, action and usage type, with the credits and whether they are billed"
+    button: true

@@ -41,6 +41,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The versions of the Helios packages listed from the Dev Hub, with their install ids and aliases](../../../assets/images/commands/package/version/list.webp)
+
+_The versions of the Helios packages listed from the Dev Hub, with their install ids and aliases_
+
 ## Parameters
 
 | Name                  |  Type   | Description                                                                                                       | Default | Required | Options |

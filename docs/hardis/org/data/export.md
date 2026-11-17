@@ -55,6 +55,18 @@ Use `--agent` to disable all prompts. Typical usage:
 - The workspace content is still displayed, but its confirmation prompt is skipped.
 
 
+## Screenshots
+
+![Pick the data workspace that lists the objects and fields to export](../../../assets/images/commands/org/data/export-1.webp)
+
+_Pick the data workspace that lists the objects and fields to export_
+
+![Accounts, contacts, opportunities, installations and panel batches of the Helios org exported to CSV files with SFDMU](../../../assets/images/commands/org/data/export.webp)
+
+_Accounts, contacts, opportunities, installations and panel batches of the Helios org exported to CSV files with SFDMU_
+
+- **(1)** The CSV files are written in scripts/data/HeliosBaseline
+
 ## Parameters
 
 | Name                |  Type   | Description                                                                                                  | Default | Required | Options |

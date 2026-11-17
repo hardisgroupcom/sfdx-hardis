@@ -1,0 +1,19 @@
+command: hardis:org:configure:data
+run: sf hardis:org:configure:data
+org: none
+caption: A new SFDMU data workspace to copy the installations and their panel batches between orgs
+answers:
+  - q: Please select a SFDMU template, or the blank one
+    choice: ^📄 Blank template$
+    shot: true
+    caption: Start from a template, or from a blank workspace
+  - q: Please input the SFDMU folder name
+    value: InstallationsWithPanels
+  - q: Please input the SFDMU config label
+    value: Installations with their panel batches
+  - q: Please input the SFDMU config description
+    value: Completed installations of the year and the panel batches they used
+  - q: Please select additional options if you need them
+    value: []
+  - q: used to import data when initializing a new scratch org
+    choice: ^✅ Yes$

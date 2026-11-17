@@ -21,12 +21,22 @@ import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
 import { CONSTANTS } from '../../../config/index.js';
 import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
 import { t } from '../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 /* jscpd:ignore-end */
 export default class UnusedMetadatas extends SfCommand<any> {
   public static title = 'check unused labels and custom permissions';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'lint-unusedmetadatas',
+      title: 'Unused metadata',
+      description: 'One row per custom label or custom permission that no other element of the project uses, so it can be deleted.',
+    },
+  ];
+
   public static description = `
 ## Command Behavior
 

@@ -1,0 +1,457 @@
+{
+  "command": "hardis:work:save",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Preparing Pull Request from branch features/HEL-42-installation-checklist to integration"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "git status --porcelain -b -u --null",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "git status --porcelain -b -u --null",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Have you already committed the updated metadata you want to deploy?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 60,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "name": "value",
+            "type": "select",
+            "message": "🦙 Have you already committed the updated metadata you want to deploy?",
+            "description": "Select your current state regarding git commits and metadata updates",
+            "placeholder": "Select commit status",
+            "choices": [
+              {
+                "title": "😎 Yes, my commit(s) are ready! I staged my files and created one or multiple commits.",
+                "value": "commitReady",
+                "description": "You have already pulled updates from your org (or locally updated the files), staged your files, and created a commit"
+              },
+              {
+                "title": "😐 No, please pull my latest updates from my org so I can commit my metadata",
+                "value": "pleasePull",
+                "description": "Pull latest updates from org so you can stage files and create your commit"
+              },
+              {
+                "title": "😱 What is a commit? What does pull mean? Help!",
+                "value": "help",
+                "description": "Don't panic, just click on the link that will appear in the console (CTRL + Click) and you'll learn!"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "😎 Yes, my commit(s) are ready! I staged my files and created one or multiple commits."
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Updating manifest/package.xml and manifest/destructiveChanges.xml using sfdx-git-delta..."
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf sgd:source:delta --from integration --to features/HEL-42-installation-checklist --ignore-whitespace --source-dir force-app --json",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1200,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf sgd:source:delta --from integration --to features/HEL-42-installation-checklist --ignore-whitespace --source-dir force-app --json",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Calculating package.xml diff from [integration] to [features/HEL-42-installation-checklist - feat: installation checklist on Installation__c]"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Delta package.xml diff to be merged within manifest/package.xml:\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Package xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <types>\n        <members>Installation__c.Checklist_Status__c</members>\n        <members>Installation__c.Roof_Access_Checked__c</members>\n        <name>CustomField</name>\n    </types>\n    <types>\n        <members>Installation_Assign_Crew</members>\n        <members>Installation_Close_Check</members>\n        <name>Flow</name>\n    </types>\n    <types>\n        <members>Installation__c-Installation Layout</members>\n        <name>Layout</name>\n    </types>\n    <types>\n        <members>Helios_Delivery_Crew</members>\n        <members>Helios_Delivery_Manager</members>\n        <name>PermissionSet</name>\n    </types>\n    <version>64.0</version>\n</Package>"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "reportFile",
+        "file": "manifest/package.xml",
+        "title": "Git Delta package.xml (7)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🌿 Adding new commit: chore(sfdx-hardis): update package content\n- Contains package.xml and destructiveChanges.xml updates based on your metadata changes."
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "table",
+        "message": "[{\"Status\":\"modified\",\"File\":\"manifest/package.xml\"},{\"Status\":\"modified\",\"File\":\"manifest/destructiveChanges.xml\"}]"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/commit-files-package-xml-updates-features__HEL-42-installation-checklist.csv",
+        "title": "Files committed with package.xml updates (CSV)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 60,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/xls/commit-files-package-xml-updates-features__HEL-42-installation-checklist.xlsx",
+        "title": "Files committed with package.xml updates (XLSX)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 600,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Flow cleanings will be restricted to the 2 Flow(s) of the git delta"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Apply cleaning of references to destructivechanges (DestructiveChanges.xml: Remove source files mentioned in destructiveChanges.xml)..."
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Run cleaning command flowPositions (Flows: Replace all positions in AutoLayout Flows by 0 to simplify conflicts management) ..."
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf hardis:project:clean:flowpositions",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 700,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf hardis:project:clean:flowpositions",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Setting flows as Auto Layout and remove positions..."
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Updated 2 flows to remove positions"
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Run cleaning command minimizeProfiles (Profiles: Remove profile attributes that exists on permission sets) ..."
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf hardis:project:clean:minimizeprofiles",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf hardis:project:clean:minimizeprofiles",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "Please make sure the attributes removed from the profiles are present in permission sets, or the users will lose them 😊"
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🌿 Adding new commit: chore(sfdx-hardis): clean sfdx project\n- Contains files that have been automatically cleaned per your configuration."
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "table",
+        "message": "[{\"Status\":\"modified\",\"File\":\"force-app/main/default/flows/Installation_Assign_Crew.flow-meta.xml\"},{\"Status\":\"modified\",\"File\":\"force-app/main/default/flows/Installation_Close_Check.flow-meta.xml\"},{\"Status\":\"modified\",\"File\":\"force-app/main/default/profiles/Admin.profile-meta.xml\"},{\"Status\":\"modified\",\"File\":\"force-app/main/default/profiles/Standard.profile-meta.xml\"},{\"Status\":\"modified\",\"File\":\"force-app/main/default/profiles/ReadOnly.profile-meta.xml\"},{\"Status\":\"modified\",\"File\":\"force-app/main/default/profiles/Helios Crew.profile-meta.xml\"},{\"Status\":\"modified\",\"File\":\"force-app/main/default/permissionsets/Helios_Delivery_Crew.permissionset-meta.xml\"},{\"Status\":\"modified\",\"File\":\"force-app/main/default/permissionsets/Helios_Delivery_Manager.permissionset-meta.xml\"}]"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/commit-files-cleaned-sources-features__HEL-42-installation-checklist.csv",
+        "title": "Cleaned files committed (CSV)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 60,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/xls/commit-files-cleaned-sources-features__HEL-42-installation-checklist.xlsx",
+        "title": "Cleaned files committed (XLSX)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Deployment plan generation is disabled in project configuration. Enable it with enableDeprecatedDeploymentPlan: true in .sfdx-hardis.yml"
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Do you want to push your commit(s) to the git server? (git push to remote git branch features/HEL-42-installation-checklist)",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 60,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "name": "value",
+            "type": "select",
+            "message": "🦙 Do you want to push your commit(s) to the git server? (git push to remote git branch features/HEL-42-installation-checklist)",
+            "description": "The branch will be pushed to the remote git server",
+            "choices": [
+              {
+                "title": "✅ Yes",
+                "value": true
+              },
+              {
+                "title": "❌ No",
+                "value": false
+              }
+            ],
+            "initial": 0
+          }
+        ]
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "✅ Yes"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Pushing commit(s) to remote branch origin/features/HEL-42-installation-checklist..."
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "git push -u origin features/HEL-42-installation-checklist",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1100,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "git push -u origin features/HEL-42-installation-checklist",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "If your work is completed, create a Pull Request, otherwise push new commits to the features/HEL-42-installation-checklist branch."
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "reportFile",
+        "file": "https://github.com/helios-energy/salesforce/compare/integration...features%2FHEL-42-installation-checklist?expand=1",
+        "title": "Create Pull Request",
+        "type": "actionUrl"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "- Repository: https://github.com/helios-energy/salesforce\n- Source branch: features/HEL-42-installation-checklist\n- Target branch: integration"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "When your Pull Request has been merged:\n- DO NOT REUSE THE SAME BRANCH\n- Use New User Story menu (sf hardis:work:new), even if you work in the same sandbox or scratch org 😊"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "Open the DevOps Pipeline panel to review and update the manual actions for your pull request."
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "reportFile",
+        "file": "vscode-sfdx-hardis.showPipeline",
+        "title": "Update the Deployment Actions of your Pull Request",
+        "type": "actionCommand",
+        "commandArgs": [
+          {
+            "focus": "deploymentActions",
+            "sourceBranch": "features/HEL-42-installation-checklist",
+            "targetBranch": "integration"
+          }
+        ]
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "reportFile",
+        "file": "https://sfdx-hardis.cloudity.com/salesforce-devops-publish-user-story/#create-merge-request",
+        "title": "View Pull Request documentation",
+        "type": "docUrl"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

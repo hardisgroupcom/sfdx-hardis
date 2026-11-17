@@ -36,6 +36,7 @@ import {
   retrieveFailureMessage,
   retrieveJsonErrorMessage,
 } from '../../../../common/monitoring/monitoringBackupDeletions.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -54,6 +55,14 @@ export function backupErrorMessage(error: any, maxLength = 2000): string {
 
 export default class MonitorBackup extends SfCommand<any> {
   public static title = 'Backup DX sources';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'backup-updated-files',
+      title: 'Updated metadata',
+      description: 'One row per file added, modified, renamed or deleted since the previous backup, with its change type and a readable metadata name.',
+    },
+  ];
 
   public static description = `Retrieve sfdx sources in the context of a monitoring backup
 

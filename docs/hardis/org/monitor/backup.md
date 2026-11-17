@@ -133,6 +133,26 @@ In agent mode:
 - All other interactive prompts are skipped.
 
 
+## Screenshots
+
+![Metadata of the Helios org retrieved into the monitoring repository, with the files changed since the last backup](../../../assets/images/commands/org/monitor/backup.webp)
+
+_Metadata of the Helios org retrieved into the monitoring repository, with the files changed since the last backup_
+
+- **(1)** One row per file added, modified, renamed or deleted since the previous backup
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Updated metadata
+
+One row per file added, modified, renamed or deleted since the previous backup, with its change type and a readable metadata name.
+
+Files: `backup-updated-files-*.csv`, `xls/backup-updated-files-*.xlsx`
+
+![Updated metadata report in Excel](../../../assets/images/commands/org/monitor/backup-report-backup-updated-files.webp)
+
 ## Parameters
 
 | Name                      |  Type   | Description                                                                                                                                 | Default | Required | Options |

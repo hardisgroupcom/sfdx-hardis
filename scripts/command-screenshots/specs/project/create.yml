@@ -1,0 +1,4 @@
+command: hardis:project:create
+run: sf hardis:project:create --orgtype sandbox --projectname helios-energy --devbranch integration
+org: none
+caption: A new sfdx-hardis project for sandbox development, with its integration branch and default cleaning

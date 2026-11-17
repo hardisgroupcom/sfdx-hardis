@@ -62,6 +62,16 @@ In agent mode:
 - All interactive prompts are skipped
 
 
+## Screenshots
+
+![Pick the metadata types to decompose](../../../assets/images/commands/project/metadata/activate-decomposed-1.webp)
+
+_Pick the metadata types to decompose_
+
+![The permission sets of the Helios project converted to the decomposed source format, one file per access](../../../assets/images/commands/project/metadata/activate-decomposed.webp)
+
+_The permission sets of the Helios project converted to the decomposed source format, one file per access_
+
 ## Parameters
 
 | Name         |  Type   | Description                                                   | Default | Required | Options |

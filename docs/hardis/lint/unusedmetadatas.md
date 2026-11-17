@@ -48,6 +48,26 @@ sf hardis:lint:unusedmetadatas --agent
 
 In agent mode, the command runs fully automatically with no interactive prompts.
 
+## Screenshots
+
+![Custom labels and custom permissions of the Helios project that no Apex, Flow or component uses](../../assets/images/commands/lint/unusedmetadatas.webp)
+
+_Custom labels and custom permissions of the Helios project that no Apex, Flow or component uses_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Unused metadata
+
+One row per custom label or custom permission that no other element of the project uses, so it can be deleted.
+
+Files: `lint-unusedmetadatas-*.csv`, `xls/lint-unusedmetadatas-*.xlsx`
+
+![Unused metadata report in Excel](../../assets/images/commands/lint/unusedmetadatas-report-lint-unusedmetadatas.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                   | Default | Required | Options |

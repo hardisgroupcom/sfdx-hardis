@@ -33,6 +33,26 @@ sf hardis:org:diagnose:minimalpermsets --agent
 
 In agent mode, the command runs fully automatically. The permission threshold defaults to 5 (or `MINIMAL_PERMSETS_THRESHOLD` env var) when `--threshold` is not provided.
 
+## Screenshots
+
+![Permission sets of the Helios project with 16 permissions or fewer, candidates to merge into another one](../../../assets/images/commands/org/diagnose/minimalpermsets.webp)
+
+_Permission sets of the Helios project with 16 permissions or fewer, candidates to merge into another one_
+
+- **(1)** One row per permission set, with its file and its number of permissions
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Minimal permission sets
+
+One row per permission set of the project that grants very few permissions, with its file path and permission count, as candidates to merge into another permission set.
+
+Files: `minimal-permission-sets-*.csv`, `xls/minimal-permission-sets-*.xlsx`
+
+![Minimal permission sets report in Excel](../../../assets/images/commands/org/diagnose/minimalpermsets-report-minimal-permission-sets.webp)
+
 ## Parameters
 
 | Name                |  Type   | Description                                                                                                          | Default | Required | Options |

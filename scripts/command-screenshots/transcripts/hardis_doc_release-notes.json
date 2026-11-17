@@ -1,0 +1,200 @@
+{
+  "command": "hardis:doc:release-notes",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Generating release notes..."
+      }
+    },
+    {
+      "delay": 600,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Scope resolved: mode=prepare, branch=preprod"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Collecting pull requests..."
+      }
+    },
+    {
+      "delay": 1200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Found 4 pull requests"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Enriching ticket information..."
+      }
+    },
+    {
+      "delay": 1300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "table",
+        "message": "[{\"ID\":\"HEL-42\",\"Title\":\"Installation checklist\",\"Status\":\"Done\",\"Assignee\":\"Mariia Kowalska\",\"PRs\":\"#118\"},{\"ID\":\"HEL-57\",\"Title\":\"Installation scheduler batch\",\"Status\":\"Done\",\"Assignee\":\"Lucia Fernandez\",\"PRs\":\"#121\"},{\"ID\":\"HEL-61\",\"Title\":\"Installation close check\",\"Status\":\"Done\",\"Assignee\":\"Tomasz Nowak\",\"PRs\":\"#122\"},{\"ID\":\"HEL-66\",\"Title\":\"Gate code of a site\",\"Status\":\"Done\",\"Assignee\":\"Amelie Dubois\",\"PRs\":\"#124\"}]"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "table",
+        "message": "[{\"#\":\"#118\",\"Title\":\"HEL-42 Installation checklist\",\"Author\":\"mariia-kowalska\",\"Merged\":\"2026-11-09\",\"Tickets\":\"HEL-42\"},{\"#\":\"#121\",\"Title\":\"HEL-57 Installation scheduler batch\",\"Author\":\"lucia-fernandez\",\"Merged\":\"2026-11-11\",\"Tickets\":\"HEL-57\"},{\"#\":\"#122\",\"Title\":\"HEL-61 Installation close check\",\"Author\":\"tomasz-nowak\",\"Merged\":\"2026-11-12\",\"Tickets\":\"HEL-61\"},{\"#\":\"#124\",\"Title\":\"HEL-66 Gate code of a site\",\"Author\":\"amelie-dubois\",\"Merged\":\"2026-11-13\",\"Tickets\":\"HEL-66\"}]"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Generating metadata delta..."
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/release-notes/preprod-2026-11-17/package.xml",
+        "title": "Git Delta package.xml (14)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 60,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/release-notes/preprod-2026-11-17/destructiveChanges.xml",
+        "title": "Git Delta destructiveChanges.xml (1)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 800,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "table",
+        "message": "[{\"Type\":\"Apex Class\",\"Count\":2,\"Change\":\"Added/Modified\"},{\"Type\":\"Custom Field\",\"Count\":4,\"Change\":\"Added/Modified\"},{\"Type\":\"Custom Object\",\"Count\":1,\"Change\":\"Added/Modified\"},{\"Type\":\"Flow\",\"Count\":3,\"Change\":\"Added/Modified\"},{\"Type\":\"Layout\",\"Count\":2,\"Change\":\"Added/Modified\"},{\"Type\":\"Permission Set\",\"Count\":2,\"Change\":\"Added/Modified\"},{\"Type\":\"Custom Field\",\"Count\":1,\"Change\":\"Deleted\"}]"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Loading deployment actions..."
+      }
+    },
+    {
+      "delay": 600,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "table",
+        "message": "[{\"Action\":\"Load the 6 standard checks of the installation checklist\",\"When\":\"post-deploy\",\"Status\":\"pending\",\"PR\":\"#118\"},{\"Action\":\"Recalculate the installation load once\",\"When\":\"post-deploy\",\"Status\":\"pending\",\"PR\":\"#121\"},{\"Action\":\"Assign Helios_Delivery_Crew to the delivery users\",\"When\":\"post-deploy\",\"Status\":\"pending\",\"PR\":\"#124\"}]"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "table",
+        "message": "[{\"Contributor\":\"amelie-dubois\",\"PRs\":1},{\"Contributor\":\"lucia-fernandez\",\"PRs\":1},{\"Contributor\":\"mariia-kowalska\",\"PRs\":1},{\"Contributor\":\"tomasz-nowak\",\"PRs\":1}]"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Building markdown report..."
+      }
+    },
+    {
+      "delay": 800,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Release notes generated successfully: hardis-report/release-notes/preprod-2026-11-17/release-notes-preprod-2026-11-17.md"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/release-notes/preprod-2026-11-17/release-notes-preprod-2026-11-17.md",
+        "title": "Release Notes (MD)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Generating PDF report..."
+      }
+    },
+    {
+      "delay": 2800,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "PDF file generated from hardis-report/release-notes/preprod-2026-11-17/release-notes-preprod-2026-11-17.md documentation: hardis-report/release-notes/preprod-2026-11-17/release-notes-preprod-2026-11-17.pdf."
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/release-notes/preprod-2026-11-17/release-notes-preprod-2026-11-17.pdf",
+        "title": "Release Notes (PDF)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Generating XLSX report..."
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/release-notes/preprod-2026-11-17/release-notes-preprod-2026-11-17.xlsx",
+        "title": "Release Notes (XLSX)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

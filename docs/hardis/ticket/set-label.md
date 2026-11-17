@@ -39,6 +39,12 @@ sf hardis ticket set-label --id ACME-123 --label ia-qualif-erreur --allowed-proj
 ```
 
 
+## Screenshots
+
+![The label deployed-uat added to the Jira ticket HEL-42](../../assets/images/commands/ticket/set-label.webp)
+
+_The label deployed-uat added to the Jira ticket HEL-42_
+
 ## Parameters
 
 | Name             |  Type   | Description                                                                                      | Default | Required |                Options                |

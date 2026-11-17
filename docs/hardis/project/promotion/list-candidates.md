@@ -53,6 +53,14 @@ In agent mode:
 - The git provider token must be available (ex: `GITHUB_TOKEN`), from the environment or from a `.env` file at the repository root: agent mode never prompts for the connection, it stops without it.
 
 
+## Screenshots
+
+![The four Pull Requests merged in uat and waiting for promotion to preprod, one already carried by another promotion](../../../assets/images/commands/project/promotion/list-candidates.webp)
+
+_The four Pull Requests merged in uat and waiting for promotion to preprod, one already carried by another promotion_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
 ## Parameters
 
 | Name                     |  Type   | Description                                                                                                                               | Default | Required | Options |

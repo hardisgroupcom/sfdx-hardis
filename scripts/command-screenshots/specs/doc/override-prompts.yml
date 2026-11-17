@@ -1,0 +1,7 @@
+command: hardis:doc:override-prompts
+run: sf hardis:doc:override-prompts
+org: none
+caption: The 28 AI prompt templates and variables copied to config/prompt-templates of the Helios project, ready to be edited
+pills:
+  - text: Prompt templates and variables location
+    legend: Edit these files to change what the AI writes in the documentation

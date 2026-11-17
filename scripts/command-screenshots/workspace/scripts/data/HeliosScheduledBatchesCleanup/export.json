@@ -1,0 +1,11 @@
+{
+  "sfdxHardisLabel": "Panel batches of scheduled installations",
+  "sfdxHardisDescription": "Deletes the panel batches reserved for installations not started yet, before the warehouse plans them again",
+  "objects": [
+    {
+      "query": "SELECT Id FROM Panel_Batch__c WHERE Installation__r.Status__c = 'Scheduled'",
+      "operation": "DeleteSource",
+      "deleteFromSource": true
+    }
+  ]
+}

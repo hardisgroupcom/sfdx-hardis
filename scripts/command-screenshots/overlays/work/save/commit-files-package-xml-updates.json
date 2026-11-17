@@ -1,0 +1,14 @@
+{
+  "mode": "replace",
+  "title": "Files committed with package.xml updates",
+  "rows": [
+    {
+      "Status": "modified",
+      "File": "manifest/package.xml"
+    },
+    {
+      "Status": "modified",
+      "File": "manifest/destructiveChanges.xml"
+    }
+  ]
+}

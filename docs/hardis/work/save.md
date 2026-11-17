@@ -128,6 +128,50 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 <!-- training-links:end -->
 
 
+## Screenshots
+
+![Confirm the metadata is committed before the manifest is updated](../../assets/images/commands/work/save-1.webp)
+
+_Confirm the metadata is committed before the manifest is updated_
+
+![Push the branch to the git server](../../assets/images/commands/work/save-2.webp)
+
+_Push the branch to the git server_
+
+![A User Story saved: package.xml updated from the git delta, sources cleaned, commits pushed, ready for a Pull Request](../../assets/images/commands/work/save.webp)
+
+_A User Story saved: package.xml updated from the git delta, sources cleaned, commits pushed, ready for a Pull Request_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Package.xml updates
+
+One row per file committed with the package.xml updates, with its status (created, modified or deleted).
+
+Files: `commit-files-package-xml-updates-*.csv`, `xls/commit-files-package-xml-updates-*.xlsx`
+
+![Package.xml updates report in Excel](../../assets/images/commands/work/save-report-commit-files-package-xml-updates.webp)
+
+### Cleaned files
+
+One row per source file cleaned and committed by the save, so the cleaning is visible in the User Story.
+
+Files: `commit-files-cleaned-sources-*.csv`, `xls/commit-files-cleaned-sources-*.xlsx`
+
+![Cleaned files report in Excel](../../assets/images/commands/work/save-report-commit-files-cleaned-sources.webp)
+
+### Deployment plan files
+
+One row per file committed with the deployment plan updates, with its status (created, modified or deleted).
+
+Files: `commit-files-deployment-plan-*.csv`, `xls/commit-files-deployment-plan-*.xlsx`
+
+![Deployment plan files report in Excel](../../assets/images/commands/work/save-report-commit-files-deployment-plan.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

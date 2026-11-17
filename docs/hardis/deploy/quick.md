@@ -60,6 +60,10 @@ commandsPostDeploy:
     runOnlyOnceByOrg: true
 ```
 
+### Plugin events
+
+As soon as Salesforce returns the result of the deployment, the installed sf plugins that listen to `sfdx-hardis:deployment-done` receive it, with the path of the Apex code coverage file, before the code coverage check. [More info](https://sfdx-hardis.cloudity.com/sfdx-hardis-plugins/#react-to-sfdx-hardis-events)
+
 ### Agent Mode
 
 Supports non-interactive execution with `--agent`:
@@ -71,6 +75,12 @@ sf hardis:project:deploy:quick --agent
 In agent mode, all interactive prompts are skipped and default values are used.
 
 
+
+## Screenshots
+
+![A validated deployment quick deployed to helios-preprod without running the tests again, then the deployment notifications](../../assets/images/commands/project/deploy/quick.webp)
+
+_A validated deployment quick deployed to helios-preprod without running the tests again, then the deployment notifications_
 
 ## Parameters
 
@@ -84,9 +94,11 @@ In agent mode, all interactive prompts are skipped and default values are used.
 | debug                    | boolean | debug                                                                                                        |         |          |         |
 | flags-dir                | option  | Import flag values from a directory.                                                                         |         |          |         |
 | json                     | boolean | Format output as json.                                                                                       |         |          |         |
+| skipauth                 | boolean | Skip authentication check when a default username is required                                                |         |          |         |
 | target-org<br/>-o        | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
 | tests                    | option  | tests                                                                                                        |         |          |         |
 | wait<br/>-w              | option  | wait                                                                                                         |   33    |          |         |
+| websocket                | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

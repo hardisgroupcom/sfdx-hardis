@@ -1,0 +1,8 @@
+command: hardis:org:diagnose:apex-api-version
+run: sf hardis:org:diagnose:apex-api-version --threshold 64
+org: showcase
+caption: "Helios Apex classes and triggers at API version 64 or below, listed with their version to plan the upgrade"
+pills:
+  - text: "Apex API Version (Deprecated)"
+    legend: "One row per class or trigger to upgrade, with its API version"
+    button: true

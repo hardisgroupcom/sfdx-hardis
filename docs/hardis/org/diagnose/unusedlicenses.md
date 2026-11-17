@@ -54,6 +54,40 @@ sf hardis:org:diagnose:unusedlicenses --agent --target-org myorg@example.com
 
 In agent mode, the bulk-delete confirmation prompt is skipped (no unused PSLAs are deleted automatically). Use `--fix` together with `--agent` to delete them without prompting.
 
+## Screenshots
+
+![Permission Set Licenses assigned to active users who hold no permission set needing them: none on this org](../../../assets/images/commands/org/diagnose/unusedlicenses.webp)
+
+_Permission Set Licenses assigned to active users who hold no permission set needing them: none on this org_
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Unused license assignments
+
+One row per permission set license assigned to an active user who holds no permission set that needs it, so you can free the license.
+
+Files: `unused-ps-license-assignments-*.csv`, `xls/unused-ps-license-assignments-*.xlsx`
+
+![Unused license assignments report in Excel](../../../assets/images/commands/org/diagnose/unusedlicenses-report-unused-ps-license-assignments.webp)
+
+### Failed deletions
+
+One row per license assignment the command could not delete, written in interactive mode after you confirm the deletion.
+
+Files: `failed-delete-ps-license-assignments-*.csv`, `xls/failed-delete-ps-license-assignments-*.xlsx`
+
+![Failed deletions report in Excel](../../../assets/images/commands/org/diagnose/unusedlicenses-report-failed-delete-ps-license-assignments.webp)
+
+### Deleted assignments
+
+One row per license assignment submitted for deletion, written in interactive mode after you confirm the deletion.
+
+Files: `deleted-ps-license-assignments-*.csv`, `xls/deleted-ps-license-assignments-*.xlsx`
+
+![Deleted assignments report in Excel](../../../assets/images/commands/org/diagnose/unusedlicenses-report-deleted-ps-license-assignments.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

@@ -1,0 +1,9 @@
+command: hardis:project:action:run
+run: sf hardis:project:action:run --pr draft
+org: throwaway
+caption: The pre-deployment Apex action of a User Story tried in a scratch org before its Pull Request exists
+answers:
+  - q: "Select the action"
+    choice: "^Pause the installation reminders"
+    shot: true
+    caption: Pick the deployment action of the User Story to try in your org

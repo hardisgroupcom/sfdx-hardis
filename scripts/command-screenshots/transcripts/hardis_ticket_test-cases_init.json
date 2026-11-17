@@ -1,0 +1,52 @@
+{
+  "command": "hardis:ticket:test-cases:init",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Writing 10 functional test case(s) into a notebook"
+      }
+    },
+    {
+      "delay": 700,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "- hardis-report/test-cases-HEL-42-functional-2026-11-17_10-24-08.xlsx"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/test-cases-HEL-42-functional-2026-11-17_10-24-08.xlsx",
+        "title": "Test cases notebook",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Wrote 10 test case(s) into 1 file(s)"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

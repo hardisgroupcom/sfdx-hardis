@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSetGroup xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Everything a delivery manager needs: the crew access and the planning access.</description>
+    <label>Helios Delivery</label>
+    <permissionSets>Helios_Delivery_Crew</permissionSets>
+    <permissionSets>Helios_Delivery_Manager</permissionSets>
+    <status>Updated</status>
+</PermissionSetGroup>

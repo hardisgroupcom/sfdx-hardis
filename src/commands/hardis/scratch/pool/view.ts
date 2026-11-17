@@ -10,12 +10,21 @@ import { PoolSummary } from '../../../../common/utils/poolDashboardUtils.js';
 import { POOL_ENCRYPTION_KEY_ENV_VAR } from '../../../../common/utils/poolCryptoUtils.js';
 import { getPoolSummary } from '../../../../common/utils/poolUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class ScratchPoolView extends SfCommand<any> {
   public static title = 'View scratch org pool info';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'scratch-org-pool',
+      title: 'Scratch org pool',
+      description: 'One row per scratch org of the pool, with its alias, username, expiration date and days left.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

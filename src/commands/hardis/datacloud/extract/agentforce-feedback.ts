@@ -22,12 +22,21 @@ import {
   stringValue,
 } from "../../../../common/utils/agentforceQueryUtils.js";
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class DataCloudExtractAgentforceFeedback extends SfCommand<any> {
   public static title = 'Extract Agentforce Feedback Data from Data Cloud';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'datacloud-agentforce-feedback',
+      title: 'Agentforce feedback',
+      description: 'One row per feedback (good or bad) left on an Agentforce answer, with the feedback message, the full conversation and a link to it, to review what users found wrong.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

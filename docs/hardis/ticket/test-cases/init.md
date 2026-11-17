@@ -63,6 +63,26 @@ sf hardis:ticket:test-cases:init --testsjsonfile cases.json --agent
 The same applies in CI.
 
 
+## Screenshots
+
+![A functional test notebook for HEL-42, ten test cases written to Excel with the tester columns left empty](../../../assets/images/commands/ticket/test-cases/init.webp)
+
+_A functional test notebook for HEL-42, ten test cases written to Excel with the tester columns left empty_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Test cases notebook
+
+One row per test case of the notebook, with the tester columns left empty to fill in; the file name continues with the ticket number and the kind of notebook.
+
+Files: `test-cases-*.csv`, `xls/test-cases-*.xlsx`
+
+![Test cases notebook report in Excel](../../../assets/images/commands/ticket/test-cases/init-report-test-cases.webp)
+
 ## Parameters
 
 | Name                 |  Type   | Description                                                                                                 | Default | Required |                 Options                  |

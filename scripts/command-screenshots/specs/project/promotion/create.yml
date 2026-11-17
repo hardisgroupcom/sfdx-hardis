@@ -1,0 +1,14 @@
+command: hardis:project:promotion:create
+run: sf hardis:project:promotion:create --source-branch uat --target-branch preprod
+mode: replay
+org: none
+caption: "A promotion branch assembled from three User Stories of uat, with the Pull Request opened and the conflicts left for a coding agent"
+answers:
+  - q: "Select the Pull Requests to carry"
+    choice: "^#(118|121|124) "
+    shot: true
+    caption: "Choose the User Stories to carry from uat to preprod"
+  - q: "What do you want to do with #121"
+    choice: "^Recommended"
+    shot: true
+    caption: "A cherry-pick conflicts, the recommended answer commits the markers for a coding agent to solve"

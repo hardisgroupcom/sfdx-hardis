@@ -1,0 +1,9 @@
+command: hardis:org:multi-org-query
+run: sf hardis:org:multi-org-query --target-orgs hardis-shots-showcase
+org: showcase
+caption: The active users of the Helios org returned by one SOQL query run on each selected org, gathered in a single report
+answers:
+  - q: Please select a predefined query, or custom SOQL option
+    choice: ^Active users$
+    shot: true
+    caption: Pick a predefined query, or type your own SOQL

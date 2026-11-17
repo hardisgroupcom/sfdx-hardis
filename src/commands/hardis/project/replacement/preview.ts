@@ -8,6 +8,7 @@ import { uxLogTableWithReport } from '../../../../common/utils/filesUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
 import { ReplacementCommandBase } from './base.js';
 import { applyReplacementRules } from '../../../../common/replacementRules/engine/ruleEngine.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -15,6 +16,14 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class ReplacementPreview extends ReplacementCommandBase {
   public static title = 'Preview replacement rules (Beta)';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'replacement-rules-preview',
+      title: 'Rules preview',
+      description: 'One row per file and rule tested, with the result and its detail, to see what the rules would change before a deployment.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior (Beta)

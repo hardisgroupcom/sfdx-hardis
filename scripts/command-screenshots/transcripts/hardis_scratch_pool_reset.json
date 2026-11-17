@@ -1,0 +1,185 @@
+{
+  "command": "hardis:scratch:pool:reset",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Reseting scratch org pool on org victor.martin@helios-solar.demo..."
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Pool config: {\"maxScratchOrgsNumber\":5,\"storageService\":\"gitProvider\"}"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf org login sfdx-url --sfdx-url-file /tmp/sfdx-hardis-4b1f/sfdxScratchAuth.txt",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf org login sfdx-url --sfdx-url-file /tmp/sfdx-hardis-4b1f/sfdxScratchAuth.txt",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf org delete scratch --no-prompt --target-org devops@hardis-scratch-PO-k2runner-uat_20261112_0300.com",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf org delete scratch --no-prompt --target-org devops@hardis-scratch-PO-k2runner-uat_20261112_0300.com",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Scratch org devops@hardis-scratch-PO-k2runner-uat_20261112_0300.com at https://helios-solar-3377-dev-ed.scratch.my.salesforce.com has been deleted"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf org login sfdx-url --sfdx-url-file /tmp/sfdx-hardis-4b1f/sfdxScratchAuth.txt",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf org login sfdx-url --sfdx-url-file /tmp/sfdx-hardis-4b1f/sfdxScratchAuth.txt",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf org delete scratch --no-prompt --target-org devops@hardis-scratch-PO-9xrunner-uat_20261112_0300.com",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf org delete scratch --no-prompt --target-org devops@hardis-scratch-PO-9xrunner-uat_20261112_0300.com",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Scratch org devops@hardis-scratch-PO-9xrunner-uat_20261112_0300.com at https://helios-solar-3378-dev-ed.scratch.my.salesforce.com has been deleted"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf org login sfdx-url --sfdx-url-file /tmp/sfdx-hardis-4b1f/sfdxScratchAuth.txt",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf org login sfdx-url --sfdx-url-file /tmp/sfdx-hardis-4b1f/sfdxScratchAuth.txt",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf org delete scratch --no-prompt --target-org devops@hardis-scratch-PO-m4runner-uat_20261114_0300.com",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf org delete scratch --no-prompt --target-org devops@hardis-scratch-PO-m4runner-uat_20261114_0300.com",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Scratch org devops@hardis-scratch-PO-m4runner-uat_20261114_0300.com at https://helios-solar-4015-dev-ed.scratch.my.salesforce.com has been deleted"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

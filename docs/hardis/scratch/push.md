@@ -40,6 +40,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The local changes of the project pushed to the scratch org](../../assets/images/commands/scratch/push.webp)
+
+_The local changes of the project pushed to the scratch org_
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

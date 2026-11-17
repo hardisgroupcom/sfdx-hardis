@@ -49,6 +49,18 @@ The command's technical implementation involves several steps:
 </details>
 
 
+## Screenshots
+
+![Pick the cleanings to run on the sources](../../../assets/images/commands/project/clean/references-1.webp)
+
+_Pick the cleanings to run on the sources_
+
+![A cleaning picked in the list run on the Helios sources, here the check that every custom item is in a permission set](../../../assets/images/commands/project/clean/references.webp)
+
+_A cleaning picked in the list run on the Helios sources, here the check that every custom item is in a permission set_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
 ## Parameters
 
 | Name          |  Type   | Description                                                                                                                      | Default | Required |                                                                                                                                                    Options                                                                                                                                                     |

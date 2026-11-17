@@ -1,0 +1,196 @@
+{
+  "command": "hardis:org:test:agents",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Running agent tests in org https://helios-solar--uat.sandbox.my.salesforce.com..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf agent test list --target-org admin@helios-solar.demo.uat --json",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1200,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf agent test list --target-org admin@helios-solar.demo.uat --json",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Select the agent tests to run",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "multiselect",
+            "name": "value",
+            "message": "🦙 Select the agent tests to run",
+            "description": "Unselect the agent tests you want to skip",
+            "choices": [
+              {
+                "title": "Helios_Installation_Assistant_Smoke",
+                "value": "Helios_Installation_Assistant_Smoke",
+                "selected": true
+              },
+              {
+                "title": "Helios_Installation_Assistant_Scheduling",
+                "value": "Helios_Installation_Assistant_Scheduling",
+                "selected": true
+              }
+            ],
+            "optionsPerPage": 9999,
+            "initial": [
+              "Helios_Installation_Assistant_Smoke",
+              "Helios_Installation_Assistant_Scheduling"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "- Helios_Installation_Assistant_Smoke\n- Helios_Installation_Assistant_Scheduling"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Running agent test Helios_Installation_Assistant_Smoke..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf agent test run --api-name Helios_Installation_Assistant_Smoke --wait 60 --target-org admin@helios-solar.demo.uat --json",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf agent test run --api-name Helios_Installation_Assistant_Smoke --wait 60 --target-org admin@helios-solar.demo.uat --json",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Running agent test Helios_Installation_Assistant_Scheduling..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf agent test run --api-name Helios_Installation_Assistant_Scheduling --wait 60 --target-org admin@helios-solar.demo.uat --json",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf agent test run --api-name Helios_Installation_Assistant_Scheduling --wait 60 --target-org admin@helios-solar.demo.uat --json",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Agent tests completed. 7/7 test cases passed."
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "All agent test cases passed (7)."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/agent-tests-features__HEL-42-installation-checklist.csv",
+        "title": "Agent Tests Results (CSV)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/xls/agent-tests-features__HEL-42-installation-checklist.xlsx",
+        "title": "Agent Tests Results (XLSX)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Agent tests passed (7/7 test cases)"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+command: hardis:packagexml:remove-managed
+run: sf hardis:packagexml:remove-managed --packagexml manifest/package.xml --namespaces SBQQ,et4ae5 --outputfile manifest/package-no-managed.xml
+org: none
+caption: The items of managed packages, found by their namespace, removed from a package.xml

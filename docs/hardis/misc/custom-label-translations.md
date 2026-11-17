@@ -56,6 +56,12 @@ The command's technical implementation involves:
 </details>
 
 
+## Screenshots
+
+![Custom Label Translations](../../assets/images/commands/misc/custom-label-translations.webp)
+
+_Custom Label Translations_
+
 ## Parameters
 
 | Name         |  Type   | Description                                                   | Default | Required | Options |

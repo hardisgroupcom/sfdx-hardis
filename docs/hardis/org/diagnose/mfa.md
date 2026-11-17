@@ -65,6 +65,27 @@ Reference: [Salesforce MFA Requirement](https://help.salesforce.com/s/articleVie
 </details>
 
 
+## Screenshots
+
+![MFA audit of the Helios org: each setting to change in Setup, with the users and settings it affects](../../../assets/images/commands/org/diagnose/mfa.webp)
+
+_MFA audit of the Helios org: each setting to change in Setup, with the users and settings it affects_
+
+- **(1)** The verdict: some logins of the org are not covered by MFA
+- **(2)** One row per finding of the six MFA checks, with its recommendation
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### MFA configuration
+
+One row per finding of the six MFA checks, with its severity, details and recommendation, so you can see which gaps to close.
+
+Files: `mfa-config-*.csv`, `xls/mfa-config-*.xlsx`
+
+![MFA configuration report in Excel](../../../assets/images/commands/org/diagnose/mfa-report-mfa-config.webp)
+
 ## Parameters
 
 | Name                             |  Type   | Description                                                                                                                                                                                                          | Default | Required | Options |

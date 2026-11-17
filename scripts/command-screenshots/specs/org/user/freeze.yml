@@ -1,0 +1,15 @@
+command: hardis:org:user:freeze
+run: sf hardis:org:user:freeze
+org: throwaway
+caption: "Field technicians with the Chatter Free User profile frozen in the Helios test org, with the list of users frozen"
+answers:
+  - q: "Please select profiles that you do you want to freeze users"
+    choice: "^Chatter Free User$"
+    shot: true
+    caption: "Pick the profiles whose users to freeze"
+  - q: "Are you sure you want to freeze these"
+    choice: "Yes$"
+pills:
+  - text: "Extract of users to freeze"
+    legend: "One row per user frozen, with username, name and profile"
+    button: true

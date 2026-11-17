@@ -14,6 +14,7 @@ import { readMkDocsFile } from '../../../common/docBuilder/docUtils.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { t } from '../../../common/utils/i18n.js';
 import { convertMermaidBlocksToImages } from '../../../common/utils/mermaidUtils.js';
+import type { CommandReport } from '../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -32,6 +33,14 @@ const HTML_ENTITY_CODE_POINTS: Record<string, number> = {
 
 export default class MkDocsToConfluence extends SfCommand<any> {
   public static title = 'MkDocs to Confluence';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'mkdocs-to-confluence',
+      title: 'Confluence deployment summary',
+      description: 'One row per page, image or Mermaid diagram published to Confluence, with its file, status, failure reason and page URL, to find what failed to publish.',
+    },
+  ];
 
   public static description = `## Command Behavior
 

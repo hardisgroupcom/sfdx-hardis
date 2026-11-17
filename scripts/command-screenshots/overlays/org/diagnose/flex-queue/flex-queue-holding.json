@@ -1,0 +1,48 @@
+{
+  "mode": "replace",
+  "title": "Apex flex queue (Holding)",
+  "columns": [
+    "Id",
+    "ApexClassName",
+    "JobType",
+    "CreatedDate",
+    "severity"
+  ],
+  "rows": [
+    {
+      "Id": "707cU00000Hel01AAA",
+      "ApexClassName": "CrewAssignmentBatch",
+      "JobType": "BatchApex",
+      "CreatedDate": "2026-11-17T06:02:11.000Z",
+      "severity": "success"
+    },
+    {
+      "Id": "707cU00000Hel02AAA",
+      "ApexClassName": "PanelStockRecalcBatch",
+      "JobType": "BatchApex",
+      "CreatedDate": "2026-11-17T06:04:37.000Z",
+      "severity": "success"
+    },
+    {
+      "Id": "707cU00000Hel03AAA",
+      "ApexClassName": "InstallationReminderBatch",
+      "JobType": "BatchApex",
+      "CreatedDate": "2026-11-17T06:05:02.000Z",
+      "severity": "success"
+    },
+    {
+      "Id": "707cU00000Hel04AAA",
+      "ApexClassName": "InverterWarrantySyncBatch",
+      "JobType": "BatchApex",
+      "CreatedDate": "2026-11-17T06:11:48.000Z",
+      "severity": "success"
+    },
+    {
+      "Id": "707cU00000Hel05AAA",
+      "ApexClassName": "CrewAssignmentBatch",
+      "JobType": "BatchApex",
+      "CreatedDate": "2026-11-17T06:15:20.000Z",
+      "severity": "success"
+    }
+  ]
+}

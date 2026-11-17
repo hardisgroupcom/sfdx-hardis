@@ -79,6 +79,30 @@ In agent mode:
 - All interactive prompts are skipped.
   
 
+## Screenshots
+
+![Choose which deployments to check against ServiceNow](../../assets/images/commands/misc/servicenow-report-1.webp)
+
+_Choose which deployments to check against ServiceNow_
+
+![The user stories of UAT are cross-checked with their ServiceNow change requests, all valid, with a report of the matches](../../assets/images/commands/misc/servicenow-report.webp)
+
+_The user stories of UAT are cross-checked with their ServiceNow change requests, all valid, with a report of the matches_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### ServiceNow cross-report
+
+One row per Salesforce user story enriched with its ServiceNow ticket, with an "Is Valid" column and the invalid fields; a second file ending with -invalid lists only the invalid rows.
+
+Files: `service-now-report-*.csv`, `xls/service-now-report-*.xlsx`
+
+![ServiceNow cross-report report in Excel](../../assets/images/commands/misc/servicenow-report-report-service-now-report.webp)
+
 ## Parameters
 
 | Name                |  Type   | Description                                                                                                 | Default | Required | Options |

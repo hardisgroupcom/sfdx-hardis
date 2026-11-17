@@ -1,0 +1,10 @@
+command: hardis:org:diagnose:unsecure-permissions
+run: sf hardis:org:diagnose:unsecure-permissions
+org: showcase
+caption: "Dangerous permissions such as Modify All Data granted by profiles and permission sets, with the active users holding them"
+pills:
+  - text: "dangerous permission grant(s)"
+    legend: "Grants found and the number of active users they reach"
+  - text: "Dangerous Permissions Audit"
+    legend: "A sheet each for profiles, permission sets, groups and users, with a criticality tier"
+    button: true

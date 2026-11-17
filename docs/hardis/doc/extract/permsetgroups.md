@@ -44,6 +44,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The permission set groups of the Helios project and the permission sets they contain, as a CSV file and a Markdown page](../../../assets/images/commands/doc/extract/permsetgroups.webp)
+
+_The permission set groups of the Helios project and the permission sets they contain, as a CSV file and a Markdown page_
+
 ## Parameters
 
 | Name              |  Type   | Description                                                       | Default | Required | Options |

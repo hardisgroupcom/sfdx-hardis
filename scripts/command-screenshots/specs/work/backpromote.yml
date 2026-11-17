@@ -1,0 +1,18 @@
+command: hardis:work:backpromote
+run: sf hardis:work:backpromote --target-org helios-dev --parent-branch integration
+mode: replay
+org: none
+caption: "The metadata merged in integration since Pull Request #122 deployed to the sandbox helios-dev, with its deployment action"
+answers:
+  - q: "Select the start Pull Request"
+    choice: "^#122 "
+    shot: true
+    caption: "Pick the first Pull Request the sandbox does not have yet"
+  - q: "Select the metadata to backpromote"
+    choice: ".*"
+    shot: true
+    caption: "Untick what must not reach the sandbox"
+  - q: "differs between helios-dev and integration"
+    choice: "^Overwrite with the integration version$"
+  - q: "Select the deployment actions to run"
+    choice: ".*"

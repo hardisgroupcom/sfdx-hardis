@@ -71,6 +71,12 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 <!-- training-links:end -->
 
 
+## Screenshots
+
+![The refresh command is deprecated and points to sf hardis:work:backpromote](../../assets/images/commands/work/refresh.webp)
+
+_The refresh command is deprecated and points to sf hardis:work:backpromote_
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

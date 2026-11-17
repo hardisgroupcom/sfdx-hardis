@@ -1,0 +1,5 @@
+command: hardis:scratch:pool:reset
+run: sf hardis:scratch:pool:reset
+mode: replay
+org: none
+caption: "Every scratch org of the pool is deleted, so the next refresh fills the pool again from scratch"

@@ -11,6 +11,7 @@ import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 import { resolveDateFilterOptions } from '../../../../common/utils/agentforceQueryUtils.js';
 import {
   AiUsageResult,
@@ -25,6 +26,14 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class DiagnoseAiUsage extends SfCommand<any> {
   public static title = 'Check Agentforce and Data 360 credit usage';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'ai-usage',
+      title: 'Credit usage',
+      description: 'One row per agent, action and usage type with the credits consumed and whether they are metered (billed), or the raw Data 360 credit rows when no agent usage exists.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

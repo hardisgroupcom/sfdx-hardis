@@ -46,6 +46,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![Every scratch org of the pool is deleted, so the next refresh fills the pool again from scratch](../../../assets/images/commands/scratch/pool/reset.webp)
+
+_Every scratch org of the pool is deleted, so the next refresh fills the pool again from scratch_
+
 ## Parameters
 
 | Name                  |  Type   | Description                                                                                                       | Default | Required | Options |

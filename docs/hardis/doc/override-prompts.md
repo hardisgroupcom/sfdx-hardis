@@ -54,6 +54,14 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The 28 AI prompt templates and variables copied to config/prompt-templates of the Helios project, ready to be edited](../../assets/images/commands/doc/override-prompts.webp)
+
+_The 28 AI prompt templates and variables copied to config/prompt-templates of the Helios project, ready to be edited_
+
+- **(1)** Edit these files to change what the AI writes in the documentation
+
 ## Parameters
 
 | Name         |  Type   | Description                                                   | Default | Required | Options |

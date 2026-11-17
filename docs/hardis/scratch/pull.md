@@ -56,6 +56,15 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The Apex classes, fields and app changed in the scratch org pulled into the Helios sources, ready to commit](../../assets/images/commands/scratch/pull.webp)
+
+_The Apex classes, fields and app changed in the scratch org pulled into the Helios sources, ready to commit_
+
+- **(1)** The pulled metadata, in an Excel report
+- **(2)** The next step, committing the pulled files
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

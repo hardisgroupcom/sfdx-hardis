@@ -33,6 +33,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The certificates of the Helios sources looked for, to replace their content by a placeholder before a commit](../../../assets/images/commands/project/clean/sensitive-metadatas.webp)
+
+_The certificates of the Helios sources looked for, to replace their content by a placeholder before a commit_
+
 ## Parameters
 
 | Name          |  Type   | Description                                                   |  Default  | Required | Options |

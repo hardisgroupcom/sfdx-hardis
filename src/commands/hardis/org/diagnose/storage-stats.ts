@@ -13,12 +13,21 @@ import { CONSTANTS, getReportDirectory } from '../../../../config/index.js';
 import path from 'path';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class StorageStats extends SfCommand<any> {
   public static title = 'Extract Data Storage stats';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'storage-stats-by-',
+      title: 'Storage stats',
+      description: 'One row per object and breakdown value (the file name continues with the breakdown field, granularity and -filtered when a WHERE is used), with its record count and estimated storage in MB and percent; a copy with only the Total row of each object is written next to it with a -totals suffix.',
+    },
+  ];
 
   public static description = `**Extracts and analyzes Data Storage usage for a Salesforce org, providing detailed per-object breakdowns with flexible grouping options.**
 

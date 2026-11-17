@@ -1,0 +1,5 @@
+command: hardis:ticket:get
+run: sf hardis:ticket:get --id HEL-42
+mode: replay
+org: none
+caption: "Ticket HEL-42 read from Jira, with its status, comments, attachments and a warning about a manual step found in its text"

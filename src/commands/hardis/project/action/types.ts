@@ -10,12 +10,21 @@ import { buildActionTypesDescription, describeBuiltInType } from '../../../../co
 import { DEPLOYMENT_ACTION_TYPES } from '../../../../common/actionsProvider/actionTypes.js';
 import { ActionWhen } from '../../../../common/actionsProvider/actionsProvider.js';
 import { assertNoFlagsOfOtherTypes, getBuiltInActionProvider } from '../../../../common/utils/actionUtils.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class ActionTypes extends SfCommand<any> {
   public static title = 'Describe deployment action types';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'deployment-action-types',
+      title: 'Action types',
+      description: 'One row per deployment action type or custom function, with when it can run, its default context and its flags.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

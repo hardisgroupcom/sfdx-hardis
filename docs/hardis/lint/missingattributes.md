@@ -45,6 +45,26 @@ sf hardis:lint:missingattributes --agent
 
 In agent mode, the command runs fully automatically with no interactive prompts.
 
+## Screenshots
+
+![Custom fields of the Helios objects checked for a missing description](../../assets/images/commands/lint/missingattributes.webp)
+
+_Custom fields of the Helios objects checked for a missing description_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Missing descriptions
+
+One row per custom field that has no description, to know which fields to document.
+
+Files: `lint-missingattributes-*.csv`, `xls/lint-missingattributes-*.xlsx`
+
+![Missing descriptions report in Excel](../../assets/images/commands/lint/missingattributes-report-lint-missingattributes.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                   | Default | Required | Options |

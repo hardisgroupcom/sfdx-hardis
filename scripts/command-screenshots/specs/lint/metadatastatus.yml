@@ -1,0 +1,4 @@
+command: hardis:lint:metadatastatus
+run: sf hardis:lint:metadatastatus
+org: none
+caption: Draft flows and inactive validation rules searched in the Helios project sources, before they reach production

@@ -1,0 +1,18 @@
+command: hardis:org:purge:profile
+run: sf hardis:org:purge:profile --profiles "Helios Crew"
+# Replayed: on the scratch orgs, the license of the profile does not let it lose the Knowledge
+# permission the purge mutes, so the deployment of the muted profile fails
+mode: replay
+org: none
+caption: The accesses that permission sets now give are removed from the Helios Crew profile, which is deployed back to the org
+answers:
+  - q: Select the namespaces you want to ignore
+    value: []
+  - q: Do you want to deploy .* profiles back to the org now
+    choice: ^✅ Yes$
+    shot: true
+    caption: The muted profile is deployed back to the org once you confirm
+pills:
+  - text: Profile muted attributes report
+    button: true
+    legend: Every attribute muted in the profile, in an Excel report

@@ -49,6 +49,26 @@ sf hardis:org:diagnose:underusedpermsets --agent --target-org myorg@example.com
 
 In agent mode, the command runs fully automatically. The threshold defaults to 5 (or `PERMSET_LIMITED_USERS_THRESHOLD` env var) when not provided.
 
+## Screenshots
+
+![Permission sets and groups of the Helios org assigned to no user, or to 5 users or fewer](../../../assets/images/commands/org/diagnose/underusedpermsets.webp)
+
+_Permission sets and groups of the Helios org assigned to no user, or to 5 users or fewer_
+
+- **(1)** One row per permission set or group, with its number of assigned users
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Underused permission sets
+
+One row per permission set or permission set group assigned to no user or to few users, with its user count and severity, as candidates to clean up.
+
+Files: `underused-permission-sets-*.csv`, `xls/underused-permission-sets-*.xlsx`
+
+![Underused permission sets report in Excel](../../../assets/images/commands/org/diagnose/underusedpermsets-report-underused-permission-sets.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

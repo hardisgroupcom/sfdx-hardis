@@ -1,0 +1,12 @@
+command: hardis:org:user:activateinvalid
+run: sf hardis:org:user:activateinvalid
+# Replayed: an org only gets .invalid emails from a sandbox refresh, and an email changed through
+# the API stays pending until the user confirms it
+mode: replay
+org: none
+caption: "After a sandbox refresh, the emails ending with .invalid are restored for the users picked"
+answers:
+  - q: "Do you want to replace invalid mails by valid mails"
+    choice: "^Yes, all"
+    shot: true
+    caption: Restore every email, or pick the users by profile or one by one

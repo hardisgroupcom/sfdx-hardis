@@ -29,6 +29,20 @@ In agent mode:
 - `--flow`, `--commit-before`, and `--commit-after` flags must be provided.
   
 
+## Screenshots
+
+![Pick the Flow to compare](../../../assets/images/commands/project/generate/flow-git-diff-1.webp)
+
+_Pick the Flow to compare_
+
+![Pick the state before the change, a commit or a branch](../../../assets/images/commands/project/generate/flow-git-diff-2.webp)
+
+_Pick the state before the change, a commit or a branch_
+
+![The visual diff of the Installation_Crew_Warning Flow between main and the User Story branch, opened in VS Code](../../../assets/images/commands/project/generate/flow-git-diff.webp)
+
+_The visual diff of the Installation_Crew_Warning Flow between main and the User Story branch, opened in VS Code_
+
 ## Parameters
 
 | Name          |  Type   | Description                                                                                                           | Default | Required | Options |

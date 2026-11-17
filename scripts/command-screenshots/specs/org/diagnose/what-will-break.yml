@@ -1,0 +1,9 @@
+command: hardis:org:diagnose:what-will-break
+run: sf hardis:org:diagnose:what-will-break
+org: showcase
+caption: What dated Salesforce changes will break in the org, when, and what to do before
+answers:
+  - q: Which checks do you want to run
+    choice: .
+    shot: true
+    caption: Every check is selected by default

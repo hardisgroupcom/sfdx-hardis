@@ -1,0 +1,109 @@
+{
+  "command": "hardis:project:dev-org:register",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 1200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Who owns this org?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "text",
+            "name": "owner",
+            "message": "🦙 Who owns this org?",
+            "description": "The owner is told when the org needs a backpromote. Write Name <email>, or an email",
+            "placeholder": "Ex: Jane Doe <jane.doe@example.com>",
+            "initial": "Victor Martin <victor.martin@helios-solar.demo>"
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Victor Martin <victor.martin@helios-solar.demo>"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Who else works in this org?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "text",
+            "name": "users",
+            "message": "🦙 Who else works in this org?",
+            "description": "Comma-separated list of Name <email> or emails. Leave empty when nobody else does",
+            "placeholder": "Ex: Jane Doe <jane.doe@example.com>, john.smith@example.com",
+            "initial": ""
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Mariia Kowalska <mariia.kowalska@helios-solar.demo>, Romain Lefebvre <romain.lefebvre@helios-solar.demo>"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Registering development org victordev in the development orgs list..."
+      }
+    },
+    {
+      "delay": 1800,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Development org victordev registered for target branch integration"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Development orgs dashboard: https://github.com/helios-energy/salesforce/issues/57"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+command: hardis:ticket:list
+run: sf hardis:ticket:list --project HEL --open-only
+mode: replay
+org: none
+caption: "The 12 open tickets of the HEL Jira project, listed with their type, status, priority and assignee"

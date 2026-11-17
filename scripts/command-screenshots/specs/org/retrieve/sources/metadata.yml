@@ -1,0 +1,7 @@
+command: hardis:org:retrieve:sources:metadata
+run: sf hardis:org:retrieve:sources:metadata
+org: showcase
+caption: "Every metadata of the Helios org retrieved in Metadata API format, managed package items left out"
+pills:
+  - text: "Filtering managed items"
+    legend: "Items of managed packages are not retrieved"

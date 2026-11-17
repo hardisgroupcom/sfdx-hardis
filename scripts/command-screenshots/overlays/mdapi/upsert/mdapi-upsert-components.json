@@ -1,0 +1,66 @@
+{
+  "mode": "replace",
+  "title": "Metadata components to overwrite",
+  "columns": [
+    "type",
+    "fullName"
+  ],
+  "rows": [
+    {
+      "type": "PermissionSet",
+      "fullName": "Helios_Delivery"
+    },
+    {
+      "type": "PermissionSet",
+      "fullName": "Helios_Delivery_Crew"
+    },
+    {
+      "type": "PermissionSet",
+      "fullName": "Helios_Delivery_Manager"
+    },
+    {
+      "type": "PermissionSet",
+      "fullName": "Helios_Panel_Stock_Viewer"
+    },
+    {
+      "type": "PermissionSet",
+      "fullName": "Helios_Quote_Desk"
+    },
+    {
+      "type": "PermissionSet",
+      "fullName": "Helios_Warranty_Desk"
+    },
+    {
+      "type": "PermissionSetGroup",
+      "fullName": "Helios_Field_Team"
+    },
+    {
+      "type": "Profile",
+      "fullName": "Helios Crew"
+    },
+    {
+      "type": "Profile",
+      "fullName": "Helios Sales"
+    },
+    {
+      "type": "Profile",
+      "fullName": "Helios Warehouse"
+    },
+    {
+      "type": "Profile",
+      "fullName": "Helios Support"
+    },
+    {
+      "type": "Profile",
+      "fullName": "Helios Read Only"
+    },
+    {
+      "type": "CustomApplication",
+      "fullName": "Helios_Field_Service"
+    },
+    {
+      "type": "CustomApplication",
+      "fullName": "Helios_Warehouse"
+    }
+  ]
+}

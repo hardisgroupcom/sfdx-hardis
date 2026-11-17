@@ -1,0 +1,10 @@
+command: hardis:project:skills:import
+run: sf hardis:project:skills:import
+mode: replay
+org: none
+caption: The Helios Energy skills, agents and rules copied into the .claude folder of the project
+answers:
+  - q: "Enter the git repository URL containing Claude Code skills"
+    value: "https://github.com/helios-energy/claude-skills.git"
+    shot: true
+    caption: Type the URL of the git repository that holds the skills

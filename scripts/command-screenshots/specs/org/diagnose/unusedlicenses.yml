@@ -1,0 +1,4 @@
+command: hardis:org:diagnose:unusedlicenses
+run: sf hardis:org:diagnose:unusedlicenses
+org: throwaway
+caption: "Permission Set Licenses assigned to active users who hold no permission set needing them: none on this org"

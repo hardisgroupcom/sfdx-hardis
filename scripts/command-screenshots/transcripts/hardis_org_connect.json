@@ -1,0 +1,198 @@
+{
+  "command": "hardis:org:connect",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Listing your authenticated orgs..."
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Please select an org",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Please select an org",
+            "description": "Choose a Salesforce org from the list of authenticated orgs",
+            "choices": [
+              {
+                "title": "🌍 Login to another org",
+                "description": "Connect in your web browser to a sandbox, a scratch org or any other org",
+                "value": {
+                  "otherOrg": true
+                }
+              },
+              {
+                "title": "helios-solar--dev.sandbox.my.salesforce.com (helios-dev)",
+                "description": "Connected with admin@helios-solar.demo.dev",
+                "value": {
+                  "username": "admin@helios-solar.demo.dev",
+                  "alias": "helios-dev",
+                  "instanceUrl": "https://helios-solar--dev.sandbox.my.salesforce.com"
+                }
+              },
+              {
+                "title": "helios-solar--preprod.sandbox.my.salesforce.com (helios-preprod)",
+                "description": "Connected with admin@helios-solar.demo.preprod",
+                "value": {
+                  "username": "admin@helios-solar.demo.preprod",
+                  "alias": "helios-preprod",
+                  "instanceUrl": "https://helios-solar--preprod.sandbox.my.salesforce.com"
+                }
+              },
+              {
+                "title": "helios-solar--uat.sandbox.my.salesforce.com (helios-uat)",
+                "description": "Connected with admin@helios-solar.demo.uat",
+                "value": {
+                  "username": "admin@helios-solar.demo.uat",
+                  "alias": "helios-uat",
+                  "instanceUrl": "https://helios-solar--uat.sandbox.my.salesforce.com"
+                }
+              },
+              {
+                "title": "helios-solar.my.salesforce.com (helios-prod)",
+                "description": "Connected with admin@helios-solar.demo",
+                "value": {
+                  "username": "admin@helios-solar.demo",
+                  "alias": "helios-prod",
+                  "instanceUrl": "https://helios-solar.my.salesforce.com"
+                }
+              },
+              {
+                "title": "😱 I already authenticated my org but I don't see it",
+                "description": "It might be a sfdx-hardis cache issue",
+                "value": {
+                  "clearCache": true
+                }
+              },
+              {
+                "title": "❌ Cancel",
+                "description": "Get out of here 😊",
+                "value": {
+                  "cancel": true
+                }
+              }
+            ],
+            "optionsPerPage": 9999
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "helios-solar--uat.sandbox.my.salesforce.com (helios-uat)"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Selected Org admin@helios-solar.demo.uat - https://helios-solar--uat.sandbox.my.salesforce.com"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Do you want to open this org in your web browser?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Do you want to open this org in your web browser?",
+            "description": "Launch the Salesforce org in your default web browser for immediate access.",
+            "choices": [
+              {
+                "title": "✅ Yes",
+                "value": true
+              },
+              {
+                "title": "❌ No",
+                "value": false
+              }
+            ],
+            "optionsPerPage": 9999,
+            "initial": 0
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "✅ Yes"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Opening org admin@helios-solar.demo.uat..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf org open --url-only --target-org admin@helios-solar.demo.uat --json",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf org open --url-only --target-org admin@helios-solar.demo.uat --json",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

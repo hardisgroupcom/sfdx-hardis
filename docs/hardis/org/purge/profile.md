@@ -53,6 +53,30 @@ In agent mode:
 - Deployment of muted profiles proceeds without confirmation.
 
 
+## Screenshots
+
+![The muted profile is deployed back to the org once you confirm](../../../assets/images/commands/org/purge/profile-1.webp)
+
+_The muted profile is deployed back to the org once you confirm_
+
+![The accesses that permission sets now give are removed from the Helios Crew profile, which is deployed back to the org](../../../assets/images/commands/org/purge/profile.webp)
+
+_The accesses that permission sets now give are removed from the Helios Crew profile, which is deployed back to the org_
+
+- **(1)** Every attribute muted in the profile, in an Excel report
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Muted attributes
+
+One row per attribute removed or reset in a profile, with the profile, the node, the attribute name, and its old and new value.
+
+Files: `profile-muted-attributes-*.csv`, `xls/profile-muted-attributes-*.xlsx`
+
+![Muted attributes report in Excel](../../../assets/images/commands/org/purge/profile-report-profile-muted-attributes.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

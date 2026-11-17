@@ -1,0 +1,518 @@
+{
+  "command": "hardis:project:promotion:create",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Promotion steps allowed by allowedPromotionSteps: uat > preprod"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Git provider connected: GitHub"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "git status --porcelain",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "git status --porcelain",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Listing the Pull Requests merged into uat and not yet promoted to preprod..."
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "git fetch origin uat preprod",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 800,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "git fetch origin uat preprod",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "table",
+        "message": "[{\"Pull Requests\":\"#118\",\"Title\":\"HEL-42 Installation checklist\",\"Author\":\"mariia-kowalska\",\"Commit\":\"7c41ab9\",\"Date\":\"2026-11-09 14:12\",\"Already promoted by\":\"\"},{\"Pull Requests\":\"#119\",\"Title\":\"HEL-52 Warranty term on panel batch\",\"Author\":\"romain-lefebvre\",\"Commit\":\"a91c0e4\",\"Date\":\"2026-11-10 09:40\",\"Already promoted by\":\"\"},{\"Pull Requests\":\"#121\",\"Title\":\"HEL-57 Installation scheduler batch\",\"Author\":\"lucia-fernandez\",\"Commit\":\"2f90d34\",\"Date\":\"2026-11-11 16:05\",\"Already promoted by\":\"\"},{\"Pull Requests\":\"#122\",\"Title\":\"HEL-61 Installation close check\",\"Author\":\"tomasz-nowak\",\"Commit\":\"c07e5b2\",\"Date\":\"2026-11-12 08:55\",\"Already promoted by\":\"\"},{\"Pull Requests\":\"#124\",\"Title\":\"HEL-66 Gate code of a site\",\"Author\":\"amelie-dubois\",\"Commit\":\"5d19e8a\",\"Date\":\"2026-11-13 11:20\",\"Already promoted by\":\"\"}]"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/promotion-candidates-features__HEL-42-installation-checklist.csv",
+        "title": "Pull Requests waiting for promotion from uat to preprod (CSV)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 60,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/xls/promotion-candidates-features__HEL-42-installation-checklist.xlsx",
+        "title": "Pull Requests waiting for promotion from uat to preprod (XLSX)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 700,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Select the Pull Requests to carry in the promotion branch (space to select, enter to confirm)",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 60,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "name": "value",
+            "type": "multiselect",
+            "message": "🦙 Select the Pull Requests to carry in the promotion branch (space to select, enter to confirm)",
+            "description": "Select the Pull Requests to carry in the promotion branch (space to select, enter to confirm)",
+            "choices": [
+              {
+                "title": "#124 HEL-66 Gate code of a site (amelie-dubois) [5d19e8a]",
+                "value": "5d19e8a",
+                "description": "features/HEL-66-gate-code",
+                "selected": true
+              },
+              {
+                "title": "#122 HEL-61 Installation close check (tomasz-nowak) [c07e5b2]",
+                "value": "c07e5b2",
+                "description": "features/HEL-61-installation-close-check",
+                "selected": false
+              },
+              {
+                "title": "#121 HEL-57 Installation scheduler batch (lucia-fernandez) [2f90d34]",
+                "value": "2f90d34",
+                "description": "features/HEL-57-installation-scheduler",
+                "selected": true
+              },
+              {
+                "title": "#119 HEL-52 Warranty term on panel batch (romain-lefebvre) [a91c0e4]",
+                "value": "a91c0e4",
+                "description": "features/HEL-52-warranty-term",
+                "selected": false
+              },
+              {
+                "title": "#118 HEL-42 Installation checklist (mariia-kowalska) [7c41ab9]",
+                "value": "7c41ab9",
+                "description": "features/HEL-42-installation-checklist",
+                "selected": true
+              }
+            ],
+            "initial": [
+              "7c41ab9",
+              "2f90d34",
+              "5d19e8a"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "- #124 HEL-66 Gate code of a site (amelie-dubois) [5d19e8a]\n- #121 HEL-57 Installation scheduler batch (lucia-fernandez) [2f90d34]\n- #118 HEL-42 Installation checklist (mariia-kowalska) [7c41ab9]"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "3 Pull Request(s) selected for the promotion"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Creating promotion branch promotion/uat/preprod/2026-11-17-0930 from origin/preprod..."
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "git checkout -b promotion/uat/preprod/2026-11-17-0930 origin/preprod",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 600,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "git checkout -b promotion/uat/preprod/2026-11-17-0930 origin/preprod",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Cherry-picking #118 HEL-42 Installation checklist (mariia-kowalska) [7c41ab9]..."
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "git cherry-pick -x 7c41ab9",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 700,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "git cherry-pick -x 7c41ab9",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Cherry-picking #121 HEL-57 Installation scheduler batch (lucia-fernandez) [2f90d34]..."
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "git cherry-pick -x 2f90d34",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 700,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "git cherry-pick -x 2f90d34",
+          "success": false
+        }
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "Cherry-pick of #121 HEL-57 Installation scheduler batch (lucia-fernandez) [2f90d34] conflicts. This User Story probably depends on another one that is not part of the promotion. Conflicting files:\nforce-app/main/default/layouts/Installation__c-Installation Layout.layout-meta.xml\nforce-app/main/default/permissionsets/Helios_Delivery_Manager.permissionset-meta.xml"
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 What do you want to do with #121 HEL-57 Installation scheduler batch (lucia-fernandez) [2f90d34]?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 60,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "name": "value",
+            "type": "select",
+            "message": "🦙 What do you want to do with #121 HEL-57 Installation scheduler batch (lucia-fernandez) [2f90d34]?",
+            "description": "What do you want to do with #121 HEL-57 Installation scheduler batch (lucia-fernandez) [2f90d34]?",
+            "choices": [
+              {
+                "title": "Recommended: commit this User Story and every following conflict with their conflict markers, without asking again",
+                "value": "commit-with-markers-all",
+                "description": "The promotion is assembled in one go, then a coding agent solves every conflict at once: copy the prompt from the Pull Request description (also saved in hardis-report/) and paste it to Claude Code, Codex, Copilot... This is the recommended way, as a promotion window usually conflicts on the same files story after story."
+              },
+              {
+                "title": "Commit this User Story anyway, with its conflict markers, to solve them later on the branch (by hand or with a coding agent)",
+                "value": "commit-with-markers"
+              },
+              {
+                "title": "Solve the conflicts of this User Story now, then continue",
+                "value": "solve-now",
+                "description": "The command lists the conflicting files, and opens them when it runs in VS Code. Solve them, save, then come back to this prompt: the command checks that no marker is left and continues the promotion."
+              },
+              {
+                "title": "Leave this User Story out of the promotion and continue",
+                "value": "skip"
+              },
+              {
+                "title": "Keep the source branch version of the conflicting lines (risky)",
+                "value": "take-source"
+              },
+              {
+                "title": "Keep the source branch version for this conflict and every following one, without asking again (risky)",
+                "value": "take-source-all"
+              },
+              {
+                "title": "Stop and undo the promotion branch",
+                "value": "abort"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Recommended: commit this User Story and every following conflict with their conflict markers, without asking again"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Conflict handling: Recommended: commit this User Story and every following conflict with their conflict markers, without asking again"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "git add -A",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "git add -A",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Git hooks skipped for this commit: it holds conflict markers on purpose, to be solved on the promotion branch"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "git -c core.hooksPath=\"/tmp/sfdx-hardis-no-git-hooks\" -c core.editor=true cherry-pick --continue",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 450,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "git -c core.hooksPath=\"/tmp/sfdx-hardis-no-git-hooks\" -c core.editor=true cherry-pick --continue",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "#121 HEL-57 Installation scheduler batch (lucia-fernandez) [2f90d34] committed with conflict markers in: force-app/main/default/layouts/Installation__c-Installation Layout.layout-meta.xml, force-app/main/default/permissionsets/Helios_Delivery_Manager.permissionset-meta.xml. Solve them on the branch before merging"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Cherry-picking #124 HEL-66 Gate code of a site (amelie-dubois) [5d19e8a]..."
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "git cherry-pick -x 5d19e8a",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 700,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "git cherry-pick -x 5d19e8a",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Pushing promotion branch promotion/uat/preprod/2026-11-17-0930..."
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "git push -u origin promotion/uat/preprod/2026-11-17-0930",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "git push -u origin promotion/uat/preprod/2026-11-17-0930",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Creating the Pull Request from promotion/uat/preprod/2026-11-17-0930 to preprod..."
+      }
+    },
+    {
+      "delay": 800,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Promotion Pull Request created: https://github.com/helios-energy/salesforce/pull/130"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Promotion branch promotion/uat/preprod/2026-11-17-0930 assembled with 3 User Story(ies): #118, #121, #124"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "1 User Story(ies) carry conflict markers to solve before the Pull Request can be merged: force-app/main/default/layouts/Installation__c-Installation Layout.layout-meta.xml, force-app/main/default/permissionsets/Helios_Delivery_Manager.permissionset-meta.xml"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "A prompt to solve the committed conflicts with a coding agent (Claude Code, Codex, Copilot...) is saved in hardis-report/promotion-conflicts-prompt-2026-11-17-0931.md and embedded in the Pull Request description"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/promotion-conflicts-prompt-2026-11-17-0931.md",
+        "title": "Prompt for a coding agent to solve the promotion conflicts",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "reportFile",
+        "file": "https://github.com/helios-energy/salesforce/pull/130",
+        "title": "Open the promotion Pull Request",
+        "type": "actionUrl"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

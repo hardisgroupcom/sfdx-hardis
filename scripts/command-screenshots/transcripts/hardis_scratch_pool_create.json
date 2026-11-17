@@ -1,0 +1,135 @@
+{
+  "command": "hardis:scratch:pool:create",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 What storage service do you want to use for your scratch orgs pool ?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "name": "storageService",
+            "type": "select",
+            "message": "🦙 What storage service do you want to use for your scratch orgs pool ?",
+            "description": "Choose a storage backend for managing and tracking scratch org pools",
+            "placeholder": "Select a storage service",
+            "initial": 0,
+            "choices": [
+              {
+                "title": "gitProvider",
+                "description": "Use a \"Scratch Orgs Pool Dashboard\" of your git provider (issue, work item or Pull Request). Scratch org credentials are encrypted.",
+                "value": "gitProvider"
+              },
+              {
+                "title": "salesforce",
+                "description": "Use a custom object on a Salesforce org (usually DevHub) to store scratch org pool tech info",
+                "value": "salesforce"
+              },
+              {
+                "title": "localtest",
+                "description": "Writes in a local file (just for tests, can not work in CI)",
+                "value": "localtest"
+              }
+            ],
+            "optionsPerPage": 9999
+          }
+        ]
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "gitProvider"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 What is the maximum number of scratch orgs in the pool ?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "name": "maxScratchOrgsNumber",
+            "type": "number",
+            "message": "🦙 What is the maximum number of scratch orgs in the pool ?",
+            "description": "Set the maximum number of scratch orgs that can exist in the pool at any time",
+            "placeholder": "Ex: 5",
+            "initial": 5
+          }
+        ]
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "5"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Configuring the scratch org pool: storage gitProvider, 5 scratch orgs at most"
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Create a masked CI/CD variable named SFDX_HARDIS_POOL_ENCRYPTION_KEY with this value, and keep it in a safe place (it is displayed only once): <copy>q7Lx2HeLiOSdemoPoolKeyNotReal0123456789abc</copy>"
+      }
+    },
+    {
+      "delay": 1200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Scratch org pool dashboard is ready: https://github.com/helios-energy/salesforce/issues/131"
+      }
+    },
+    {
+      "delay": 600,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "You need to define CI masked variable SFDX_AUTH_URL_DEV_HUB = force://PlatformCLI::(your-refresh-token)@helios-solar.my.salesforce.com"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

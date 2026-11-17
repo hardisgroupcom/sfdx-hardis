@@ -46,6 +46,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![Standard objects without custom fields and the standard apps removed from the Helios sources after a retrieve](../../../assets/images/commands/project/clean/standarditems.webp)
+
+_Standard objects without custom fields and the standard apps removed from the Helios sources after a retrieve_
+
 ## Parameters
 
 | Name         |  Type   | Description                                                   | Default | Required | Options |

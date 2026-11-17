@@ -1,0 +1,23 @@
+command: hardis:project:function:create
+run: sf hardis:project:function:create
+org: none
+caption: A custom function that posts a message to the crew channel becomes a new deployment action type
+answers:
+  - q: Enter the function id
+    value: postToCrewChannel
+    shot: true
+    caption: The id of the function is the type of the deployment actions that use it
+  - q: Enter the function label
+    value: Post to the crew channel
+  - q: Select the script runtime
+    choice: ^node$
+    shot: true
+    caption: Pick the runtime of the script
+  - q: Enter the script path
+    value: scripts/functions/notify-crew.js
+  - q: Describe what the function does
+    value: Posts a release message to the channel of the installation crew
+  - q: "Add an input"
+    choice: ^❌ No$
+  - q: Add an output
+    choice: ^❌ No$

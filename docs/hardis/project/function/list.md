@@ -30,6 +30,12 @@ This command is read-only and never prompts, so it already runs headless. `--age
 </details>
 
 
+## Screenshots
+
+![The notifyCrew custom function of the Helios project, its script, its channel input and whether its Node.js runtime is installed](../../../assets/images/commands/project/function/list.webp)
+
+_The notifyCrew custom function of the Helios project, its script, its channel input and whether its Node.js runtime is installed_
+
 ## Parameters
 
 | Name           |  Type   | Description                                                            | Default | Required | Options |

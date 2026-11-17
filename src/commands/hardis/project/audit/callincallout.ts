@@ -9,12 +9,21 @@ import sortArray from '../../../../common/utils/sortArray.js';
 import { catchMatches, generateReports, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class CallInCallOut extends SfCommand<any> {
   public static title = 'Audit CallIns and CallOuts';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'callins-callouts-audit',
+      title: 'CallIns and CallOuts',
+      description: 'One row per CallIn or CallOut found in the Apex code, with its protocol, namespace, number of matches and detail.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

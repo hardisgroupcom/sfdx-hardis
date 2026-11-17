@@ -46,6 +46,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The component instances of the Lightning pages of the Helios project checked for the identifier that API 53 requires](../../../assets/images/commands/project/fix/v53flexipages.webp)
+
+_The component instances of the Lightning pages of the Helios project checked for the identifier that API 53 requires_
+
 ## Parameters
 
 | Name         |  Type   | Description                                                   |      Default       | Required | Options |

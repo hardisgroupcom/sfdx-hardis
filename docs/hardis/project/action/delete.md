@@ -33,6 +33,16 @@ Required in agent mode:
 </details>
 
 
+## Screenshots
+
+![Pick the action to delete](../../../assets/images/commands/project/action/delete-1.webp)
+
+_Pick the action to delete_
+
+![The manual action that checks the inverter catalog is removed from the project configuration](../../../assets/images/commands/project/action/delete.webp)
+
+_The manual action that checks the inverter catalog is removed from the project configuration_
+
 ## Parameters
 
 | Name         |  Type   | Description                                                       | Default | Required |          Options           |

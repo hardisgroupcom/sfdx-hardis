@@ -64,6 +64,26 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 <!-- training-links:end -->
 
 
+## Screenshots
+
+![Pick the org that the branch deploys to](../../../assets/images/commands/project/configure/auth-1.webp)
+
+_Pick the org that the branch deploys to_
+
+![Pick the git branch to configure](../../../assets/images/commands/project/configure/auth-2.webp)
+
+_Pick the git branch to configure_
+
+![Pick the branches the uat branch merges into](../../../assets/images/commands/project/configure/auth-3.webp)
+
+_Pick the branches the uat branch merges into_
+
+![The uat branch is linked to its sandbox, with its branch config file, certificate, External Client App and CI/CD variables](../../../assets/images/commands/project/configure/auth.webp)
+
+_The uat branch is linked to its sandbox, with its branch config file, certificate, External Client App and CI/CD variables_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
 ## Parameters
 
 | Name                  |  Type   | Description                                                                                                                                                                                                                                               |  Default   | Required |            Options            |

@@ -1,0 +1,27 @@
+{
+  "command": "hardis:work:refresh",
+  "exitCode": 1,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "error",
+        "message": "This command is deprecated. Use \"sf hardis:work:backpromote\" instead."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "error"
+      }
+    }
+  ]
+}

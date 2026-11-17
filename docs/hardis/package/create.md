@@ -44,6 +44,16 @@ Use `--agent` to disable all interactive prompts. Required flags in agent mode:
 All interactive prompts for package name, path, and type are skipped.
 
 
+## Screenshots
+
+![Choose an unlocked package, meant for internal use](../../assets/images/commands/package/create-1.webp)
+
+_Choose an unlocked package, meant for internal use_
+
+![The unlocked package Helios Core is created in the Dev Hub and its package id is printed](../../assets/images/commands/package/create.webp)
+
+_The unlocked package Helios Core is created in the Dev Hub and its package id is printed_
+
 ## Parameters
 
 | Name                  |  Type   | Description                                                                                                       | Default | Required |       Options        |

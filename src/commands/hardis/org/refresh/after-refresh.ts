@@ -43,6 +43,7 @@ import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { soqlQuery, soqlQueryTooling } from '../../../../common/utils/apiUtils.js';
 import { importData, selectDataWorkspace } from '../../../../common/utils/dataUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -65,6 +66,14 @@ interface RefreshActionRow {
 
 export default class OrgRefreshAfterRefresh extends SfCommand<AnyJson> {
   public static title = 'Restore Connected Apps after org refresh';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'sandbox-refresh-after-actions-',
+      title: 'Refresh actions',
+      description: 'One row per restore step or manual action of the sandbox refresh (step, type, name, status, details), kept across runs; the sandbox folder name ends the file name.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

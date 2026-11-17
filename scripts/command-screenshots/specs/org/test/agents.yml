@@ -1,0 +1,10 @@
+command: hardis:org:test:agents
+run: sf hardis:org:test:agents
+mode: replay
+org: none
+caption: Seven test cases of the Helios_Installation_Assistant agent pass, with the report buttons
+answers:
+  - q: "Select the agent tests to run"
+    choice: "."
+    shot: true
+    caption: Pick the agent tests to run

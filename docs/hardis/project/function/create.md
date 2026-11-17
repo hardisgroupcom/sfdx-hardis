@@ -58,6 +58,20 @@ The `--outputs` syntax is `name[:type]`, entries separated by `;`.
 </details>
 
 
+## Screenshots
+
+![The id of the function is the type of the deployment actions that use it](../../../assets/images/commands/project/function/create-1.webp)
+
+_The id of the function is the type of the deployment actions that use it_
+
+![Pick the runtime of the script](../../../assets/images/commands/project/function/create-2.webp)
+
+_Pick the runtime of the script_
+
+![A custom function that posts a message to the crew channel becomes a new deployment action type](../../../assets/images/commands/project/function/create.webp)
+
+_A custom function that posts a message to the crew channel becomes a new deployment action type_
+
 ## Parameters
 
 | Name             |  Type   | Description                                                                              | Default | Required |          Options           |

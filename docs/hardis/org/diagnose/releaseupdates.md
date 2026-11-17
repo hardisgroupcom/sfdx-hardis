@@ -30,6 +30,27 @@ sf hardis:org:diagnose:releaseupdates --agent --target-org myorg@example.com
 
 In agent mode, the command runs fully automatically with no interactive prompts.
 
+## Screenshots
+
+![Release Updates of the Helios org still to check, with their status, category and the date Salesforce enforces them](../../../assets/images/commands/org/diagnose/releaseupdates.webp)
+
+_Release Updates of the Helios org still to check, with their status, category and the date Salesforce enforces them_
+
+- **(1)** Salesforce enforces the update on this date
+- **(2)** Every Release Update to check, beyond the first rows shown here
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Release updates
+
+One row per upcoming or overdue Release Update of the org, with its title, category, status and due date, so you can plan the ones to activate.
+
+Files: `release-updates-*.csv`, `xls/release-updates-*.xlsx`
+
+![Release updates report in Excel](../../../assets/images/commands/org/diagnose/releaseupdates-report-release-updates.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

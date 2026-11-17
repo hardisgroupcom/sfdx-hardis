@@ -44,6 +44,12 @@ The command has no prompt.
 
 
 
+## Screenshots
+
+![A snapshot of the uat branch is taken from a fresh scratch org, then the oldest snapshot is pruned](../../../assets/images/commands/scratch/snapshot/refresh.webp)
+
+_A snapshot of the uat branch is taken from a fresh scratch org, then the oldest snapshot is pruned_
+
 ## Parameters
 
 | Name                  |  Type   | Description                                                   | Default | Required | Options |

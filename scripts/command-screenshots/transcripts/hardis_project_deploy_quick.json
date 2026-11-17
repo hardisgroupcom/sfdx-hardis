@@ -1,0 +1,95 @@
+{
+  "command": "hardis:project:deploy:quick",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Executing: sf project deploy quick --target-org \"helios-preprod\" -i \"0AfHE00000Q1HelAAA\""
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf project deploy quick --target-org \"helios-preprod\" -i \"0AfHE00000Q1HelAAA\"",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 4200,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf project deploy quick --target-org \"helios-preprod\" -i \"0AfHE00000Q1HelAAA\"",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "[JiraProvider] Try to post comments on 4 tickets..."
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[JiraProvider] Using JIRA_EMAIL and JIRA_TOKEN for authentication"
+      }
+    },
+    {
+      "delay": 1100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[JiraProvider] Posted comments on 4 ticket(s): HEL-42, HEL-57, HEL-61, HEL-66"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[JiraProvider] Added label PREPROD_DEPLOYED on 4 ticket(s): HEL-42, HEL-57, HEL-61, HEL-66"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[NotifProvider] Handling notification of type DEPLOYMENT..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[NotifProvider] - Notif target found: sfdx-hardis Slack connector"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

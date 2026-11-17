@@ -25,12 +25,21 @@ import { SOAP_LOGIN_INACTIVITY_DAYS } from '../../../../common/whatWillBreak/aut
 import { WhatWillBreakCheckKey } from '../../../../common/whatWillBreak/whatWillBreakTypes.js';
 import { t } from '../../../../common/utils/i18n.js';
 import { markRowSensitiveValues, SENSITIVE_VALUES_KEY, stripSensitiveValues } from '../../../../common/utils/anonymizeUtils.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class DiagnoseWhatWillBreak extends SfCommand<any> {
   public static title = 'What will break after dated Salesforce changes';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'what-will-break',
+      title: 'What will break',
+      description: 'One row per dated Salesforce change, with what will break, its date and how to fix it, what breaks first coming first; each check that found something also writes a detail report named after the check, linked from this one.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

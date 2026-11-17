@@ -46,6 +46,12 @@ Optional flag:
 - `--minimizeprofiles`: activates the `minimizeProfiles` auto-clean type. **Only use this if the project is Permission Set-based**: it removes from profiles any attribute (object access, field access, etc.) that is already granted by a Permission Set. Omitted by default in agent mode; always activated in interactive mode.
 
 
+## Screenshots
+
+![A new sfdx-hardis project for sandbox development, with its integration branch and default cleaning](../../assets/images/commands/project/create.webp)
+
+_A new sfdx-hardis project for sandbox development, with its integration branch and default cleaning_
+
 ## Parameters
 
 | Name             |  Type   | Description                                                                                                                                                                                                                                                  | Default | Required |                  Options                  |

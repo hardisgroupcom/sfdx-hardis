@@ -1,0 +1,29 @@
+{
+  "mode": "append",
+  "rows": [
+    {
+      "Protocol": "HTTPS",
+      "Domain": "helios-solar.demo",
+      "Name": "Helios_Warranty",
+      "URL": "https://warranty.helios-solar.demo",
+      "Active": "yes",
+      "Description": "Warranty claims of the inverters, sent when a crew reports a faulty unit."
+    },
+    {
+      "Protocol": "HTTPS",
+      "Domain": "gridop.example",
+      "Name": "Grid_Operator",
+      "URL": "https://api.gridop.example",
+      "Active": "yes",
+      "Description": "Grid connection requests for the finished installations."
+    },
+    {
+      "Protocol": "HTTP",
+      "Domain": "helios-solar.demo",
+      "Name": "Legacy_Survey_Tool",
+      "URL": "http://surveys.helios-solar.demo",
+      "Active": "no",
+      "Description": "The old site survey tool, replaced in 2025."
+    }
+  ]
+}

@@ -69,6 +69,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The project documentation is built with Zensical, uploaded to Cloudflare Pages and protected by a Cloudflare Access policy](../../assets/images/commands/doc/mkdocs-to-cf.webp)
+
+_The project documentation is built with Zensical, uploaded to Cloudflare Pages and protected by a Cloudflare Access policy_
+
 ## Parameters
 
 | Name         |  Type   | Description                                                   | Default | Required | Options |

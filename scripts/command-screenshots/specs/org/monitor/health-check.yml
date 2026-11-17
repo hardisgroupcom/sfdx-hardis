@@ -1,0 +1,10 @@
+command: hardis:org:monitor:health-check
+run: sf hardis:org:monitor:health-check
+org: showcase
+caption: "Security Health Check score of the Helios org, then every setting below the Salesforce baseline by severity"
+pills:
+  - text: "Security Health Check score"
+    legend: "The score Salesforce shows in Setup > Health Check"
+  - text: "Security Health Check"
+    legend: "One row per indicator, with the org value and the baseline value"
+    button: true

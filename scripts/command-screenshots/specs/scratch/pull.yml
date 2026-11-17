@@ -1,0 +1,11 @@
+command: hardis:scratch:pull
+run: sf hardis:scratch:pull
+org: showcase
+caption: The Apex classes, fields and app changed in the scratch org pulled into the Helios sources, ready to commit
+pills:
+  - text: Sources pulled from scratch org
+    button: true
+    legend: The pulled metadata, in an Excel report
+  - text: Commit your retrieved files
+    button: true
+    legend: The next step, committing the pulled files

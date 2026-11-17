@@ -80,6 +80,14 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The Helios sources validated without being deployed, with the deployment actions and Pull Request comments of sfdx-hardis around it](../../../assets/images/commands/project/deploy/validate.webp)
+
+_The Helios sources validated without being deployed, with the deployment actions and Pull Request comments of sfdx-hardis around it_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
 ## Parameters
 
 | Name                     |  Type   | Description                                                                                                  | Default | Required | Options |
@@ -101,11 +109,13 @@ In agent mode, all interactive prompts are skipped and default values are used.
 | purge-on-delete          | boolean | purge-on-delete                                                                                              |         |          |         |
 | results-dir              | option  | results-dir                                                                                                  |         |          |         |
 | single-package           | boolean | single-package                                                                                               |         |          |         |
+| skipauth                 | boolean | Skip authentication check when a default username is required                                                |         |          |         |
 | source-dir<br/>-d        | option  | source-dir                                                                                                   |         |          |         |
 | target-org<br/>-o        | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
 | test-level               | option  | test-level                                                                                                   |         |          |         |
 | tests                    | option  | tests                                                                                                        |         |          |         |
 | wait<br/>-w              | option  | wait                                                                                                         |   33    |          |         |
+| websocket                | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

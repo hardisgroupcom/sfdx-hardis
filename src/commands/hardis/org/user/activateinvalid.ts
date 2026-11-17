@@ -9,12 +9,21 @@ import { prompts } from '../../../../common/utils/prompts.js';
 import { bulkQuery, bulkUpdate, soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { promptProfiles } from '../../../../common/utils/orgUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class OrgUserActiveInvalid extends SfCommand<any> {
   public static title = 'Reactivate sandbox invalid users';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'reactivated-users',
+      title: 'Reactivated users',
+      description: 'One row per sandbox user reactivated by the command, with the id and the corrected email.',
+    },
+  ];
 
   public static description = `Update sandbox users so their email is valid
 

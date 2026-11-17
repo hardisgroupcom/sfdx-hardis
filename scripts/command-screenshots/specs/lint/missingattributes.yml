@@ -1,0 +1,4 @@
+command: hardis:lint:missingattributes
+run: sf hardis:lint:missingattributes
+org: none
+caption: Custom fields of the Helios objects checked for a missing description

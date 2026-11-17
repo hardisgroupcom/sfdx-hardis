@@ -15,12 +15,51 @@ import sortArray from '../../../../common/utils/sortArray.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { t } from '../../../../common/utils/i18n.js';
 import { stripSensitiveValues } from '../../../../common/utils/anonymizeUtils.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class UnsecuredConnectedApps extends SfCommand<any> {
   public static title = 'Detect Unsecured Connected Apps';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'unsecured-oauth-tokens',
+      title: 'OAuth tokens',
+      description: 'One row per OAuth token of the org, with its app, user, last used date and a secured or unsecured status.',
+    },
+    {
+      file: 'unsecured-connected-apps',
+      title: 'Unsecured apps',
+      description: 'One row per app that has unsecured OAuth tokens, with the number of tokens, its latest usage date and the profiles of the users using it, so you can decide which apps to secure.',
+    },
+    {
+      file: 'oauth-tokens-by-user',
+      title: 'Tokens by user',
+      description: 'One row per user holding OAuth tokens, with the apps they connected and the last usage date of each.',
+    },
+    {
+      file: 'connected-apps-usage',
+      title: 'Connected apps usage',
+      description: 'One row per app that has OAuth tokens, with its last usage date, its users and whether it must move to an External Client App.',
+    },
+    {
+      file: 'deletable-auth-tokens',
+      title: 'Deletable tokens',
+      description: 'One row per unsecured OAuth token of an app that no longer exists in the org, written in interactive mode before you choose which ones to revoke.',
+    },
+    {
+      file: 'deleted-auth-tokens',
+      title: 'Deleted tokens',
+      description: 'One row per OAuth token revoked by the command after your confirmation.',
+    },
+    {
+      file: 'unsecured-tokens-secured-app-',
+      title: 'Stale tokens of secured apps',
+      description: 'One row per unsecured OAuth token of an app that is otherwise secured, written in interactive mode for each such app (the app name ends the file name).',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

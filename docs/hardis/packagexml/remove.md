@@ -52,6 +52,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The items of package-no-overwrite.xml removed from the package.xml of the project](../../assets/images/commands/packagexml/remove.webp)
+
+_The items of package-no-overwrite.xml removed from the package.xml of the project_
+
 ## Parameters
 
 | Name                    |  Type   | Description                                                                                                                                           | Default | Required | Options |
