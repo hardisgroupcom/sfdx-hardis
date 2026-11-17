@@ -194,19 +194,19 @@ the reports and the manifest are rebuilt from `<run dir>/out`).
 
 ## Files
 
-| File                                             | What                                                        |
-|--------------------------------------------------|-------------------------------------------------------------|
-| `scripts/command-screenshots/run.mjs`            | The runner                                                  |
-| `scripts/command-screenshots/lib/*.mjs`          | specs, orgs, workspace, harness, reports, excel, manifest   |
-| `scripts/command-screenshots/excel-shot.ps1`     | Excel capture on the hidden desktop                         |
-| `scripts/command-screenshots/specs/**.yml`       | One spec per command                                        |
-| `scripts/command-screenshots/overlays/**.json`   | Fictional report rows                                       |
-| `scripts/command-screenshots/transcripts/*.json` | Replayed runs                                               |
-| `scripts/command-screenshots/seed/apex/*.apex`   | Seed of the scratch orgs (plus the Helios SFDMU data)       |
-| `src/common/docBuilder/commandScreenshots.ts`    | `CommandReport`, the manifest types, missing image listing  |
-| `src/common/docBuilder/pluginDocUtils.ts`        | Screenshots and Reports sections of a command page          |
-| `docs/assets/command-screenshots.json`           | The manifest                                                |
-| `docs/assets/images/commands/**.webp`            | The images                                                  |
-| extension `src/test/ui/commandShots.test.ts`     | The suite that runs the commands and captures them          |
-| extension `src/test/ui/domMask.ts`               | Masking and leak check                                      |
+| File                                             | What                                                         |
+|--------------------------------------------------|--------------------------------------------------------------|
+| `scripts/command-screenshots/run.mjs`            | The runner                                                   |
+| `scripts/command-screenshots/lib/*.mjs`          | specs, orgs, workspace, harness, reports, excel, manifest    |
+| `scripts/command-screenshots/excel-shot.ps1`     | Excel capture on the hidden desktop                          |
+| `scripts/command-screenshots/specs/**.yml`       | One spec per command                                         |
+| `scripts/command-screenshots/overlays/**.json`   | Fictional report rows                                        |
+| `scripts/command-screenshots/transcripts/*.json` | Replayed runs                                                |
+| `scripts/command-screenshots/seed/apex/*.apex`   | Seed of the scratch orgs (plus the Helios SFDMU data)        |
+| `src/common/docBuilder/commandScreenshots.ts`    | `CommandReport`, the manifest types, missing image listing   |
+| `src/common/docBuilder/pluginDocUtils.ts`        | Screenshots and Reports sections of a command page           |
+| `docs/assets/command-screenshots.json`           | The manifest                                                 |
+| `docs/assets/images/commands/**.webp`            | The images                                                   |
+| extension `src/test/ui/commandShots.test.ts`     | The suite that runs the commands and captures them           |
+| extension `src/test/ui/domMask.ts`               | Masking and leak check                                       |
 | extension `test/fixtures/sf-shim/sf-mock.js`     | Passthrough to the real sf, replay and record of transcripts |
