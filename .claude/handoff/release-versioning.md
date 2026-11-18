@@ -21,6 +21,20 @@ Still to do on the first part:
 - Left from the review: the Azure DevOps provider builds the repository web URL in two places (merging them changes an existing function)
 - 16 unit tests fail locally: 15 blocked by the corporate proxy (403), 1 JIRA test that also fails on main
 
+## Decisions already made (do not reopen)
+
+- Release candidate scheme: release candidates below the highest versioned branch (`v1.5.0-rc.3`), plain version on it (`v1.5.0`).
+- Only branches whose branch config declares `releaseVersioning: true` are versioned. Their order comes from `mergeTargets`: roles `first`, `middle`, `final`.
+- One minor per release, opened on the first versioned branch (UAT) once the previous release has moved up. Hotfixes go through preprod and give a patch.
+- `v` prefix, initial version configurable (`releaseVersioningInitialVersion`, default `1.0.0`), `releaseVersioningMinimumVersion` to start a major.
+- Tags and Releases go through the git provider REST API (no push from CI), annotated tag message `sfdx-hardis release version <tag>` with `branch`, `org`, `deployedAt`, `pullRequest`, `jobUrl`.
+- Tags and provider Releases are always on with `releaseVersioning: true`. Versions on tickets are opt-in: `releaseVersioningTicketVersions: none | allCandidates | finalOnly`, default `none` (JIRA fix versions, labels elsewhere).
+- Release notes and the Release only when the deployment to the highest versioned branch succeeds. The release notes notification (Slack, Teams, email) is sent after the Release, with a "View Release" button. Every versioned deployment notification has a `Release version` line.
+- Performance of the DevOps Pipeline: `version:list` only calls the git provider with `--with-links`; the extension builds the links itself, runs the command after the first paint, and caches the result per panel session.
+- GitHub workflow template keeps `contents: read`, with a comment to switch to `write` when versioning is on.
+
+Main code: `src/common/utils/releaseVersionRules.ts` (pure rules, unit tested in `test/common/utils/releaseVersionRules.test.ts`), `src/common/utils/releaseVersionUtils.ts` (git and provider I/O), `src/commands/hardis/project/version/list.ts`, wiring in `src/commands/hardis/project/deploy/smart.ts`. Docs: `docs/salesforce-ci-cd-release-versioning.md`. Extension: `src/utils/pipeline/releaseVersionUtils.ts` and the pipeline LWC.
+
 ## Next step: custom tag formats per branch
 
 Analysis done and validated, next step is `/design`, then `/implement` in both repositories (same branches, same PRs).
