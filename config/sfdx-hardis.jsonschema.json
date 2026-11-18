@@ -3846,6 +3846,59 @@
       "title": "Project Name",
       "type": "string"
     },
+    "releaseVersioning": {
+      "$id": "#/properties/releaseVersioning",
+      "description": "Branch config (config/branches/.sfdx-hardis.<branch>.yml). Each successful deployment on this major branch creates a semver tag on the deployed commit: release candidates (v1.5.0-rc.3) on every versioned branch but the highest one of the chain, plain versions (v1.5.0) on the highest one, which also publishes the release notes as a GitHub or GitLab Release. The Pull Request comment, the notification, the tickets and the DevOps Pipeline of VS Code show the version.",
+      "default": false,
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-release-versioning/",
+      "examples": [
+        true,
+        false
+      ],
+      "title": "Handle release versioning",
+      "type": "boolean"
+    },
+    "releaseVersioningInitialVersion": {
+      "$id": "#/properties/releaseVersioningInitialVersion",
+      "description": "Version of the first release when the repository has no semver tag yet. A repository that already has semver tags (v1.3.0 or 1.3.0) carries on from the highest one.",
+      "default": "1.0.0",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-release-versioning/",
+      "examples": [
+        "1.0.0",
+        "0.1.0"
+      ],
+      "pattern": "^v?\\d+\\.\\d+\\.\\d+$",
+      "title": "Release versioning: first version",
+      "type": "string"
+    },
+    "releaseVersioningMinimumVersion": {
+      "$id": "#/properties/releaseVersioningMinimumVersion",
+      "description": "Lowest version the next release may get: set it to 2.0.0 to start a major version. A computed version below it is raised to it. Once that version exists, the setting has no more effect and does not need to be removed.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-release-versioning/",
+      "examples": [
+        "2.0.0"
+      ],
+      "pattern": "^v?\\d+\\.\\d+\\.\\d+$",
+      "title": "Release versioning: minimum version",
+      "type": "string"
+    },
+    "releaseVersioningTicketVersions": {
+      "$id": "#/properties/releaseVersioningTicketVersions",
+      "description": "With release versioning, writes the versions on the tickets of the deployed Pull Requests: a JIRA fix version (created when missing, marked released at the final version), a label or tag on the other ticketing systems. none (default): nothing is written on tickets. allCandidates: every release candidate, then the final version. finalOnly: the final version only, which keeps the release list of a JIRA project short.",
+      "default": "none",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-release-versioning/",
+      "enum": [
+        "none",
+        "allCandidates",
+        "finalOnly"
+      ],
+      "examples": [
+        "finalOnly",
+        "allCandidates"
+      ],
+      "title": "Release versioning: versions written on tickets",
+      "type": "string"
+    },
     "replacementRules": {
       "$id": "#/properties/replacementRules",
       "description": "Rules applied to the metadata files right before each deployment, for the org the deployment goes to: set an XML element to the value of the target org (xml-value), remove an XML element (xml-remove), or find and replace a text (text). A value is the same for every org (value), one per target branch with a default (values), or read from a CI/CD variable (secret). Rules of the branch config file of the target and of the \"sfdx-hardis Replacement Rules\" git provider issue change the rules with the same id. Built-in rules (ids starting with builtin-) remove the elements the deployment API version of the target org does not accept, and can be turned off with enabled: false.",

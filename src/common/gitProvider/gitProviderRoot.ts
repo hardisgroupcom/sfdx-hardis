@@ -561,6 +561,79 @@ export abstract class GitProviderRoot {
   public async closeDashboard(dashboard: DashboardRef): Promise<void> {
     throw new SfError(`Method closeDashboard is not implemented on ${this.getLabel()}`);
   }
+
+  // ---- Release versioning: tags and Releases created through the API, so the CI job never pushes ----
+
+  public supportsVersionTags(): boolean {
+    return false;
+  }
+
+  // Creates an annotated tag on a commit. alreadyExists when another job created a tag of that name
+  // first: the caller then computes the next version
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async createAnnotatedTag(request: CreateVersionTagRequest): Promise<CreateVersionTagResult> {
+    throw new SfError(`Method createAnnotatedTag is not implemented on ${this.getLabel()}`);
+  }
+
+  // False on providers that only have tags: the release notes then stay in the job reports
+  public supportsReleases(): boolean {
+    return false;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async createRelease(request: CreateReleaseRequest): Promise<CreateReleaseResult> {
+    throw new SfError(`Method createRelease is not implemented on ${this.getLabel()}`);
+  }
+
+  // Web page of a tag, null when the provider cannot build it
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public getTagUrl(tagName: string): string | null {
+    return null;
+  }
+
+  // Web page of the Release of a tag, null on providers without Releases
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public getReleaseUrl(tagName: string): string | null {
+    return null;
+  }
+
+  // Web page comparing two refs (tags, commits)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public getCompareUrl(fromRef: string, toRef: string): string | null {
+    return null;
+  }
+}
+
+export interface CreateVersionTagRequest {
+  name: string;
+  commitSha: string;
+  message: string;
+}
+
+export interface CreateVersionTagResult {
+  created: boolean;
+  alreadyExists: boolean;
+  url: string | null;
+}
+
+export interface ReleaseAsset {
+  // Local file attached to the Release
+  file: string;
+  name: string;
+  contentType: string;
+}
+
+export interface CreateReleaseRequest {
+  tagName: string;
+  title: string;
+  bodyMarkdown: string;
+  assets: ReleaseAsset[];
+}
+
+export interface CreateReleaseResult {
+  url: string | null;
+  // Assets the provider refused, by name: the Release exists without them
+  assetsNotAttached: string[];
 }
 
 export type DashboardFormat = 'markdown' | 'html';

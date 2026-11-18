@@ -259,6 +259,7 @@ description: "All the commands of sfdx-hardis, grouped by topic, with a link to 
 | [**hardis:project:replacement:preview**](hardis/project/replacement/preview.md)                         | Preview replacement rules (Beta)                                                                                                                                                                                       |
 | [**hardis:project:replacement:update**](hardis/project/replacement/update.md)                           | Update replacement rule (Beta)                                                                                                                                                                                         |
 | [**hardis:project:skills:import**](hardis/project/skills/import.md)                                     | Import Skills                                                                                                                                                                                                          |
+| [**hardis:project:version:list**](hardis/project/version/list.md)                                       | List release versions                                                                                                                                                                                                  |
 
 ## hardis:scratch
 

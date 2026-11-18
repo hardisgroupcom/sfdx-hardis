@@ -42,6 +42,9 @@ jobs:
       contents: read
       # To allow coding agents to push auto-fix branches and create Pull Requests,
       # replace "contents: read" above by "contents: write"
+      # With release versioning (releaseVersioning: true in a branch config), sfdx-hardis creates the
+      # version tags and the GitHub Releases: replace "contents: read" above by "contents: write"
+      # https://sfdx-hardis.cloudity.com/salesforce-ci-cd-release-versioning/
     steps:
       # Git Checkout
       - name: Checkout Code

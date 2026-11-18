@@ -1,0 +1,2 @@
+command: hardis:project:version:list
+skip: "It needs version tags created by deployment jobs on branches that declare releaseVersioning, which the Helios sample repository does not have. The DevOps Pipeline reads it in the background."

@@ -168,6 +168,7 @@ nav:
           - Retrofit: salesforce-devops-retrofit.md
           - Promotion branches (Beta): salesforce-devops-promotion-branches.md
           - Release Notes: hardis/doc/salesforce-devops-release-notes.md
+          - Release versioning (Beta): salesforce-ci-cd-release-versioning.md
           - DORA Metrics: hardis/doc/salesforce-devops-dora-report.md
           - Smart Deploy internals: salesforce-devops-smart-deployment.md
           - Project configuration:

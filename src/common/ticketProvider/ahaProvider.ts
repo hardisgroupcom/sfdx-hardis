@@ -93,6 +93,10 @@ export class AhaProvider extends TicketProviderRoot {
     return 'sfdx-hardis Aha! connector';
   }
 
+  public getTicketKind(): Ticket["provider"] {
+    return 'AHA';
+  }
+
   /** True when the identifier has the shape of a feature reference */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public static matchesTicketId(ticketId: string, _config: any = {}): boolean {

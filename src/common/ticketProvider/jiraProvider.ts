@@ -1,6 +1,6 @@
 import { Version2Client, Version3Client, Version3Models } from "jira.js";
 import type { Config } from "jira.js";
-import { recordTicketCollectionIssue, TicketProviderRoot } from "./ticketProviderRoot.js";
+import { recordTicketCollectionIssue, TicketProviderRoot, type TicketReleaseVersion } from "./ticketProviderRoot.js";
 import c from "chalk";
 import sortArray from '../utils/sortArray.js';
 // Type-only: a value import here would close a runtime cycle index -> provider -> index
@@ -324,6 +324,10 @@ export class JiraProvider extends TicketProviderRoot {
 
   public getLabel(): string {
     return "sfdx-hardis JIRA connector";
+  }
+
+  public getTicketKind(): Ticket["provider"] {
+    return "JIRA";
   }
 
   private async getJiraClient(): Promise<Version2Client | Version3Client | null> {
@@ -994,6 +998,51 @@ export class JiraProvider extends TicketProviderRoot {
   }
 
   /**
+   * A JIRA ticket gets the release version as a fix version of its project, created when missing.
+   * A final version (v1.5.0) is also marked released, with the date of the day.
+   */
+  public async recordReleaseVersion(tickets: Ticket[], releaseVersion: TicketReleaseVersion): Promise<Ticket[]> {
+    const ownTickets = this.listOwnFoundTickets(tickets);
+    if (ownTickets.length === 0 || !(await this.getJiraClient())) {
+      return [];
+    }
+    const versionsByProject = new Map<string, any>();
+    const updated: Ticket[] = [];
+    for (const ticket of ownTickets) {
+      const issueKey = this.normalizeTicketId(ticket.id);
+      const projectKey = issueKey.split("-")[0];
+      try {
+        if (!versionsByProject.has(projectKey)) {
+          versionsByProject.set(projectKey, await this.findOrCreateProjectVersion(projectKey, releaseVersion.tag));
+        }
+        await this.runJiraCall((client) =>
+          client.issues.editIssue({ issueIdOrKey: issueKey, update: { fixVersions: [{ add: { name: releaseVersion.tag } }] } })
+        );
+        updated.push(ticket);
+      } catch (e: any) {
+        uxLog("warning", this, c.yellow('[JiraProvider] ' + t('releaseVersionTicketFailed', { version: releaseVersion.tag, ticket: issueKey, message: e?.message || String(e) })));
+      }
+    }
+    if (releaseVersion.final) {
+      for (const version of versionsByProject.values()) {
+        if (version?.id && version.released !== true) {
+          try {
+            await this.runJiraCall((client) =>
+              client.projectVersions.updateVersion({ id: String(version.id), projectId: version.projectId, released: true, releaseDate: new Date().toISOString().split("T")[0] })
+            );
+          } catch (e: any) {
+            uxLog("warning", this, c.yellow('[JiraProvider] ' + t('releaseVersionTicketFailed', { version: releaseVersion.tag, ticket: version.name || releaseVersion.tag, message: e?.message || String(e) })));
+          }
+        }
+      }
+    }
+    if (updated.length > 0) {
+      uxLog("log", this, c.grey('[JiraProvider] ' + t('releaseVersionTicketsUpdated', { version: releaseVersion.tag, count: updated.length })));
+    }
+    return updated;
+  }
+
+  /**
    * Posts a markdown comment: an Atlassian document on Jira Cloud (REST API v3), wiki markup on
    * Jira Server / Data Center (REST API v2). With a marker, the most recent comment holding it is
    * updated instead, the marker being a visible line since a Jira comment has no hidden text.
@@ -1156,5 +1205,18 @@ export class JiraProvider extends TicketProviderRoot {
     const blocks = wiki.split("\n\n");
     blocks.splice(1, 0, `${mentionLead()}[~${assignee.id}]`);
     return blocks.join("\n\n");
+  }
+
+  // The version of a project with that name, created when the project does not have it yet
+  private async findOrCreateProjectVersion(projectKey: string, versionName: string): Promise<any> {
+    const versions: any[] = await this.runJiraCall((client) =>
+      retryReadOn5xx(() => client.projectVersions.getProjectVersions({ projectIdOrKey: projectKey }))
+    );
+    const existing = (versions || []).find((version: any) => version?.name === versionName);
+    if (existing) {
+      return existing;
+    }
+    const project: any = await this.runJiraCall((client) => retryReadOn5xx(() => client.projects.getProject({ projectIdOrKey: projectKey })));
+    return this.runJiraCall((client) => client.projectVersions.createVersion({ name: versionName, projectId: project?.id }));
   }
 }

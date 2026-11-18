@@ -140,7 +140,7 @@ function buildVerdict(prData: Partial<PullRequestData>, commands: PhasedCommand[
       ].filter((text) => text !== '').join('\n\n');
     } else {
       verdict = nothingToDeploy ? `✅ Nothing to deploy to ${target}` : `✅ Deployed to ${target}`;
-      next = '';
+      next = buildReleaseVersionLine(prData);
     }
   } else if (status === 'invalid') {
     const reason = describeFailure(prData, failedActions);
@@ -185,6 +185,16 @@ function buildVerdict(prData: Partial<PullRequestData>, commands: PhasedCommand[
     next = '';
   }
   return [`### ${verdict}`, [next, note].filter((text) => text !== '').join(' ')].filter((line) => line !== '').join('\n\n');
+}
+
+// The version a deployment on a versioned branch tagged, linked to its tag when the provider gives the URL
+function buildReleaseVersionLine(prData: Partial<PullRequestData>): string {
+  const releaseVersion = prData.releaseVersion;
+  if (!releaseVersion?.tag) {
+    return '';
+  }
+  const tag = releaseVersion.url ? `[**${releaseVersion.tag}**](${releaseVersion.url})` : `**${releaseVersion.tag}**`;
+  return `Release version: ${tag}`;
 }
 
 // Stopped only by manual steps not done yet: nothing to fix in the code, and a push is not needed
