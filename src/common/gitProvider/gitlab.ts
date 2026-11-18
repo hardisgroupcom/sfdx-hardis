@@ -1243,6 +1243,17 @@ ${getBannerMarkdownAndLink()}
     return { url: release?._links?.self || this.getReleaseUrl(request.tagName), assetsNotAttached };
   }
 
+  // 404 when the tag has no Release
+  public async releaseExists(tagName: string): Promise<boolean | null> {
+    try {
+      await this.gitlabApi.ProjectReleases.show(this.requireProjectId(), tagName);
+      return true;
+    } catch (e: any) {
+      const status = e?.cause?.response?.status ?? e?.response?.status;
+      return status === 404 || /404|not found/i.test(String(e?.message || "")) ? false : null;
+    }
+  }
+
   public getTagUrl(tagName: string): string | null {
     return this.projectWebUrl() ? `${this.projectWebUrl()}/-/tags/${encodeURIComponent(tagName)}` : null;
   }

@@ -332,6 +332,17 @@ function chooseFinalBase(
   if (candidates.length > 0) {
     return { base: candidates[0], reason: 'final-release' };
   }
+  // A promotion branch cherry-picks the User Stories: the tags of its source are not reachable from
+  // the deployed commit, so the release comes from the version last deployed on that source
+  const promotionSource = context.sourceKind === 'promotionBranch' ? readPromotionSource(context, graph, branch) : null;
+  if (promotionSource) {
+    const sourceTag = graph.roles[promotionSource]
+      ? findLatestVersionTagOfBranch(tags, promotionSource)
+      : latestTagOfFeedingBranches(tags, graph, branch, promotionSource);
+    if (sourceTag && (!production || compareReleaseVersions(baseOf(sourceTag.version), production) > 0)) {
+      return { base: baseOf(sourceTag.version), reason: 'final-release' };
+    }
+  }
   if ((graph.below[branch] || []).length === 0) {
     // The only versioned branch: every deployment is a release
     return { base: production ? nextMinor(production) : settings.initialVersion, reason: 'final-only' };
@@ -376,9 +387,9 @@ function chooseMiddleBase(
   settings: ReleaseVersionSettings
 ): { base: ReleaseVersion; reason: ReleaseVersionReason } {
   const production = highestPlainVersion(tags);
-  const isPromotion = (context.sourceKind === 'majorBranch' || context.sourceKind === 'promotionBranch') && !!context.sourceBranch;
-  if (isPromotion) {
-    const feedingTag = latestTagOfFeedingBranches(tags, graph, branch, toConfigBranchName(context.sourceBranch));
+  const promotionSource = readPromotionSource(context, graph, branch);
+  if (promotionSource) {
+    const feedingTag = latestTagOfFeedingBranches(tags, graph, branch, promotionSource);
     if (feedingTag) {
       const feedingBase = baseOf(feedingTag.version);
       if (!production || compareReleaseVersions(feedingBase, production) > 0) {
@@ -394,6 +405,19 @@ function chooseMiddleBase(
   return { base: reference ? nextPatch(reference) : settings.initialVersion, reason: 'middle-hotfix-patch' };
 }
 
+/**
+ * The major branch a promotion into this branch comes from: the source of the Pull Request, or of
+ * its promotion branch, when it merges upwards into this branch. Null for anything else, including
+ * a higher branch merged back into this one (main into preprod), which is a hotfix.
+ */
+function readPromotionSource(context: ReleaseVersionContext, graph: VersionedBranchGraph, branch: string): string | null {
+  if ((context.sourceKind !== 'majorBranch' && context.sourceKind !== 'promotionBranch') || !context.sourceBranch) {
+    return null;
+  }
+  const source = toConfigBranchName(context.sourceBranch);
+  return (graph.reachableUp[source] || []).includes(branch) ? source : null;
+}
+
 /** Versioned branches at or below the source of the Pull Request, that feed the deployed branch */
 function latestTagOfFeedingBranches(tags: VersionTag[], graph: VersionedBranchGraph, branch: string, source: string): VersionTag | undefined {
   const feeding = (graph.below[branch] || []).filter(
@@ -407,10 +431,9 @@ function latestTagOfFeedingBranches(tags: VersionTag[], graph: VersionedBranchGr
 
 function hasMovedUp(tags: VersionTag[], graph: VersionedBranchGraph, branch: string, base: ReleaseVersion): boolean {
   const higher = graph.above[branch] || [];
+  // A plain version of that base is a release already in production: the caller checks it first
   return tags.some(
-    (tag) =>
-      compareReleaseVersions(baseOf(tag.version), base) === 0 &&
-      (tag.version.rc === null || (tag.managed && higher.includes(toConfigBranchName(tag.branch))))
+    (tag) => compareReleaseVersions(baseOf(tag.version), base) === 0 && tag.managed && higher.includes(toConfigBranchName(tag.branch))
   );
 }
 

@@ -181,7 +181,12 @@ export async function handlePostDeploymentReleaseVersion(options: { branch: stri
  * the job reports. When the notes fail, the Release links to the comparison with the previous version.
  */
 export async function publishProductionRelease(result: ReleaseVersionResult | null, commandRef: any): Promise<void> {
-  if (!result || !result.final || !result.created) {
+  if (!result || !result.final) {
+    return;
+  }
+  // A production job run again on a tagged commit publishes only what is missing: the Release of a
+  // first run whose Release call failed after the tag was created
+  if (!result.created && !(await isReleaseMissing(result.tag))) {
     return;
   }
   // Loaded when needed: releaseNotesUtils reads the version tags from this module
@@ -240,7 +245,6 @@ export async function describeReleaseVersions(options: { fetch: boolean; history
   const majorOrgs = await listMajorOrgs();
   const graph = buildVersionedBranchGraph(majorOrgs);
   const settings = await readReleaseVersionSettings(commandRef);
-  const config = await getConfig("project");
   const tags = await listVersionTags();
   // Building the git provider costs API calls (GitLab resolves its project): only for the links
   let gitProvider: GitProviderRoot | null = null;
@@ -264,7 +268,8 @@ export async function describeReleaseVersions(options: { fetch: boolean; history
   return {
     enabled: graph.versioned.length > 0,
     initialVersion: formatReleaseVersion(settings.initialVersion, false),
-    minimumVersion: config.releaseVersioningMinimumVersion ? String(config.releaseVersioningMinimumVersion) : null,
+    // The value the computation uses: an invalid one in the config is ignored there, and here
+    minimumVersion: settings.minimumVersion ? formatReleaseVersion(settings.minimumVersion, false) : null,
     branches,
     history: [...tags].sort(compareTagsNewestFirst).slice(0, options.historyLimit).map((tag) => toVersionEntry(tag, gitProvider)),
   };
@@ -302,6 +307,19 @@ export async function listVersionTags(): Promise<VersionTag[]> {
 
 // ---- Private ----
 
+// True only when the provider has Releases and says this one does not exist
+async function isReleaseMissing(tagName: string): Promise<boolean> {
+  try {
+    const gitProvider = await GitProvider.getInstance();
+    if (!gitProvider || !gitProvider.supportsReleases()) {
+      return false;
+    }
+    return (await gitProvider.releaseExists(tagName)) === false;
+  } catch {
+    return false;
+  }
+}
+
 async function readReleaseVersionSettings(commandRef: any): Promise<ReleaseVersionSettings> {
   const config = await getConfig("project");
   const readVersion = (key: string, fallback: string | null) => {
@@ -322,9 +340,15 @@ async function readReleaseVersionSettings(commandRef: any): Promise<ReleaseVersi
   };
 }
 
-// The CI checkout may not have every tag: Azure Pipelines does not fetch them by default
+// The CI checkout may not have every tag: Azure Pipelines does not fetch them by default. A shallow
+// clone (the default of GitLab) does not have the history either, and git tag --merged then misses
+// the release candidates older than the depth: the history is fetched once, when it is shallow
 async function fetchVersionTags(commandRef: any): Promise<void> {
   try {
+    const shallow = (await git().raw(['rev-parse', '--is-shallow-repository']).catch(() => 'false')).trim() === 'true';
+    if (shallow) {
+      await git().raw(['fetch', 'origin', '--unshallow', '--quiet']);
+    }
     await git().raw(['fetch', 'origin', '--tags', '--force', '--quiet']);
   } catch (e: any) {
     uxLog("warning", commandRef, c.yellow(t('releaseVersionFetchTagsFailed', { message: e?.message || String(e) })));

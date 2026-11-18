@@ -1183,6 +1183,16 @@ ${getBannerMarkdownAndLink()}
     return { url: release.data?.html_url || this.getReleaseUrl(request.tagName), assetsNotAttached };
   }
 
+  // GET /repos/{owner}/{repo}/releases/tags/{tag}: 404 when the tag has no Release
+  public async releaseExists(tagName: string): Promise<boolean | null> {
+    try {
+      await this.api.get<any>(`${this.repoPath()}/releases/tags/${encodeURIComponent(tagName)}`);
+      return true;
+    } catch (e: any) {
+      return e?.status === 404 ? false : null;
+    }
+  }
+
   public getTagUrl(tagName: string): string | null {
     return this.repoWebUrl() ? `${this.repoWebUrl()}/tree/${encodeURIComponent(tagName)}` : null;
   }

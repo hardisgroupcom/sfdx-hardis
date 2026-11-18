@@ -585,6 +585,12 @@ export abstract class GitProviderRoot {
     throw new SfError(`Method createRelease is not implemented on ${this.getLabel()}`);
   }
 
+  // Whether the Release of a tag exists. Null when the provider cannot tell
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async releaseExists(tagName: string): Promise<boolean | null> {
+    return null;
+  }
+
   // Web page of a tag, null when the provider cannot build it
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public getTagUrl(tagName: string): string | null {

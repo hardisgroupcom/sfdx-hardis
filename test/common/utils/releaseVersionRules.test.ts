@@ -187,6 +187,25 @@ describe('releaseVersionRules', () => {
       expect(repo.deploy('preprod', { sourceBranch: 'uat', sourceKind: 'promotionBranch' })).to.equal('v1.6.0-rc.2');
     });
 
+    it('treats a higher branch merged back into preprod as a hotfix', () => {
+      const repo = new Repository();
+      repo.seed('v1.4.1', 'main');
+      repo.seed('v1.5.0-rc.1', 'uat');
+      expect(repo.deploy('preprod', { sourceBranch: 'main', sourceKind: 'majorBranch' })).to.equal('v1.4.2-rc.1');
+      // Release 1.5.0 did not move up: uat keeps it open
+      expect(repo.deploy('uat', fromInt)).to.equal('v1.5.0-rc.2');
+    });
+
+    it('releases the version of the source of a promotion branch into main', () => {
+      const repo = new Repository();
+      repo.seed('v1.4.1', 'main');
+      repo.seed('v1.5.0-rc.2', 'uat');
+      repo.seed('v1.5.0-rc.3', 'preprod');
+      repo.seed('v1.6.0-rc.1', 'uat');
+      // The cherry-picked commits carry new SHAs: no release candidate is reachable from the deployed commit
+      expect(repo.deploy('main', { sourceBranch: 'preprod', sourceKind: 'promotionBranch' }, ['v1.4.1'])).to.equal('v1.5.0');
+    });
+
     it('releases the newest version when a release overtook another one', () => {
       const repo = new Repository();
       repo.seed('v1.4.1', 'main');

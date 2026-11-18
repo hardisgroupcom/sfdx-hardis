@@ -71,10 +71,11 @@ A release cycle on a pipeline `int -> uat -> preprod -> main`, where uat, prepro
 The rules behind it:
 
 - **Lowest versioned branch** (uat): it adds release candidates to its open release until a tag of that release exists on a higher branch, or the release is in production. The next deployment then opens the next minor version.
-- **Middle branches** (preprod): a promotion from the branch below (or a [promotion branch](salesforce-devops-promotion-branches.md) built from it) takes the version coming up. Anything else is a hotfix: it joins the release waiting there for production, or starts the next patch of production when nothing waits.
-- **Highest versioned branch** (main): it gets the plain version of the newest release candidate reachable from the deployed commit and not released yet. When a release overtook another one in preprod, only the newest is released, and its release notes start from the previous production version.
+- **Middle branches** (preprod): a promotion from the branch below (or a [promotion branch](salesforce-devops-promotion-branches.md) built from it) takes the version coming up. Anything else is a hotfix, including a higher branch merged back into it: it joins the release waiting there for production, or starts the next patch of production when nothing waits.
+- **Highest versioned branch** (main): it gets the plain version of the newest release candidate reachable from the deployed commit and not released yet. A promotion branch cherry-picks its User Stories, so nothing of its source is reachable: it gets the version last deployed on that source. When a release overtook another one in preprod, only the newest is released, and its release notes start from the previous production version.
 - **Major versions**: set `releaseVersioningMinimumVersion: 2.0.0`.
-- A deployment job run again on a commit that already has its version tag creates no new tag.
+- A deployment job run again on a commit that already has its version tag creates no new tag. On the highest versioned branch, it publishes the Release only when the first run could not create it.
+- A shallow clone (the default of GitLab CI) is completed with its history first, so the release candidates older than the clone depth are found.
 - When two jobs compute the same version at the same time, the second one sees the tag exists and takes the next one.
 
 Each tag is an annotated tag whose message says which branch and which org it was deployed to, when, from which Pull Request and by which job. Tags created by hand count for the numbering, without a branch.

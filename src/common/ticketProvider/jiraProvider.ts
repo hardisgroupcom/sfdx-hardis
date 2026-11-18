@@ -1007,13 +1007,23 @@ export class JiraProvider extends TicketProviderRoot {
       return [];
     }
     const versionsByProject = new Map<string, any>();
+    // A project whose version could not be read or created is not asked again for each of its tickets
+    const failedProjects = new Set<string>();
     const updated: Ticket[] = [];
     for (const ticket of ownTickets) {
       const issueKey = this.normalizeTicketId(ticket.id);
       const projectKey = issueKey.split("-")[0];
+      if (failedProjects.has(projectKey)) {
+        continue;
+      }
       try {
         if (!versionsByProject.has(projectKey)) {
-          versionsByProject.set(projectKey, await this.findOrCreateProjectVersion(projectKey, releaseVersion.tag));
+          try {
+            versionsByProject.set(projectKey, await this.findOrCreateProjectVersion(projectKey, releaseVersion.tag));
+          } catch (e) {
+            failedProjects.add(projectKey);
+            throw e;
+          }
         }
         await this.runJiraCall((client) =>
           client.issues.editIssue({ issueIdOrKey: issueKey, update: { fixVersions: [{ add: { name: releaseVersion.tag } }] } })

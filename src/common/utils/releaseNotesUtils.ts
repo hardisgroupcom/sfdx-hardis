@@ -7,7 +7,7 @@ import Papa from "papaparse";
 import { arrayUniqueByKey, execCommand, getCurrentGitBranch, git, isCI, uxLog, uxLogTable } from "./index.js";
 import { generatePdfFileFromMarkdown } from "./markdownUtils.js";
 import { listVersionTags } from "./releaseVersionUtils.js";
-import { findPreviousVersionTag, parseReleaseVersion } from "./releaseVersionRules.js";
+import { findPreviousVersionTag, parseReleaseVersion, VersionTag } from "./releaseVersionRules.js";
 import { CommonPullRequestInfo, GitProvider } from "../gitProvider/index.js";
 import { Ticket, TicketProvider } from "../ticketProvider/index.js";
 import { listMajorOrgs, isProduction } from "./orgConfigUtils.js";
@@ -341,7 +341,9 @@ export async function resolveReleaseScope(
   if (flags["release-tag"]) {
     const releaseTag = flags["release-tag"];
     await assertTagExists(releaseTag, commandRef);
-    const previousTag = flags["previous-tag"] || (await findPreviousSemverTag(releaseTag, commandRef));
+    // Read once: the previous tag and the target branch both come from the version tags
+    const versionTags = await listVersionTags().catch(() => []);
+    const previousTag = flags["previous-tag"] || (await findPreviousSemverTag(releaseTag, commandRef, versionTags));
     if (previousTag) {
       await assertTagExists(previousTag, commandRef);
     }
@@ -350,7 +352,7 @@ export async function resolveReleaseScope(
     // tagged commit, as the post mode does for a first promotion, rather than an empty range
     const fromCommit = previousTag ? await getCommitForTag(previousTag) : (await getFirstParentCommit(toCommit)) || toCommit;
     // A version tag created by a deployment says which branch it was deployed to
-    const taggedBranch = (await listVersionTags().catch(() => [])).find((tag) => tag.name === releaseTag && tag.managed)?.branch || null;
+    const taggedBranch = versionTags.find((tag) => tag.name === releaseTag && tag.managed)?.branch || null;
     const targetBranch = flags["target-branch"] || taggedBranch || (await detectTargetBranchForTag(releaseTag, majorOrgs, agentMode));
     return { fromCommit, toCommit, releaseTag, previousTag, targetBranch, mode };
   }
@@ -670,10 +672,10 @@ async function assertTagExists(tag: string, commandRef: any): Promise<void> {
  * release candidates, and a release candidate created by a deployment starts from the previous
  * version of the same branch. Any other tag starts from the tag before it in version order.
  */
-export async function findPreviousSemverTag(currentTag: string, commandRef: any): Promise<string | undefined> {
+export async function findPreviousSemverTag(currentTag: string, commandRef: any, versionTags?: VersionTag[]): Promise<string | undefined> {
   if (parseReleaseVersion(currentTag)) {
     try {
-      const previous = findPreviousVersionTag(currentTag, await listVersionTags());
+      const previous = findPreviousVersionTag(currentTag, versionTags || (await listVersionTags()));
       if (previous) {
         uxLog("action", commandRef, c.cyan(t("releaseNotesPreviousTagAutoDetected", { tag: previous.name })));
       }
