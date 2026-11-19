@@ -1384,6 +1384,7 @@
   "doYouWantToUseOrg": "Vuoi utilizzare la org {{org}}?",
   "doYouWantToUseOrgTo": "Vuoi utilizzare la org {{flags}} per simulare la distribuzione dei metadati {{sourceDirOrFile}}?",
   "doYouWantToUseTheExisting": "Vuoi utilizzare il manifest completo della org esistente o generarne uno nuovo?",
+  "docCacheRemovalFromSiteFailed": "Impossibile rimuovere le cache AI e di diagrammi dal sito di documentazione, il sito viene pubblicato con esse: {{message}}",
   "docCacheRemovedFromSite": "Rimosse {{count}} voci di cache AI e di diagrammi dall'indice di ricerca del sito di documentazione",
   "docHomeAuthorizationsDesc": "Chi può vedere cosa e chi può fare cosa.",
   "docHomeAutomationsDesc": "Cosa parte da solo quando un record viene creato o modificato.",

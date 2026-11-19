@@ -1383,6 +1383,7 @@
   "doYouWantToUseOrg": "Möchten Sie die Org {{org}} verwenden?",
   "doYouWantToUseOrgTo": "Möchten Sie die Org {{flags}} verwenden, um die Bereitstellung von Metadaten {{sourceDirOrFile}} zu simulieren?",
   "doYouWantToUseTheExisting": "Möchten Sie das vorhandene vollständige Org-Manifest verwenden oder ein neues generieren?",
+  "docCacheRemovalFromSiteFailed": "Die KI- und Diagramm-Caches konnten nicht von der Dokumentationsseite entfernt werden, die Seite wird mit ihnen veröffentlicht: {{message}}",
   "docCacheRemovedFromSite": "{{count}} KI- und Diagramm-Cache-Einträge wurden aus dem Suchindex der Dokumentationsseite entfernt",
   "docHomeAuthorizationsDesc": "Wer was sehen darf und wer was tun darf.",
   "docHomeAutomationsDesc": "Was von selbst läuft, wenn ein Datensatz erstellt oder geändert wird.",

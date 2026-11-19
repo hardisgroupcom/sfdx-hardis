@@ -161,9 +161,13 @@ In agent mode, all interactive prompts are skipped and default values are used.
     this.setupCloudflareClient();
 
     // Generate HTML pages
-    if ((process.env?.SKIP_BUILD_HTML || "false") !== "true") {
+    const skipBuildHtml = (process.env?.SKIP_BUILD_HTML || "false") === "true";
+    if (!skipBuildHtml) {
       await generateMkDocsHTML();
     }
+
+    // Before any Cloudflare resource is created, so a site that cannot be uploaded creates none
+    await this.fitSiteToCloudflareLimits(skipBuildHtml);
 
     // Get or Create Cloudflare Pages project
     await this.ensureCloudflarePagesProject();
@@ -210,6 +214,34 @@ In agent mode, all interactive prompts are skipped and default values are used.
       accountId: this.accountId,
     });
     uxLog("log", this, c.grey(t('cloudflareClientInfoFound')));
+  }
+
+  // Cloudflare Pages refuses the whole deployment when a single file is over 25 MiB, and the
+  // search index of a large org gets there first
+  private async fitSiteToCloudflareLimits(skipBuildHtml: boolean) {
+    const siteDir = path.join(process.cwd(), "site");
+    // generateMkDocsHTML already removed the caches: only a site built by something else
+    // (SKIP_BUILD_HTML=true) still has them
+    if (skipBuildHtml) {
+      const removedSearchEntries = await removeDocCacheFromSite(siteDir);
+      if (removedSearchEntries > 0) {
+        uxLog("log", this, c.grey(t('docCacheRemovedFromSite', { count: removedSearchEntries })));
+      }
+    }
+    const searchIndexTrim = await fitSearchIndexToSize(siteDir, CLOUDFLARE_PAGES_SAFE_FILE_SIZE);
+    if (searchIndexTrim.trimmed > 0) {
+      uxLog("warning", this, c.yellow(t('searchIndexTrimmed', {
+        maxSize: formatFileSize(CLOUDFLARE_PAGES_SAFE_FILE_SIZE),
+        count: searchIndexTrim.trimmed,
+        pages: searchIndexTrim.largest.join(', '),
+      })));
+    }
+    const filesOverSize = await listSiteFilesOverSize(siteDir, CLOUDFLARE_PAGES_MAX_FILE_SIZE);
+    if (filesOverSize.length > 0) {
+      throw new SfError(t('docSiteFilesTooLargeForCloudflare', {
+        files: filesOverSize.map((fileOverSize) => `${fileOverSize.file} (${formatFileSize(fileOverSize.size)})`).join(', '),
+      }));
+    }
   }
 
   private async ensureCloudflarePagesProject() {
@@ -304,7 +336,6 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
   private async uploadHtmlPages() {
     uxLog("action", this, c.cyan(t('uploadingHtmlPagesToCloudflarePages')));
-    await this.fitSiteToCloudflareLimits();
     let wranglerCommand = `wrangler pages deploy ./site --project-name="${this.pagesProjectName}" --branch=${this.currentGitBranch}`;
     const isWranglerAvailable = await which("wrangler", { nothrow: true });
     if (!isWranglerAvailable) {
@@ -312,30 +343,4 @@ In agent mode, all interactive prompts are skipped and default values are used.
     }
     await execCommand(wranglerCommand, this, { fail: true, output: true, debug: this.debugMode });
   }
-
-  // Cloudflare Pages refuses the whole deployment when a single file is over 25 MiB, and the
-  // search index of a large org gets there first
-  private async fitSiteToCloudflareLimits() {
-    const siteDir = path.join(process.cwd(), "site");
-    // Also when SKIP_BUILD_HTML=true: the site was then built by something else
-    const removedSearchEntries = await removeDocCacheFromSite(siteDir);
-    if (removedSearchEntries > 0) {
-      uxLog("log", this, c.grey(t('docCacheRemovedFromSite', { count: removedSearchEntries })));
-    }
-    const searchIndexTrim = await fitSearchIndexToSize(siteDir, CLOUDFLARE_PAGES_SAFE_FILE_SIZE);
-    if (searchIndexTrim.trimmed > 0) {
-      uxLog("warning", this, c.yellow(t('searchIndexTrimmed', {
-        maxSize: formatFileSize(CLOUDFLARE_PAGES_SAFE_FILE_SIZE),
-        count: searchIndexTrim.trimmed,
-        pages: searchIndexTrim.largest.join(', '),
-      })));
-    }
-    const filesOverSize = await listSiteFilesOverSize(siteDir, CLOUDFLARE_PAGES_MAX_FILE_SIZE);
-    if (filesOverSize.length > 0) {
-      throw new SfError(t('docSiteFilesTooLargeForCloudflare', {
-        files: filesOverSize.map((fileOverSize) => `${fileOverSize.file} (${formatFileSize(fileOverSize.size)})`).join(', '),
-      }));
-    }
-  }
-
 }

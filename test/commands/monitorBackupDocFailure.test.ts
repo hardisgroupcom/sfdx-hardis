@@ -23,7 +23,7 @@ describe('hardis:org:monitor:backup documentation failure', () => {
   });
 
   const onDocumentationFailure = (error: any, exitCodeBeforeDoc: number | undefined) =>
-    (MonitorBackup.prototype as any).onDocumentationFailure.call({}, {}, 'fr', error, exitCodeBeforeDoc);
+    (MonitorBackup.prototype as any).onDocumentationFailure.call(Object.create(MonitorBackup.prototype), {}, 'fr', error, exitCodeBeforeDoc);
 
   it('sets back the exit code the backup had before the documentation', async () => {
     // What SfCommand.catch does before throwing the error of a sub-command again

@@ -53,13 +53,12 @@ describe('documentation site cleaning', () => {
       expect(searchIndex.items.map((item: any) => item.location)).to.deep.equal(['objects/Account/']);
     });
 
-    it('reads the search entries of MkDocs Material, called docs', async () => {
+    it('reads the search index of MkDocs Material, in search/search_index.json with entries called docs', async () => {
       writeSite({
-        'search/search.json': '',
-        'search.json': JSON.stringify({ docs: [{ location: 'cache-mermaid/x/', title: 'x', text: 'x' }, { location: 'apex/', title: 'Apex', text: '' }] }),
+        'search/search_index.json': JSON.stringify({ docs: [{ location: 'cache-mermaid/x/', title: 'x', text: 'x' }, { location: 'apex/', title: 'Apex', text: '' }] }),
       });
       expect(await removeDocCacheFromSite(siteDir)).to.equal(1);
-      expect(readSearchIndex().docs).to.have.length(1);
+      expect(JSON.parse(fs.readFileSync(path.join(siteDir, 'search', 'search_index.json'), 'utf8')).docs).to.have.length(1);
     });
 
     it('does nothing without a site or a search index it knows', async () => {

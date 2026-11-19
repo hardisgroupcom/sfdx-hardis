@@ -1319,6 +1319,7 @@
   "didYouUpdateAndWantToExport": "Você atualizou {{dataSource}} e quer exportar os dados relacionados?",
   "discoveredFilesInChunkUpdatedTotalEstimate": "{{filesDiscoveredInChunk}} arquivos descobertos no bloco, estimativa total atualizada para {{actualTotalFiles}}",
   "discoveredFilesInChunkUpdatedTotalEstimate2": "{{filesDiscoveredInChunk}} arquivos descobertos no bloco, estimativa total atualizada para {{actualTotalFiles}} {{apiUsage}}",
+  "docCacheRemovalFromSiteFailed": "Não foi possível remover os caches de IA e de diagramas do site de documentação, o site é publicado com eles: {{message}}",
   "docCacheRemovedFromSite": "Foram removidas {{count}} entradas de cache de IA e de diagramas do índice de busca do site de documentação",
   "docPluginCommandsWithoutScreenshot": "{{count}} comandos não têm captura de tela em {{manifest}}: {{commands}}",
   "docPluginGeneratingSelectedCommands": "Gerando a documentação de {{selected}} comando(s) de {{total}}",

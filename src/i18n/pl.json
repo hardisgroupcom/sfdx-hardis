@@ -1384,6 +1384,7 @@
   "doYouWantToUseOrg": "Czy chcesz użyć org {{org}}?",
   "doYouWantToUseOrgTo": "Czy chcesz użyć org {{flags}} do symulacji wdrożenia metadanych {{sourceDirOrFile}}?",
   "doYouWantToUseTheExisting": "Czy chcesz użyć istniejącego pełnego manifestu org, czy wygenerować nowy?",
+  "docCacheRemovalFromSiteFailed": "Nie udało się usunąć pamięci podręcznej AI i diagramów z witryny dokumentacji, witryna zostanie opublikowana razem z nią: {{message}}",
   "docCacheRemovedFromSite": "Usunięto {{count}} wpisów pamięci podręcznej AI i diagramów z indeksu wyszukiwania witryny dokumentacji",
   "docHomeAuthorizationsDesc": "Kto może co zobaczyć i kto może co zrobić.",
   "docHomeAutomationsDesc": "To, co uruchamia się samo przy tworzeniu lub zmianie rekordu.",

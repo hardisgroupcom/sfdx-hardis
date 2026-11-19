@@ -1384,6 +1384,7 @@
   "doYouWantToUseOrg": "Wil je org {{org}} gebruiken?",
   "doYouWantToUseOrgTo": "Wil je org {{flags}} gebruiken om de implementatie van metadata {{sourceDirOrFile}} te simuleren?",
   "doYouWantToUseTheExisting": "Wil je het bestaande volledige org-manifest gebruiken of een nieuw manifest genereren?",
+  "docCacheRemovalFromSiteFailed": "Kan de AI- en diagramcaches niet uit de documentatiesite verwijderen, de site wordt ermee gepubliceerd: {{message}}",
   "docCacheRemovedFromSite": "{{count}} AI- en diagramcache-items verwijderd uit de zoekindex van de documentatiesite",
   "docHomeAuthorizationsDesc": "Wie wat mag zien, en wie wat mag doen.",
   "docHomeAutomationsDesc": "Wat automatisch draait wanneer een record wordt aangemaakt of gewijzigd.",

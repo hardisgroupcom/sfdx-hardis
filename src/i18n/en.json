@@ -1388,6 +1388,7 @@
   "doYouWantToUseOrg": "Do you want to use org {{org}} ?",
   "doYouWantToUseOrgTo": "Do you want to use org {{flags}} to simulate deployment of metadata {{sourceDirOrFile}} ?",
   "doYouWantToUseTheExisting": "Do you want to use the existing full org manifest or generate a new one?",
+  "docCacheRemovalFromSiteFailed": "Could not remove the AI and diagram caches from the documentation site, the site is published with them: {{message}}",
   "docCacheRemovedFromSite": "Removed {{count}} AI and diagram cache entries from the search index of the documentation site",
   "docHomeAuthorizationsDesc": "Who is allowed to see what, and who is allowed to do what.",
   "docHomeAutomationsDesc": "What runs on its own when a record is created or changed.",

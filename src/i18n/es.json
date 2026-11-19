@@ -1384,6 +1384,7 @@
   "doYouWantToUseOrg": "¿Desea usar la org {{org}}?",
   "doYouWantToUseOrgTo": "¿Desea usar la org {{flags}} para simular el despliegue de los metadatos {{sourceDirOrFile}}?",
   "doYouWantToUseTheExisting": "¿Desea usar el manifiesto completo de la org existente o generar uno nuevo?",
+  "docCacheRemovalFromSiteFailed": "No se han podido eliminar las cachés de IA y de diagramas del sitio de documentación, el sitio se publica con ellas: {{message}}",
   "docCacheRemovedFromSite": "Se eliminaron {{count}} entradas de caché de IA y de diagramas del índice de búsqueda del sitio de documentación",
   "docHomeAuthorizationsDesc": "Quién puede ver qué, y quién puede hacer qué.",
   "docHomeAutomationsDesc": "Lo que se ejecuta solo cuando se crea o se modifica un registro.",

@@ -612,10 +612,16 @@ export async function generateMkDocsHTML() {
       throw new SfError('Zensical build with docker failed:\n' + zensicalBuildRes.output);
     }
   }
-  // The AI and Mermaid caches are only read to regenerate the doc, never shown as site pages
-  const removedSearchEntries = await removeDocCacheFromSite(path.join(process.cwd(), "site"));
-  if (removedSearchEntries > 0) {
-    uxLog("log", this, c.grey(t('docCacheRemovedFromSite', { count: removedSearchEntries })));
+  // The AI and Mermaid caches are only read to regenerate the doc, never shown as site pages.
+  // A cleaning that fails (a site written by the root user of the Docker build...) leaves the
+  // built site as it is: it must not turn a build that worked into a failed one.
+  try {
+    const removedSearchEntries = await removeDocCacheFromSite(path.join(process.cwd(), "site"));
+    if (removedSearchEntries > 0) {
+      uxLog("log", this, c.grey(t('docCacheRemovedFromSite', { count: removedSearchEntries })));
+    }
+  } catch (e: any) {
+    uxLog("warning", this, c.yellow(t('docCacheRemovalFromSiteFailed', { message: e?.message || String(e) })));
   }
 }
 

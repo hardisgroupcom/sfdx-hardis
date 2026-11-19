@@ -1384,6 +1384,7 @@
   "doYouWantToUseOrg": "Voulez-vous utiliser l'org {{org}} ?",
   "doYouWantToUseOrgTo": "Voulez-vous utiliser l'org {{flags}} pour simuler le déploiement des métadonnées {{sourceDirOrFile}} ?",
   "doYouWantToUseTheExisting": "Voulez-vous utiliser le manifeste complet de l'org existant ou en générer un nouveau ?",
+  "docCacheRemovalFromSiteFailed": "Impossible de supprimer les caches IA et de diagrammes du site de documentation, le site est publié avec : {{message}}",
   "docCacheRemovedFromSite": "{{count}} entrées de cache IA et de diagrammes supprimées de l'index de recherche du site de documentation",
   "docHomeAuthorizationsDesc": "Qui a le droit de voir quoi, et qui a le droit de faire quoi.",
   "docHomeAutomationsDesc": "Ce qui se déclenche tout seul quand un enregistrement est créé ou modifié.",

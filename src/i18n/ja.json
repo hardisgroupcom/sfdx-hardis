@@ -1382,6 +1382,7 @@
   "doYouWantToUseOrg": "組織 {{org}} を使用しますか？",
   "doYouWantToUseOrgTo": "組織{{flags}}を使用してメタデータ{{sourceDirOrFile}}のデプロイをシミュレーションしますか？",
   "doYouWantToUseTheExisting": "既存の完全な組織マニフェストを使用しますか、それとも新しいものを生成しますか？",
+  "docCacheRemovalFromSiteFailed": "ドキュメントサイトから AI とダイアグラムのキャッシュを削除できませんでした。サイトはキャッシュを含んだまま公開されます: {{message}}",
   "docCacheRemovedFromSite": "ドキュメントサイトの検索インデックスから、AI とダイアグラムのキャッシュエントリを {{count}} 件削除しました",
   "docHomeAuthorizationsDesc": "誰が何を参照でき、誰が何を実行できるかを示します。",
   "docHomeAutomationsDesc": "レコードの作成時や更新時に自動的に動作する仕組みです。",

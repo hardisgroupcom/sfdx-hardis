@@ -10,10 +10,12 @@ export const DOC_CACHE_FOLDERS = ['cache-ai-results', 'cache-mermaid'];
 export const CLOUDFLARE_PAGES_MAX_FILE_SIZE = 25 * 1024 * 1024;
 export const CLOUDFLARE_PAGES_SAFE_FILE_SIZE = 24 * 1024 * 1024;
 
-const SEARCH_INDEX_FILE = 'search.json';
+// Zensical writes search.json with its entries in "items", MkDocs Material wrote
+// search/search_index.json with its entries in "docs"
+const SEARCH_INDEX_FILES = ['search.json', path.join('search', 'search_index.json')];
 
-// Zensical calls its search entries "items", MkDocs Material called them "docs"
 interface SearchIndex {
+  file: string;
   content: any;
   entriesKey: 'items' | 'docs';
 }
@@ -36,7 +38,7 @@ export async function removeDocCacheFromSite(siteDir: string): Promise<number> {
   const removedCount = entries.length - keptEntries.length;
   if (removedCount > 0) {
     searchIndex.content[searchIndex.entriesKey] = keptEntries;
-    await writeSearchIndex(siteDir, searchIndex.content);
+    await writeSearchIndex(searchIndex);
   }
   return removedCount;
 }
@@ -68,7 +70,7 @@ export async function fitSearchIndexToSize(siteDir: string, maxBytes: number): P
     totalBytes -= textBytes - 2;
     trimmedLocations.push(String(entry.location ?? ''));
   }
-  await writeSearchIndex(siteDir, searchIndex.content);
+  await writeSearchIndex(searchIndex);
   return { trimmed: trimmedLocations.length, largest: trimmedLocations.slice(0, 5) };
 }
 
@@ -102,8 +104,8 @@ export function formatFileSize(bytes: number): string {
 
 // A search index in a format not known here is left as it is
 async function readSearchIndex(siteDir: string): Promise<SearchIndex | null> {
-  const searchIndexFile = path.join(siteDir, SEARCH_INDEX_FILE);
-  if (!fs.existsSync(searchIndexFile)) {
+  const searchIndexFile = SEARCH_INDEX_FILES.map((file) => path.join(siteDir, file)).find((file) => fs.existsSync(file));
+  if (!searchIndexFile) {
     return null;
   }
   let content: any;
@@ -113,16 +115,12 @@ async function readSearchIndex(siteDir: string): Promise<SearchIndex | null> {
     return null;
   }
   if (Array.isArray(content?.items)) {
-    return { content, entriesKey: 'items' };
+    return { file: searchIndexFile, content, entriesKey: 'items' };
   }
   if (Array.isArray(content?.docs)) {
-    return { content, entriesKey: 'docs' };
+    return { file: searchIndexFile, content, entriesKey: 'docs' };
   }
   return null;
-}
-
-async function writeSearchIndex(siteDir: string, content: any): Promise<void> {
-  await fs.writeFile(path.join(siteDir, SEARCH_INDEX_FILE), JSON.stringify(content));
 }
 
 // A location is relative to the site root: "cache-ai-results/en-PROMPT-Account-123/#fields",
@@ -133,4 +131,8 @@ function isDocCacheLocation(location: unknown): boolean {
   }
   const relativeLocation = location.replace(/^\.?\//, '');
   return DOC_CACHE_FOLDERS.some((folder) => relativeLocation.startsWith(`${folder}/`));
+}
+
+async function writeSearchIndex(searchIndex: SearchIndex): Promise<void> {
+  await fs.writeFile(searchIndex.file, JSON.stringify(searchIndex.content));
 }
