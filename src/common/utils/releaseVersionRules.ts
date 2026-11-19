@@ -129,6 +129,7 @@ export interface ReleaseVersionDecision {
 export const VERSION_TAG_MESSAGE_MARKER = 'sfdx-hardis release version';
 export const DEFAULT_INITIAL_RELEASE_VERSION = '1.0.0';
 export const DEFAULT_TAG_FORMAT = 'v{MAJ}.{MIN}.{PATCH}-rc.{RC}';
+export const TAG_VARIABLE_ENV_VAR_PREFIX = 'SFDX_HARDIS_RELEASE_VERSIONING_VAR_';
 
 const RELEASE_VERSION_REGEX = /^v?(\d+)\.(\d+)\.(\d+)(?:-rc\.(\d+))?$/;
 const REQUIRED_PLACEHOLDERS = ['MAJ', 'MIN', 'PATCH', 'RC'];
@@ -249,6 +250,16 @@ export function parseTagFormat(text: string | null | undefined): TagFormat | nul
   const format: TagFormat = { text: source, parts, variables: placeholders.filter((name) => !BUILT_IN_PLACEHOLDERS.includes(name)) };
   const sample = format.parts.map((part) => ('literal' in part ? part.literal : '0')).join('');
   return isValidTagName(sample) ? format : null;
+}
+
+/**
+ * The CI/CD variables that set the minimum value of a tag variable, the first one set wins: the one
+ * of the branch (SFDX_HARDIS_RELEASE_VERSIONING_VAR_RELEASE_UAT_PI for release/uat), then the one of
+ * every branch (SFDX_HARDIS_RELEASE_VERSIONING_VAR_PI).
+ */
+export function listTagVariableEnvNames(branch: string, name: string): string[] {
+  const toEnvName = (text: string) => text.replace(/[^A-Za-z0-9]/g, '_').toUpperCase();
+  return [`${TAG_VARIABLE_ENV_VAR_PREFIX}${toEnvName(toGitBranchName(branch))}_${toEnvName(name)}`, `${TAG_VARIABLE_ENV_VAR_PREFIX}${toEnvName(name)}`];
 }
 
 /** A value of releaseVersioningMinimumVariables: letters, digits, '.', '_' and '-', no dot at either end */

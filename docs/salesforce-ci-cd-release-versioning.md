@@ -132,6 +132,15 @@ The rules:
 - **Variables never change on their own**: a tag takes the values of the previous tags. They change when a Pull Request raises `releaseVersioningMinimumVariables`, and the next tag takes the new values. They compare together, in the order of the format, like a semver: PI 3 / IT 1 is above PI 2 / IT 5. A value set in a branch config replaces the project value of the same variable.
 - **A variable with no value**, neither in the previous tags nor in the config: warning, no tag, and the deployment goes on.
 - **Production** (the highest versioned branch) always gets `v1.5.0`: a format set in its branch config is ignored, with a warning.
+- **CI/CD variables** override the config, for example to start a new PI without a Pull Request:
+
+    | Variable                                              | Overrides                                                                                                      |
+    |-------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|
+    | `SFDX_HARDIS_RELEASE_VERSIONING_TAG_FORMAT`           | `releaseVersioningTagFormat` of every versioned branch but production                                          |
+    | `SFDX_HARDIS_RELEASE_VERSIONING_VAR_<NAME>`           | The value of `{NAME}` in `releaseVersioningMinimumVariables`, for every branch: `..._VAR_PI=3`                 |
+    | `SFDX_HARDIS_RELEASE_VERSIONING_VAR_<BRANCH>_<NAME>`  | The same for one branch, over the previous one: `..._VAR_UAT_IT=1`. `release/uat` is written `RELEASE_UAT`     |
+
+    A variable value is still a minimum: the tags win when they hold higher values, and lowering it has no effect. Set every variable that changes (`PI` and `IT` for a new PI), not only the first one. The DevOps Pipeline of VS Code computes the next versions on your computer, without the variables of your CI/CD server.
 - **sfdx-hardis never reads a version from a custom tag name**: the version, the release candidate number and the variables are written in the message of each tag, and read from there. A tag created by hand counts only when its name is a plain semver version.
 
 ### Permissions of the CI/CD jobs

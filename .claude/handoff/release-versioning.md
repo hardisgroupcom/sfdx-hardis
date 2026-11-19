@@ -37,7 +37,7 @@ Main code: `src/common/utils/releaseVersionRules.ts` (pure rules, unit tested in
 
 ## Custom tag formats per branch (implemented)
 
-Analysis, design (`release-versioning-tag-formats-design.md`, its 5 choices validated) and implementation done in both repositories, same branches, same PRs. Still to do: a code review of this part, and a custom-format step in the e2e scenario once its scripts exist. The extension work was done in a worktree (`C:/git/vscode-sfdx-hardis-rv`): the main clone kept a local `.claude/settings.json` change. `releaseVersioningMinimumVariables` is not in the Pipeline Settings editor (it has no generic form for object settings): it is set in the YAML.
+Analysis, design (`release-versioning-tag-formats-design.md`, its 5 choices validated) and implementation done in both repositories, same branches, same PRs. Still to do: a code review of this part, and a custom-format step in the e2e scenario once its scripts exist. The extension work was done in a worktree (`C:/git/vscode-sfdx-hardis-rv`): the main clone kept a local `.claude/settings.json` change. Both keys are in Pipeline Settings (a key/value editor for `releaseVersioningMinimumVariables`), and CI/CD variables override them (`SFDX_HARDIS_RELEASE_VERSIONING_TAG_FORMAT`, `SFDX_HARDIS_RELEASE_VERSIONING_VAR_<NAME>`, `..._VAR_<BRANCH>_<NAME>`), as minimums like the config.
 
 ### Goal
 

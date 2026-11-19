@@ -10,7 +10,7 @@ import * as path from 'path';
 import fs from './fsUtils.js';
 import { git, uxLog } from './index.js';
 import { t } from './i18n.js';
-import { getConfig } from '../../config/index.js';
+import { getConfig, getEnvVar } from '../../config/index.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
 import { GitProvider } from '../gitProvider/index.js';
 import type { GitProviderRoot, ReleaseAsset } from '../gitProvider/gitProviderRoot.js';
@@ -28,6 +28,7 @@ import {
   formatReleaseVersion,
   formatVersionTagMessage,
   isValidTagVariableValue,
+  listTagVariableEnvNames,
   parseReleaseVersion,
   parseTagFormat,
   parseVersionTagMessage,
@@ -91,6 +92,8 @@ export interface ReleaseVersionsDescription {
 const MAX_TAG_ATTEMPTS = 3;
 const FIELD_SEPARATOR = '\x1f';
 const RECORD_SEPARATOR = '\x1e';
+// CI/CD variable over the config: the tag format of every versioned branch below the highest one
+const TAG_FORMAT_ENV_VAR = 'SFDX_HARDIS_RELEASE_VERSIONING_TAG_FORMAT';
 
 /**
  * True when a deployment job on this branch creates a version: the branch declares
@@ -380,7 +383,7 @@ async function readReleaseVersionSettings(
       }
       continue;
     }
-    const formatText = majorOrg.releaseVersioningTagFormat ?? config.releaseVersioningTagFormat;
+    const formatText = getEnvVar(TAG_FORMAT_ENV_VAR) ?? majorOrg.releaseVersioningTagFormat ?? config.releaseVersioningTagFormat;
     if (formatText !== undefined && formatText !== null && formatText !== '') {
       const format = parseTagFormat(String(formatText));
       if (format) {
@@ -393,9 +396,36 @@ async function readReleaseVersionSettings(
         );
       }
     }
-    minimumVariables[branch] = { ...projectVariables, ...readMinimumVariables(majorOrg.releaseVersioningMinimumVariables, commandRef) };
+    minimumVariables[branch] = {
+      ...projectVariables,
+      ...readMinimumVariables(majorOrg.releaseVersioningMinimumVariables, commandRef),
+      ...readEnvMinimumVariables(branch, tagFormats[branch]?.variables || [], commandRef),
+    };
   }
   return { ...readVersionSettings(config, commandRef), tagFormats, minimumVariables };
+}
+
+/**
+ * The minimum variables a CI/CD variable sets, over the config: SFDX_HARDIS_RELEASE_VERSIONING_VAR_UAT_PI
+ * for the branch uat, then SFDX_HARDIS_RELEASE_VERSIONING_VAR_PI for every branch. Only the variables
+ * of the tag format of the branch are looked up. Like the config, a minimum: the tags still win
+ * when they hold higher values.
+ */
+function readEnvMinimumVariables(branch: string, names: string[], commandRef: any): Record<string, string> {
+  const variables: Record<string, string> = {};
+  for (const name of names) {
+    const envName = listTagVariableEnvNames(branch, name).find((candidate) => getEnvVar(candidate) !== null);
+    if (!envName) {
+      continue;
+    }
+    const value = (getEnvVar(envName) as string).trim();
+    if (isValidTagVariableValue(value)) {
+      variables[name] = value;
+    } else {
+      uxLog("warning", commandRef, c.yellow(t('releaseVersionInvalidTagVariable', { key: envName, value })));
+    }
+  }
+  return variables;
 }
 
 // releaseVersioningMinimumVariables ({PI: 3, IT: 1}): a value outside the allowed characters is ignored

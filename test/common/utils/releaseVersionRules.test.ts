@@ -10,6 +10,7 @@ import {
   formatTagName,
   formatVersionTagMessage,
   isValidTagVariableValue,
+  listTagVariableEnvNames,
   parseReleaseVersion,
   parseTagFormat,
   parseVersionTagMessage,
@@ -372,6 +373,14 @@ describe('releaseVersionRules', () => {
       const version = { major: 1, minor: 2, patch: 0, rc: 4 };
       expect(formatTagName(format, version, 'release/uat', {})).to.equal('v1.2.0-release-uat-rc4');
       expect(formatTagName(format, version, 'release__uat', {})).to.equal('v1.2.0-release-uat-rc4');
+    });
+
+    it('names the CI/CD variables of a tag variable, the one of the branch first', () => {
+      expect(listTagVariableEnvNames('uat', 'PI')).to.deep.equal(['SFDX_HARDIS_RELEASE_VERSIONING_VAR_UAT_PI', 'SFDX_HARDIS_RELEASE_VERSIONING_VAR_PI']);
+      expect(listTagVariableEnvNames('release__uat', 'It')).to.deep.equal([
+        'SFDX_HARDIS_RELEASE_VERSIONING_VAR_RELEASE_UAT_IT',
+        'SFDX_HARDIS_RELEASE_VERSIONING_VAR_IT',
+      ]);
     });
 
     it('accepts only safe variable values', () => {

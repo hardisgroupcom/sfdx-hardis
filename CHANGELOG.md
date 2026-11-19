@@ -4,7 +4,7 @@
 
 - **Release versioning (Beta)** ([doc](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-release-versioning/)): each successful deployment gets a semver tag, from release candidates in UAT to the plain version in production.
   - Release candidates such as v1.5.0-rc.3 come from UAT, and the plain version such as v1.5.0 comes from production, with a GitHub or GitLab Release holding its release notes.
-  - Each branch can name its release candidates its own way, such as v1.5.0-pi2-it4-uat-rc1, with variables you raise in the config.
+  - Each branch can name its release candidates its own way, such as v1.5.0-pi2-it4-uat-rc1, with variables you raise in the config or with CI/CD variables.
   - The version shows in the Pull Request comment and the notification, and can optionally be written on tickets.
   - New [hardis:project:version:list](https://sfdx-hardis.cloudity.com/hardis/project/version/list/): lists the version of each versioned branch, the version each promotion would create, and the history of the version tags.
   - [hardis:doc:release-notes](https://sfdx-hardis.cloudity.com/hardis/doc/release-notes/): with a plain version tag, the release notes start from the previous plain version instead of one of its release candidates.
