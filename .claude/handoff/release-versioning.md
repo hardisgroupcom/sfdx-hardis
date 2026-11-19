@@ -15,7 +15,7 @@ Still to do on the first part:
 
 - Code review of the extension PR #622 (not run yet)
 - Look at the DevOps Pipeline panel in a running VS Code, light and dark themes
-- Run the `release-versioning` e2e scenario (`.claude/skills/e2e/scenarios/release-versioning/README.md`), its scripts are not written yet
+- Run the `release-versioning` e2e scenario (`.claude/skills/e2e/scenarios/release-versioning/README.md`): scripts written (`rv-e2e.sh`, `PART=default` and `PART=custom`, GitHub and GitLab, DevOps Pipeline captured after each step), never run yet. Prerequisites: `sf plugins link` of this branch, the extension built (`yarn dev && yarn compile`), Pillow
 - CI of both PRs has not run yet
 - The local commitlint hook crashes (`yargs_1.default.options is not a function`), commits still go through
 - Left from the review: the Azure DevOps provider builds the repository web URL in two places (merging them changes an existing function)
