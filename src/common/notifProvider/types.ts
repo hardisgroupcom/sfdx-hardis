@@ -88,6 +88,7 @@ export type NotifMessageType =
   | "AGENT_TESTS"
   | "BACKUP"
   | "DEPLOYMENT"
+  | "DOCUMENTATION"
   | "LEGACY_API"
   | "LICENSES"
   | "LINT_ACCESS"
@@ -258,6 +259,15 @@ export const notificationTypesDefault: Record<NotifMessageType, NotificationType
     colorClass: "audit",
     emittedSeverities: ["critical", "error", "warning", "info", "success", "log"],
     defaults: { messaging: "log", email: "warning", api: "log" },
+  },
+  DOCUMENTATION: {
+    category: "other",
+    icon: "utility:knowledge_base",
+    colorClass: "backup",
+    // warning: the project documentation of one language could not be generated or published
+    // (hardis:org:monitor:backup); the backup itself succeeded
+    emittedSeverities: ["warning"],
+    defaults: { messaging: "warning", email: "off", api: "log" },
   },
   DEPLOYMENTS: {
     category: "orgActivity",
