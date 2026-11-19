@@ -35,9 +35,9 @@ Still to do on the first part:
 
 Main code: `src/common/utils/releaseVersionRules.ts` (pure rules, unit tested in `test/common/utils/releaseVersionRules.test.ts`), `src/common/utils/releaseVersionUtils.ts` (git and provider I/O), `src/commands/hardis/project/version/list.ts`, wiring in `src/commands/hardis/project/deploy/smart.ts`. Docs: `docs/salesforce-ci-cd-release-versioning.md`. Extension: `src/utils/pipeline/releaseVersionUtils.ts` and the pipeline LWC.
 
-## Next step: custom tag formats per branch
+## Custom tag formats per branch (implemented)
 
-Analysis done and validated, next step is `/design`, then `/implement` in both repositories (same branches, same PRs).
+Analysis, design (`release-versioning-tag-formats-design.md`, its 5 choices validated) and implementation done in both repositories, same branches, same PRs. Still to do: a code review of this part, and a custom-format step in the e2e scenario once its scripts exist. The extension work was done in a worktree (`C:/git/vscode-sfdx-hardis-rv`): the main clone kept a local `.claude/settings.json` change. `releaseVersioningMinimumVariables` is not in the Pipeline Settings editor (it has no generic form for object settings): it is set in the YAML.
 
 ### Goal
 
@@ -57,7 +57,7 @@ Each versioned branch below production chooses the format of its release candida
 
 - Code: `src/common/utils/releaseVersionRules.ts` (template formatting, counter per text, variables), `src/common/utils/releaseVersionUtils.ts` (read template and variables minimum of each branch, structured tag message). Check every use of `version.rc` for ordering (`nextRcNumber`, `compareTagsNewestFirst`, `findPreviousVersionTag`, final base choice): rc numbers are no longer unique per version.
 - JSON schema: 2 keys. Docs page `docs/salesforce-ci-cd-release-versioning.md`, descriptions of `deploy:smart` and `version:list`, CHANGELOG (extend the existing release versioning line).
-- i18n: 3 warning keys in 9 locales (invalid template, template ignored on production branch, variable without value).
+- i18n: 4 warning keys in 9 locales (invalid template, invalid variable value, template ignored on production branch, variable without value).
 - Unit tests: the UAT / preprod example as a full scenario, with a PI change.
 - PR comment, notifications, tickets, Releases: no change, they show the tag name.
 - VS Code extension: config editor gets the 2 keys (`sfdxHardisConfigHelper.ts`, project and branch scope), schema copy, tests with a custom tag. It never parses tags (uses `tag` and `prerelease` from `version:list --json`), `SAFE_RELEASE_TAG` already accepts these characters.

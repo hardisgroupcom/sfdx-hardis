@@ -22,14 +22,18 @@ import {
   compareTagsNewestFirst,
   computeNextReleaseVersion,
   DEFAULT_INITIAL_RELEASE_VERSION,
+  DEFAULT_TAG_FORMAT,
   findLatestVersionTagOfBranch,
   findPreviousVersionTag,
   formatReleaseVersion,
   formatVersionTagMessage,
+  isValidTagVariableValue,
   parseReleaseVersion,
+  parseTagFormat,
   parseVersionTagMessage,
   ReleaseSourceKind,
   ReleaseVersionSettings,
+  TagFormat,
   toConfigBranchName,
   VersionedBranchGraph,
   VersionedBranchRole,
@@ -39,7 +43,10 @@ import {
 /** What a deployment on a versioned branch tagged */
 export interface ReleaseVersionResult {
   tag: string;
+  // Semver form (1.5.0-rc.3). The tag name may differ, with the tag format of the branch
   version: string;
+  // Values of the custom variables of the tag format ({PI}, {IT})
+  variables: Record<string, string>;
   prerelease: boolean;
   // Plain version on the highest versioned branch: a Release is published for it
   final: boolean;
@@ -53,7 +60,9 @@ export interface ReleaseVersionResult {
 /** One version tag, as hardis:project:version:list returns it */
 export interface ReleaseVersionEntry {
   tag: string;
+  // Semver form (1.5.0-rc.3): with tag formats, two release candidates of two branches can share it
   version: string;
+  variables: Record<string, string>;
   prerelease: boolean;
   branchName: string | null;
   commit: string;
@@ -120,24 +129,38 @@ export async function handlePostDeploymentReleaseVersion(options: { branch: stri
     const headCommit = (await git().revparse(['HEAD'])).trim();
     const majorOrgs = await listMajorOrgs();
     const graph = buildVersionedBranchGraph(majorOrgs);
-    const settings = await readReleaseVersionSettings(commandRef);
+    const settings = await readReleaseVersionSettings(majorOrgs, graph, commandRef);
     const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
     const source = resolveReleaseSource(prInfo?.sourceBranch || null, majorOrgs);
     const jobUrl = await GitProvider.getJobUrl();
+    // Names the provider refused although no version tag has them: tags made by hand
+    const takenTagNames: string[] = [];
     for (let attempt = 1; attempt <= MAX_TAG_ATTEMPTS; attempt++) {
       const tags = await listVersionTags();
       const decision = computeNextReleaseVersion(
-        { branch, sourceBranch: source.sourceBranch, sourceKind: source.sourceKind, headCommit, tagsMergedInHead: await listTagsMergedIn('HEAD') },
+        {
+          branch,
+          sourceBranch: source.sourceBranch,
+          sourceKind: source.sourceKind,
+          headCommit,
+          tagsMergedInHead: await listTagsMergedIn('HEAD'),
+          takenTagNames,
+        },
         tags,
         graph,
         settings
       );
+      if (decision.reason === 'missing-variables') {
+        uxLog("warning", commandRef, c.yellow(t('releaseVersionTagVariableMissing', { variables: (decision.missingVariables || []).join(', '), branch })));
+        return null;
+      }
       if (!decision.version || !decision.tagName) {
         return null;
       }
       const result: ReleaseVersionResult = {
         tag: decision.tagName,
         version: formatReleaseVersion(decision.version, false),
+        variables: decision.variables,
         prerelease: decision.version.rc !== null,
         final: decision.role === 'final',
         created: false,
@@ -152,6 +175,8 @@ export async function handlePostDeploymentReleaseVersion(options: { branch: stri
       uxLog("action", commandRef, c.cyan(t('releaseVersionComputed', { version: decision.tagName })));
       const message = formatVersionTagMessage(decision.tagName, {
         branch,
+        version: decision.version,
+        variables: decision.variables,
         org: options.org,
         deployedAt: new Date().toISOString(),
         pullRequest: prInfo?.idNumber ?? null,
@@ -160,6 +185,7 @@ export async function handlePostDeploymentReleaseVersion(options: { branch: stri
       const tagResult = await gitProvider.createAnnotatedTag({ name: decision.tagName, commitSha: headCommit, message });
       if (tagResult.alreadyExists) {
         uxLog("log", commandRef, c.grey(t('releaseVersionTagTakenRetry', { tag: decision.tagName })));
+        takenTagNames.push(decision.tagName);
         await fetchVersionTags(commandRef);
         continue;
       }
@@ -244,7 +270,7 @@ export async function describeReleaseVersions(options: { fetch: boolean; history
   }
   const majorOrgs = await listMajorOrgs();
   const graph = buildVersionedBranchGraph(majorOrgs);
-  const settings = await readReleaseVersionSettings(commandRef);
+  const settings = await readReleaseVersionSettings(majorOrgs, graph, commandRef);
   const tags = await listVersionTags();
   // Building the git provider costs API calls (GitLab resolves its project): only for the links
   let gitProvider: GitProviderRoot | null = null;
@@ -275,23 +301,31 @@ export async function describeReleaseVersions(options: { fetch: boolean; history
   };
 }
 
-/** Semver tags of the local repository (v1.5.0, v1.5.0-rc.3), with what their sfdx-hardis message says */
+/**
+ * Version tags of the local repository, with what their sfdx-hardis message says. A tag created by
+ * sfdx-hardis gives its version in its message, whatever its name (v1.5.0-pi2-it4-uat-rc3). Any
+ * other tag counts only when its name is a plain semver version (v1.5.0, v1.5.0-rc.3).
+ */
 export async function listVersionTags(): Promise<VersionTag[]> {
   const format = ['%(refname:strip=2)', '%(objecttype)', '%(objectname)', '%(*objectname)', '%(creatordate:iso-strict)', '%(contents)'].join('%1f') + '%1e';
   const raw = await git().raw(['for-each-ref', 'refs/tags', `--format=${format}`]);
   const tags: VersionTag[] = [];
   for (const record of raw.split(RECORD_SEPARATOR)) {
     const [name, objectType, objectName, peeledName, date, ...contents] = record.replace(/^\s+/, '').split(FIELD_SEPARATOR);
-    const version = parseReleaseVersion(name);
-    if (!name || !version) {
+    if (!name) {
       continue;
     }
     // An annotated tag points to a tag object: the commit is the peeled object
     const isAnnotated = objectType === 'tag';
     const metadata = isAnnotated ? parseVersionTagMessage(contents.join(FIELD_SEPARATOR)) : null;
+    const version = metadata?.version || parseReleaseVersion(name);
+    if (!version) {
+      continue;
+    }
     tags.push({
       name,
       version,
+      variables: metadata?.variables || {},
       commit: (isAnnotated ? peeledName : objectName) || objectName,
       date: date || null,
       managed: metadata !== null,
@@ -320,8 +354,72 @@ async function isReleaseMissing(tagName: string): Promise<boolean> {
   }
 }
 
-async function readReleaseVersionSettings(commandRef: any): Promise<ReleaseVersionSettings> {
+/**
+ * The settings of release versioning: first and minimum versions from the project config, and for
+ * each versioned branch its tag format and minimum variables, its branch config over the project
+ * config. An invalid value is a warning and is ignored: it never fails a deployment.
+ */
+async function readReleaseVersionSettings(
+  majorOrgs: any[],
+  graph: VersionedBranchGraph,
+  commandRef: any
+): Promise<ReleaseVersionSettings> {
   const config = await getConfig("project");
+  const tagFormats: Record<string, TagFormat> = {};
+  const minimumVariables: Record<string, Record<string, string>> = {};
+  const projectVariables = readMinimumVariables(config.releaseVersioningMinimumVariables, commandRef);
+  for (const majorOrg of majorOrgs) {
+    const branch = toConfigBranchName(majorOrg.branchName);
+    const role = graph.roles[branch];
+    if (!role) {
+      continue;
+    }
+    if (role === 'final') {
+      if (majorOrg.releaseVersioningTagFormat) {
+        uxLog("warning", commandRef, c.yellow(t('releaseVersionTagFormatIgnoredOnFinalBranch', { branch: toGitBranchName(branch), example: 'v1.5.0' })));
+      }
+      continue;
+    }
+    const formatText = majorOrg.releaseVersioningTagFormat ?? config.releaseVersioningTagFormat;
+    if (formatText !== undefined && formatText !== null && formatText !== '') {
+      const format = parseTagFormat(String(formatText));
+      if (format) {
+        tagFormats[branch] = format;
+      } else {
+        uxLog(
+          "warning",
+          commandRef,
+          c.yellow(t('releaseVersionInvalidTagFormat', { format: String(formatText), branch: toGitBranchName(branch), defaultFormat: DEFAULT_TAG_FORMAT }))
+        );
+      }
+    }
+    minimumVariables[branch] = { ...projectVariables, ...readMinimumVariables(majorOrg.releaseVersioningMinimumVariables, commandRef) };
+  }
+  return { ...readVersionSettings(config, commandRef), tagFormats, minimumVariables };
+}
+
+// releaseVersioningMinimumVariables ({PI: 3, IT: 1}): a value outside the allowed characters is ignored
+function readMinimumVariables(value: any, commandRef: any): Record<string, string> {
+  const variables: Record<string, string> = {};
+  if (value === undefined || value === null) {
+    return variables;
+  }
+  if (typeof value !== 'object' || Array.isArray(value)) {
+    uxLog("warning", commandRef, c.yellow(t('releaseVersionInvalidTagVariable', { key: 'releaseVersioningMinimumVariables', value: JSON.stringify(value) })));
+    return variables;
+  }
+  for (const [name, raw] of Object.entries(value)) {
+    const text = raw === undefined || raw === null ? '' : String(raw);
+    if (isValidTagVariableValue(text)) {
+      variables[name] = text;
+    } else {
+      uxLog("warning", commandRef, c.yellow(t('releaseVersionInvalidTagVariable', { key: `releaseVersioningMinimumVariables.${name}`, value: text })));
+    }
+  }
+  return variables;
+}
+
+function readVersionSettings(config: any, commandRef: any): Pick<ReleaseVersionSettings, 'initialVersion' | 'minimumVersion'> {
   const readVersion = (key: string, fallback: string | null) => {
     const value = config[key];
     if (value === undefined || value === null || value === '') {
@@ -427,6 +525,7 @@ function toVersionEntry(tag: VersionTag, gitProvider: GitProviderRoot | null): R
   return {
     tag: tag.name,
     version: formatReleaseVersion(tag.version, false),
+    variables: tag.variables,
     prerelease: tag.version.rc !== null,
     branchName: tag.branch,
     commit: tag.commit,

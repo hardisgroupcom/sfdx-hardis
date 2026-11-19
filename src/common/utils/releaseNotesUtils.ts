@@ -667,15 +667,17 @@ async function assertTagExists(tag: string, commandRef: any): Promise<void> {
 }
 
 /**
- * The tag a release starts from. For a semver version (v1.5.0, v1.5.0-rc.3), the rules of release
- * versioning: a plain version starts from the previous plain version, never from one of its own
- * release candidates, and a release candidate created by a deployment starts from the previous
- * version of the same branch. Any other tag starts from the tag before it in version order.
+ * The tag a release starts from. For a version tag (v1.5.0, v1.5.0-rc.3, or a release candidate in
+ * the tag format of its branch), the rules of release versioning: a plain version starts from the
+ * previous plain version, never from one of its own release candidates, and a release candidate
+ * created by a deployment starts from the previous version of the same branch. Any other tag starts
+ * from the tag before it in version order.
  */
 export async function findPreviousSemverTag(currentTag: string, commandRef: any, versionTags?: VersionTag[]): Promise<string | undefined> {
-  if (parseReleaseVersion(currentTag)) {
+  const tags = versionTags || (await listVersionTags().catch(() => []));
+  if (parseReleaseVersion(currentTag) || tags.some((tag) => tag.name === currentTag)) {
     try {
-      const previous = findPreviousVersionTag(currentTag, versionTags || (await listVersionTags()));
+      const previous = findPreviousVersionTag(currentTag, tags);
       if (previous) {
         uxLog("action", commandRef, c.cyan(t("releaseNotesPreviousTagAutoDetected", { tag: previous.name })));
       }

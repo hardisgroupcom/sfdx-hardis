@@ -417,7 +417,7 @@ The default CI/CD templates hold this job, ready to be scheduled. With `enableMa
 
 ### Release versioning (Beta)
 
-When the branch config of the deployed branch declares `releaseVersioning: true`, each successful deployment creates a semver tag on the deployed commit, through the API of the git provider. The highest versioned branch of the chain (usually main) gets plain versions (`v1.5.0`), the other versioned branches get release candidates (`v1.5.0-rc.3`). The Pull Request comment, the notification and the tickets show the version. On the highest versioned branch, the release notes are generated and published as a GitHub or GitLab Release. A failure there never fails the deployment. [More info](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-release-versioning/)
+When the branch config of the deployed branch declares `releaseVersioning: true`, each successful deployment creates a semver tag on the deployed commit, through the API of the git provider. The highest versioned branch of the chain (usually main) gets plain versions (`v1.5.0`), the other versioned branches get release candidates (`v1.5.0-rc.3`, or the name set by `releaseVersioningTagFormat`, like `v1.5.0-pi2-it4-uat-rc3`). The Pull Request comment, the notification and the tickets show the version. On the highest versioned branch, the release notes are generated and published as a GitHub or GitLab Release. A failure there never fails the deployment. [More info](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-release-versioning/)
 
 ### Development orgs list
 

@@ -46,10 +46,10 @@ The DevOps Pipeline of the VS Code extension reads it with \`--json\` to show th
 <details markdown="1">
 <summary>Technical explanations</summary>
 
-- The tags are read with \`git for-each-ref refs/tags\`: a version tag created by a deployment is an annotated tag whose message starts with \`sfdx-hardis release version\` and holds the branch, the org, the date, the Pull Request and the job URL.
-- Tags that are not semver (\`v2.0\`, \`release-x\`) are ignored. Semver tags created by hand count for the numbering, with no branch.
+- The tags are read with \`git for-each-ref refs/tags\`: a version tag created by a deployment is an annotated tag whose message starts with \`sfdx-hardis release version\` and holds the branch, the version, the release candidate number, the variables of the tag format, the org, the date, the Pull Request and the job URL. The version comes from that message, whatever the tag name (\`releaseVersioningTagFormat\`).
+- Other tags count only when their name is a plain semver version (\`v1.3.0\`, \`v1.3.0-rc.2\`), with no branch. The others (\`v2.0\`, \`release-x\`, \`v1.3.0-pi2-rc1\` made by hand) are ignored.
 - The version a promotion would create is computed from the tags reachable from \`origin/<source branch>\`, as the deployment job computes it from the deployed commit.
-- With \`--json\`, the result holds \`enabled\`, \`initialVersion\`, \`minimumVersion\`, \`branches\` (\`branchName\`, \`role\`, \`current\`, \`nextOnPromotion\`) and \`history\`. Each version entry has \`tag\`, \`version\`, \`prerelease\`, \`branchName\`, \`commit\`, \`deployedAt\`, \`org\`, \`pullRequest\`, \`jobUrl\`, \`tagUrl\` and \`releaseUrl\`.
+- With \`--json\`, the result holds \`enabled\`, \`initialVersion\`, \`minimumVersion\`, \`branches\` (\`branchName\`, \`role\`, \`current\`, \`nextOnPromotion\`) and \`history\`. Each version entry has \`tag\`, \`version\` (semver form, \`1.5.0-rc.3\`: with tag formats, two release candidates of two branches can share it), \`variables\` (values of the custom variables of the tag format), \`prerelease\`, \`branchName\`, \`commit\`, \`deployedAt\`, \`org\`, \`pullRequest\`, \`jobUrl\`, \`tagUrl\` and \`releaseUrl\`.
 </details>
 
 ### Agent Mode

@@ -7,6 +7,10 @@
  * highest of the chain (usually main) gets plain versions (v1.5.0), every other one gets release
  * candidates (v1.5.0-rc.3). The version only depends on the existing tags, the branch deployed and
  * where its Pull Request comes from.
+ *
+ * The name of a release candidate follows the tag format of its branch (releaseVersioningTagFormat,
+ * v1.5.0-pi2-it4-uat-rc3). sfdx-hardis never reads a version back from such a name: it writes the
+ * version, the rc number and the template variables in the tag message, and reads them from there.
  */
 
 /** A semver version, with an optional release candidate number */
@@ -17,10 +21,12 @@ export interface ReleaseVersion {
   rc: number | null;
 }
 
-/** A semver tag of the repository, with what its sfdx-hardis tag message says */
+/** A version tag of the repository, with what its sfdx-hardis tag message says */
 export interface VersionTag {
   name: string;
   version: ReleaseVersion;
+  // Values of the custom variables of the tag format ({PI}, {IT}), from the sfdx-hardis tag message
+  variables: Record<string, string>;
   commit: string;
   // ISO date the tag was created (annotated tag) or committed (lightweight tag)
   date: string | null;
@@ -36,6 +42,9 @@ export interface VersionTag {
 /** What sfdx-hardis writes in the message of a version tag */
 export interface VersionTagMetadata {
   branch: string;
+  // Null in a message written before the tag formats: the version then comes from the tag name
+  version: ReleaseVersion | null;
+  variables: Record<string, string>;
   org: string | null;
   deployedAt: string;
   pullRequest: number | null;
@@ -59,6 +68,18 @@ export interface VersionedBranchGraph {
 export interface ReleaseVersionSettings {
   initialVersion: ReleaseVersion;
   minimumVersion: ReleaseVersion | null;
+  // Tag format of the release candidates of each versioned branch (config form). Missing: the default format
+  tagFormats?: Record<string, TagFormat>;
+  // releaseVersioningMinimumVariables of each versioned branch, its own values over the project ones
+  minimumVariables?: Record<string, Record<string, string>>;
+}
+
+/** A tag format, cut into literal text and placeholders ({MAJ}, {RC}, {PI}...) */
+export interface TagFormat {
+  text: string;
+  parts: Array<{ literal: string } | { placeholder: string }>;
+  // Custom variables, in template order
+  variables: string[];
 }
 
 /** Where the Pull Request of a deployment comes from */
@@ -75,6 +96,8 @@ export interface ReleaseVersionContext {
   headCommit: string;
   // Names of the tags reachable from the deployed commit (git tag --merged)
   tagsMergedInHead: string[];
+  // Tag names the git provider said exist already, although they are not version tags (made by hand)
+  takenTagNames?: string[];
 }
 
 export type ReleaseVersionReason =
@@ -87,21 +110,34 @@ export type ReleaseVersionReason =
   | 'first-open'
   | 'middle-promotion'
   | 'middle-hotfix-join'
-  | 'middle-hotfix-patch';
+  | 'middle-hotfix-patch'
+  | 'missing-variables';
 
 export interface ReleaseVersionDecision {
   version: ReleaseVersion | null;
   tagName: string | null;
   role: VersionedBranchRole | null;
   reason: ReleaseVersionReason;
+  // Values of the custom variables written in the tag
+  variables: Record<string, string>;
   // The tag the deployed commit already has, for already-tagged
   existingTag?: VersionTag;
+  // Custom variables of the tag format without any value, for missing-variables
+  missingVariables?: string[];
 }
 
 export const VERSION_TAG_MESSAGE_MARKER = 'sfdx-hardis release version';
 export const DEFAULT_INITIAL_RELEASE_VERSION = '1.0.0';
+export const DEFAULT_TAG_FORMAT = 'v{MAJ}.{MIN}.{PATCH}-rc.{RC}';
 
 const RELEASE_VERSION_REGEX = /^v?(\d+)\.(\d+)\.(\d+)(?:-rc\.(\d+))?$/;
+const REQUIRED_PLACEHOLDERS = ['MAJ', 'MIN', 'PATCH', 'RC'];
+const BUILT_IN_PLACEHOLDERS = [...REQUIRED_PLACEHOLDERS, 'BRANCH'];
+const PLACEHOLDER_NAME_REGEX = /^[A-Za-z][A-Za-z0-9_]*$/;
+// Characters valid in a git tag, a JIRA fix version and a ticket label
+const TAG_TEXT_REGEX = /^[A-Za-z0-9._-]+$/;
+// A variable value: no dot at either end, no two dots in a row
+const TAG_VARIABLE_VALUE_REGEX = /^[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*$/;
 
 /** Config file form of a branch name: a / is written __ (.sfdx-hardis.release__uat.yml is the branch release/uat) */
 export function toConfigBranchName(branchName: string | null | undefined): string {
@@ -157,6 +193,8 @@ export function parseVersionTagMessage(message: string | null | undefined): Vers
   const pullRequest = Number.parseInt(values.pullRequest || '', 10);
   return {
     branch: values.branch,
+    version: readMessageVersion(values.version, values.rc),
+    variables: readMessageVariables(values.variables),
     org: values.org || null,
     deployedAt: values.deployedAt || '',
     pullRequest: Number.isFinite(pullRequest) ? pullRequest : null,
@@ -179,6 +217,46 @@ export function parseReleaseVersion(text: string | null | undefined): ReleaseVer
 }
 
 /**
+ * Reads a tag format (releaseVersioningTagFormat). Null when it is invalid: {MAJ}, {MIN}, {PATCH}
+ * and {RC} once each, {BRANCH} and custom variables at most once, two placeholders never side by
+ * side, only letters, digits, '.', '_' and '-' around them, and a valid git tag once filled in.
+ */
+export function parseTagFormat(text: string | null | undefined): TagFormat | null {
+  const source = (text || '').trim();
+  const parts: TagFormat['parts'] = [];
+  let index = 0;
+  for (const match of source.matchAll(/\{([^{}]*)\}/g)) {
+    const start = match.index as number;
+    if (start > index) {
+      parts.push({ literal: source.substring(index, start) });
+    }
+    parts.push({ placeholder: match[1] });
+    index = start + match[0].length;
+  }
+  if (index < source.length) {
+    parts.push({ literal: source.substring(index) });
+  }
+  const placeholders = parts.filter((part): part is { placeholder: string } => 'placeholder' in part).map((part) => part.placeholder);
+  const valid =
+    placeholders.every((name) => PLACEHOLDER_NAME_REGEX.test(name)) &&
+    parts.every((part) => !('literal' in part) || TAG_TEXT_REGEX.test(part.literal)) &&
+    new Set(placeholders).size === placeholders.length &&
+    REQUIRED_PLACEHOLDERS.every((name) => placeholders.includes(name)) &&
+    parts.every((part, position) => position === 0 || 'literal' in part || 'literal' in parts[position - 1]);
+  if (!valid) {
+    return null;
+  }
+  const format: TagFormat = { text: source, parts, variables: placeholders.filter((name) => !BUILT_IN_PLACEHOLDERS.includes(name)) };
+  const sample = format.parts.map((part) => ('literal' in part ? part.literal : '0')).join('');
+  return isValidTagName(sample) ? format : null;
+}
+
+/** A value of releaseVersioningMinimumVariables: letters, digits, '.', '_' and '-', no dot at either end */
+export function isValidTagVariableValue(value: string): boolean {
+  return TAG_VARIABLE_VALUE_REGEX.test(value);
+}
+
+/**
  * The version a deployment creates, or why it creates none. Steps: a commit that already has a
  * version tag of this branch keeps it; then the base version comes from the role of the branch; the
  * minimum version raises it; the rc number is the next one of that base, shared by every branch.
@@ -192,12 +270,12 @@ export function computeNextReleaseVersion(
   const branch = toConfigBranchName(context.branch);
   const role = graph.roles[branch] || null;
   if (!role) {
-    return { version: null, tagName: null, role: null, reason: 'not-versioned' };
+    return { version: null, tagName: null, role: null, reason: 'not-versioned', variables: {} };
   }
   if (context.headCommit) {
     const existingTag = tags.find((tag) => tag.commit === context.headCommit && tag.managed && toConfigBranchName(tag.branch) === branch);
     if (existingTag) {
-      return { version: existingTag.version, tagName: existingTag.name, role, reason: 'already-tagged', existingTag };
+      return { version: existingTag.version, tagName: existingTag.name, role, reason: 'already-tagged', variables: existingTag.variables, existingTag };
     }
   }
   const choice =
@@ -210,8 +288,30 @@ export function computeNextReleaseVersion(
   if (settings.minimumVersion && compareReleaseVersions(base, baseOf(settings.minimumVersion)) < 0) {
     base = baseOf(settings.minimumVersion);
   }
-  const version: ReleaseVersion = role === 'final' ? base : { ...base, rc: nextRcNumber(tags, base) };
-  return { version, tagName: formatReleaseVersion(version), role, reason: choice.reason };
+  if (role === 'final') {
+    return { version: base, tagName: formatReleaseVersion(base), role, reason: choice.reason, variables: {} };
+  }
+  const format = settings.tagFormats?.[branch] || (parseTagFormat(DEFAULT_TAG_FORMAT) as TagFormat);
+  const resolved = resolveTagVariables(format.variables, tags, settings.minimumVariables?.[branch] || {});
+  if (resolved.missing.length > 0) {
+    return { version: null, tagName: null, role, reason: 'missing-variables', variables: {}, missingVariables: resolved.missing };
+  }
+  const render = (rc: number) => formatTagName(format, { ...base, rc }, context.branch, resolved.values);
+  const rc = nextRcNumber(tags, base, render, context.takenTagNames || []);
+  return { version: { ...base, rc }, tagName: render(rc), role, reason: choice.reason, variables: resolved.values };
+}
+
+/** The name of a release candidate in a tag format: {BRANCH} is the git branch name, '/' written '-' */
+export function formatTagName(format: TagFormat, version: ReleaseVersion, branch: string, variables: Record<string, string>): string {
+  const values: Record<string, string> = {
+    ...variables,
+    MAJ: String(version.major),
+    MIN: String(version.minor),
+    PATCH: String(version.patch),
+    RC: version.rc !== null ? String(version.rc) : '',
+    BRANCH: toGitBranchName(branch).replace(/[^A-Za-z0-9._-]/g, '-'),
+  };
+  return format.parts.map((part) => ('literal' in part ? part.literal : values[part.placeholder] ?? '')).join('');
 }
 
 /** v1.5.0 or v1.5.0-rc.3 */
@@ -223,6 +323,16 @@ export function formatReleaseVersion(version: ReleaseVersion, withPrefix = true)
 /** The message sfdx-hardis writes in an annotated version tag */
 export function formatVersionTagMessage(tagName: string, metadata: VersionTagMetadata): string {
   const lines = [`${VERSION_TAG_MESSAGE_MARKER} ${tagName}`, '', `branch: ${metadata.branch}`];
+  if (metadata.version) {
+    lines.push(`version: ${formatReleaseVersion({ ...metadata.version, rc: null }, false)}`);
+    if (metadata.version.rc !== null) {
+      lines.push(`rc: ${metadata.version.rc}`);
+    }
+  }
+  const variables = Object.entries(metadata.variables || {});
+  if (variables.length > 0) {
+    lines.push(`variables: ${variables.map(([name, value]) => `${name}=${value}`).join(' ')}`);
+  }
   if (metadata.org) {
     lines.push(`org: ${metadata.org}`);
   }
@@ -239,7 +349,8 @@ export function formatVersionTagMessage(tagName: string, metadata: VersionTagMet
 /**
  * The tag the release notes of a version start from. A plain version starts from the previous plain
  * version, never from one of its own release candidates. A release candidate tagged by sfdx-hardis
- * starts from the previous version tag of the same branch. Undefined when there is none.
+ * starts from the version tag deployed on the same branch just before it: with tag formats, rc
+ * numbers restart for each text (pi3-it1-rc1 comes after pi2-it4-rc3). Undefined when there is none.
  */
 export function findPreviousVersionTag(tagName: string, tags: VersionTag[]): VersionTag | undefined {
   const current = tags.find((tag) => tag.name === tagName);
@@ -247,14 +358,14 @@ export function findPreviousVersionTag(tagName: string, tags: VersionTag[]): Ver
   if (!currentVersion) {
     return undefined;
   }
-  let candidates: VersionTag[];
-  if (currentVersion.rc === null) {
-    candidates = tags.filter((tag) => tag.version.rc === null);
-  } else if (current?.managed && current.branch) {
-    candidates = tags.filter((tag) => tag.managed && toConfigBranchName(tag.branch) === toConfigBranchName(current.branch));
-  } else {
-    candidates = tags;
+  if (currentVersion.rc !== null && current?.managed && current.branch) {
+    const currentTime = tagTime(current);
+    const currentBranch = toConfigBranchName(current.branch);
+    return tags
+      .filter((tag) => tag.managed && tag.name !== tagName && toConfigBranchName(tag.branch) === currentBranch && tagTime(tag) < currentTime)
+      .sort(compareTagsNewestFirst)[0];
   }
+  const candidates = currentVersion.rc === null ? tags.filter((tag) => tag.version.rc === null) : tags;
   return candidates
     .filter((tag) => tag.name !== tagName && compareReleaseVersions(tag.version, currentVersion) < 0)
     .sort((a, b) => compareReleaseVersions(b.version, a.version))[0];
@@ -266,14 +377,14 @@ export function findLatestVersionTagOfBranch(tags: VersionTag[], branch: string)
   return tags.filter((tag) => tag.managed && toConfigBranchName(tag.branch) === configBranch).sort(compareTagsNewestFirst)[0];
 }
 
-/** Newest deployment first; the version breaks ties between tags of the same second */
+/** Newest deployment first; the version, then the name, break ties between tags of the same second */
 export function compareTagsNewestFirst(a: VersionTag, b: VersionTag): number {
-  const dateA = Date.parse(a.deployedAt || a.date || '') || 0;
-  const dateB = Date.parse(b.deployedAt || b.date || '') || 0;
+  const dateA = tagTime(a);
+  const dateB = tagTime(b);
   if (dateA !== dateB) {
     return dateB - dateA;
   }
-  return compareReleaseVersions(b.version, a.version);
+  return compareReleaseVersions(b.version, a.version) || b.name.localeCompare(a.name);
 }
 
 /** Semver order: a release candidate comes before the plain version of the same base */
@@ -296,6 +407,42 @@ export function compareReleaseVersions(a: ReleaseVersion, b: ReleaseVersion): nu
 }
 
 // ---- Private ----
+
+// version: 1.5.0 and rc: 3 of an sfdx-hardis tag message
+function readMessageVersion(versionText: string | undefined, rcText: string | undefined): ReleaseVersion | null {
+  const version = parseReleaseVersion(versionText);
+  if (!version || version.rc !== null) {
+    return null;
+  }
+  const rc = Number.parseInt(rcText || '', 10);
+  return { ...version, rc: Number.isFinite(rc) ? rc : null };
+}
+
+// variables: PI=2 IT=4 of an sfdx-hardis tag message. Values hold no space nor '='
+function readMessageVariables(text: string | undefined): Record<string, string> {
+  const variables: Record<string, string> = {};
+  for (const pair of (text || '').split(/\s+/)) {
+    const separator = pair.indexOf('=');
+    if (separator > 0) {
+      variables[pair.substring(0, separator)] = pair.substring(separator + 1);
+    }
+  }
+  return variables;
+}
+
+// A git tag name: no leading '-' or '.', no '..', no trailing '.' nor '.lock'
+function isValidTagName(name: string): boolean {
+  return TAG_TEXT_REGEX.test(name) && !/^[-.]/.test(name) && !name.includes('..') && !name.endsWith('.') && !name.endsWith('.lock');
+}
+
+// Config file form back to the git name: release__uat is the branch release/uat
+function toGitBranchName(branch: string): string {
+  return branch.replace(/__/g, '/');
+}
+
+function tagTime(tag: VersionTag): number {
+  return Date.parse(tag.deployedAt || tag.date || '') || 0;
+}
 
 function listReachableUp(branch: string, targetsOf: Record<string, string[]>): string[] {
   const visited = new Set<string>();
@@ -437,11 +584,57 @@ function hasMovedUp(tags: VersionTag[], graph: VersionedBranchGraph, branch: str
   );
 }
 
-function nextRcNumber(tags: VersionTag[], base: ReleaseVersion): number {
+/**
+ * The custom variables of a tag carry the values of the previous tags, until the configured minimum
+ * goes above them. The values of a tag or of the config are compared together, in template order,
+ * like a semver: PI 3 / IT 1 is above PI 2 / IT 5. Only a set with a value for every variable counts.
+ */
+function resolveTagVariables(
+  names: string[],
+  tags: VersionTag[],
+  minimum: Record<string, string>
+): { values: Record<string, string>; missing: string[] } {
+  if (names.length === 0) {
+    return { values: {}, missing: [] };
+  }
+  const hasValue = (set: Record<string, string>, name: string) => set[name] !== undefined && set[name] !== '';
+  const complete = [minimum, ...tags.filter((tag) => tag.managed).map((tag) => tag.variables)].filter((set) =>
+    names.every((name) => hasValue(set, name))
+  );
+  if (complete.length === 0) {
+    return { values: {}, missing: names.filter((name) => !hasValue(minimum, name)) };
+  }
+  const highest = complete.sort((a, b) => compareVariableSets(b, a, names))[0];
+  return { values: Object.fromEntries(names.map((name) => [name, highest[name]])), missing: [] };
+}
+
+function compareVariableSets(a: Record<string, string>, b: Record<string, string>, names: string[]): number {
+  for (const name of names) {
+    const bothNumbers = /^\d+$/.test(a[name]) && /^\d+$/.test(b[name]);
+    const difference = bothNumbers ? Number(a[name]) - Number(b[name]) : a[name].localeCompare(b[name], undefined, { numeric: true });
+    if (difference !== 0) {
+      return difference;
+    }
+  }
+  return 0;
+}
+
+/**
+ * One release candidate counter per tag text: the tags of the same version whose name is the same
+ * text around {RC}. A tag counts when its own rc number, rendered in the format, gives back its
+ * name: no tag name is ever parsed. With the default format, every semver release candidate of the
+ * version counts, created by hand or not. A name taken by a tag made by hand is skipped.
+ */
+function nextRcNumber(tags: VersionTag[], base: ReleaseVersion, render: (rc: number) => string, takenTagNames: string[]): number {
   const rcNumbers = tags
-    .filter((tag) => tag.version.rc !== null && compareReleaseVersions(baseOf(tag.version), base) === 0)
+    .filter((tag) => tag.version.rc !== null && compareReleaseVersions(baseOf(tag.version), base) === 0 && tag.name === render(tag.version.rc))
     .map((tag) => tag.version.rc as number);
-  return rcNumbers.length > 0 ? Math.max(...rcNumbers) + 1 : 1;
+  let rc = rcNumbers.length > 0 ? Math.max(...rcNumbers) + 1 : 1;
+  const taken = new Set([...takenTagNames, ...tags.map((tag) => tag.name)]);
+  while (taken.has(render(rc))) {
+    rc++;
+  }
+  return rc;
 }
 
 function highestPlainVersion(tags: VersionTag[]): ReleaseVersion | null {
