@@ -275,7 +275,7 @@ Labels, on logs and metrics:
 
 - `source`: always `sfdx-hardis`
 - `orgIdentifier`: the monitored org (see above)
-- `type`: the notification type. The `notificationTypes` of the checks listed below, plus `BACKUP` (each backup, with severity `error` and an `error` field when it failed), `MONITORING_SUMMARY` (each run of the checks) and `DEPLOYMENT` (each deployment by the CI/CD pipeline, its `gitIdentifier` is then the deployment repository and branch)
+- `type`: the notification type. The `notificationTypes` of the checks listed below, plus `BACKUP` (each backup, with severity `error` and an `error` field when it failed), `DOCUMENTATION` (severity `warning`, with `language` and `error` fields, when the documentation of a language could not be generated or published: the backup itself succeeded), `MONITORING_SUMMARY` (each run of the checks) and `DEPLOYMENT` (each deployment by the CI/CD pipeline, its `gitIdentifier` is then the deployment repository and branch)
 - `severity` (logs only): `critical`, `error`, `warning`, `info`, `success` or `log`
 - `gitIdentifier`: `<repository name>/<branch>` of the job that sent it
 
@@ -370,7 +370,7 @@ Any other command against an org counts as a write: do not run it, even when the
 | `manifest/package-skip-items-dynamic-do-not-update-manually.xml` | Filters built from the `MONITORING_BACKUP_SKIP_METADATA_TYPES` variable, when it is set. |
 | `manifest/package-backup-datacloud-items.xml` | Data Cloud items (`__dlm`, `__dll` objects and Data Cloud metadata types), retrieved in a separate call. |
 | `manifest/chunks/` | Only in full mode (`--full`): the list of items split in several retrieves. |
-| `docs/` | Project documentation generated from the metadata after each backup, unless disabled: objects, Apex, Flows with their visual history (`docs/flows/*-history.md`), Lightning pages, profiles, permission sets, packages, and an object model diagram. |
+| `docs/` | Project documentation generated from the metadata after each backup, unless disabled: objects, Apex, Flows with their visual history (`docs/flows/*-history.md`), Lightning pages, profiles, permission sets, packages, and an object model diagram. `docs/cache-ai-results/` and `docs/cache-mermaid/` only keep the AI texts and diagram images already generated, so the next run does not compute them again: they are not pages of the site. |
 | `mkdocs.yml` | Menu and settings of the documentation site built from `docs/`. |
 | `.sfdx-hardis.yml` | sfdx-hardis configuration of the branch: monitored org, notification settings, custom `monitoringCommands` and `monitoringDisable`, the `deploymentRepository` (and optional `deploymentBranch`) that deploys to the org, and the `grafanaUrl` (and optional datasource uids) that receives the monitoring results. Never a secret. |
 | `sfdx-project.json` | Salesforce DX project definition, including the API version used for the retrieve. |

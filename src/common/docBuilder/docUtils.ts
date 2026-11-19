@@ -12,6 +12,7 @@ import { UtilsAi } from "../aiProvider/utils/utils.js";
 import { AiProvider } from "../aiProvider/index.js";
 import { uxLog, execCommand } from "../utils/index.js";
 import { SUPPORTED_LOCALES, t } from '../utils/i18n.js';
+import { removeDocCacheFromSite } from './docSiteUtils.js';
 
 
 // The two lines every generated page starts with. Whoever writes in a page sets the second one
@@ -610,6 +611,11 @@ export async function generateMkDocsHTML() {
     if (!zensicalBuildRes.ok) {
       throw new SfError('Zensical build with docker failed:\n' + zensicalBuildRes.output);
     }
+  }
+  // The AI and Mermaid caches are only read to regenerate the doc, never shown as site pages
+  const removedSearchEntries = await removeDocCacheFromSite(path.join(process.cwd(), "site"));
+  if (removedSearchEntries > 0) {
+    uxLog("log", this, c.grey(t('docCacheRemovedFromSite', { count: removedSearchEntries })));
   }
 }
 
