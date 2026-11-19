@@ -140,6 +140,8 @@ The rules:
     | `SFDX_HARDIS_RELEASE_VERSIONING_VAR_<NAME>`           | The value of `{NAME}` in `releaseVersioningMinimumVariables`, for every branch: `..._VAR_PI=3`                 |
     | `SFDX_HARDIS_RELEASE_VERSIONING_VAR_<BRANCH>_<NAME>`  | The same for one branch, over the previous one: `..._VAR_UAT_IT=1`. `release/uat` is written `RELEASE_UAT`     |
 
+    GitLab, Azure Pipelines and Bitbucket Pipelines give their variables to every job. GitHub Actions does not: map each repository variable in the `env` of the deployment step of `.github/workflows/process-deploy.yml`, like `SFDX_HARDIS_RELEASE_VERSIONING_VAR_PI: ${{ vars.SFDX_HARDIS_RELEASE_VERSIONING_VAR_PI }}` (the template has commented examples).
+
     A variable value is still a minimum: the tags win when they hold higher values, and lowering it has no effect. Set every variable that changes (`PI` and `IT` for a new PI), not only the first one. The DevOps Pipeline of VS Code computes the next versions on your computer, without the variables of your CI/CD server.
 - **sfdx-hardis never reads a version from a custom tag name**: the version, the release candidate number and the variables are written in the message of each tag, and read from there. A tag created by hand counts only when its name is a plain semver version.
 
