@@ -482,3 +482,8 @@ CVE-2026-118764
 # https://avd.aquasec.com/nvd/cve-2026-118773 (GHSA-3g3m-2fjr-6pw4)
 # glob 9.0.0 to 14.0.1: an aborted async walk keeps reading directories (DoS only). sfdx-hardis never passes a signal to glob. The fix is glob 14, whose matching changes need their own upgrade. Added 2026-10-31.
 CVE-2026-118773
+
+# https://avd.aquasec.com/nvd/cve-2026-97054 (GO-2026-6859)
+# Go stdlib v1.27.3 compiled into the pebble binary of the Ubuntu base image (usr/bin/pebble), fixed in Go 1.26.11 / 1.27.4. net/http DoS: when MaxBytesReader's limit is exceeded, the "Connection: close" header is set without synchronization and can crash an HTTP/1 server whose handler reads the body while writing headers.
+# Same situation as the pebble entries above: the Go runtime is statically linked into a binary Canonical ships in ubuntu:latest (last pushed 2026-11-12, pebble still built with Go 1.27.3), so nothing in this repo can upgrade it. It goes away when the base image is rebuilt with a patched Go. It needs the binary to run an HTTP server; pebble is Canonical's service manager, never invoked by sfdx-hardis (one-shot CI/CD CLI), so no HTTP server ever exists. Added 2026-11-19.
+CVE-2026-97054
