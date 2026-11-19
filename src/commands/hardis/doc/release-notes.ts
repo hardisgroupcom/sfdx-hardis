@@ -36,7 +36,7 @@ In the XLSX file, the **Metadata Changes** tab lists for each metadata item the 
 
 The command can determine the release scope from git tags (semver), branch names, commit ranges, or date ranges.
 
-With a semver \`--release-tag\` and no \`--previous-tag\`, the previous tag follows the rules of [release versioning (Beta)](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-release-versioning/): a plain version (\`v1.5.0\`) starts from the previous plain version, never from one of its own release candidates, and a release candidate created by a deployment (\`v1.5.0-rc.3\`) starts from the previous version of its branch, which is also its target branch.
+With a semver \`--release-tag\` and no \`--previous-tag\`, the previous tag follows the rules of [release versioning](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-release-versioning/): a plain version (\`v1.5.0\`) starts from the previous plain version, never from one of its own release candidates, and a release candidate created by a deployment (\`v1.5.0-rc.3\`) starts from the previous version of its branch, which is also its target branch.
 
 This command is part of [sfdx-hardis Documentation](${CONSTANTS.DOC_URL_ROOT}/salesforce-project-documentation/).
 

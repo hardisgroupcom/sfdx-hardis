@@ -143,7 +143,7 @@ jobUrl: ...
   - "Limits": tags made by hand count only in plain semver form.
 - `src/commands/hardis/project/deploy/smart.ts` description (line 470): one sentence on custom formats.
 - `src/commands/hardis/project/version/list.ts` description: `variables` in the JSON, and `version` being the semver form.
-- `CHANGELOG.md`: extend the existing "Release versioning (Beta)" line, using the `changelog` skill. No new line.
+- `CHANGELOG.md`: extend the existing "Release versioning" line, using the `changelog` skill. No new line.
 - `yarn build:doc --commands hardis:project:deploy:smart hardis:project:version:list`, then `yarn build:llms-txt`.
 
 ## New files

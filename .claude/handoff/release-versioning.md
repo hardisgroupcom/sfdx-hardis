@@ -1,4 +1,4 @@
-# Handoff: release versioning (Beta)
+# Handoff: release versioning
 
 Work in progress, to continue on another computer. **Delete this file before merging PR #2498.**
 

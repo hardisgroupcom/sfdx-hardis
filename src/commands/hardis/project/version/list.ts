@@ -29,7 +29,7 @@ export default class VersionList extends SfCommand<any> {
 
 **Lists the release versions of the project: the version deployed on each versioned major branch, the version each promotion would create, and the history of the version tags.**
 
-With [release versioning (Beta)](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-release-versioning/), each successful deployment on a major branch whose branch config declares \`releaseVersioning: true\` creates a semver tag: release candidates (\`v1.5.0-rc.3\`) on every versioned branch but the highest one, plain versions (\`v1.5.0\`) on the highest one (usually main).
+With [release versioning](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-release-versioning/), each successful deployment on a major branch whose branch config declares \`releaseVersioning: true\` creates a semver tag: release candidates (\`v1.5.0-rc.3\`) on every versioned branch but the highest one, plain versions (\`v1.5.0\`) on the highest one (usually main).
 
 The command:
 

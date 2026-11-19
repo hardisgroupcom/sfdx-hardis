@@ -1,11 +1,11 @@
 ---
-title: Release versioning (Beta)
+title: Release versioning
 description: With sfdx-hardis, give every deployment to UAT, preprod and production a semver version, from the first test campaign to the go live, with GitHub and GitLab Releases and versions on the DevOps Pipeline
 ---
 
 <!-- markdownlint-disable MD013 -->
 
-## Release versioning (Beta)
+## Release versioning
 
 Testers, release managers and business owners talk about the same release from the first test campaign until production: each deployment to a versioned major branch creates a semver tag on the deployed commit.
 
