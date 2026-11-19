@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { expect } from 'chai';
 import { GitProvider } from '../../../src/common/gitProvider/index.js';
+import * as fs from 'fs';
 import * as path from 'path';
+import { getReportDirectory } from '../../../src/config/index.js';
 import {
   buildEventEnvelope,
   buildRetrieveEventData,
@@ -11,8 +13,10 @@ import {
   emitPluginEvent,
   emitRetrieveEvent,
   emitSalesforceRunEvent,
+  emitTestSelectionEvent,
   getDeployRunEventName,
   getDeployStartEventName,
+  readPluginTestSelection,
 } from '../../../src/common/utils/pluginEventUtils.js';
 import { enableMajorBranchCheckMode, resetMajorBranchCheckMode } from '../../../src/common/utils/majorBranchCheckUtils.js';
 
@@ -257,5 +261,115 @@ describe('Plugin events', () => {
     await emitRetrieveEvent({ config }, { status: 'success' });
     expect(calls).to.be.empty;
     expect(pullRequestLookups).to.equal(0);
+  });
+
+  describe('Test selection event', () => {
+    const SELECTION_INPUT = {
+      checkOnly: true,
+      packageXmlFile: 'manifest/package.xml',
+      delta: true,
+      testLevel: 'RunLocalTests',
+      testClasses: [],
+      targetUsername: 'user@example.com',
+    };
+
+    // A fake oclif config whose plugin writes the given content in the selection file
+    function selectingPlugin(content: string | null) {
+      return fakeOclifConfig([['sfdx-hardis:test-selection']], async (_event, payload) => {
+        if (content !== null) {
+          fs.writeFileSync(payload.data.selectionFile, content);
+        }
+        return { successes: [], failures: [] };
+      });
+    }
+
+    async function selectionFilePath(): Promise<string> {
+      return path.resolve(path.join(await getReportDirectory(), 'plugin-test-selection.json'));
+    }
+
+    afterEach(async () => {
+      fs.rmSync(await selectionFilePath(), { force: true });
+    });
+
+    it('sends the package.xml, the current selection and the selection file to the listening plugins', async () => {
+      const { config, calls } = selectingPlugin(null);
+      const selection = await emitTestSelectionEvent({ id: 'hardis:project:deploy:smart', config }, {
+        ...SELECTION_INPUT,
+        testLevel: 'RunSpecifiedTests',
+        testClasses: ['FromPrTest'],
+      });
+      expect(selection).to.be.null;
+      expect(calls).to.have.length(1);
+      expect(calls[0].event).to.equal('sfdx-hardis:test-selection');
+      expect(calls[0].payload.org).to.deep.equal({ username: 'user@example.com' });
+      expect(calls[0].payload.data).to.deep.equal({
+        checkOnly: true,
+        packageXmlFile: path.resolve('manifest/package.xml'),
+        delta: true,
+        testLevel: 'RunSpecifiedTests',
+        testClasses: ['FromPrTest'],
+        selectionFile: await selectionFilePath(),
+      });
+    });
+
+    it('returns the tests a plugin selected, without duplicates', async () => {
+      const { config } = selectingPlugin(JSON.stringify({
+        plugin: 'apextestlist',
+        testLevel: 'RunSpecifiedTests',
+        testClasses: ['AccountServiceTest', 'ns.OrderTest', 'AccountServiceTest', 'CaseTest.testClose'],
+      }));
+      const selection = await emitTestSelectionEvent({ config }, SELECTION_INPUT);
+      expect(selection).to.deep.equal({
+        plugin: 'apextestlist',
+        testLevel: 'RunSpecifiedTests',
+        testClasses: ['AccountServiceTest', 'ns.OrderTest', 'CaseTest.testClose'],
+      });
+    });
+
+    it('drops the test classes when the plugin selects another test level', async () => {
+      const { config } = selectingPlugin(JSON.stringify({ testLevel: 'RunLocalTests', testClasses: ['IgnoredTest'] }));
+      const selection = await emitTestSelectionEvent({ config }, SELECTION_INPUT);
+      expect(selection).to.deep.equal({ testLevel: 'RunLocalTests', testClasses: [], plugin: undefined });
+    });
+
+    it('ignores a selection that is not valid', async () => {
+      const invalidContents = [
+        'not json',
+        '[]',
+        JSON.stringify({ testLevel: 'NoTestRun' }),
+        JSON.stringify({ testLevel: 'RunRelevantTests' }),
+        JSON.stringify({ testLevel: 'RunSpecifiedTests' }),
+        JSON.stringify({ testLevel: 'RunSpecifiedTests', testClasses: [] }),
+        JSON.stringify({ testLevel: 'RunSpecifiedTests', testClasses: ['GoodTest', 'Bad Test; rm -rf'] }),
+        JSON.stringify({ testLevel: 'RunSpecifiedTests', testClasses: ['GoodTest', 42] }),
+      ];
+      for (const content of invalidContents) {
+        const { config } = selectingPlugin(content);
+        // eslint-disable-next-line no-await-in-loop
+        expect(await emitTestSelectionEvent({ config }, SELECTION_INPUT), content).to.be.null;
+      }
+    });
+
+    it('never reads a selection file left by an earlier run', async () => {
+      const selectionFile = await selectionFilePath();
+      fs.writeFileSync(selectionFile, JSON.stringify({ testLevel: 'RunSpecifiedTests', testClasses: ['OldTest'] }));
+      const { config, calls } = fakeOclifConfig([['sfdx-hardis:deployment-done']]);
+      const selection = await emitTestSelectionEvent({ config }, SELECTION_INPUT);
+      expect(calls).to.be.empty;
+      expect(selection).to.be.null;
+      expect(fs.existsSync(selectionFile)).to.be.false;
+    });
+
+    it('reads nothing when the plugin events are disabled', async () => {
+      process.env.SFDX_HARDIS_DISABLE_PLUGIN_EVENTS = 'true';
+      const { config, calls } = selectingPlugin(JSON.stringify({ testLevel: 'RunLocalTests' }));
+      const selection = await emitTestSelectionEvent({ config }, SELECTION_INPUT);
+      expect(calls).to.be.empty;
+      expect(selection).to.be.null;
+    });
+
+    it('returns null when there is no selection file', async () => {
+      expect(await readPluginTestSelection({}, path.resolve('does-not-exist.json'))).to.be.null;
+    });
   });
 });

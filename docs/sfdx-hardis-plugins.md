@@ -243,6 +243,7 @@ The events are [oclif custom events](https://oclif.io/docs/hooks#custom-events).
 | `sfdx-hardis:deployment-done`  | [hardis:project:deploy:smart](hardis/project/deploy/smart.md), [hardis:project:deploy:start](hardis/project/deploy/start.md), [hardis:project:deploy:quick](hardis/project/deploy/quick.md)                                      | Salesforce returned the result of the deployment    |
 | `sfdx-hardis:apex-tests-done`  | [hardis:org:test:apex](hardis/org/test/apex.md)                                                                                                                                                                                  | The Apex test run is over, before the notifications |
 | `sfdx-hardis:retrieve-done`    | [hardis:source:retrieve](hardis/source/retrieve.md)                                                                                                                                                                              | The metadata retrieve is over, success or failure   |
+| `sfdx-hardis:test-selection`   | [hardis:project:deploy:smart](hardis/project/deploy/smart.md), validation and deployment                                                                                                                                        | The package.xml to deploy is final, before deploying |
 
 `sfdx-hardis:validation-start` and `sfdx-hardis:deployment-start` are sent once per command, before the package.xml, the delta, the replacement rules and the deployment read the local sources. Use it to prepare the sources, for example to recompose metadata that your plugin decomposed after a retrieve (`sfdx-hardis:retrieve-done`). It is not sent by [hardis:project:deploy:quick](hardis/project/deploy/quick.md), which sends no sources.
 
@@ -251,6 +252,8 @@ The `-done` deployment events are sent as soon as Salesforce answers, on success
 - before the sfdx-hardis Pull Request comment, the post-deployment actions and the code coverage check, so a failure of one of them does not prevent the event
 - once per Salesforce deployment: a deployment plan with several packages sends one event per package, with its `deploymentLabel`
 - not when nothing is sent to Salesforce (empty package.xml)
+
+`sfdx-hardis:test-selection` is sent once per command, after the delta and [Smart Deployment Tests](hardis/project/deploy/smart.md#smart-deployments-tests) have run. It is the only event a plugin can answer: see [Choose the Apex tests](#choose-the-apex-tests).
 
 ### Listen to an event
 
@@ -299,7 +302,7 @@ export default hook;
 
 A working example is in the [demo plugin](https://github.com/hardisgroupcom/sf-plugin-hardis-demo).
 
-**Catch your own errors and keep the hook quick:** the job waits for it. sfdx-hardis turns a failing hook into a warning, it never changes the result of the command.
+**Catch your own errors and keep the hook quick:** the job waits for it. sfdx-hardis turns a failing hook into a warning, it never changes the result of the command. The value your hook returns is ignored: only the selection file of `sfdx-hardis:test-selection` is read back.
 
 If your plugin already has a `postrun` hook that watches sfdx-hardis commands, the events replace it.
 
@@ -345,7 +348,68 @@ Every event has the same envelope, and what is specific to the event under `data
 
 The plugin finds the retrieved files in the local project, for example with `git status` to list what changed.
 
-The types are exported by `sfdx-hardis/plugin-api`: `SfdxHardisEvent`, `SfdxHardisRunEvent`, `SalesforceRunEventData`, `SfdxHardisDeploymentStartEvent`, `DeploymentStartEventData`, `SfdxHardisRetrieveEvent`, `RetrieveEventData`, `SfdxHardisEventHookOptions`...
+`data` of `sfdx-hardis:test-selection`:
+
+| Property         | Type       | Description                                                                                                  |
+|------------------|------------|--------------------------------------------------------------------------------------------------------------|
+| `checkOnly`      | `boolean`  | `true` for a validation                                                                                      |
+| `packageXmlFile` | `string`   | Absolute path of the package.xml that will be deployed: the delta one in a delta deployment                  |
+| `delta`          | `boolean`  | `true` when `packageXmlFile` only contains the delta of the Pull Request                                     |
+| `testLevel`      | `string`   | Test level selected by sfdx-hardis so far, from the flags, the config and Smart Deployment Tests             |
+| `testClasses`    | `string[]` | Test classes selected by sfdx-hardis so far, for example from `deploymentApexTestClasses`. Empty unless `RunSpecifiedTests` |
+| `selectionFile`  | `string`   | Absolute path where your plugin can write its selection. sfdx-hardis deletes it before sending the event     |
+
+The types are exported by `sfdx-hardis/plugin-api`: `SfdxHardisEvent`, `SfdxHardisRunEvent`, `SalesforceRunEventData`, `SfdxHardisDeploymentStartEvent`, `DeploymentStartEventData`, `SfdxHardisRetrieveEvent`, `RetrieveEventData`, `SfdxHardisTestSelectionEvent`, `TestSelectionEventData`, `PluginTestSelection`, `SfdxHardisEventHookOptions`...
+
+### Choose the Apex tests
+
+With `sfdx-hardis:test-selection`, a plugin chooses the Apex tests of a [hardis:project:deploy:smart](hardis/project/deploy/smart.md) validation or deployment, for example from the Apex classes and triggers of the package.xml. To keep the selection of sfdx-hardis, write nothing.
+
+Write a JSON file at `data.selectionFile`:
+
+```json
+{
+  "plugin": "my-test-selection-plugin",
+  "testLevel": "RunSpecifiedTests",
+  "testClasses": ["AccountServiceTest", "OrderTriggerTest"]
+}
+```
+
+| Property      | Required                    | Description                                                                                         |
+|---------------|-----------------------------|-----------------------------------------------------------------------------------------------------|
+| `testLevel`   | Yes                         | `RunSpecifiedTests`, `RunLocalTests` or `RunAllTestsInOrg`                                          |
+| `testClasses` | With `RunSpecifiedTests`    | Not empty. `ClassName`, `namespace.ClassName` or `ClassName.methodName`. Ignored with other levels  |
+| `plugin`      | No                          | Name of your plugin, shown in the logs                                                              |
+
+```typescript
+import fs from "node:fs";
+import type { SfdxHardisEventHookOptions, SfdxHardisTestSelectionEvent, PluginTestSelection } from "sfdx-hardis/plugin-api";
+
+const hook = async function (options: SfdxHardisEventHookOptions<SfdxHardisTestSelectionEvent>): Promise<void> {
+  const { data } = options;
+  const myTests = await listTestsForPackageXml(data.packageXmlFile);
+  if (myTests.length === 0) {
+    return; // Keep the selection of sfdx-hardis
+  }
+  // Keep the test classes sfdx-hardis already selected, for example from the Pull Requests
+  const selection: PluginTestSelection = {
+    plugin: "my-test-selection-plugin",
+    testLevel: "RunSpecifiedTests",
+    testClasses: [...new Set([...data.testClasses, ...myTests])],
+  };
+  fs.writeFileSync(data.selectionFile, JSON.stringify(selection));
+};
+
+export default hook;
+```
+
+What sfdx-hardis does with the file:
+
+- **Your selection replaces the one of sfdx-hardis.** Merge `data.testClasses` into yours to keep them.
+- **`NoTestRun` stays.** When `data.testLevel` is `NoTestRun` (Smart Deployment Tests found no impacting metadata, or the config asks for it), the file is ignored with a warning. A plugin can not ask for `NoTestRun` either: skipping the tests stays a decision of sfdx-hardis.
+- **A file that is not valid is ignored** with a warning, and the selection of sfdx-hardis is used.
+- **One selection per command.** With a deployment plan, the same tests run for every package. When several plugins write the file, the last one wins.
+- The Salesforce rules still apply: with `RunSpecifiedTests`, each Apex class and trigger deployed needs 75% code coverage from the tests that run.
 
 ### Need another extension point?
 

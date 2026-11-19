@@ -58,6 +58,10 @@ export type {
   SfdxHardisRetrieveEvent,
   SfdxHardisRetrieveEventName,
   RetrieveEventData,
+  SfdxHardisTestSelectionEvent,
+  SfdxHardisTestSelectionEventName,
+  TestSelectionEventData,
+  PluginTestSelection,
 } from './common/utils/pluginEventUtils.js';
 
 // Pull Request comment of a plugin, posted through the git provider sfdx-hardis already set up
