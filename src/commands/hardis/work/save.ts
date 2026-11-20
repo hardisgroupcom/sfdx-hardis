@@ -22,6 +22,7 @@ import { uxLogTableWithReport } from '../../../common/utils/filesUtils.js';
 import { exportData } from '../../../common/utils/dataUtils.js';
 import { forceSourcePull } from '../../../common/utils/deployUtils.js';
 import { buildAvailableTargetBranches, buildConventionalCommitMessage, callSfdxGitDelta, getGitDeltaScope, selectTargetBranch } from '../../../common/utils/gitUtils.js';
+import { getTargetBranchName } from '../../../common/utils/targetBranchUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import {
   appendPackageXmlFilesContent,
@@ -290,8 +291,10 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
     }
     if (this.targetBranch == null) {
       const userConfig = await getConfig('user');
-      if (userConfig?.localStorageBranchTargets && userConfig?.localStorageBranchTargets[localBranch]) {
-        this.targetBranch = userConfig?.localStorageBranchTargets[localBranch];
+      // An older work:new could store a "branch,label" entry of availableTargetBranches as is
+      const storedTargetBranch = getTargetBranchName(userConfig?.localStorageBranchTargets?.[localBranch]);
+      if (storedTargetBranch) {
+        this.targetBranch = storedTargetBranch;
       }
     }
     if (this.targetBranch == null) {
@@ -1041,7 +1044,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 
     const projectConfig = await getConfig('project');
     const userConfig = await getConfig('user');
-    const inferredTargetBranch = userConfig?.localStorageBranchTargets?.[localBranch] || null;
+    const inferredTargetBranch = getTargetBranchName(userConfig?.localStorageBranchTargets?.[localBranch]) || null;
     const { branches: availableTargetBranches, display: availableTargetBranchesDisplay } = buildAvailableTargetBranches(projectConfig);
 
     available.push(`targetbranch: ${this.toOptionList(availableTargetBranchesDisplay)}`);

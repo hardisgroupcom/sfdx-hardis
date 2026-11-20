@@ -8,6 +8,7 @@
   - The version shows in the Pull Request comment and the notification, and can optionally be written on tickets.
   - New [hardis:project:version:list](https://sfdx-hardis.cloudity.com/hardis/project/version/list/): lists the version of each versioned branch, the version each promotion would create, and the history of the version tags.
   - [hardis:doc:release-notes](https://sfdx-hardis.cloudity.com/hardis/doc/release-notes/): with a plain version tag, the release notes start from the previous plain version instead of one of its release candidates.
+- Target branches configured with a label (`preprod,HOTFIX tickets`) are accepted by [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/) and [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/) in agent mode, and by backpromote ([#2505](https://github.com/hardisgroupcom/sfdx-hardis/issues/2505)).
 
 ## [8.26.0] 2026-11-19
 

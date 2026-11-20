@@ -125,6 +125,15 @@ describe('backpromote branches', () => {
     expect(listAllowedBackpromoteParentBranches({ developmentBranch: 'integration' })).to.deep.equal(['integration']);
     expect(listAllowedBackpromoteParentBranches(null)).to.deep.equal([]);
   });
+
+  it('allows the branch of a "branch,label" entry of availableTargetBranches', () => {
+    const allowed = listAllowedBackpromoteParentBranches({
+      developmentBranch: 'integration',
+      availableTargetBranches: ['integration,BUILD tickets', 'preprod,HOTFIX tickets'],
+    });
+    expect(allowed).to.deep.equal(['integration', 'preprod']);
+    expect(findBackpromoteParentBranchRefusal('preprod', allowed)).to.be.null;
+  });
 });
 
 describe('backpromote target org', () => {
