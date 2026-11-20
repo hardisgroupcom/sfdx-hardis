@@ -270,7 +270,7 @@ export async function publishProductionRelease(result: ReleaseVersionResult | nu
 export async function describeReleaseVersions(options: { fetch: boolean; historyLimit: number; withLinks: boolean; commandRef: any }): Promise<ReleaseVersionsDescription> {
   const { commandRef } = options;
   if (options.fetch) {
-    await fetchVersionTags(commandRef);
+    await fetchVersionTags(commandRef, { unshallow: false });
   }
   const majorOrgs = await listMajorOrgs();
   const graph = buildVersionedBranchGraph(majorOrgs);
@@ -471,12 +471,15 @@ function readVersionSettings(config: any, commandRef: any): Pick<ReleaseVersionS
 
 // The CI checkout may not have every tag: Azure Pipelines does not fetch them by default. A shallow
 // clone (the default of GitLab) does not have the history either, and git tag --merged then misses
-// the release candidates older than the depth: the history is fetched once, when it is shallow
-async function fetchVersionTags(commandRef: any): Promise<void> {
+// the release candidates older than the depth: a deployment job fetches the history once, when it is
+// shallow. version:list only reads: on a shallow clone it warns instead of downloading the history
+async function fetchVersionTags(commandRef: any, options: { unshallow: boolean } = { unshallow: true }): Promise<void> {
   try {
     const shallow = (await git().raw(['rev-parse', '--is-shallow-repository']).catch(() => 'false')).trim() === 'true';
-    if (shallow) {
+    if (shallow && options.unshallow) {
       await git().raw(['fetch', 'origin', '--unshallow', '--quiet']);
+    } else if (shallow) {
+      uxLog("warning", commandRef, c.yellow(t('releaseVersionShallowClone')));
     }
     await git().raw(['fetch', 'origin', '--tags', '--force', '--quiet']);
   } catch (e: any) {

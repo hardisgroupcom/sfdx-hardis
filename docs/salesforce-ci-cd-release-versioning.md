@@ -109,7 +109,7 @@ releaseVersioning: true
 | `{MAJ}`, `{MIN}`, `{PATCH}`    | The version, chosen by the [rules above](#how-a-version-is-chosen). Required.      |
 | `{RC}`                         | The release candidate number. Required.                                            |
 | `{BRANCH}`                     | The git branch name, `/` and any character a tag cannot hold written `-`: `release/uat` gives `release-uat`. Use it rather than writing the branch name in the format: one format then serves several branches, each with its own counter. |
-| Any other `{NAME}` (`{PI}`...) | A custom variable, from `releaseVersioningMinimumVariables` and the previous tags. |
+| Any other `{NAME}` (`{PI}`...) | A custom variable, from `releaseVersioningMinimumVariables` and the previous tags. Its name holds letters and digits only. |
 
 #### Use case: program increments and iterations
 
@@ -134,7 +134,7 @@ The CI/CD variables are listed in the rules below. MIN only goes up once, when u
 
 The rules:
 
-- **The format**: `{MAJ}`, `{MIN}`, `{PATCH}` and `{RC}` once each, two placeholders never side by side, and only letters, digits, `.`, `_` and `-` around them, so the name is a valid git tag, JIRA fix version and ticket label. An invalid format logs a warning and the branch uses the default one: it never fails a deployment.
+- **The format**: `{MAJ}`, `{MIN}`, `{PATCH}` and `{RC}` once each, two placeholders never side by side, custom variable names of letters and digits only (no `_`: `..._VAR_UAT_PI` then always means `{PI}` of the branch uat), and only letters, digits, `.`, `_` and `-` around them, so the name is a valid git tag, JIRA fix version and ticket label. An invalid format logs a warning and the branch uses the default one: it never fails a deployment.
 - **One counter per tag text**: the next release candidate is 1 + the highest one among the tags of the same version with the same text around `{RC}`. A new PI, a new iteration or another branch gives a new text, and its counter starts at 1. Two branches with the same format share one counter, so their tags never collide. Changing the format also restarts the counter.
 - **Variables never change on their own**: a tag takes the values of the previous tags. They change when a Pull Request raises `releaseVersioningMinimumVariables`, and the next tag takes the new values. They compare together, in the order of the format, like a semver: PI 3 / IT 1 is above PI 2 / IT 5. A value set in a branch config replaces the project value of the same variable.
 - **A variable with no value**, neither in the previous tags nor in the config: warning, no tag, and the deployment goes on.

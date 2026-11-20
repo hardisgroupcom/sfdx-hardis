@@ -3886,7 +3886,7 @@
     },
     "releaseVersioningMinimumVariables": {
       "$id": "#/properties/releaseVersioningMinimumVariables",
-      "description": "Values of the custom variables of releaseVersioningTagFormat ({PI}, {IT}...). A tag takes the values of the previous tags: they only change when this setting goes above them, and the next tag then takes the new values. Variables compare together in the order of the tag format, like a semver: PI 3 / IT 1 is above PI 2 / IT 5. Lowering it later has no effect. Project config, a branch config can override some values, and so can the CI/CD variables `SFDX_HARDIS_RELEASE_VERSIONING_VAR_<NAME>` (every branch) and `SFDX_HARDIS_RELEASE_VERSIONING_VAR_<BRANCH>_<NAME>` (one branch), with the branch and variable names in uppercase and other characters than letters and digits written `_` (`SFDX_HARDIS_RELEASE_VERSIONING_VAR_RELEASE_UAT_PI` for release/uat). Only letters, digits, `.`, `_` and `-`.",
+      "description": "Values of the custom variables of releaseVersioningTagFormat ({PI}, {IT}...). A tag takes the values of the previous tags: they only change when this setting goes above them, and the next tag then takes the new values. Variables compare together in the order of the tag format, like a semver: PI 3 / IT 1 is above PI 2 / IT 5. Lowering it later has no effect. Project config, a branch config can override some values, and so can the CI/CD variables `SFDX_HARDIS_RELEASE_VERSIONING_VAR_<NAME>` (every branch) and `SFDX_HARDIS_RELEASE_VERSIONING_VAR_<BRANCH>_<NAME>` (one branch), with the branch and variable names in uppercase and other characters than letters and digits written `_` (`SFDX_HARDIS_RELEASE_VERSIONING_VAR_RELEASE_UAT_PI` for release/uat). Variable names: letters and digits only, so that `..._VAR_UAT_PI` can only mean {PI} of the branch uat. Values: only letters, digits, `.`, `_` and `-`.",
       "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-release-versioning/",
       "examples": [
         {
@@ -3902,14 +3902,14 @@
         "pattern": "^[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)*$"
       },
       "propertyNames": {
-        "pattern": "^[A-Za-z][A-Za-z0-9_]*$"
+        "pattern": "^[A-Za-z][A-Za-z0-9]*$"
       },
       "title": "Release versioning: values of the tag format variables",
       "type": "object"
     },
     "releaseVersioningTagFormat": {
       "$id": "#/properties/releaseVersioningTagFormat",
-      "description": "Name of the release candidate tags. Placeholders: {MAJ}, {MIN}, {PATCH} and {RC} (required, once each), {BRANCH} (git branch name, `/` and other characters a tag cannot hold written `-`) and custom variables such as {PI} or {IT}, whose values come from releaseVersioningMinimumVariables. Only letters, digits, `.`, `_` and `-` around them, and two placeholders cannot touch. Each text around {RC} has its own release candidate counter. Set it in the project config for every branch, in a branch config for that branch, or with the CI/CD variable `SFDX_HARDIS_RELEASE_VERSIONING_TAG_FORMAT` over both. Ignored on the highest versioned branch, which always gets plain versions (v1.5.0). An invalid format is a warning and the default one is used.",
+      "description": "Name of the release candidate tags. Placeholders: {MAJ}, {MIN}, {PATCH} and {RC} (required, once each), {BRANCH} (git branch name, `/` and other characters a tag cannot hold written `-`) and custom variables such as {PI} or {IT} (letters and digits only), whose values come from releaseVersioningMinimumVariables. Only letters, digits, `.`, `_` and `-` around them, and two placeholders cannot touch. Each text around {RC} has its own release candidate counter. Set it in the project config for every branch, in a branch config for that branch, or with the CI/CD variable `SFDX_HARDIS_RELEASE_VERSIONING_TAG_FORMAT` over both. Ignored on the highest versioned branch, which always gets plain versions (v1.5.0). An invalid format is a warning and the default one is used.",
       "default": "v{MAJ}.{MIN}.{PATCH}-rc.{RC}",
       "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-release-versioning/",
       "examples": [

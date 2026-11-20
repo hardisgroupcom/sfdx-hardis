@@ -3731,6 +3731,7 @@
   "releaseVersionReleaseFailed": "Release {{tag}} を作成できませんでした: {{message}}",
   "releaseVersionReleaseNotSupported": "{{provider}} には Release オブジェクトがありません: {{tag}} の release notes はジョブのレポートに残ります",
   "releaseVersionReleaseNotesFailed": "{{tag}} の release notes を生成できませんでした: {{message}}。代わりに Release は比較へのリンクになります",
+  "releaseVersionShallowClone": "このクローンは shallow です: その深さより古いリリース候補が欠けている可能性があります。すべてを読み取るには git fetch --unshallow を実行してください",
   "releaseVersionTagCreated": "commit {{commit}} に tag {{tag}} を作成しました",
   "releaseVersionTagFailed": "release バージョンの tag ({{tag}}) を作成できませんでした: {{message}}。デプロイには影響しません",
   "releaseVersionTagFormatIgnoredOnFinalBranch": "{{branch}} では releaseVersioningTagFormat は無視されます: バージョン管理される最上位の branch には常に通常のバージョンが付与されます ({{example}})",

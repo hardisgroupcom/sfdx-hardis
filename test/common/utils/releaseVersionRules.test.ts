@@ -362,6 +362,8 @@ describe('releaseVersionRules', () => {
         'v{MAJ}..{MIN}.{PATCH}-rc{RC}',
         'v{MAJ}.{MIN}.{PATCH}-rc{RC}.lock',
         'v{MAJ}.{MIN}.{PATCH}-rc{RC}-{1PI}',
+        // '_' in a variable name: ..._VAR_UAT_PI would read as UAT_PI of every branch as well
+        'v{MAJ}.{MIN}.{PATCH}-pi{UAT_PI}-rc{RC}',
         'v{MAJ}.{MIN}.{PATCH}-rc{RC}-{PI',
       ]) {
         expect(parseTagFormat(invalid), invalid).to.be.null;

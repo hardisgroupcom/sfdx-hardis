@@ -130,6 +130,7 @@ RV_VARIABLES="SFDX_HARDIS_RELEASE_VERSIONING_TAG_FORMAT SFDX_HARDIS_RELEASE_VERS
 # GitHub passes no repository variable to a job unless the workflow maps it: the deployment job
 # gets contents: write (tags and Releases) and the release versioning variables of this run
 patch_github_workflow() {
+  # shellcheck disable=SC2016 # a node script, and ${{ vars.X }} expressions GitHub expands
   node -e '
     const fs = require("fs");
     const file = process.argv[1];

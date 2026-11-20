@@ -3733,6 +3733,7 @@
   "releaseVersionReleaseFailed": "Kan Release {{tag}} niet aanmaken: {{message}}",
   "releaseVersionReleaseNotSupported": "{{provider}} heeft geen Release-object: de release notes van {{tag}} blijven in de jobrapporten",
   "releaseVersionReleaseNotesFailed": "Kan de release notes van {{tag}} niet genereren: {{message}}. De Release verwijst in plaats daarvan naar de vergelijking",
+  "releaseVersionShallowClone": "Deze clone is shallow: release candidates die ouder zijn dan de diepte kunnen ontbreken. Voer git fetch --unshallow uit om ze allemaal te lezen",
   "releaseVersionTagCreated": "Tag {{tag}} aangemaakt op commit {{commit}}",
   "releaseVersionTagFailed": "Kan de release-versie-tag ({{tag}}) niet aanmaken: {{message}}. De deployment wordt niet beïnvloed",
   "releaseVersionTagFormatIgnoredOnFinalBranch": "releaseVersioningTagFormat wordt genegeerd op {{branch}}: de hoogste versie-branch krijgt altijd gewone versies ({{example}})",

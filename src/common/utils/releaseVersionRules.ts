@@ -134,7 +134,8 @@ export const TAG_VARIABLE_ENV_VAR_PREFIX = 'SFDX_HARDIS_RELEASE_VERSIONING_VAR_'
 const RELEASE_VERSION_REGEX = /^v?(\d+)\.(\d+)\.(\d+)(?:-rc\.(\d+))?$/;
 const REQUIRED_PLACEHOLDERS = ['MAJ', 'MIN', 'PATCH', 'RC'];
 const BUILT_IN_PLACEHOLDERS = [...REQUIRED_PLACEHOLDERS, 'BRANCH'];
-const PLACEHOLDER_NAME_REGEX = /^[A-Za-z][A-Za-z0-9_]*$/;
+// No '_' in a name: SFDX_HARDIS_RELEASE_VERSIONING_VAR_UAT_PI must only read as {PI} of the branch uat
+const PLACEHOLDER_NAME_REGEX = /^[A-Za-z][A-Za-z0-9]*$/;
 // Characters valid in a git tag, a JIRA fix version and a ticket label
 const TAG_TEXT_REGEX = /^[A-Za-z0-9._-]+$/;
 // A variable value: no dot at either end, no two dots in a row
@@ -220,7 +221,8 @@ export function parseReleaseVersion(text: string | null | undefined): ReleaseVer
 /**
  * Reads a tag format (releaseVersioningTagFormat). Null when it is invalid: {MAJ}, {MIN}, {PATCH}
  * and {RC} once each, {BRANCH} and custom variables at most once, two placeholders never side by
- * side, only letters, digits, '.', '_' and '-' around them, and a valid git tag once filled in.
+ * side, variable names of letters and digits only, only letters, digits, '.', '_' and '-' around
+ * them, and a valid git tag once filled in.
  */
 export function parseTagFormat(text: string | null | undefined): TagFormat | null {
   const source = (text || '').trim();

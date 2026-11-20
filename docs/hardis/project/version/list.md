@@ -22,7 +22,7 @@ The command:
 - lists the version tags, newest first, with the branch, the org, the deployment date, the Pull Request and the job that created them, in a report file;
 - with `--with-links`, adds the web URL of each tag and Release. It is off by default, since building the git provider client can call its API.
 
-Nothing is written: no tag is created, no org is called. Without `--with-links`, only git is called: one fetch of the tags, then local reads.
+Nothing is written: no tag is created, no org is called. Without `--with-links`, only git is called: one fetch of the tags, then local reads. On a shallow clone, the history is not downloaded: a warning says that the release candidates older than the clone depth may be missing.
 
 The DevOps Pipeline of the VS Code extension reads it with `--json` to show the versions on the branch and org nodes, the version each promotion will create, and the Releases tab.
 

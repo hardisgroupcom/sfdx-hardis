@@ -3700,6 +3700,7 @@
   "releaseVersionReleaseFailed": "Não foi possível criar a Release {{tag}}: {{message}}",
   "releaseVersionReleaseNotesFailed": "Não foi possível gerar as release notes de {{tag}}: {{message}}. A Release aponta para a comparação",
   "releaseVersionReleaseNotSupported": "{{provider}} não tem objeto Release: as release notes de {{tag}} ficam nos relatórios do job",
+  "releaseVersionShallowClone": "Este clone é shallow: as release candidates mais antigas que sua profundidade podem estar ausentes. Execute git fetch --unshallow para ler todas",
   "releaseVersionTagCreated": "Tag {{tag}} criada no commit {{commit}}",
   "releaseVersionTagFailed": "Não foi possível criar a tag de versão de release ({{tag}}): {{message}}. O deploy não é afetado",
   "releaseVersionTagFormatIgnoredOnFinalBranch": "releaseVersioningTagFormat é ignorado em {{branch}}: o branch versionado mais alto sempre recebe versões simples ({{example}})",

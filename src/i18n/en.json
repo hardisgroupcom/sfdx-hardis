@@ -3737,6 +3737,7 @@
   "releaseVersionReleaseFailed": "Unable to create Release {{tag}}: {{message}}",
   "releaseVersionReleaseNotSupported": "{{provider}} has no Release object: the release notes of {{tag}} stay in the job reports",
   "releaseVersionReleaseNotesFailed": "Unable to generate the release notes of {{tag}}: {{message}}. The Release links to the comparison instead",
+  "releaseVersionShallowClone": "This clone is shallow: the release candidates older than its depth may be missing. Run git fetch --unshallow to read them all",
   "releaseVersionTagCreated": "Tag {{tag}} created on commit {{commit}}",
   "releaseVersionTagFailed": "Unable to create the release version tag ({{tag}}): {{message}}. The deployment is not affected",
   "releaseVersionTagFormatIgnoredOnFinalBranch": "releaseVersioningTagFormat is ignored on {{branch}}: the highest versioned branch always gets plain versions ({{example}})",
