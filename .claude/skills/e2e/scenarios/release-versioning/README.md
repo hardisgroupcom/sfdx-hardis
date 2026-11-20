@@ -50,11 +50,11 @@ releaseVersioningMinimumVariables:
   PI: 2
   IT: 4
 # config/branches/.sfdx-hardis.uat.yml
-releaseVersioningTagFormat: v{MAJ}.{MIN}.{PATCH}-pi{PI}-it{IT}-uat-rc{RC}
+releaseVersioningTagFormat: v{MAJ}.{MIN}.{PATCH}-pi{PI}-it{IT}-{BRANCH}-rc{RC}
 # config/branches/.sfdx-hardis.preprod.yml
 releaseVersioningTagFormat: v{MAJ}.{MIN}.{PATCH}-{BRANCH}-rc{RC}
 # config/branches/.sfdx-hardis.main.yml: ignored, with a warning
-releaseVersioningTagFormat: v{MAJ}.{MIN}.{PATCH}-main-rc{RC}
+releaseVersioningTagFormat: v{MAJ}.{MIN}.{PATCH}-{BRANCH}-rc{RC}
 ```
 
 | Step | Action                                                                          | Expected tag             | What it proves                                                     |

@@ -10,7 +10,7 @@
 #
 # PART=default  the tags of every versioned branch keep the default format (v1.4.0-rc.2), and main
 #               starts with a tag made by hand, v1.3.0
-# PART=custom   uat names its tags v{MAJ}.{MIN}.{PATCH}-pi{PI}-it{IT}-uat-rc{RC}, preprod
+# PART=custom   uat names its tags v{MAJ}.{MIN}.{PATCH}-pi{PI}-it{IT}-{BRANCH}-rc{RC}, preprod
 #               v{MAJ}.{MIN}.{PATCH}-{BRANCH}-rc{RC}, and main declares a format too, which must be
 #               ignored with a warning. The project config gives PI 2 and IT 4
 #
@@ -132,10 +132,10 @@ printf 'mergeTargets:\n  - preprod\nreleaseVersioning: true\n' >config/branches/
 printf 'mergeTargets:\n  - main\nreleaseVersioning: true\n' >config/branches/.sfdx-hardis.preprod.yml
 printf 'mergeTargets: []\nreleaseVersioning: true\n' >config/branches/.sfdx-hardis.main.yml
 if [ "$PART" = "custom" ]; then
-  echo 'releaseVersioningTagFormat: v{MAJ}.{MIN}.{PATCH}-pi{PI}-it{IT}-uat-rc{RC}' >>config/branches/.sfdx-hardis.uat.yml
+  echo 'releaseVersioningTagFormat: v{MAJ}.{MIN}.{PATCH}-pi{PI}-it{IT}-{BRANCH}-rc{RC}' >>config/branches/.sfdx-hardis.uat.yml
   echo 'releaseVersioningTagFormat: v{MAJ}.{MIN}.{PATCH}-{BRANCH}-rc{RC}' >>config/branches/.sfdx-hardis.preprod.yml
   # Ignored: the highest versioned branch always gets plain versions, with a warning
-  echo 'releaseVersioningTagFormat: v{MAJ}.{MIN}.{PATCH}-main-rc{RC}' >>config/branches/.sfdx-hardis.main.yml
+  echo 'releaseVersioningTagFormat: v{MAJ}.{MIN}.{PATCH}-{BRANCH}-rc{RC}' >>config/branches/.sfdx-hardis.main.yml
 fi
 
 git add -A
