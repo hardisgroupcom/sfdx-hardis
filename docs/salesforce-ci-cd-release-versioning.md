@@ -42,11 +42,11 @@ The order of the branches comes from their `mergeTargets`. The highest versioned
 
 Optional settings, in `config/.sfdx-hardis.yml`:
 
-| Setting                           | Default | Use                                                                                                                                                      |
-|-----------------------------------|---------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `releaseVersioningInitialVersion` | `1.0.0` | First version when the repository has no semver tag. A repository that already has tags (`v1.3.0` or `1.3.0`) carries on from the highest one.         |
-| `releaseVersioningMinimumVersion` |         | Set it to `2.0.0` to start a major version. A computed version below it is raised to it. Once that version exists, the setting has no more effect.       |
-| `releaseVersioningTicketVersions` | `none`  | Write the versions on tickets: `allCandidates` or `finalOnly`. See [Versions on tickets](#versions-on-tickets-optional).                                  |
+| Setting                           | Default | Use                                                                                                                                                |
+|-----------------------------------|---------|----------------------------------------------------------------------------------------------------------------------------------------------------|
+| `releaseVersioningInitialVersion` | `1.0.0` | First version when the repository has no semver tag. A repository that already has tags (`v1.3.0` or `1.3.0`) carries on from the highest one.     |
+| `releaseVersioningMinimumVersion` |         | Set it to `2.0.0` to start a major version. A computed version below it is raised to it. Once that version exists, the setting has no more effect. |
+| `releaseVersioningTicketVersions` | `none`  | Write the versions on tickets: `allCandidates` or `finalOnly`. See [Versions on tickets](#versions-on-tickets-optional).                           |
 
 `releaseVersioningTagFormat` and `releaseVersioningMinimumVariables` name the release candidates: see [Tag format of release candidates](#tag-format-of-release-candidates).
 
@@ -58,18 +58,18 @@ The version only depends on the existing tags, on the branch deployed, and on wh
 
 A release cycle on a pipeline `int -> uat -> preprod -> main`, where uat, preprod and main declare `releaseVersioning: true`, after `v1.3.0`:
 
-| Deployment                                       | Version       | Why                                                                                 |
-|--------------------------------------------------|---------------|-------------------------------------------------------------------------------------|
-| int promoted to uat                              | `v1.4.0-rc.1` | The first deployment to uat after `v1.3.0` opens release 1.4.0                      |
-| int promoted to uat again                        | `v1.4.0-rc.2` | Same release, next release candidate                                                |
-| uat promoted to preprod                          | `v1.4.0-rc.3` | uat and preprod have the same tag format: they share one counter                    |
-| int promoted to uat                              | `v1.5.0-rc.1` | Release 1.4.0 moved up to preprod: uat opens the next one                           |
-| preprod promoted to main                         | `v1.4.0`      | Production gets the plain version of the release it receives                        |
-| hotfix merged into preprod                       | `v1.4.1-rc.1` | Nothing waits in preprod for production: the hotfix starts a patch                  |
-| preprod promoted to main                         | `v1.4.1`      |                                                                                     |
-| hotfix backpromoted to uat, with new work        | `v1.5.0-rc.2` | Release 1.5.0 is still in uat                                                       |
-| uat promoted to preprod                          | `v1.5.0-rc.3` |                                                                                     |
-| int promoted to uat                              | `v1.6.0-rc.1` | Release 1.5.0 moved up: uat opens release 1.6.0                                     |
+| Deployment                                | Version       | Why                                                                |
+|-------------------------------------------|---------------|--------------------------------------------------------------------|
+| int promoted to uat                       | `v1.4.0-rc.1` | The first deployment to uat after `v1.3.0` opens release 1.4.0     |
+| int promoted to uat again                 | `v1.4.0-rc.2` | Same release, next release candidate                               |
+| uat promoted to preprod                   | `v1.4.0-rc.3` | uat and preprod have the same tag format: they share one counter   |
+| int promoted to uat                       | `v1.5.0-rc.1` | Release 1.4.0 moved up to preprod: uat opens the next one          |
+| preprod promoted to main                  | `v1.4.0`      | Production gets the plain version of the release it receives       |
+| hotfix merged into preprod                | `v1.4.1-rc.1` | Nothing waits in preprod for production: the hotfix starts a patch |
+| preprod promoted to main                  | `v1.4.1`      |                                                                    |
+| hotfix backpromoted to uat, with new work | `v1.5.0-rc.2` | Release 1.5.0 is still in uat                                      |
+| uat promoted to preprod                   | `v1.5.0-rc.3` |                                                                    |
+| int promoted to uat                       | `v1.6.0-rc.1` | Release 1.5.0 moved up: uat opens release 1.6.0                    |
 
 The rules behind it:
 
@@ -104,31 +104,31 @@ releaseVersioningTagFormat: v{MAJ}.{MIN}.{PATCH}-{BRANCH}-rc{RC}
 releaseVersioning: true
 ```
 
-| Placeholder                    | Value                                                                              |
-|--------------------------------|------------------------------------------------------------------------------------|
-| `{MAJ}`, `{MIN}`, `{PATCH}`    | The version, chosen by the [rules above](#how-a-version-is-chosen). Required.      |
-| `{RC}`                         | The release candidate number. Required.                                            |
+| Placeholder                    | Value                                                                                                                                                                                                                                      |
+|--------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `{MAJ}`, `{MIN}`, `{PATCH}`    | The version, chosen by the [rules above](#how-a-version-is-chosen). Required.                                                                                                                                                              |
+| `{RC}`                         | The release candidate number. Required.                                                                                                                                                                                                    |
 | `{BRANCH}`                     | The git branch name, `/` and any character a tag cannot hold written `-`: `release/uat` gives `release-uat`. Use it rather than writing the branch name in the format: one format then serves several branches, each with its own counter. |
-| Any other `{NAME}` (`{PI}`...) | A custom variable, from `releaseVersioningMinimumVariables` and the previous tags. Its name holds letters and digits only. |
+| Any other `{NAME}` (`{PI}`...) | A custom variable, from `releaseVersioningMinimumVariables` and the previous tags. Its name holds letters and digits only.                                                                                                                 |
 
 #### Use case: program increments and iterations
 
 A team plans its work in program increments (PI) of several iterations (IT), and its testers want to read the PI and the iteration in the name of each UAT release candidate. With the config above, and no tag at the start:
 
-| Deployment                                                                                  | Tag                      | Why                                                                                          |
-|---------------------------------------------------------------------------------------------|--------------------------|----------------------------------------------------------------------------------------------|
-| int promoted to uat                                                                         | `v1.0.0-pi2-it4-uat-rc1` | First release, PI 2 and IT 4 from the config                                                 |
-| int promoted to uat, once `v1.0.0-pi2-it4-uat-rc2` was created by hand                      | `v1.0.0-pi2-it4-uat-rc3` | The name is taken: the job takes the next release candidate                                  |
-| uat promoted to preprod                                                                     | `v1.0.0-preprod-rc1`     | Another text: its own counter starts at 1                                                    |
-| A Pull Request sets `IT: 5` in `config/.sfdx-hardis.yml`, int promoted to uat              | `v1.1.0-pi2-it5-uat-rc1` | 1.0.0 moved up to preprod: uat opens 1.1.0, with the IT the Pull Request brought             |
-| hotfix merged into preprod                                                                  | `v1.0.0-preprod-rc2`     | The hotfix joins the release waiting in preprod                                              |
-| preprod promoted to main                                                                    | `v1.0.0`                 | Production gets the plain version, and a Release listing the Pull Requests of 1.0.0          |
-| A new PI starts: CI/CD variables `..._VAR_PI=3` and `..._VAR_IT=1`, int promoted to uat      | `v1.1.0-pi3-it1-uat-rc1` | No Pull Request needed. PI 3 / IT 1 is above PI 2 / IT 5. A new text: the counter restarts   |
-| Only uat moves to the next iteration: `..._VAR_UAT_IT=2`, int promoted to uat                | `v1.1.0-pi3-it2-uat-rc1` | The variable of one branch wins over the variable of every branch                            |
-| `..._VAR_UAT_IT=1`, int promoted to uat                                                     | `v1.1.0-pi3-it2-uat-rc2` | A value is a minimum: the tags hold IT 2 already, lowering it has no effect                  |
-| `..._TAG_FORMAT=v{MAJ}.{MIN}.{PATCH}-{BRANCH}-rc.{RC}`, int promoted to uat                  | `v1.1.0-uat-rc.1`        | One format for every branch, from the CI/CD server. A new text: the counter restarts         |
-| That variable removed, uat promoted to preprod                                              | `v1.1.0-preprod-rc1`     | preprod uses its own format again                                                            |
-| preprod promoted to main                                                                    | `v1.1.0`                 | Its release notes start from `v1.0.0`                                                        |
+| Deployment                                                                              | Tag                      | Why                                                                                        |
+|-----------------------------------------------------------------------------------------|--------------------------|--------------------------------------------------------------------------------------------|
+| int promoted to uat                                                                     | `v1.0.0-pi2-it4-uat-rc1` | First release, PI 2 and IT 4 from the config                                               |
+| int promoted to uat, once `v1.0.0-pi2-it4-uat-rc2` was created by hand                  | `v1.0.0-pi2-it4-uat-rc3` | The name is taken: the job takes the next release candidate                                |
+| uat promoted to preprod                                                                 | `v1.0.0-preprod-rc1`     | Another text: its own counter starts at 1                                                  |
+| A Pull Request sets `IT: 5` in `config/.sfdx-hardis.yml`, int promoted to uat           | `v1.1.0-pi2-it5-uat-rc1` | 1.0.0 moved up to preprod: uat opens 1.1.0, with the IT the Pull Request brought           |
+| hotfix merged into preprod                                                              | `v1.0.0-preprod-rc2`     | The hotfix joins the release waiting in preprod                                            |
+| preprod promoted to main                                                                | `v1.0.0`                 | Production gets the plain version, and a Release listing the Pull Requests of 1.0.0        |
+| A new PI starts: CI/CD variables `..._VAR_PI=3` and `..._VAR_IT=1`, int promoted to uat | `v1.1.0-pi3-it1-uat-rc1` | No Pull Request needed. PI 3 / IT 1 is above PI 2 / IT 5. A new text: the counter restarts |
+| Only uat moves to the next iteration: `..._VAR_UAT_IT=2`, int promoted to uat           | `v1.1.0-pi3-it2-uat-rc1` | The variable of one branch wins over the variable of every branch                          |
+| `..._VAR_UAT_IT=1`, int promoted to uat                                                 | `v1.1.0-pi3-it2-uat-rc2` | A value is a minimum: the tags hold IT 2 already, lowering it has no effect                |
+| `..._TAG_FORMAT=v{MAJ}.{MIN}.{PATCH}-{BRANCH}-rc.{RC}`, int promoted to uat             | `v1.1.0-uat-rc.1`        | One format for every branch, from the CI/CD server. A new text: the counter restarts       |
+| That variable removed, uat promoted to preprod                                          | `v1.1.0-preprod-rc1`     | preprod uses its own format again                                                          |
+| preprod promoted to main                                                                | `v1.1.0`                 | Its release notes start from `v1.0.0`                                                      |
 
 The CI/CD variables are listed in the rules below. MIN only goes up once, when uat opens 1.1.0: production takes the version of the release candidate it receives, and a hotfix joins the release waiting in preprod.
 
@@ -141,11 +141,11 @@ The rules:
 - **Production** (the highest versioned branch) always gets `v1.5.0`: a format set in its branch config is ignored, with a warning.
 - **CI/CD variables** override the config, for example to start a new PI without a Pull Request:
 
-    | Variable                                              | Overrides                                                                                                      |
-    |-------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|
-    | `SFDX_HARDIS_RELEASE_VERSIONING_TAG_FORMAT`           | `releaseVersioningTagFormat` of every versioned branch but production                                          |
-    | `SFDX_HARDIS_RELEASE_VERSIONING_VAR_<NAME>`           | The value of `{NAME}` in `releaseVersioningMinimumVariables`, for every branch: `..._VAR_PI=3`                 |
-    | `SFDX_HARDIS_RELEASE_VERSIONING_VAR_<BRANCH>_<NAME>`  | The same for one branch, over the previous one: `..._VAR_UAT_IT=1`. `release/uat` is written `RELEASE_UAT`     |
+    | Variable                                             | Overrides                                                                                                  |
+    |------------------------------------------------------|------------------------------------------------------------------------------------------------------------|
+    | `SFDX_HARDIS_RELEASE_VERSIONING_TAG_FORMAT`          | `releaseVersioningTagFormat` of every versioned branch but production                                      |
+    | `SFDX_HARDIS_RELEASE_VERSIONING_VAR_<NAME>`          | The value of `{NAME}` in `releaseVersioningMinimumVariables`, for every branch: `..._VAR_PI=3`             |
+    | `SFDX_HARDIS_RELEASE_VERSIONING_VAR_<BRANCH>_<NAME>` | The same for one branch, over the previous one: `..._VAR_UAT_IT=1`. `release/uat` is written `RELEASE_UAT` |
 
     GitLab, Azure Pipelines and Bitbucket Pipelines give their variables to every job. GitHub Actions does not: map each repository variable in the `env` of the deployment step of `.github/workflows/process-deploy.yml`, like `SFDX_HARDIS_RELEASE_VERSIONING_VAR_PI: ${{ vars.SFDX_HARDIS_RELEASE_VERSIONING_VAR_PI }}` (the template has commented examples).
 
@@ -156,12 +156,12 @@ The rules:
 
 Tags and Releases are created through the API of the git provider, with the token sfdx-hardis already uses for Pull Request comments: the job never pushes. The token needs one more permission.
 
-| Git provider    | Tag                 | Release at production                                                      | What to change                                                                                                    |
-|-----------------|---------------------|----------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
-| GitHub          | Git refs API        | GitHub Release, PDF and XLSX attached                                      | In `.github/workflows/process-deploy.yml`, replace `contents: read` by `contents: write`                           |
-| GitLab          | Repository tags API | GitLab Release, PDF and XLSX as release links                              | `CI_SFDX_HARDIS_GITLAB_TOKEN` with the `api` scope; the Maintainer role when `v*` tags are protected              |
-| Azure DevOps    | Annotated tags API  | No Release object: the release notes stay in the artifacts of the job      | Give the Build Service the **Create tag** permission on the repository                                            |
-| Bitbucket Cloud | Refs tags API       | No Release object: the release notes stay in the artifacts of the job      | `CI_SFDX_HARDIS_BITBUCKET_TOKEN` with the `repository:write` scope                                                |
+| Git provider    | Tag                 | Release at production                                                 | What to change                                                                                       |
+|-----------------|---------------------|-----------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
+| GitHub          | Git refs API        | GitHub Release, PDF and XLSX attached                                 | In `.github/workflows/process-deploy.yml`, replace `contents: read` by `contents: write`             |
+| GitLab          | Repository tags API | GitLab Release, PDF and XLSX as release links                         | `CI_SFDX_HARDIS_GITLAB_TOKEN` with the `api` scope; the Maintainer role when `v*` tags are protected |
+| Azure DevOps    | Annotated tags API  | No Release object: the release notes stay in the artifacts of the job | Give the Build Service the **Create tag** permission on the repository                               |
+| Bitbucket Cloud | Refs tags API       | No Release object: the release notes stay in the artifacts of the job | `CI_SFDX_HARDIS_BITBUCKET_TOKEN` with the `repository:write` scope                                   |
 
 Jenkins and the other CI servers use the git provider of the repository.
 
@@ -184,11 +184,11 @@ The release notes of any version can also be generated by hand: `sf hardis:doc:r
 
 Off by default. With `releaseVersioningTicketVersions`, the tickets referenced by the deployed Pull Requests get the version:
 
-| Value           | UAT and preprod                                  | main                   |
-|-----------------|--------------------------------------------------|------------------------|
-| `none`          | Nothing                                          | Nothing                |
-| `allCandidates` | Each release candidate: `v1.5.0-rc.2`, `v1.5.0-rc.3` | `v1.5.0`           |
-| `finalOnly`     | Nothing                                          | `v1.5.0`               |
+| Value           | UAT and preprod                                      | main     |
+|-----------------|------------------------------------------------------|----------|
+| `none`          | Nothing                                              | Nothing  |
+| `allCandidates` | Each release candidate: `v1.5.0-rc.2`, `v1.5.0-rc.3` | `v1.5.0` |
+| `finalOnly`     | Nothing                                              | `v1.5.0` |
 
 - **JIRA**: a fix version of the project of the ticket, created when missing, and marked released with the date of the day when main is deployed. With `allCandidates`, the release candidates also appear in the release list of the project.
 - **ServiceNow, Aha!, Azure Boards**: a label or a tag on the record.

@@ -10,9 +10,9 @@ captured: the captures, and an animated timeline built from them, show how the v
 Two parts, each on a throwaway repository of its own, on the pipeline
 `integration -> uat -> preprod -> main` where uat, preprod and main declare `releaseVersioning: true`:
 
-| Part      | What it proves                                                                                              | Duration, per provider |
-|-----------|-------------------------------------------------------------------------------------------------------------|------------------------|
-| `default` | The default format (`v1.4.0-rc.2`): the version rules, one counter per version shared by every branch       | About 1h15             |
+| Part      | What it proves                                                                                             | Duration, per provider |
+|-----------|------------------------------------------------------------------------------------------------------------|------------------------|
+| `default` | The default format (`v1.4.0-rc.2`): the version rules, one counter per version shared by every branch      | About 1h15             |
 | `custom`  | Tag formats per branch, their variables, CI/CD variable overrides, a name taken by hand, an ignored format | About 1h30             |
 
 Run each part on GitHub and on GitLab. Azure DevOps and Bitbucket have no Release object and go
@@ -23,18 +23,18 @@ through the same rules: the GitHub and GitLab runs cover them, except the tag AP
 The repository starts with a tag made by hand, `v1.3.0` on main (no sfdx-hardis message: it counts
 for the numbering, on no branch).
 
-| Step | Action                                                     | Expected tag  | Captured                       |
-|------|------------------------------------------------------------|---------------|--------------------------------|
-| a01  | A story into integration, promote integration to uat       | `v1.4.0-rc.1` | pipeline, uat Release tab      |
-| a02  | A second story, promote integration to uat                 | `v1.4.0-rc.2` | pipeline                       |
-| a03  | Promote uat to preprod                                     | `v1.4.0-rc.3` | pipeline                       |
-| a04  | A third story, promote integration to uat                  | `v1.5.0-rc.1` | pipeline                       |
-| a05  | Promote preprod to main                                    | `v1.4.0`      | pipeline, Releases tab         |
-| a06  | A hotfix branch merged into preprod                        | `v1.4.1-rc.1` | pipeline                       |
-| a07  | Promote preprod to main                                    | `v1.4.1`      | pipeline                       |
-| a08  | preprod merged back into uat (a Pull Request preprod -> uat) | `v1.5.0-rc.2` | pipeline                     |
-| a09  | Promote uat to preprod                                     | `v1.5.0-rc.3` | pipeline                       |
-| a10  | A story, promote integration to uat                        | `v1.6.0-rc.1` | pipeline, Releases, uat and preprod Release tabs |
+| Step | Action                                                       | Expected tag  | Captured                                         |
+|------|--------------------------------------------------------------|---------------|--------------------------------------------------|
+| a01  | A story into integration, promote integration to uat         | `v1.4.0-rc.1` | pipeline, uat Release tab                        |
+| a02  | A second story, promote integration to uat                   | `v1.4.0-rc.2` | pipeline                                         |
+| a03  | Promote uat to preprod                                       | `v1.4.0-rc.3` | pipeline                                         |
+| a04  | A third story, promote integration to uat                    | `v1.5.0-rc.1` | pipeline                                         |
+| a05  | Promote preprod to main                                      | `v1.4.0`      | pipeline, Releases tab                           |
+| a06  | A hotfix branch merged into preprod                          | `v1.4.1-rc.1` | pipeline                                         |
+| a07  | Promote preprod to main                                      | `v1.4.1`      | pipeline                                         |
+| a08  | preprod merged back into uat (a Pull Request preprod -> uat) | `v1.5.0-rc.2` | pipeline                                         |
+| a09  | Promote uat to preprod                                       | `v1.5.0-rc.3` | pipeline                                         |
+| a10  | A story, promote integration to uat                          | `v1.6.0-rc.1` | pipeline, Releases, uat and preprod Release tabs |
 
 Steps a08 and a09 use plain Pull Requests: the backpromote and promotion branch paths of the same
 rules are proven by the [promotion-branches scenario](../promotion-branches/README.md) and the unit
@@ -57,20 +57,20 @@ releaseVersioningTagFormat: v{MAJ}.{MIN}.{PATCH}-{BRANCH}-rc{RC}
 releaseVersioningTagFormat: v{MAJ}.{MIN}.{PATCH}-{BRANCH}-rc{RC}
 ```
 
-| Step | Action                                                                          | Expected tag             | What it proves                                                     |
-|------|---------------------------------------------------------------------------------|--------------------------|--------------------------------------------------------------------|
-| c01  | A story, promote integration to uat                                             | `v1.0.0-pi2-it4-uat-rc1` | The format of uat, PI and IT from the config                       |
-| c02  | `v1.0.0-pi2-it4-uat-rc2` pushed by hand first, then a story, promote to uat     | `v1.0.0-pi2-it4-uat-rc3` | A name taken by hand: the provider refuses it, the job retries     |
-| c03  | Promote uat to preprod                                                          | `v1.0.0-preprod-rc1`     | Another text, its own counter; `{BRANCH}`                          |
-| c04  | A story that sets `IT: 5` in the project config, promote to uat                 | `v1.1.0-pi2-it5-uat-rc1` | A config change reaches uat with its promotion; 1.1.0 opens        |
-| c05  | A hotfix merged into preprod                                                    | `v1.0.0-preprod-rc2`     | The hotfix joins the release waiting in preprod                    |
-| c06  | Promote preprod to main                                                         | `v1.0.0`                 | Production keeps the plain version, its format ignored with a warning, Release created |
-| c07  | CI/CD variables `..._VAR_PI=3`, `..._VAR_IT=1`, a story, promote to uat         | `v1.1.0-pi3-it1-uat-rc1` | A new PI without a Pull Request; PI 3 / IT 1 is above PI 2 / IT 5  |
-| c08  | CI/CD variable `..._VAR_UAT_IT=2`, a story, promote to uat                      | `v1.1.0-pi3-it2-uat-rc1` | The variable of one branch wins over the variable of every branch |
-| c09  | `..._VAR_UAT_IT=1`, a story, promote to uat                                     | `v1.1.0-pi3-it2-uat-rc2` | Lowering a value has no effect: the tags hold IT 2                 |
-| c10  | CI/CD variable `..._TAG_FORMAT=v{MAJ}.{MIN}.{PATCH}-{BRANCH}-rc.{RC}`, promote to uat | `v1.1.0-uat-rc.1`  | The format of every branch from a CI/CD variable; a new text restarts at 1 |
-| c11  | That variable removed, promote uat to preprod                                   | `v1.1.0-preprod-rc1`     | preprod uses its own format again                                  |
-| c12  | Promote preprod to main                                                         | `v1.1.0`                 | Release notes from `v1.0.0`                                        |
+| Step | Action                                                                                | Expected tag             | What it proves                                                                         |
+|------|---------------------------------------------------------------------------------------|--------------------------|----------------------------------------------------------------------------------------|
+| c01  | A story, promote integration to uat                                                   | `v1.0.0-pi2-it4-uat-rc1` | The format of uat, PI and IT from the config                                           |
+| c02  | `v1.0.0-pi2-it4-uat-rc2` pushed by hand first, then a story, promote to uat           | `v1.0.0-pi2-it4-uat-rc3` | A name taken by hand: the provider refuses it, the job retries                         |
+| c03  | Promote uat to preprod                                                                | `v1.0.0-preprod-rc1`     | Another text, its own counter; `{BRANCH}`                                              |
+| c04  | A story that sets `IT: 5` in the project config, promote to uat                       | `v1.1.0-pi2-it5-uat-rc1` | A config change reaches uat with its promotion; 1.1.0 opens                            |
+| c05  | A hotfix merged into preprod                                                          | `v1.0.0-preprod-rc2`     | The hotfix joins the release waiting in preprod                                        |
+| c06  | Promote preprod to main                                                               | `v1.0.0`                 | Production keeps the plain version, its format ignored with a warning, Release created |
+| c07  | CI/CD variables `..._VAR_PI=3`, `..._VAR_IT=1`, a story, promote to uat               | `v1.1.0-pi3-it1-uat-rc1` | A new PI without a Pull Request; PI 3 / IT 1 is above PI 2 / IT 5                      |
+| c08  | CI/CD variable `..._VAR_UAT_IT=2`, a story, promote to uat                            | `v1.1.0-pi3-it2-uat-rc1` | The variable of one branch wins over the variable of every branch                      |
+| c09  | `..._VAR_UAT_IT=1`, a story, promote to uat                                           | `v1.1.0-pi3-it2-uat-rc2` | Lowering a value has no effect: the tags hold IT 2                                     |
+| c10  | CI/CD variable `..._TAG_FORMAT=v{MAJ}.{MIN}.{PATCH}-{BRANCH}-rc.{RC}`, promote to uat | `v1.1.0-uat-rc.1`        | The format of every branch from a CI/CD variable; a new text restarts at 1             |
+| c11  | That variable removed, promote uat to preprod                                         | `v1.1.0-preprod-rc1`     | preprod uses its own format again                                                      |
+| c12  | Promote preprod to main                                                               | `v1.1.0`                 | Release notes from `v1.0.0`                                                            |
 
 The `..._VAR_` variables are `SFDX_HARDIS_RELEASE_VERSIONING_VAR_<NAME>` and
 `SFDX_HARDIS_RELEASE_VERSIONING_VAR_<BRANCH>_<NAME>`: repository variables on GitHub, project

@@ -4,10 +4,10 @@ Work in progress, to continue on another computer. **Delete this file before mer
 
 ## Where things are
 
-| Repository          | Branch                    | Pull Request                                                     | Last commit |
-|---------------------|---------------------------|------------------------------------------------------------------|-------------|
-| sfdx-hardis         | `feat/release-versioning` | https://github.com/hardisgroupcom/sfdx-hardis/pull/2498          | `95727d11`  |
-| vscode-sfdx-hardis  | `feat/release-versioning` | https://github.com/hardisgroupcom/vscode-sfdx-hardis/pull/622    | `1c5055e`   |
+| Repository         | Branch                    | Pull Request                                                  | Last commit |
+|--------------------|---------------------------|---------------------------------------------------------------|-------------|
+| sfdx-hardis        | `feat/release-versioning` | https://github.com/hardisgroupcom/sfdx-hardis/pull/2498       | `95727d11`  |
+| vscode-sfdx-hardis | `feat/release-versioning` | https://github.com/hardisgroupcom/vscode-sfdx-hardis/pull/622 | `1c5055e`   |
 
 Done: analysis, design, implementation, code review (high) of the CLI PR and its fixes.
 
