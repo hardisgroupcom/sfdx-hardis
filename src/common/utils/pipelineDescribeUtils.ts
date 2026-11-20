@@ -1,5 +1,6 @@
 import { t } from './i18n.js';
 import { getPromotionBranchConfig, isPromotionStepAllowed, PromotionStep } from './promotionBranchUtils.js';
+import { listAvailableTargetBranchNames } from './targetBranchUtils.js';
 
 export interface PipelineBranch {
   name: string;
@@ -94,7 +95,7 @@ export function buildPipelineDescription(majorOrgs: any[], config: any): Pipelin
 
   return {
     developmentBranch: config?.developmentBranch || 'integration',
-    availableTargetBranches: Array.isArray(config?.availableTargetBranches) ? config.availableTargetBranches : [],
+    availableTargetBranches: listAvailableTargetBranchNames(config),
     branches,
     steps,
     entryBranches: branches.filter((branch) => branch.mergeSources.length === 0).map((branch) => branch.name),
