@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Release versioning e2e</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: a test report for maintainers, plain and exact, finding first.
+   IDEA: the departure board of a release cycle: each step a row, its version tag the train.
+   PICTURE: the DevOps Pipeline captured after the selected step, large, stepped through.
+   COLOUR and TYPE: Swiss timetable, white and black, signal red for failures, Archivo wide.
+   LAYOUT: finding and run switch on top, timetable left, picture right, checks and findings below. */
+:root{color-scheme:light dark;--bg:light-dark(#fff,#0e0e0e);--ink:light-dark(#111,#eee);--mute:light-dark(#6b6b6b,#9a9a9a);--rule:light-dark(#111,#eee);--line:light-dark(#e3e3e3,#2a2a2a);--red:#e4002b;--ok:light-dark(#111,#eee);--chip:light-dark(#f2f2f2,#1c1c1c)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Archivo,system-ui,sans-serif;overflow-x:clip}
+.band{padding:clamp(24px,4vw,56px) max(5vw,16px);max-width:1440px;margin:0 auto}
+header.band{border-top:10px solid var(--rule);padding-bottom:16px}
+h1{font-size:clamp(30px,4.4vw,50px);line-height:1.05;font-weight:800;font-stretch:112%;margin:0 0 12px;text-wrap:balance;max-width:20ch}
+h2{font-size:26px;font-weight:800;font-stretch:112%;margin:0 0 14px;line-height:1.1}
+.lede{color:var(--mute);margin:0 0 22px;max-width:70ch}
+.runs{display:flex;flex-wrap:wrap;gap:8px}
+.runs button{font:inherit;font-weight:700;min-height:44px;padding:8px 16px;border:2px solid var(--rule);background:var(--bg);color:var(--ink);cursor:pointer;border-radius:0;display:flex;gap:10px;align-items:baseline}
+.runs button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+.runs small{font-weight:500;font-variant-numeric:tabular-nums}
+.bad{color:var(--red)}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+.board{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:clamp(16px,3vw,40px);align-items:start}
+ol.steps{list-style:none;margin:0;padding:0;border-top:3px solid var(--rule)}
+ol.steps li{border-bottom:1px solid var(--line)}
+ol.steps button{all:unset;box-sizing:border-box;display:grid;grid-template-columns:3.2em minmax(0,1fr);gap:4px 10px;width:100%;padding:10px 6px;cursor:pointer;min-height:44px}
+ol.steps button[aria-current=true]{background:var(--chip);box-shadow:inset 4px 0 0 var(--red)}
+.num{font-size:28px;font-weight:800;font-stretch:125%;line-height:1;font-variant-numeric:tabular-nums;grid-row:span 2}
+.tag{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tag em{font-style:normal;font-weight:500;color:var(--mute)}
+.cap{font-size:14px;color:var(--mute);line-height:1.35}
+.stage{position:sticky;top:12px}
+.frame{border:3px solid var(--rule);background:var(--chip);aspect-ratio:1836/900;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.frame img{width:100%;height:100%;object-fit:contain;display:block}
+.frame p{color:var(--mute);padding:20px;text-align:center}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:12px}
+.bar h3{font-size:20px;margin:0;flex:1 1 280px;line-height:1.25;text-wrap:balance}
+.bar button{font:inherit;font-weight:700;min-width:44px;min-height:44px;border:2px solid var(--rule);background:var(--bg);color:var(--ink);cursor:pointer}
+.thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.thumbs button{all:unset;cursor:pointer;width:150px;border:2px solid var(--line);font-size:13px;color:var(--mute)}
+.thumbs button[aria-pressed=true]{border-color:var(--red);color:var(--ink)}
+.thumbs img{display:block;width:100%;aspect-ratio:1836/900;object-fit:cover}
+.thumbs span{display:block;padding:2px 6px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{border-bottom:3px solid var(--rule);font-weight:800}
+td:first-child{white-space:nowrap;font-weight:700}
+td.s{font-weight:800;white-space:nowrap}
+tr.FAIL td{color:var(--red)}
+details{border-top:3px solid var(--rule);padding-top:10px}
+summary{cursor:pointer;font-weight:800;font-size:20px;min-height:44px;display:flex;align-items:center}
+.finds{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:18px 28px}
+.finds article{border-top:3px solid var(--rule);padding-top:8px}
+.finds article.bug{border-color:var(--red)}
+.finds b{display:block;font-size:13px;color:var(--mute);font-weight:600}
+.finds h3{margin:2px 0 6px;font-size:18px;line-height:1.25}
+.finds p{margin:0;font-size:15px}
+.meta{font-size:14px;color:var(--mute)}
+.meta a{color:inherit}
+code{overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.scroll{overflow-x:auto}
+@media(max-width:900px){.board{grid-template-columns:minmax(0,1fr)}.stage{position:static;order:-1}ol.steps{max-height:none}}
+@media(max-width:600px){table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:6em;text-align:start;white-space:normal}.stack td::before{content:attr(data-l);float:inline-start;width:5.5em;margin-inline-start:-6em;font-weight:700}.thumbs button{width:calc(50% - 4px)}}
+@media(prefers-reduced-motion:no-preference){.frame img{animation:in .25s ease-out}@keyframes in{from{opacity:.4}to{opacity:1}}}
+</style>
+<script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
+</head>
+<body>
+<header class="band">
+  <h1 id="title">Release versioning, end to end</h1>
+  <p class="lede" id="lede"></p>
+  <div class="runs" id="runs" role="group" aria-label="Run"></div>
+</header>
+<main>
+  <section class="band board" aria-label="Steps of the run">
+    <ol class="steps" id="steps"></ol>
+    <div class="stage">
+      <div class="frame" id="frame"></div>
+      <div class="bar">
+        <h3 id="shotTitle"></h3>
+        <button type="button" id="prev" aria-label="Previous step">&#8592;</button>
+        <button type="button" id="play" aria-label="Play the steps">&#9654;</button>
+        <button type="button" id="next" aria-label="Next step">&#8594;</button>
+      </div>
+      <div class="thumbs" id="thumbs" role="group" aria-label="Captures of the step"></div>
+    </div>
+  </section>
+  <section class="band" aria-label="Checks"><details id="checksBox"><summary id="checksTitle">Every check</summary><div class="scroll"><table class="stack"><thead><tr><th>Check</th><th>Result</th><th>Detail</th></tr></thead><tbody id="checks"></tbody></table></div></details></section>
+  <section class="band" id="findBand"><h2>Findings</h2><div class="finds" id="finds"></div></section>
+  <footer class="band meta" id="meta"></footer>
+</main>
+<script>
+{
+const DATA = /*DATA*/null;
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const slug = (r) => `${r.part}-${r.provider}`;
+const label = (r) => `${r.part === "default" ? "Default format" : "Custom formats"} · ${r.provider === "github" ? "GitHub" : "GitLab"}`;
+const shotName = (file, step) => file.replace(step + "-", "").replace(".png", "").replace(/-/g, " ").replace("pipeline", "DevOps Pipeline");
+let run = null, step = 0, shot = "", timer = null;
+const total = DATA.runs.reduce((t, r) => ({ OK: t.OK + r.count.OK, FAIL: t.FAIL + r.count.FAIL, SKIP: t.SKIP + r.count.SKIP }), { OK: 0, FAIL: 0, SKIP: 0 });
+$("title").textContent = total.FAIL === 0
+  ? `Release versioning holds on GitHub and GitLab: ${total.OK} checks OK`
+  : `Release versioning: ${total.FAIL} of ${total.OK + total.FAIL + total.SKIP} checks fail`;
+$("lede").textContent = `${DATA.runs.length} runs in real CI jobs built from the branch under test, on throwaway repositories. ${total.OK} OK, ${total.FAIL} FAIL, ${total.SKIP} SKIP. Pick a run, then a step: the DevOps Pipeline as it was right after that deployment.`;
+$("runs").innerHTML = DATA.runs.map((r) => `<button type="button" data-run="${slug(r)}">${esc(label(r))} <small class="${r.count.FAIL ? "bad" : ""}">${r.count.OK} OK${r.count.FAIL ? ` · ${r.count.FAIL} FAIL` : ""}${r.count.SKIP ? ` · ${r.count.SKIP} SKIP` : ""}</small></button>`).join("");
+const KIND = { bug: "Product bug", fixed: "Fixed during the runs", question: "Open question", harness: "Test harness", environment: "Environment" };
+if (DATA.findings.length) {
+  $("finds").innerHTML = DATA.findings.map((f) => `<article class="${esc(f.kind)}"><b>${esc(KIND[f.kind] || f.kind)}</b><h3>${esc(f.title)}</h3><p>${esc(f.text)}</p></article>`).join("");
+} else { $("findBand").hidden = true; }
+function showRun(id) {
+  run = DATA.runs.find((r) => slug(r) === id) || DATA.runs[0];
+  for (const b of $("runs").children) b.setAttribute("aria-pressed", String(b.dataset.run === slug(run)));
+  $("steps").innerHTML = run.steps.map((s, i) => `<li><button type="button" data-i="${i}"><span class="num">${esc(s.id.replace(/^\D+/, ""))}</span><span class="tag">${s.tag ? esc(s.tag) : "no tag"} <em>${esc(s.branch)}</em>${s.ok ? "" : ' <em class="bad">FAIL</em>'}</span><span class="cap">${esc(s.caption)}</span></button></li>`).join("");
+  const fails = run.checks.filter((c) => c.status !== "OK");
+  $("checksTitle").textContent = `Every check of this run: ${run.count.OK} OK, ${run.count.FAIL} FAIL, ${run.count.SKIP} SKIP`;
+  $("checksBox").open = run.count.FAIL > 0;
+  $("checks").innerHTML = [...fails, ...run.checks.filter((c) => c.status === "OK")].map((c) => `<tr class="${esc(c.status)}"><td>${esc(c.id)}</td><td class="s">${esc(c.status)}</td><td>${esc(c.detail)}</td></tr>`).join("");
+  $("meta").innerHTML = `Repository <a href="${esc(run.repo)}">${esc(run.repo)}</a> · sfdx-hardis ${esc(run.branch)} <code>${esc(run.commit)}</code> · vscode-sfdx-hardis <code>${esc(run.extension)}</code> · run ${esc(run.run)}, ${esc(run.date)}`;
+  showStep(0);
+}
+function showStep(i) {
+  step = Math.max(0, Math.min(run.steps.length - 1, i));
+  const s = run.steps[step];
+  for (const b of $("steps").querySelectorAll("button")) b.setAttribute("aria-current", String(Number(b.dataset.i) === step));
+  shot = s.shots.find((f) => f.endsWith("-pipeline.png")) || s.shots[0] || "";
+  $("thumbs").innerHTML = s.shots.length > 1 ? s.shots.map((f) => `<button type="button" data-f="${esc(f)}"><img src="shots/${esc(run.run)}/${esc(f)}" alt="" loading="lazy"><span>${esc(shotName(f, s.id))}</span></button>`).join("") : "";
+  showShot();
+}
+function showShot() {
+  const s = run.steps[step];
+  $("frame").innerHTML = shot ? `<img src="shots/${esc(run.run)}/${esc(shot)}" alt="${esc(shotName(shot, s.id))} after step ${esc(s.id)}">` : "<p>No capture for this step.</p>";
+  $("shotTitle").textContent = `${s.id} · ${s.tag || "no tag"}${s.branch ? " on " + s.branch : ""} · ${s.caption}`;
+  for (const b of $("thumbs").children) b.setAttribute("aria-pressed", String(b.dataset.f === shot));
+}
+function stop() { clearInterval(timer); timer = null; $("play").innerHTML = "&#9654;"; $("play").setAttribute("aria-label", "Play the steps"); }
+$("runs").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { stop(); location.hash = b.dataset.run; } });
+$("steps").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { stop(); showStep(Number(b.dataset.i)); } });
+$("thumbs").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { shot = b.dataset.f; showShot(); } });
+$("prev").addEventListener("click", () => { stop(); showStep(step - 1); });
+$("next").addEventListener("click", () => { stop(); showStep(step + 1); });
+$("play").addEventListener("click", () => {
+  if (timer) { stop(); return; }
+  if (step >= run.steps.length - 1) showStep(0);
+  $("play").innerHTML = "&#10073;&#10073;"; $("play").setAttribute("aria-label", "Pause");
+  timer = setInterval(() => { if (step >= run.steps.length - 1) { stop(); return; } showStep(step + 1); }, 2500);
+});
+document.addEventListener("keydown", (e) => { if (e.target.closest("input,textarea")) return; if (e.key === "ArrowRight") { stop(); showStep(step + 1); } if (e.key === "ArrowLeft") { stop(); showStep(step - 1); } });
+const route = () => showRun(location.hash.slice(1));
+window.addEventListener("hashchange", route);
+route();
+}
+</script>
+</body>
+</html>

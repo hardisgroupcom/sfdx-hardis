@@ -127,6 +127,10 @@ export class ServiceNowProvider extends TicketProviderRoot {
     return 'sfdx-hardis ServiceNow connector';
   }
 
+  public getTicketKind(): Ticket["provider"] {
+    return 'SERVICENOW';
+  }
+
   /**
    * Record number prefix -> table, with the project's own tables merged in.
    *

@@ -1142,6 +1142,8 @@ export declare type PullRequestData = {
   metadataOutcome?: 'deployed' | 'nothing-to-deploy';
   // Delta deployment (only what the Pull Requests changed) or full deployment of manifest/package.xml
   deploymentMode?: 'delta' | 'full';
+  // Release version the deployment tagged, on a branch that declares releaseVersioning
+  releaseVersion?: { tag: string; url: string | null };
   // Components that changed or failed, counted per metadata type (collapsible table)
   deploymentComponentTypesMarkdownBody?: string;
   // package-no-overwrite.xml components kept in the org or created this once

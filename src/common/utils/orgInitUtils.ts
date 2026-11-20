@@ -10,6 +10,7 @@ import { createTempDir, elapseEnd, elapseStart, execSfdxJson, getCurrentGitBranc
 import { uxLogTableWithReport } from './filesUtils.js';
 import fs from './fsUtils.js';
 import { t } from './i18n.js';
+import { getTargetBranchName } from './targetBranchUtils.js';
 
 export type OrgInitOrgType = 'scratch' | 'sandbox';
 
@@ -550,7 +551,7 @@ export async function getScratchOrgMajorBranch(config: any): Promise<string | nu
 // developmentBranch first, then availableTargetBranches, once each
 function listMajorBranches(config: any): string[] {
   const branches = [config?.developmentBranch, ...(config?.availableTargetBranches || [])]
-    .map((branch: any) => (typeof branch === 'string' ? branch : branch?.branch))
+    .map((branch: any) => getTargetBranchName(typeof branch === 'string' ? branch : branch?.branch))
     .filter(Boolean);
   return [...new Set<string>(branches)];
 }

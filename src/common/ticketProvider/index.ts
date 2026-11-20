@@ -1,7 +1,7 @@
 import c from "chalk";
 import sortArray from '../utils/sortArray.js';
 import { JIRA_HOST_PLACEHOLDER, JiraProvider } from "./jiraProvider.js";
-import { clearTicketCollectionIssues, TicketProviderRoot } from "./ticketProviderRoot.js";
+import { clearTicketCollectionIssues, TicketProviderRoot, type TicketReleaseVersion } from "./ticketProviderRoot.js";
 import { uxLog } from "../utils/index.js";
 import { GenericTicketingProvider } from "./genericProvider.js";
 import { AzureBoardsProvider } from "./azureBoardsProvider.js";
@@ -240,14 +240,28 @@ export abstract class TicketProvider {
     }
   }
 
-  // Process Ticket providers actions after a deployment.
-  // Can be comments on JIRA, and maybe later status changes ? 😊
-  public static async postDeploymentActions(tickets: Ticket[], org: string, pullRequestInfo: CommonPullRequestInfo | null) {
+  // Process Ticket providers actions after a deployment: comments and labels, then the release
+  // version of a versioned branch, only when releaseVersioningTicketVersions asks for it (off by
+  // default): allCandidates writes every version, finalOnly only the final one.
+  public static async postDeploymentActions(
+    tickets: Ticket[],
+    org: string,
+    pullRequestInfo: CommonPullRequestInfo | null,
+    options: { releaseVersion?: TicketReleaseVersion | null } = {}
+  ) {
     const config = await getConfig("project");
     const ticketProviders = this.getInstances(config);
+    const releaseVersion = options.releaseVersion || null;
+    const ticketVersions = config.releaseVersioningTicketVersions || "none";
+    const recordVersion =
+      releaseVersion !== null &&
+      (ticketVersions === "allCandidates" || (ticketVersions === "finalOnly" && releaseVersion.final));
     for (const ticketProvider of ticketProviders) {
       if (ticketProvider.isActive) {
         await ticketProvider.postDeploymentComments(tickets, org, pullRequestInfo);
+        if (recordVersion) {
+          await ticketProvider.recordReleaseVersion(tickets, releaseVersion as TicketReleaseVersion);
+        }
       }
     }
     return tickets;

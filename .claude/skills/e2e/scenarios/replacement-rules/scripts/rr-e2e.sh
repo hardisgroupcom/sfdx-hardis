@@ -109,7 +109,7 @@ if step repo; then
   save REPO "$REPO"
   (
     cd "$WORK" || exit 1
-    gh repo create "$REPO" --private >>"$LOGS/build.log" 2>&1 || exit 1
+    gh repo create "$REPO" "--${GH_E2E_VISIBILITY:-public}" >>"$LOGS/build.log" 2>&1 || exit 1
     gh api -X PUT "repos/$REPO/actions/permissions" -F enabled=false >/dev/null
     git remote add origin "https://github.com/$REPO.git"
     git push -q -u origin main
