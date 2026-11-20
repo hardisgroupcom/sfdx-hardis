@@ -54,9 +54,17 @@ gl_ci_env() {
 # The head of the source branch of a merge request, as GitLab knows it
 # Usage: gl_mr_sha <iid>
 gl_mr_sha() {
-  curl -sS -H "PRIVATE-TOKEN: $GL_TOKEN" \
-    "$GL_HOST/api/v4/projects/$PROJECT_ID/merge_requests/$1" |
-    python -c "import json,sys; print(json.load(sys.stdin)['sha'])"
+  local sha=""
+  # GitLab can stop answering for minutes (2026-11-19 and 11-20: curl timed out after 300 s, the
+  # step went on with an empty sha): a shorter timeout, asked again until it answers
+  for _ in 1 2 3 4 5 6; do
+    sha=$(curl -sS --max-time 60 -H "PRIVATE-TOKEN: $GL_TOKEN" \
+      "$GL_HOST/api/v4/projects/$PROJECT_ID/merge_requests/$1" 2>/dev/null |
+      python -c "import json,sys; print(json.load(sys.stdin)['sha'])" 2>/dev/null)
+    [ -n "$sha" ] && break
+    sleep 10
+  done
+  printf '%s\n' "$sha"
 }
 
 # Check out refs/merge-requests/<iid>/merge as a GitLab CI job would.

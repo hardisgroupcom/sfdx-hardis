@@ -3,7 +3,8 @@ import c from "chalk";
 import { Agent as HttpsAgent } from "https";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestCommitInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
-import { buildPrCreateUrl, CiRunFilters, CiRunStatus, CommonCiRun, DashboardComment, DashboardRef, GitProviderRepositorySettings, GitProviderRoot, JobArtifact, JobArtifactsListing, PullRequestCommentRef, PullRequestCreateUrlResult, getOldestCommitDateWithMargin } from "./gitProviderRoot.js";
+import { buildPrCreateUrl, CiRunFilters, CiRunStatus, CommonCiRun, CreateReleaseRequest, CreateReleaseResult, CreateVersionTagRequest, CreateVersionTagResult, DashboardComment, DashboardRef, GitProviderRepositorySettings, GitProviderRoot, JobArtifact, JobArtifactsListing, PullRequestCommentRef, PullRequestCreateUrlResult, getOldestCommitDateWithMargin } from "./gitProviderRoot.js";
+import fs from "../utils/fsUtils.js";
 import { getBannerMarkdownAndLink } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
 import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
@@ -1187,5 +1188,99 @@ ${getBannerMarkdownAndLink()}
       return 'canceled';
     }
     return null;
+  }
+
+  public supportsVersionTags(): boolean {
+    return true;
+  }
+
+  // A tag created with a message is an annotated tag. GitLab answers 400 "Tag ... already exists"
+  // when another job took the name first
+  public async createAnnotatedTag(request: CreateVersionTagRequest): Promise<CreateVersionTagResult> {
+    try {
+      await this.gitlabApi.Tags.create(this.requireProjectId(), request.name, request.commitSha, { message: request.message });
+    } catch (e: any) {
+      const details = `${e?.message || ""} ${e?.cause?.description || ""}`;
+      if (/already exists/i.test(details)) {
+        return { created: false, alreadyExists: true, url: this.getTagUrl(request.name) };
+      }
+      throw e;
+    }
+    return { created: true, alreadyExists: false, url: this.getTagUrl(request.name) };
+  }
+
+  public supportsReleases(): boolean {
+    return true;
+  }
+
+  // A GitLab Release has no attachments: each file is uploaded to the project, then linked from the Release
+  public async createRelease(request: CreateReleaseRequest): Promise<CreateReleaseResult> {
+    const projectId = this.requireProjectId();
+    const links: Array<{ name: string; url: string; linkType: string }> = [];
+    const assetsNotAttached: string[] = [];
+    for (const asset of request.assets) {
+      try {
+        const content = await fs.readFile(asset.file);
+        const upload: any = await this.gitlabApi.Projects.uploadForReference(projectId, {
+          content: new Blob([content], { type: asset.contentType }),
+          filename: asset.name,
+        });
+        const url = upload?.full_path
+          ? `${this.serverUrl.replace(/\/$/, "")}${upload.full_path}`
+          : `${this.projectWebUrl() || ""}${upload?.url || ""}`;
+        links.push({ name: asset.name, url, linkType: "other" });
+      } catch (e: any) {
+        uxLog("other", this, `[GitLab Integration] Asset ${asset.name} not uploaded for Release ${request.tagName}: ${e?.message || e}`);
+        assetsNotAttached.push(asset.name);
+      }
+    }
+    const release: any = await this.gitlabApi.ProjectReleases.create(projectId, {
+      tagName: request.tagName,
+      name: request.title,
+      description: request.bodyMarkdown,
+      assets: { links },
+    } as any);
+    return { url: release?._links?.self || this.getReleaseUrl(request.tagName), assetsNotAttached };
+  }
+
+  // 404 when the tag has no Release
+  public async releaseExists(tagName: string): Promise<boolean | null> {
+    try {
+      await this.gitlabApi.ProjectReleases.show(this.requireProjectId(), tagName);
+      return true;
+    } catch (e: any) {
+      const status = e?.cause?.response?.status ?? e?.response?.status;
+      return status === 404 || /404|not found/i.test(String(e?.message || "")) ? false : null;
+    }
+  }
+
+  public getTagUrl(tagName: string): string | null {
+    return this.projectWebUrl() ? `${this.projectWebUrl()}/-/tags/${encodeURIComponent(tagName)}` : null;
+  }
+
+  public getReleaseUrl(tagName: string): string | null {
+    return this.projectWebUrl() ? `${this.projectWebUrl()}/-/releases/${encodeURIComponent(tagName)}` : null;
+  }
+
+  public getCompareUrl(fromRef: string, toRef: string): string | null {
+    return this.projectWebUrl() ? `${this.projectWebUrl()}/-/compare/${encodeURIComponent(fromRef)}...${encodeURIComponent(toRef)}` : null;
+  }
+
+  // The project id is numeric in a GitLab job, the path with namespace anywhere else
+  private projectWebUrl(): string | null {
+    if (process.env.CI_PROJECT_URL) {
+      return process.env.CI_PROJECT_URL.replace(/\/$/, "");
+    }
+    if (this.serverUrl && this.projectId && Number.isNaN(Number(this.projectId))) {
+      return `${this.serverUrl.replace(/\/$/, "")}/${this.projectId}`;
+    }
+    return null;
+  }
+
+  private requireProjectId(): string {
+    if (!this.projectId) {
+      throw new SfError("[GitLab Integration] CI_PROJECT_ID is not defined");
+    }
+    return this.projectId;
   }
 }

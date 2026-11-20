@@ -1,4 +1,4 @@
-import { buildPrCreateUrl, CiRunFilters, CiRunStatus, CommonCiRun, DashboardComment, DashboardFormat, DashboardRef, GitProviderRepositorySettings, GitProviderRoot, JobArtifact, JobArtifactsListing, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
+import { buildPrCreateUrl, CiRunFilters, CiRunStatus, CommonCiRun, CreateVersionTagRequest, CreateVersionTagResult, DashboardComment, DashboardFormat, DashboardRef, GitProviderRepositorySettings, GitProviderRoot, JobArtifact, JobArtifactsListing, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
 import { POOL_DASHBOARD_TITLE } from "../utils/poolDashboardUtils.js";
 import { CiRunCandidate, classifyJobKind, selectCiRuns } from "./utils/jobKindUtils.js";
 import { Build, BuildQueryOrder, BuildReason, BuildResult, BuildStatus, TaskResult } from "azure-devops-node-api/interfaces/BuildInterfaces.js";
@@ -9,7 +9,7 @@ import fs from '../utils/fsUtils.js';
 import { getCurrentGitBranch, getGitRepoUrl, git, isGitRepo, uxLog } from "../utils/index.js";
 import * as path from "path";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestCommitInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
-import { CommentThreadStatus, GitCommitRef, GitPullRequest, GitPullRequestCommentThread, GitPullRequestSearchCriteria, PullRequestAsyncStatus, PullRequestStatus, PullRequestTimeRangeType } from "azure-devops-node-api/interfaces/GitInterfaces.js";
+import { CommentThreadStatus, GitAnnotatedTag, GitCommitRef, GitPullRequest, GitPullRequestCommentThread, GitPullRequestSearchCriteria, PullRequestAsyncStatus, PullRequestStatus, PullRequestTimeRangeType } from "azure-devops-node-api/interfaces/GitInterfaces.js";
 import { getBannerMarkdownAndLink, getEnvVar } from "../../config/index.js";
 import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./utils/prCommentNav.js";
 import { SfError } from "@salesforce/core";
@@ -1985,6 +1985,51 @@ ${getBannerMarkdownAndLink()}
   // A GUID in a pipeline job, the name of the repository anywhere else
   private get repositoryIdOrName(): string | null {
     return this.otherRepository ? this.otherRepository.repositoryName : process.env.BUILD_REPOSITORY_ID || null;
+  }
+
+  public supportsVersionTags(): boolean {
+    return true;
+  }
+
+  // Needs the "Create tag" permission of the build service on the repository. A tag that exists
+  // already is refused with a conflict (409, or a message saying it already exists)
+  public async createAnnotatedTag(request: CreateVersionTagRequest): Promise<CreateVersionTagResult> {
+    const azureGitApi = await this.azureApi.getGitApi();
+    const repositoryId = await this.getRepositoryGuid();
+    try {
+      await azureGitApi.createAnnotatedTag(
+        { name: request.name, message: request.message, taggedObject: { objectId: request.commitSha } } as GitAnnotatedTag,
+        this.teamProjectName || "",
+        repositoryId,
+      );
+    } catch (e: any) {
+      if (e?.statusCode === 409 || /already exists/i.test(String(e?.message || ""))) {
+        return { created: false, alreadyExists: true, url: this.getTagUrl(request.name) };
+      }
+      throw e;
+    }
+    return { created: true, alreadyExists: false, url: this.getTagUrl(request.name) };
+  }
+
+  public getTagUrl(tagName: string): string | null {
+    return this.repositoryWebUrl() ? `${this.repositoryWebUrl()}?version=GT${encodeURIComponent(tagName)}` : null;
+  }
+
+  public getCompareUrl(fromRef: string, toRef: string): string | null {
+    return this.repositoryWebUrl()
+      ? `${this.repositoryWebUrl()}/branchCompare?baseVersion=GT${encodeURIComponent(fromRef)}&targetVersion=GT${encodeURIComponent(toRef)}`
+      : null;
+  }
+
+  private repositoryWebUrl(): string | null {
+    if (this.otherRepository) {
+      return `${this.serverUrl}${encodeURIComponent(this.otherRepository.teamProject)}/_git/${encodeURIComponent(this.otherRepository.repositoryName)}`;
+    }
+    const repositoryName = process.env.BUILD_REPOSITORY_NAME || process.env.BUILD_REPOSITORYNAME || "";
+    if (!process.env.SYSTEM_COLLECTIONURI || !process.env.SYSTEM_TEAMPROJECT || !repositoryName) {
+      return null;
+    }
+    return `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT)}/_git/${encodeURIComponent(repositoryName)}`;
   }
 }
 

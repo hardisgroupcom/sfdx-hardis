@@ -1,7 +1,7 @@
 ---
 name: e2e
-description: End to end tests of sfdx-hardis against real Salesforce orgs and throwaway git repositories, one scenario per feature - promotion branches and backpromote (GitHub, GitLab, Azure DevOps, Bitbucket Cloud), replacement rules, deployment action types (command, apex, run-batch, schedule-batch, remove-packagexml-items, user-access-policy, manual), Agentforce agents (retrieve, the cleaning that writes their actions, running user, publication and activation in each org), the three promoted together through promotion branches, User Stories cherry-picked by hand (detectManualCherryPicks), the major branch deployment check (--major-branch-check, enableMajorBranchDeploymentCheck, its status on the DevOps Pipeline branch nodes), the development orgs list (the dev sandboxes and scratch orgs registered by work:new, what each one misses from its target branch, the DevOps Pipeline dev org nodes), and the training course walked as a learner. Use when a change must be proven in real CI jobs or real orgs because unit tests cannot cover it, or when the user asks for an end to end / e2e / hardcore test, to walk the labs, to test the training, or names one of these features with "end to end".
-argument-hint: "<promotion-branches|replacement-rules|deployment-actions|agentforce-agents|promotion-rules-actions|manual-cherry-picks|major-branch-check|training> [scenario arguments]"
+description: End to end tests of sfdx-hardis against real Salesforce orgs and throwaway git repositories, one scenario per feature - promotion branches and backpromote (GitHub, GitLab, Azure DevOps, Bitbucket Cloud), replacement rules, deployment action types (command, apex, run-batch, schedule-batch, remove-packagexml-items, user-access-policy, manual), Agentforce agents (retrieve, the cleaning that writes their actions, running user, publication and activation in each org), the three promoted together through promotion branches, User Stories cherry-picked by hand (detectManualCherryPicks), the major branch deployment check (--major-branch-check, enableMajorBranchDeploymentCheck, its status on the DevOps Pipeline branch nodes), the development orgs list (the dev sandboxes and scratch orgs registered by work:new, what each one misses from its target branch, the DevOps Pipeline dev org nodes), release versioning (the version tags and Releases of a release cycle, default and custom tag formats per branch, their CI/CD variables, the DevOps Pipeline captured after each step), and the training course walked as a learner. Use when a change must be proven in real CI jobs or real orgs because unit tests cannot cover it, or when the user asks for an end to end / e2e / hardcore test, to walk the labs, to test the training, or names one of these features with "end to end".
+argument-hint: "<promotion-branches|replacement-rules|deployment-actions|agentforce-agents|promotion-rules-actions|manual-cherry-picks|major-branch-check|release-versioning|training> [scenario arguments]"
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write, WebFetch, AskUserQuestion
 user-invocable: true
 model: opus
@@ -12,7 +12,7 @@ model: opus
 Each scenario proves one feature against real Salesforce orgs, real CI jobs running sfdx-hardis built
 from the branch under test, and real Pull Requests, then writes a report. A scenario lives in its own
 folder under `scenarios/`: its `README.md` is the procedure, next to its `scripts/`, `reference/` and
-`reports/`.
+`reports/` (text reports only, see the rules below).
 
 ## Pick the scenario
 
@@ -26,6 +26,7 @@ folder under `scenarios/`: its `README.md` is the procedure, next to its `script
 | [manual-cherry-picks](scenarios/manual-cherry-picks/README.md)         | `detectManualCherryPicks`, the target-side evidence of `promotion:list-candidates` or the placement of cherry-picked stories in the DevOps Pipeline changed: a GitLab project of every pattern, CLI and pipeline compared with `main` setting off.          | About 20 minutes, no org       |
 | [major-branch-check](scenarios/major-branch-check/README.md)           | The major branch deployment check (`--major-branch-check`, `enableMajorBranchDeploymentCheck`), the branch node status or the deployment arrow of the DevOps Pipeline changed.                                                                              | About 40 minutes, per provider |
 | [dev-orgs](scenarios/dev-orgs/README.md)                               | The development orgs list (`enableDevOrgsRegistry`, `hardis:project:dev-org:*`, the registration in `work:new` / `work:save` / `work:backpromote` / `org:create`, the count in `deploy:smart`, the dev org nodes of the DevOps Pipeline) changed.           | About 40 minutes, GitHub       |
+| [release-versioning](scenarios/release-versioning/README.md)           | Release versioning (`releaseVersioning`, tag formats, their CI/CD variables, the tags and Releases of `deploy:smart`, `version:list`, the versions of the DevOps Pipeline) changed.                                                                         | About 1h30, per part, provider |
 | [training](scenarios/training/README.md)                               | The user asks to test the training, walk the labs, run the course or a level end to end, or a change to sfdx-hardis or vscode-sfdx-hardis is too broad for reading the labs (`training-impact`) to settle.                                                  | One level to a full night      |
 
 Read the `README.md` of the scenario before anything else, and follow it: prerequisites, the run, what
@@ -56,15 +57,26 @@ works in the sibling clones of the course, not in a throwaway repository.
   documents.
 - **A check that cannot run says SKIP with the reason, never OK.** A wrong expectation found during a
   run is fixed in the script and written in the scenario `README.md` traps, not only in the report.
-- **Each run writes its report** in the `reports/` folder of its scenario.
+- **Each run writes its report.** A text report (Markdown, no image) may be committed in the
+  `reports/` folder of its scenario. Screenshots, GIFs, videos and full run outputs are never
+  committed: they go to `hardis-report/e2e/<scenario>/<run>/` of the working copy, which git ignores.
+- **Show the results in a claude.ai artifact** when the run captured screens: one page for the batch
+  of runs, with each step, its captures and every check, published with the claude-artifacts server
+  (`publish_files`) and private to the user until they share it. Give the user the link, and put it
+  in the Pull Request. A scenario that captures screens keeps its page builder in its `scripts/`
+  (the release-versioning `rv-showcase.py` is the reference).
 - **Clean up** what the run created (throwaway repositories, scratch orgs) once the report is written,
   unless the user wants to look at them.
 - **No customer name** in a report, a commit or a Pull Request: throwaway orgs and repositories only.
+- **Throwaway GitHub repositories are public** (`GH_E2E_VISIBILITY`, default `public`): GitHub-hosted
+  runners cost nothing there, while a private one stops when the minutes or the spending limit of
+  the account run out. Their files and job logs are public: org logins go in repository secrets,
+  never in a file, and nothing else secret is committed there.
 
 ## Add a scenario
 
 1. Create `scenarios/<name>/` with `README.md` (what it proves, prerequisites, how to run, what each
-   step proves, traps), `scripts/` and `reports/`.
+   step proves, traps), `scripts/` and, for text reports, `reports/`.
 2. Reuse the shared harness by a path relative to the script (`$HERE/../../promotion-branches/scripts`),
    so the scenario runs from any working copy or worktree.
 3. Add its row to the table above, and its feature to the `description` of this skill.

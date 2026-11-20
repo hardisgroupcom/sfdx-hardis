@@ -42,12 +42,23 @@ export function getTicketCollectionIssues(): string[] {
   return [..._ticketCollectionIssues];
 }
 
+/** A release version to write on tickets: final for a plain version (v1.5.0), false for a release candidate */
+export interface TicketReleaseVersion {
+  tag: string;
+  final: boolean;
+}
+
 export abstract class TicketProviderRoot {
   public isActive = false;
   protected token: string | null;
 
   public getLabel(): string {
     throw new SfError("getLabel should be implemented on this call");
+  }
+
+  /** Kind of the tickets this connector handles (Ticket.provider). Null when it cannot record a release version */
+  public getTicketKind(): Ticket["provider"] | null {
+    return null;
   }
 
   public async collectTicketsInfo(tickets: Ticket[]) {
@@ -170,6 +181,27 @@ export abstract class TicketProviderRoot {
     return tickets;
   }
 
+  /**
+   * Writes a release version on the tickets of this connector, by default as a label. A connector
+   * with a version concept of its own (JIRA fix versions) overrides it. Returns the tickets updated.
+   */
+  public async recordReleaseVersion(tickets: Ticket[], releaseVersion: TicketReleaseVersion): Promise<Ticket[]> {
+    const ownTickets = this.listOwnFoundTickets(tickets);
+    const updated: Ticket[] = [];
+    for (const ticket of ownTickets) {
+      try {
+        await this.addTicketLabel(ticket.id, releaseVersion.tag);
+        updated.push(ticket);
+      } catch (e: any) {
+        uxLog("warning", this, c.yellow(`[${this.getLabel()}] ` + t('releaseVersionTicketFailed', { version: releaseVersion.tag, ticket: ticket.id, message: e?.message || String(e) })));
+      }
+    }
+    if (updated.length > 0) {
+      uxLog("log", this, c.grey(`[${this.getLabel()}] ` + t('releaseVersionTicketsUpdated', { version: releaseVersion.tag, count: updated.length })));
+    }
+    return updated;
+  }
+
   public async getDeploymentTag(): Promise<string> {
     const currentGitBranch = await getCurrentGitBranch() || "";
     let tag = currentGitBranch.toUpperCase() + "_DEPLOYED";
@@ -188,5 +220,13 @@ export abstract class TicketProviderRoot {
     }
 
     return tag;
+  }
+
+  protected listOwnFoundTickets(tickets: Ticket[]): Ticket[] {
+    const kind = this.getTicketKind();
+    if (!kind) {
+      return [];
+    }
+    return tickets.filter((ticket) => ticket.provider === kind && ticket.foundOnServer !== false);
   }
 }

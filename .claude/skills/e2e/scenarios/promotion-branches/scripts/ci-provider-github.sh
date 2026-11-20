@@ -74,8 +74,11 @@ ci_provider_init() {
 
 ci_create_remote() {
   local auth_url="$1" b
-  # Actions off while the major branches are pushed: no deployment of the base project
-  gh repo create "$REPO" --private >>"$LOGS/build.log" 2>&1 || {
+  # Actions off while the major branches are pushed: no deployment of the base project. Public by
+  # default: GitHub-hosted runners cost nothing on a public repository (a private one stops when
+  # the minutes or the spending limit of the account run out). The org logins are secrets, which
+  # a public repository does not show.
+  gh repo create "$REPO" "--${GH_E2E_VISIBILITY:-public}" >>"$LOGS/build.log" 2>&1 || {
     echo "repo create failed"
     return 1
   }
@@ -263,7 +266,13 @@ _gh_wait_run_id() {
     [ "$status" = "completed" ] && break
     sleep 20
   done
-  conclusion=$(gh run view "$id" -R "$REPO" --json conclusion --jq .conclusion 2>/dev/null)
+  # gh can answer nothing for a moment (2026-11-19: an empty conclusion failed a run that succeeded):
+  # a completed run always has a conclusion, so ask again until it comes
+  for _ in 1 2 3 4 5 6; do
+    conclusion=$(gh run view "$id" -R "$REPO" --json conclusion --jq .conclusion 2>/dev/null)
+    [ -n "$conclusion" ] && break
+    sleep 10
+  done
   # the latest attempt of the run
   gh run view "$id" -R "$REPO" --log >"$LOGS/$label.log" 2>&1
   # Right after a run completes, gh run view --log can answer nothing (2026-11-08: an empty

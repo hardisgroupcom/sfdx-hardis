@@ -563,8 +563,9 @@ export async function handlePostDeploymentNotifications(
   debugMode: boolean,
   additionalMessage = "",
   deploymentMetrics: DeploymentMetrics | null = null,
-  // Flows a post-deploy Flow deletion left in the org: the notification becomes a warning listing them
-  options: { flowsNotDeleted?: string[] } = {}
+  // Flows a post-deploy Flow deletion left in the org: the notification becomes a warning listing them.
+  // releaseVersion: the version a deployment on a versioned branch tagged
+  options: { flowsNotDeleted?: string[]; releaseVersion?: { tag: string; final: boolean } | null } = {}
 ) {
   const pullRequestInfo = await GitProvider.getPullRequestInfo({ useCache: true });
   const translateNotif = await isDeploymentNotifTranslationEnabled();
@@ -590,7 +591,8 @@ export async function handlePostDeploymentNotifications(
     await TicketProvider.postDeploymentActions(
       collected.commitsSummary.tickets,
       targetOrg?.getConnection()?.instanceUrl || targetUsername || '',
-      pullRequestInfo
+      pullRequestInfo,
+      { releaseVersion: options.releaseVersion || null }
     );
   } catch (e4: any) {
     uxLog(
@@ -631,6 +633,9 @@ export async function handlePostDeploymentNotifications(
     : delta
       ? ' (🌙 delta deployment)'
       : ' (🌕 full deployment)';
+  if (options.releaseVersion?.tag) {
+    notifMessage += '\n' + tMaybe(translateNotif, 'releaseVersionNotifLine', { version: options.releaseVersion.tag });
+  }
   if (additionalMessage) {
     notifMessage += '\n\n' + additionalMessage + "\n\n"
   }

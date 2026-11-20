@@ -144,6 +144,10 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     return "sfdx-hardis Azure Boards connector";
   }
 
+  public getTicketKind(): Ticket["provider"] {
+    return "AZURE";
+  }
+
   public static async getTicketsFromString(text: string, options: TicketsFromStringOptions = {}): Promise<Ticket[]> {
     const prInfo = options.pullRequestInfo || null;
     const tickets: Ticket[] = [];

@@ -1,5 +1,5 @@
 import c from "chalk";
-import { buildPrCreateUrl, CiRunFilters, CiRunStatus, CommonCiRun, DashboardComment, DashboardRef, encodePrUrlPathBranch, GitProviderRepositorySettings, GitProviderRoot, JobArtifact, JobArtifactsListing, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
+import { buildPrCreateUrl, CiRunFilters, CiRunStatus, CommonCiRun, CreateReleaseRequest, CreateReleaseResult, CreateVersionTagRequest, CreateVersionTagResult, DashboardComment, DashboardRef, encodePrUrlPathBranch, GitProviderRepositorySettings, GitProviderRoot, JobArtifact, JobArtifactsListing, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestCommitInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { GITHUB_DEFAULT_API_URL, GITHUB_DEFAULT_GRAPHQL_URL, GITHUB_DEFAULT_SERVER_URL, GithubApiClient, getGithubActionsContext } from "./utils/githubApiClient.js";
@@ -1128,6 +1128,86 @@ ${getBannerMarkdownAndLink()}
       .filter(Boolean)
       .sort();
     return starts[0] || null;
+  }
+
+  public supportsVersionTags(): boolean {
+    return true;
+  }
+
+  // An annotated tag is a tag object, then a ref pointing to it: POST /git/tags, then POST /git/refs.
+  // The ref is what fails (422 "Reference already exists") when another job took the name first
+  public async createAnnotatedTag(request: CreateVersionTagRequest): Promise<CreateVersionTagResult> {
+    const tagObject = await this.api.post<any>(`${this.repoPath()}/git/tags`, {
+      tag: request.name,
+      message: request.message,
+      object: request.commitSha,
+      type: "commit",
+    });
+    try {
+      await this.api.post<any>(`${this.repoPath()}/git/refs`, { ref: `refs/tags/${request.name}`, sha: tagObject.data?.sha });
+    } catch (e: any) {
+      if (e?.status === 422 && /already exists/i.test(String(e?.message || ""))) {
+        return { created: false, alreadyExists: true, url: this.getTagUrl(request.name) };
+      }
+      throw e;
+    }
+    return { created: true, alreadyExists: false, url: this.getTagUrl(request.name) };
+  }
+
+  public supportsReleases(): boolean {
+    return true;
+  }
+
+  // The body of a GitHub Release holds 125,000 characters at most
+  public async createRelease(request: CreateReleaseRequest): Promise<CreateReleaseResult> {
+    const maxBodyLength = 125000;
+    const body = request.bodyMarkdown.length > maxBodyLength
+      ? request.bodyMarkdown.substring(0, maxBodyLength - 200) + "\n\n_The release notes were shortened: the complete version is attached._"
+      : request.bodyMarkdown;
+    const release = await this.api.post<any>(`${this.repoPath()}/releases`, {
+      tag_name: request.tagName,
+      name: request.title,
+      body,
+      draft: false,
+      prerelease: false,
+    });
+    const assetsNotAttached: string[] = [];
+    for (const asset of request.assets) {
+      try {
+        await this.api.uploadReleaseAsset(release.data?.upload_url || "", asset.file, asset.name, asset.contentType);
+      } catch (e: any) {
+        uxLog("other", this, `[GitHub Integration] Asset ${asset.name} not attached to Release ${request.tagName}: ${e?.message || e}`);
+        assetsNotAttached.push(asset.name);
+      }
+    }
+    return { url: release.data?.html_url || this.getReleaseUrl(request.tagName), assetsNotAttached };
+  }
+
+  // GET /repos/{owner}/{repo}/releases/tags/{tag}: 404 when the tag has no Release
+  public async releaseExists(tagName: string): Promise<boolean | null> {
+    try {
+      await this.api.get<any>(`${this.repoPath()}/releases/tags/${encodeURIComponent(tagName)}`);
+      return true;
+    } catch (e: any) {
+      return e?.status === 404 ? false : null;
+    }
+  }
+
+  public getTagUrl(tagName: string): string | null {
+    return this.repoWebUrl() ? `${this.repoWebUrl()}/tree/${encodeURIComponent(tagName)}` : null;
+  }
+
+  public getReleaseUrl(tagName: string): string | null {
+    return this.repoWebUrl() ? `${this.repoWebUrl()}/releases/tag/${encodeURIComponent(tagName)}` : null;
+  }
+
+  public getCompareUrl(fromRef: string, toRef: string): string | null {
+    return this.repoWebUrl() ? `${this.repoWebUrl()}/compare/${encodeURIComponent(fromRef)}...${encodeURIComponent(toRef)}` : null;
+  }
+
+  private repoWebUrl(): string | null {
+    const serverUrl = (this.serverUrl || process.env.GITHUB_SERVER_URL || GITHUB_DEFAULT_SERVER_URL).replace(/\/$/, "");
+    return this.repoOwner && this.repoName ? `${serverUrl}/${this.repoOwner}/${this.repoName}` : null;
   }
 
   // The run a job URL points to, refused when it is not a run of this repository
