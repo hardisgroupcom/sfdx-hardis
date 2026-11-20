@@ -1,3 +1,7 @@
+---
+title: "hardis:org:retrieve:sources:analytics - Retrieve CRM Analytics configuration from an org"
+description: "Retrieves all CRM Analytics (formerly Tableau CRM or Einstein Analytics) sources from a Salesforce org, including workarounds for known SFDX bugs."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:retrieve:sources:analytics
 
@@ -42,17 +46,23 @@ In agent mode:
 - The interactive org selection prompt is skipped; `--target-org` flag value is used directly.
 
 
+## Screenshots
+
+![The CRM Analytics apps, dashboards, datasets and recipes of the org are retrieved into the project](../../../../assets/images/commands/org/retrieve/sources/analytics.webp)
+
+_The CRM Analytics apps, dashboards, datasets and recipes of the org are retrieved into the project_
+
 ## Parameters
 
-| Name              |  Type   | Description                                                   | Default | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir         | option  | undefined                                                     |         |          |         |
-| json              | boolean | Format output as json.                                        |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-org<br/>-o | option  | undefined                                                     |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+| Name              |  Type   | Description                                                                                                  | Default | Required | Options |
+|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                                         |         |          |         |
+| json              | boolean | Format output as json.                                                                                       |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

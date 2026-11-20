@@ -93,7 +93,8 @@ In agent mode:
 ## Project Documentation
 
 - Main docs: https://sfdx-hardis.cloudity.com
-- Auto-generated command docs: `yarn build:doc`
+- Auto-generated command docs: `yarn compile` then `yarn build:doc --commands <command id>` for the commands you changed (ids or `*` patterns, comma-separated). Plain `yarn build:doc` rewrites every page: keep it for a change that touches many commands.
+- Screenshots of a command page (the command running in VS Code, its reports in Excel): `yarn screenshots:commands <command id>`, from the spec of the command in `scripts/command-screenshots/specs/`. See the `command-screenshots` skill. The reports a command writes are declared in its `static reports` field and listed on its page.
 - Site generator: MkDocs
 - AI-generated documentation features supported
 

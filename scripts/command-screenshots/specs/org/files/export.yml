@@ -1,0 +1,12 @@
+command: hardis:org:files:export
+run: sf hardis:org:files:export --path scripts/files/InstallationDocuments
+org: showcase
+caption: The site surveys and wiring plans of the completed installations, downloaded into one folder per installation
+answers:
+  - q: Do you want to resume the previous export
+    choice: ^❌ No$
+    optional: true
+  - q: Do you want to proceed
+    choice: ^✅ Yes$
+    shot: true
+    caption: The number of records and API calls the export will use, before it starts

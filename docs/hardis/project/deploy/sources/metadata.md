@@ -1,3 +1,7 @@
+---
+title: "hardis:project:deploy:sources:metadata - Deploy metadata sources to org"
+description: "Deploy metadatas to source org"
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:deploy:sources:metadata
 
@@ -5,23 +9,29 @@
 
 Deploy metadatas to source org
 
+## Screenshots
+
+![A folder in Metadata API format, with its package.xml, deployed to a scratch org](../../../../assets/images/commands/project/deploy/sources/metadata.webp)
+
+_A folder in Metadata API format, with its package.xml, deployed to a scratch org_
+
 ## Parameters
 
-| Name                         |  Type   | Description                                                   |    Default    | Required |                                           Options                                           |
-|:-----------------------------|:-------:|:--------------------------------------------------------------|:-------------:|:--------:|:-------------------------------------------------------------------------------------------:|
-| agent                        | boolean | Run in non-interactive mode for agents and automation         |               |          |                                                                                             |
-| check<br/>-c                 | boolean | Only checks the deployment, there is no impact on target org  |               |          |                                                                                             |
-| debug<br/>-d                 | boolean | Activate debug mode (more logs)                               |               |          |                                                                                             |
-| deploydir<br/>-x             | option  | Deploy directory                                              |       .       |          |                                                                                             |
-| destructivepackagexml<br/>-k | option  | Path to destructiveChanges.xml file to deploy                 |               |          |                                                                                             |
-| filter<br/>-f                | boolean | Filter metadatas before deploying                             |               |          |                                                                                             |
-| flags-dir                    | option  | undefined                                                     |               |          |                                                                                             |
-| json                         | boolean | Format output as json.                                        |               |          |                                                                                             |
-| packagexml<br/>-p            | option  | Path to package.xml file to deploy                            |               |          |                                                                                             |
-| skipauth                     | boolean | Skip authentication check when a default username is required |               |          |                                                                                             |
-| target-org<br/>-o            | option  | undefined                                                     |               |          |                                                                                             |
-| testlevel<br/>-l             | option  | Level of tests to apply to validate deployment                | RunLocalTests |          | NoTestRun<br/>RunSpecifiedTests<br/>RunLocalTests<br/>RunRelevantTests<br/>RunAllTestsInOrg |
-| websocket                    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |               |          |                                                                                             |
+| Name                         |  Type   | Description                                                                                                  |    Default    | Required |                                           Options                                           |
+|:-----------------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------------:|:--------:|:-------------------------------------------------------------------------------------------:|
+| agent                        | boolean | Run in non-interactive mode for agents and automation                                                        |               |          |                                                                                             |
+| check<br/>-c                 | boolean | Only checks the deployment, there is no impact on target org                                                 |               |          |                                                                                             |
+| debug<br/>-d                 | boolean | Activate debug mode (more logs)                                                                              |               |          |                                                                                             |
+| deploydir<br/>-x             | option  | Deploy directory                                                                                             |       .       |          |                                                                                             |
+| destructivepackagexml<br/>-k | option  | Path to destructiveChanges.xml file to deploy                                                                |               |          |                                                                                             |
+| filter<br/>-f                | boolean | Filter metadatas before deploying                                                                            |               |          |                                                                                             |
+| flags-dir                    | option  | Import flag values from a directory.                                                                         |               |          |                                                                                             |
+| json                         | boolean | Format output as json.                                                                                       |               |          |                                                                                             |
+| packagexml<br/>-p            | option  | Path to package.xml file to deploy                                                                           |               |          |                                                                                             |
+| skipauth                     | boolean | Skip authentication check when a default username is required                                                |               |          |                                                                                             |
+| target-org<br/>-o            | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |               |   true   |                                                                                             |
+| testlevel<br/>-l             | option  | Level of tests to apply to validate deployment                                                               | RunLocalTests |          | NoTestRun<br/>RunSpecifiedTests<br/>RunLocalTests<br/>RunRelevantTests<br/>RunAllTestsInOrg |
+| websocket                    | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |               |          |                                                                                             |
 
 ## Examples
 

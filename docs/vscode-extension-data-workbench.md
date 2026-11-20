@@ -10,7 +10,7 @@ The Data Workbench is a visual editor for [SFDMU](https://help.sfdmu.com/) works
 
 ![Data Workbench](assets/images/data-workbench.gif)
 
-Workspaces live in `scripts/data/<workspace>/export.json` of your project, so they are shared through git like the rest of your configuration. A [deployment action](salesforce-devops-work-on-user-story-deployment-actions.md) can import a workspace automatically when a Pull Request is deployed.
+Workspaces live in `scripts/data/<workspace>/export.json` of your project, so they are shared through git like the rest of your configuration. A [Data deployment action](salesforce-devops-work-on-user-story-deployment-actions-data.md) can import a workspace automatically when a Pull Request is deployed.
 
 ## Open it
 
@@ -60,5 +60,5 @@ Click **Edit Global Settings**. The tabs **(1)** hold the script-level options o
 |---|---|
 | Your workspaces | `scripts/data/<workspace>/export.json`, edited by the workbench or by hand |
 | Run a workspace from a terminal or a pipeline | [hardis:org:data:export](hardis/org/data/export.md), [hardis:org:data:import](hardis/org/data/import.md), [hardis:org:data:delete](hardis/org/data/delete.md) |
-| Import a workspace when a Pull Request is deployed | A **Data** [deployment action](salesforce-devops-work-on-user-story-deployment-actions.md) |
+| Import a workspace when a Pull Request is deployed | A **Data** [deployment action](salesforce-devops-work-on-user-story-deployment-actions-data.md) |
 | Let a coding agent write the workspace | [Data Workspaces with AI Coding Agents](salesforce-devops-agent-data-workspaces.md) |

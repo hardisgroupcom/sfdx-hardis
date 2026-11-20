@@ -1,3 +1,7 @@
+---
+title: "hardis:org:connect - Connect to an org"
+description: "Connects to a Salesforce org without setting it as the default username, and optionally opens the org in a web browser."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:connect
 
@@ -41,13 +45,23 @@ In agent mode:
 - The browser open prompt is skipped.
 
 
+## Screenshots
+
+![Pick one of the authenticated orgs, or log in to another one](../../assets/images/commands/org/connect-1.webp)
+
+_Pick one of the authenticated orgs, or log in to another one_
+
+![Connect to the Helios UAT sandbox without changing the default org, then open it in the browser](../../assets/images/commands/org/connect.webp)
+
+_Connect to the Helios UAT sandbox without changing the default org, then open it in the browser_
+
 ## Parameters
 
 | Name         |  Type   | Description                                                   | Default | Required | Options |
 |:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent        | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir    | option  | undefined                                                     |         |          |         |
+| flags-dir    | option  | Import flag values from a directory.                          |         |          |         |
 | json         | boolean | Format output as json.                                        |         |          |         |
 | skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
 | websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |

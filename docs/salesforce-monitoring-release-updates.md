@@ -6,6 +6,9 @@ description: Schedule weekly checks of Setup Release Updates with sfdx-hardis Mo
 
 ## Check Release Updates
 
+!!! warning "Deprecated"
+    This check is replaced by [What will break](salesforce-monitoring-what-will-break.md), which checks the release updates due together with everything else that will break after a dated Salesforce change. The daily monitoring now runs it instead.
+
 Before publishing **breaking changes**, Salesforce announces them in the Setup menu [**Release Updates**](https://help.salesforce.com/s/articleView?id=sf.release_updates.htm&type=5).
 
 ⚠️ Some of them are very important: if you do not make the related changes in time (for example before Winter '25), your production org can crash.

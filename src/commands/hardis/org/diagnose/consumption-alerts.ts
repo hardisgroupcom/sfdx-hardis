@@ -11,6 +11,7 @@ import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 import {
   buildConsumptionAlertMetrics,
   ConsumptionAlertRow,
@@ -26,6 +27,14 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class DiagnoseConsumptionAlerts extends SfCommand<any> {
   public static title = 'Check consumption utilization alerts';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'consumption-alerts',
+      title: 'Utilization alerts',
+      description: 'One row per consumption utilization alert raised on the org, with its scope, status, threshold and timestamp, one row per crossed threshold.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

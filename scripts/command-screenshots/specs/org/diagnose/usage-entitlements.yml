@@ -1,0 +1,10 @@
+command: hardis:org:diagnose:usage-entitlements
+run: sf hardis:org:diagnose:usage-entitlements
+org: showcase
+caption: "Usage-based entitlements of the Helios org with their allowance, consumption and period, none close to its limit"
+pills:
+  - text: "No usage-based entitlement is at risk"
+    legend: "The verdict: no entitlement is consumed faster than its period allows"
+  - text: "Usage-Based Entitlements"
+    legend: "One row per entitlement, with its allowance and consumption"
+    button: true

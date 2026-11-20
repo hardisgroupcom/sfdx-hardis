@@ -1,3 +1,7 @@
+---
+title: "hardis:work:resetselection - Select again"
+description: "Resets the local Git repository to allow for a new selection of files to be included in a merge request."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:work:resetselection
 
@@ -46,18 +50,38 @@ In agent mode:
 - The confirmation prompt is skipped and the reset proceeds automatically.
 - The target branch is selected automatically from the project configuration.
 
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) course runs this command, click by click, on an org of your own:
+
+- [Lab 2.8 - Recover from committing the wrong metadata](https://sfdx-hardis-training.cloudity.com/en/level-2-contributor-advanced/2-8-recover-from-committing-the-wrong-metadata/)
+
+<!-- training-links:end -->
+
+
+## Screenshots
+
+![Confirm the soft reset of the User Story branch](../../assets/images/commands/work/resetselection-1.webp)
+
+_Confirm the soft reset of the User Story branch_
+
+![The three commits of the User Story reset softly, so the files can be selected and committed again](../../assets/images/commands/work/resetselection.webp)
+
+_The three commits of the User Story reset softly, so the files can be selected and committed again_
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   | Default | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir         | option  | undefined                                                     |         |          |         |
-| json              | boolean | Format output as json.                                        |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-org<br/>-o | option  | undefined                                                     |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+| Name              |  Type   | Description                                                                                                  | Default | Required | Options |
+|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                                         |         |          |         |
+| json              | boolean | Format output as json.                                                                                       |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

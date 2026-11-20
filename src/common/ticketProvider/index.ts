@@ -10,9 +10,12 @@ import { getConfig } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
 import { SfError } from "@salesforce/core";
 import { ServiceNowProvider } from "./serviceNowProvider.js";
-import { TicketDetails, TicketDetailsOptions } from "./ticketDetails.js";
+import { AhaProvider } from "./ahaProvider.js";
+import { TicketDetails, TicketDetailsOptions } from "./utils/ticketDetails.js";
+import { PostCommentOptions, PostCommentResult, assertValidMarker } from "./utils/ticketComment.js";
+import { TICKET_ERROR } from "./utils/ticketOperations.js";
 
-export type TicketProviderKey = "jira" | "azure" | "servicenow" | "generic";
+export type TicketProviderKey = "jira" | "azure" | "servicenow" | "aha" | "generic";
 
 /**
  * Options handed to every `getTicketsFromString()`.
@@ -39,11 +42,19 @@ export type TicketProviderClass = {
   providerKey: TicketProviderKey;
   providerLabel: string;
   supportsTicketDetails: boolean;
+  /** True for a connector able to post a comment on a ticket (every connector with an API) */
+  supportsComments: boolean;
   isAvailable(config: any): boolean;
   matchesTicketId(ticketId: string, config?: any): boolean;
   getTicketsFromString(text: string, options: TicketsFromStringOptions): Promise<Ticket[]>;
   /** Only implemented by connectors able to complete their own configuration from the git remote */
   autoDetectFromGitRemote?: () => Promise<void>;
+  /**
+   * True for a connector that only reads references when `ticketingProvider` names it. Needed by a
+   * connector whose references look like those of another one (PROJ-123 is a JIRA key and an Aha!
+   * feature): without a declared provider, the references stay with the connectors that always run.
+   */
+  onlyWhenDeclared?: boolean;
 };
 
 export const allTicketProviders: TicketProviderClass[] = [
@@ -51,14 +62,36 @@ export const allTicketProviders: TicketProviderClass[] = [
   GenericTicketingProvider,
   AzureBoardsProvider,
   ServiceNowProvider,
+  AhaProvider,
 ];
+
+/** Connectors `sf hardis ticket post-comment` can post a comment with */
+export function ticketCommentProviderKeys(): TicketProviderKey[] {
+  return allTicketProviders.filter((provider) => provider.supportsComments).map((provider) => provider.providerKey);
+}
 
 /** Connectors `sf hardis ticket get` can fetch a full ticket from */
 export function ticketDetailsProviderKeys(): TicketProviderKey[] {
   return allTicketProviders.filter((provider) => provider.supportsTicketDetails).map((provider) => provider.providerKey);
 }
 
+/**
+ * The connectors that read the references of a project.
+ *
+ * `ticketingProvider` set in .sfdx-hardis.yml: the connector it names, and no other. Not set: every
+ * connector except those that only run when declared, which is where a PROJ-123 reference is a JIRA
+ * key by default.
+ */
+export function activeTicketProviders(config: any = {}): TicketProviderClass[] {
+  const declared = String(config?.ticketingProvider || "").toUpperCase();
+  const named = declared ? allTicketProviders.filter((provider) => provider.providerKey.toUpperCase() === declared) : [];
+  return named.length > 0 ? named : allTicketProviders.filter((provider) => !provider.onlyWhenDeclared);
+}
+
 export abstract class TicketProvider {
+  // The connectors left out by ticketingProvider are named once per run, not once per Pull Request
+  private static skippedProvidersReported = false;
+
   static getInstances(config: any): TicketProviderRoot[] {
     const ticketProviders: TicketProviderRoot[] = [];
     for (const provider of allTicketProviders) {
@@ -73,7 +106,9 @@ export abstract class TicketProvider {
   public static async getProvidersTicketsFromString(text: string, options: TicketsFromStringOptions = {}): Promise<Ticket[]> {
     const tickets: Ticket[] = [];
     const optionsWithConfig: TicketsFromStringOptions = { ...options, config: options.config || (await getConfig("project")) };
-    for (const ticketProvider of allTicketProviders) {
+    const activeProviders = activeTicketProviders(optionsWithConfig.config);
+    this.reportSkippedProviders(optionsWithConfig.config, activeProviders);
+    for (const ticketProvider of activeProviders) {
       const providerTickets = await ticketProvider.getTicketsFromString(text, optionsWithConfig);
       tickets.push(...providerTickets);
     }
@@ -120,8 +155,9 @@ export abstract class TicketProvider {
   /**
    * Deep fetch of a single ticket, with its description, comments, links and attachments.
    *
-   * The provider is deduced from the shape of the identifier (PROJ-123 -> JIRA, 1234 / AB-1234 ->
-   * Azure Boards, INC0012345 -> ServiceNow) unless `providerKey` forces one. Throws an explicit
+   * The provider is deduced from the shape of the identifier (PROJ-123 -> JIRA, or the connector
+   * `ticketingProvider` names when it recognizes that shape too, 1234 / AB-1234 -> Azure Boards,
+   * INC0012345 -> ServiceNow) unless `providerKey` forces one. Throws an explicit
    * SfError rather than returning null when nothing can handle the identifier, so the caller can
    * report which variables are missing instead of an empty result.
    */
@@ -129,46 +165,79 @@ export abstract class TicketProvider {
     ticketId: string,
     options: TicketDetailsOptions & { providerKey?: TicketProviderKey } = {}
   ): Promise<TicketDetails | null> {
-    const config = await getConfig("project");
     const trimmedId = (ticketId || "").trim();
-    const shapeMatches = allTicketProviders.filter(
-      (provider) =>
-        provider.supportsTicketDetails &&
-        (options.providerKey ? provider.providerKey === options.providerKey : provider.matchesTicketId(trimmedId, config))
-    );
-    if (shapeMatches.length === 0) {
-      throw new SfError(t('ticketDetailsUnknownIdShape', { ticketId: trimmedId }));
+    const { provider, providerClass } = await this.resolveProviderForTicket(trimmedId, options.providerKey, "supportsTicketDetails");
+    uxLog("action", this, c.cyan('[TicketProvider] ' + t('ticketDetailsFetching', { ticketId: trimmedId, provider: providerClass.providerLabel })));
+    return provider.getTicketDetails(trimmedId, options);
+  }
+
+  /**
+   * The connector of a ticket operation, with a stable error name on every failure.
+   *
+   * With a `ticketId`, the connector is found as `getTicketDetails` finds it. Without one (ticket
+   * list, whoami, meta), `providerKey` names it, or else the only configured connector is taken.
+   */
+  public static async resolveProvider(
+    options: { ticketId?: string; providerKey?: TicketProviderKey } = {}
+  ): Promise<{ provider: TicketProviderRoot; providerClass: TicketProviderClass }> {
+    const trimmedId = (options.ticketId || "").trim();
+    if (trimmedId) {
+      try {
+        return await this.resolveProviderForTicket(trimmedId, options.providerKey, "supportsTicketDetails");
+      } catch (e) {
+        const message = (e as Error).message;
+        // resolveProviderForTicket only fails on an unknown shape or on a missing configuration
+        const name = message === t('ticketDetailsUnknownIdShape', { ticketId: trimmedId }) ? TICKET_ERROR.notFound : TICKET_ERROR.providerNotConfigured;
+        throw new SfError(message, name);
+      }
     }
-    // A provider may be able to complete its own configuration (Azure Boards reads the organization
-    // and the project from the git remote). Runs before isAvailable(), which is synchronous and
-    // cannot look at the remote itself. Only the candidates matching the identifier are prepared,
-    // so a JIRA key never triggers a git call.
-    for (const provider of shapeMatches) {
+    const config = await getConfig("project");
+    // --provider names the connector; otherwise ticketingProvider of .sfdx-hardis.yml does, as for ticket ids
+    const pool = options.providerKey ? allTicketProviders : activeTicketProviders(config);
+    const candidates = pool.filter(
+      (provider) => provider.supportsTicketDetails && (!options.providerKey || provider.providerKey === options.providerKey)
+    );
+    for (const provider of candidates) {
       if (provider.autoDetectFromGitRemote) {
         await provider.autoDetectFromGitRemote();
       }
     }
-    const available = shapeMatches.filter((provider) => provider.isAvailable(config));
+    const available = candidates.filter((provider) => provider.isAvailable(config));
     if (available.length === 0) {
       throw new SfError(
-        t('ticketDetailsProviderNotConfigured', {
-          ticketId: trimmedId,
-          providers: shapeMatches.map((provider) => provider.providerLabel).join(", "),
-        })
+        t('ticketListProviderNotConfigured', { providers: candidates.map((provider) => provider.providerLabel).join(", ") }),
+        TICKET_ERROR.providerNotConfigured
       );
     }
     if (available.length > 1) {
       throw new SfError(
-        t('ticketDetailsAmbiguousProvider', {
-          ticketId: trimmedId,
-          providers: available.map((provider) => provider.providerKey).join(", "),
-        })
+        t('ticketListAmbiguousProvider', { providers: available.map((provider) => provider.providerKey).join(", ") }),
+        TICKET_ERROR.providerNotConfigured
       );
     }
-    const providerClass = available[0];
-    const provider = new providerClass(config);
-    uxLog("action", this, c.cyan('[TicketProvider] ' + t('ticketDetailsFetching', { ticketId: trimmedId, provider: providerClass.providerLabel })));
-    return provider.getTicketDetails(trimmedId, options);
+    return { provider: new available[0](config), providerClass: available[0] };
+  }
+
+  /**
+   * Post a markdown comment on one ticket, the provider being found as `getTicketDetails` finds it.
+   * Never throws: a ticket that cannot be commented on comes back as a `failed` result, so a caller
+   * posting on several tickets reports each one.
+   */
+  public static async postComment(
+    ticketId: string,
+    markdown: string,
+    options: PostCommentOptions & { providerKey?: TicketProviderKey } = {}
+  ): Promise<PostCommentResult> {
+    const trimmedId = (ticketId || "").trim();
+    let providerLabel = options.providerKey || "";
+    try {
+      assertValidMarker(options.marker);
+      const { provider, providerClass } = await this.resolveProviderForTicket(trimmedId, options.providerKey, "supportsComments");
+      providerLabel = providerClass.providerLabel;
+      return await provider.postComment(trimmedId, markdown, options);
+    } catch (e) {
+      return { ticketId: trimmedId, provider: providerLabel, action: "failed", error: (e as Error).message };
+    }
   }
 
   // Process Ticket providers actions after a deployment.
@@ -183,10 +252,82 @@ export abstract class TicketProvider {
     }
     return tickets;
   }
+
+  /**
+   * The connector that handles one identifier, for a capability (`supportsTicketDetails`,
+   * `supportsComments`). Several connectors can recognize the same identifier: the ones reading the
+   * references of the project come first, and an identifier none of them recognizes (a ServiceNow
+   * number typed in a JIRA project) is still routed by its shape, among the connectors that always
+   * run. Throws an explicit SfError naming what is missing when nothing can handle it.
+   */
+  private static async resolveProviderForTicket(
+    ticketId: string,
+    providerKey: TicketProviderKey | undefined,
+    capability: "supportsTicketDetails" | "supportsComments"
+  ): Promise<{ provider: TicketProviderRoot; providerClass: TicketProviderClass }> {
+    const config = await getConfig("project");
+    const capableProviders = allTicketProviders.filter((provider) => provider[capability]);
+    let shapeMatches = capableProviders.filter((provider) =>
+      providerKey ? provider.providerKey === providerKey : provider.matchesTicketId(ticketId, config)
+    );
+    if (!providerKey) {
+      const active = activeTicketProviders(config);
+      const activeMatches = shapeMatches.filter((provider) => active.includes(provider));
+      shapeMatches = activeMatches.length > 0 ? activeMatches : shapeMatches.filter((provider) => !provider.onlyWhenDeclared);
+    }
+    if (shapeMatches.length === 0) {
+      throw new SfError(t('ticketDetailsUnknownIdShape', { ticketId }));
+    }
+    // A provider may be able to complete its own configuration (Azure Boards reads the organization
+    // and the project from the git remote). Runs before isAvailable(), which is synchronous and
+    // cannot look at the remote itself. Only the candidates matching the identifier are prepared,
+    // so a JIRA key never triggers a git call.
+    for (const provider of shapeMatches) {
+      if (provider.autoDetectFromGitRemote) {
+        await provider.autoDetectFromGitRemote();
+      }
+    }
+    const available = shapeMatches.filter((provider) => provider.isAvailable(config));
+    if (available.length === 0) {
+      throw new SfError(
+        t('ticketDetailsProviderNotConfigured', {
+          ticketId,
+          providers: shapeMatches.map((provider) => provider.providerLabel).join(", "),
+        })
+      );
+    }
+    if (available.length > 1) {
+      throw new SfError(
+        t('ticketDetailsAmbiguousProvider', {
+          ticketId,
+          providers: available.map((provider) => provider.providerKey).join(", "),
+        })
+      );
+    }
+    return { provider: new available[0](config), providerClass: available[0] };
+  }
+
+  /**
+   * A connector whose variables are defined, and that `ticketingProvider` leaves out, finds no
+   * ticket anymore: say which ones, so missing references are not a mystery.
+   */
+  private static reportSkippedProviders(config: any, activeProviders: TicketProviderClass[]): void {
+    if (this.skippedProvidersReported || !config?.ticketingProvider) {
+      return;
+    }
+    this.skippedProvidersReported = true;
+    const skipped = allTicketProviders.filter((provider) => !activeProviders.includes(provider) && provider.isAvailable(config));
+    if (skipped.length > 0) {
+      uxLog("log", this, c.grey('[TicketProvider] ' + t('ticketProvidersSkipped', {
+        declared: config.ticketingProvider,
+        skipped: skipped.map((provider) => provider.providerLabel).join(", "),
+      })));
+    }
+  }
 }
 
 export interface Ticket {
-  provider: "JIRA" | "AZURE" | "GENERIC" | "SERVICENOW";
+  provider: "JIRA" | "AZURE" | "GENERIC" | "SERVICENOW" | "AHA";
   id: string;
   url: string;
   subject?: string;

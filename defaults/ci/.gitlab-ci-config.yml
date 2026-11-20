@@ -1,3 +1,10 @@
+# Source of this file: the sfdx-hardis default template
+#   https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.gitlab-ci-config.yml
+#   raw: https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/defaults/ci/.gitlab-ci-config.yml
+# To upgrade it, compare it with the latest version of that template and bring in its changes,
+# keeping what is specific to this project (branch names, secrets, runner tags, image, custom jobs).
+# This file holds the values of this project: bring in new keys only, never replace existing values.
+# What changed between versions: https://github.com/hardisgroupcom/sfdx-hardis/blob/main/CHANGELOG.md
 # You can customize your pipeline process here
 variables:
   DEPLOY_BRANCHES: /^(development|integration|recette|preprod|main|master)$/ # Regex contenant la liste des branches où un push va déclencher un déploiement

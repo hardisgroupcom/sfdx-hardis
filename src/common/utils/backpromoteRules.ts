@@ -8,6 +8,7 @@
 import { diffLines } from 'diff';
 import { isRetrofit } from './orgConfigUtils.js';
 import { isPromotionBranchName } from './promotionBranchUtils.js';
+import { quoteShellArgument } from './stringUtils.js';
 
 /** What to deploy for a file whose sandbox version differs from the parent branch version */
 export type BackpromoteDiffChoice = 'git' | 'org' | 'merge';
@@ -264,6 +265,30 @@ export function deriveSandboxName(options: { instanceUrl: string; username: stri
 }
 
 /**
+ * Name a developer org is shown by, in the comments and the panels: the sandbox part of its instance
+ * URL (`dev1` for `mycompany--dev1.sandbox.my.salesforce.com`), else its alias (the name the owner
+ * of a scratch org knows it by: its host is random), else the first label of the URL (a Developer
+ * Edition with its own domain), else the username. Never the org id. Unlike deriveSandboxName, it
+ * is not a key: two orgs can share it, and the org id tells them apart where it matters.
+ */
+export function deriveOrgLabel(options: { instanceUrl?: string | null; alias?: string | null; username?: string | null }): string {
+  const host = (options.instanceUrl || '').replace(/^https?:\/\//i, '').split('/')[0];
+  const firstLabel = host.split('.')[0] || '';
+  const doubleDash = firstLabel.indexOf('--');
+  if (doubleDash > 0 && doubleDash < firstLabel.length - 2) {
+    return firstLabel.substring(doubleDash + 2);
+  }
+  const alias = (options.alias || '').trim();
+  if (alias) {
+    return alias;
+  }
+  if (firstLabel && !['login', 'test', 'www'].includes(firstLabel.toLowerCase())) {
+    return firstLabel;
+  }
+  return (options.username || '').trim();
+}
+
+/**
  * Why a backpromote must not deploy to this org, or null when it may. Only developer sandboxes and
  * scratch orgs receive a backpromote: a production org, or the org of a major branch, is deployed by
  * the CI/CD pipeline. A major org matches on its username, on the sandbox that username belongs to
@@ -484,19 +509,6 @@ export function sourcePathTail(file: string, packageDirectories: string[] = []):
 
 // ---- Command and prompt ----
 
-function quoteArgument(value: string): string {
-  if (/^[A-Za-z0-9_.@:/=-]+$/.test(value)) {
-    return value;
-  }
-  // Reports, Dashboards and Email Templates of the default folder are named unfiled$public: inside
-  // double quotes a shell would expand that dollar sign. Single quotes are literal in bash and in
-  // PowerShell, the two shells the VS Code extension opens.
-  if (value.includes('$') && !value.includes("'")) {
-    return `'${value}'`;
-  }
-  return `"${value.replace(/"/g, '\\"')}"`;
-}
-
 export interface BackpromoteRunCommandOptions {
   mode: 'auto' | 'agent' | 'plan' | 'prepare';
   parentBranch: string;
@@ -518,24 +530,24 @@ export interface BackpromoteRunCommandOptions {
 export function buildBackpromoteRunCommand(options: BackpromoteRunCommandOptions): string {
   const parts = ['sf hardis:work:backpromote', `--${options.mode}`];
   if (options.targetOrg) {
-    parts.push(`--target-org ${quoteArgument(options.targetOrg)}`);
+    parts.push(`--target-org ${quoteShellArgument(options.targetOrg)}`);
   }
-  parts.push(`--parent-branch ${quoteArgument(options.parentBranch)}`);
+  parts.push(`--parent-branch ${quoteShellArgument(options.parentBranch)}`);
   if (options.fromPullRequest && options.fromPullRequest > 0) {
     parts.push(`--from-pull-request ${options.fromPullRequest}`);
   }
   if (options.runId) {
-    parts.push(`--run-id ${quoteArgument(options.runId)}`);
+    parts.push(`--run-id ${quoteShellArgument(options.runId)}`);
   }
   for (const key of options.excludeMetadata || []) {
-    parts.push(`--exclude-metadata ${quoteArgument(key)}`);
+    parts.push(`--exclude-metadata ${quoteShellArgument(key)}`);
   }
   for (const key of options.includeNoOverwrite || []) {
-    parts.push(`--include-no-overwrite ${quoteArgument(key)}`);
+    parts.push(`--include-no-overwrite ${quoteShellArgument(key)}`);
   }
   const decisions = options.diffDecisions instanceof Map ? [...options.diffDecisions.entries()] : Object.entries(options.diffDecisions || {});
   for (const [file, choice] of decisions) {
-    parts.push(`--on-diff ${quoteArgument(`${file}=${choice}`)}`);
+    parts.push(`--on-diff ${quoteShellArgument(`${file}=${choice}`)}`);
   }
   if (options.diffDefault && options.diffDefault !== 'git') {
     parts.push(`--on-diff-default ${options.diffDefault}`);
@@ -546,10 +558,10 @@ export function buildBackpromoteRunCommand(options: BackpromoteRunCommandOptions
   if (options.skipActions) {
     parts.push('--skip-actions');
   } else if (options.actions && options.actions.length > 0) {
-    parts.push(`--actions ${options.actions.map(quoteArgument).join(',')}`);
+    parts.push(`--actions ${options.actions.map(quoteShellArgument).join(',')}`);
   }
   for (const actionId of options.confirmActions || []) {
-    parts.push(`--confirm-action ${quoteArgument(actionId)}`);
+    parts.push(`--confirm-action ${quoteShellArgument(actionId)}`);
   }
   if (options.json) {
     parts.push('--json');
@@ -620,7 +632,7 @@ export function buildBackpromoteDeployErrorsPrompt(options: {
     }
     lines.push(`- Error returned by Salesforce: ${error.problem}`);
     if (error.pullRequests.length > 0) {
-      lines.push(`- Merged in \`${options.parentBranch}\` by the Pull Request(s): ${error.pullRequests.map((number) => `#${number}`).join(', ')}`);
+      lines.push(`- Merged in \`${options.parentBranch}\` by the Pull Request${error.pullRequests.length === 1 ? '' : 's'} ${error.pullRequests.map((number) => `#${number}`).join(', ')}`);
     }
     if (error.tip) {
       lines.push(`- sfdx-hardis deployment hint "${error.tip.label}"${error.tip.docUrl ? ` (documentation: ${error.tip.docUrl})` : ''}:`);
@@ -698,7 +710,7 @@ export function buildBackpromoteMergePrompt(options: {
       lines.push(`  - common base (the version at the start of the window, both sides were changed from it): \`${file.versions.base}\``);
     }
     if (file.pullRequests.length > 0) {
-      lines.push(`  - changed in ${options.parentBranch} by the Pull Request(s) ${file.pullRequests.map((number) => `#${number}`).join(', ')}`);
+      lines.push(`  - changed in ${options.parentBranch} by the Pull Request${file.pullRequests.length === 1 ? '' : 's'} ${file.pullRequests.map((number) => `#${number}`).join(', ')}`);
     }
   }
   lines.push('');

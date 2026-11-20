@@ -1,3 +1,7 @@
+---
+title: "hardis:project:metadata:findduplicates - XML duplicate values finder"
+description: "find duplicate values in XML file(s). Find duplicate values in XML file(s). Keys to be checked can be configured in config/sfdx-hardis.yml using property metadataDuplicateFindKeys."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:metadata:findduplicates
 
@@ -22,13 +26,19 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The metadata files of the Helios project checked for values listed twice, such as a field placed twice in a layout](../../../assets/images/commands/project/metadata/findduplicates.webp)
+
+_The metadata files of the Helios project checked for values listed twice, such as a field placed twice in a layout_
+
 ## Parameters
 
 | Name         |  Type   | Description                                                   | Default | Required | Options |
 |:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent        | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | files<br/>-f | option  | XML metadata files path                                       |         |          |         |
-| flags-dir    | option  | undefined                                                     |         |          |         |
+| flags-dir    | option  | Import flag values from a directory.                          |         |          |         |
 | json         | boolean | Format output as json.                                        |         |          |         |
 | skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
 | websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |

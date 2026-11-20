@@ -1,0 +1,765 @@
+{
+  "command": "hardis:org:refresh:before-refresh",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "This command will save information that must be restored after org refresh, in the following order:\n- Certificates\n- Other metadata\n- Custom Settings\n- Records\n- Connected Apps \n- External Client Apps"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "IMPORTANT: the files saved under scripts/sandbox-refresh/ contain secrets in clear text (Consumer Secrets, credentials, custom settings data). NEVER commit or push them: keep them out of your repository and delete them once the refresh process is fully complete."
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Creating sfdx-project for sandbox info storage"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Save Project created in folder C:/helios/salesforce/scripts/sandbox-refresh/helios-solar--uatsandbox"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Do you want to retrieve Certificates from https://helios-solar--uat.sandbox.my.salesforce.com before refreshing it ?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Do you want to retrieve Certificates from https://helios-solar--uat.sandbox.my.salesforce.com before refreshing it ?",
+            "description": "Certificates cannot be retrieved using Source API, so we will use Metadata API to retrieve them",
+            "choices": [
+              {
+                "title": "✅ Yes",
+                "value": true
+              },
+              {
+                "title": "❌ No",
+                "value": false
+              }
+            ],
+            "optionsPerPage": 9999,
+            "initial": 0
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "✅ Yes"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Retrieving certificates (.crt) from org..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf project retrieve start --manifest manifest/package-certificates-to-save.xml --target-metadata-dir mdapi_certs --unzip --target-org admin@helios-solar.demo.uat --json",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf project retrieve start --manifest manifest/package-certificates-to-save.xml --target-metadata-dir mdapi_certs --unzip --target-org admin@helios-solar.demo.uat --json",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Successfully retrieved certificates from org and saved them to C:/helios/salesforce/scripts/sandbox-refresh/helios-solar--uatsandbox/force-app/main/default/certs"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Saving metadata files before sandbox refresh..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "reportFile",
+        "file": "C:/helios/salesforce/scripts/sandbox-refresh/helios-solar--uatsandbox/manifest/package-metadatas-to-save.xml",
+        "title": "Save package XML",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Please check package XML file C:/helios/salesforce/scripts/sandbox-refresh/helios-solar--uatsandbox/manifest/package-metadatas-to-save.xml before retrieving, update it to add metadata if necessary then continue",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Please check package XML file C:/helios/salesforce/scripts/sandbox-refresh/helios-solar--uatsandbox/manifest/package-metadatas-to-save.xml before retrieving, update it to add metadata if necessary then continue",
+            "description": "Add or remove metadata types before they are retrieved",
+            "choices": [
+              {
+                "title": "✅ Yes",
+                "value": true
+              },
+              {
+                "title": "❌ No",
+                "value": false
+              }
+            ],
+            "optionsPerPage": 9999,
+            "initial": 0
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "✅ Yes"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Retrieving metadatas to save..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf project retrieve start --manifest manifest/package-metadatas-to-save.xml --target-org admin@helios-solar.demo.uat",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf project retrieve start --manifest manifest/package-metadatas-to-save.xml --target-org admin@helios-solar.demo.uat",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Listing Custom Settings in the org..."
+      }
+    },
+    {
+      "delay": 600,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Found 2 Custom Setting(s) in the org:\n- Helios_Settings__c\n- Installation_Config__c"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Select Custom Settings to retrieve",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "multiselect",
+            "name": "value",
+            "message": "🦙 Select Custom Settings to retrieve",
+            "description": "You can select multiple Custom Settings to retrieve.",
+            "choices": [
+              {
+                "title": "Helios_Settings__c",
+                "value": "Helios_Settings__c",
+                "selected": true
+              },
+              {
+                "title": "Installation_Config__c",
+                "value": "Installation_Config__c",
+                "selected": true
+              }
+            ],
+            "optionsPerPage": 9999,
+            "initial": [
+              "Helios_Settings__c",
+              "Installation_Config__c"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "- Helios_Settings__c\n- Installation_Config__c"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf data tree export --query \"SELECT Id, Name, Default_Crew_Size__c, Max_Daily_Installations__c FROM Helios_Settings__c\" --target-org admin@helios-solar.demo.uat --json",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 700,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf data tree export --query \"SELECT Id, Name, Default_Crew_Size__c, Max_Daily_Installations__c FROM Helios_Settings__c\" --target-org admin@helios-solar.demo.uat --json",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf data tree export --query \"SELECT Id, Name, Slot_Length_Minutes__c FROM Installation_Config__c\" --target-org admin@helios-solar.demo.uat --json",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 700,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf data tree export --query \"SELECT Id, Name, Slot_Length_Minutes__c FROM Installation_Config__c\" --target-org admin@helios-solar.demo.uat --json",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Custom Settings retrieval completed (2 successful, 0 empty, 0 failed)"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Successfully retrieved Custom Settings:\n- Helios_Settings__c\n- Installation_Config__c"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "No data workspaces found in the project, skipping record saving"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "You can create data workspaces using hardis:org:configure:data (https://sfdx-hardis.cloudity.com/hardis/org/configure/data/)"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Checking for Connected Apps that have not been converted to External Client Apps..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf org list metadata --metadata-type ConnectedApp --target-org admin@helios-solar.demo.uat --json",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf org list metadata --metadata-type ConnectedApp --target-org admin@helios-solar.demo.uat --json",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "8 Connected App(s) have no matching External Client App. Since Spring '26, Connected Apps can not be re-created after a sandbox refresh (unless Salesforce Support enables it via a Case), so they will probably be LOST after the refresh:"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "table",
+        "message": "[{\"Name\":\"Helios_Crew_Scheduler_Sync\",\"Last Updated Date\":\"2026-09-14 08:21\",\"Last Updated By\":\"Victor Martin\"},{\"Name\":\"Helios_Installer_Mobile\",\"Last Updated Date\":\"2026-08-02 15:40\",\"Last Updated By\":\"Romain Lefebvre\"},{\"Name\":\"Helios_Panel_Telemetry\",\"Last Updated Date\":\"2026-05-27 11:05\",\"Last Updated By\":\"Tomasz Nowak\"},{\"Name\":\"Helios_Customer_Portal_SSO\",\"Last Updated Date\":\"2026-04-11 09:30\",\"Last Updated By\":\"Mariia Kowalska\"},{\"Name\":\"Helios_Warehouse_Scanner\",\"Last Updated Date\":\"2026-03-19 16:12\",\"Last Updated By\":\"Lucia Fernandez\"},{\"Name\":\"Helios_Panel_Supplier_Sync\",\"Last Updated Date\":\"2026-02-03 10:48\",\"Last Updated By\":\"Amelie Dubois\"},{\"Name\":\"Helios_Field_Service_App\",\"Last Updated Date\":\"2025-12-18 13:02\",\"Last Updated By\":\"Romain Lefebvre\"},{\"Name\":\"Helios_BI_Connector\",\"Last Updated Date\":\"2025-11-07 17:25\",\"Last Updated By\":\"Victor Martin\"}]"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/connected-apps-not-converted-features__HEL-42-installation-checklist.csv",
+        "title": "Connected Apps not converted to External Client Apps (CSV)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/xls/connected-apps-not-converted-features__HEL-42-installation-checklist.xlsx",
+        "title": "Connected Apps not converted to External Client Apps (XLSX)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "To keep them, convert them now to External Client Apps (Setup > App Manager > contextual menu of each Connected App), then choose \"I have converted them\": the newly converted External Client Apps will be saved with their credentials and restored after the refresh."
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Have you converted the Connected Apps you want to keep into External Client Apps?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Have you converted the Connected Apps you want to keep into External Client Apps?",
+            "description": "Newly converted External Client Apps are detected by re-checking the org.",
+            "choices": [
+              {
+                "title": "I have converted them (re-check the org now)",
+                "value": "recheck"
+              },
+              {
+                "title": "Open App Manager in my browser so I can convert them",
+                "value": "open"
+              },
+              {
+                "title": "Continue without converting (these Connected Apps will probably be lost)",
+                "value": "continue"
+              }
+            ],
+            "optionsPerPage": 9999
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "I have converted them (re-check the org now)"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "All Connected Apps have a matching External Client App: they will be saved and restored as External Client Apps."
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Saving External Client Apps before sandbox refresh..."
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Select the External Client Apps you want to save before the sandbox refresh",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "multiselect",
+            "name": "value",
+            "message": "🦙 Select the External Client Apps you want to save before the sandbox refresh",
+            "description": "Only the selected apps will be saved and their credentials captured. Deselected apps will remain in the org.",
+            "choices": [
+              {
+                "title": "Helios_Crew_Scheduler_Sync",
+                "value": "Helios_Crew_Scheduler_Sync",
+                "selected": true
+              },
+              {
+                "title": "Helios_Installer_Mobile",
+                "value": "Helios_Installer_Mobile",
+                "selected": true
+              },
+              {
+                "title": "Helios_Panel_Telemetry",
+                "value": "Helios_Panel_Telemetry",
+                "selected": true
+              },
+              {
+                "title": "Helios_Customer_Portal_SSO",
+                "value": "Helios_Customer_Portal_SSO",
+                "selected": true
+              },
+              {
+                "title": "Helios_Warehouse_Scanner",
+                "value": "Helios_Warehouse_Scanner",
+                "selected": true
+              },
+              {
+                "title": "Helios_Panel_Supplier_Sync",
+                "value": "Helios_Panel_Supplier_Sync",
+                "selected": true
+              },
+              {
+                "title": "Helios_Field_Service_App",
+                "value": "Helios_Field_Service_App",
+                "selected": true
+              },
+              {
+                "title": "Helios_BI_Connector",
+                "value": "Helios_BI_Connector",
+                "selected": true
+              }
+            ],
+            "optionsPerPage": 9999,
+            "initial": [
+              "Helios_Crew_Scheduler_Sync",
+              "Helios_Installer_Mobile",
+              "Helios_Panel_Telemetry",
+              "Helios_Customer_Portal_SSO",
+              "Helios_Warehouse_Scanner",
+              "Helios_Panel_Supplier_Sync",
+              "Helios_Field_Service_App",
+              "Helios_BI_Connector"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "- Helios_Crew_Scheduler_Sync\n- Helios_Installer_Mobile\n- Helios_Panel_Telemetry"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf project retrieve start --manifest manifest/package-external-client-apps.xml --target-org admin@helios-solar.demo.uat --ignore-conflicts --json",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf project retrieve start --manifest manifest/package-external-client-apps.xml --target-org admin@helios-solar.demo.uat --ignore-conflicts --json",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "External Client Apps have been saved successfully (3 apps)"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Do you want to delete the External Client Apps from the org after saving? Helios_Crew_Scheduler_Sync, Helios_Installer_Mobile, Helios_Panel_Telemetry",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Do you want to delete the External Client Apps from the org after saving? Helios_Crew_Scheduler_Sync, Helios_Installer_Mobile, Helios_Panel_Telemetry",
+            "description": "If not deleted, External Client Apps will remain in the org and may not be restorable with the same credentials after sandbox refresh",
+            "choices": [
+              {
+                "title": "✅ Yes",
+                "value": true
+              },
+              {
+                "title": "❌ No",
+                "value": false
+              }
+            ],
+            "optionsPerPage": 9999,
+            "initial": 1
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "❌ No"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Do you still want to save Connected Apps? They can NOT be restored after the refresh without a Salesforce Case.",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Do you still want to save Connected Apps? They can NOT be restored after the refresh without a Salesforce Case.",
+            "description": "Only useful if Salesforce Support has enabled Connected App creation in your org, or to keep their metadata for documentation.",
+            "choices": [
+              {
+                "title": "✅ Yes",
+                "value": true
+              },
+              {
+                "title": "❌ No",
+                "value": false
+              }
+            ],
+            "optionsPerPage": 9999,
+            "initial": 1
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "❌ No"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Skipping Connected Apps save."
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Collecting the inventory of items that cannot be restored automatically (external OAuth authentications, credential secrets, scheduled jobs)..."
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "1 external OAuth authentication(s) cannot be saved and will have to be re-authorized manually after the refresh:\n- Helios Installer Mobile Sync (4 OAuth token(s), users: victor.martin@helios-solar.demo.uat, mariia.kowalska@helios-solar.demo.uat)"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "3 Auth Provider(s), External Credential(s) and Named Credential(s) added to the inventory: their secrets are not included in metadata and must be re-entered manually after the restore."
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Manual actions inventory saved in C:/helios/salesforce/scripts/sandbox-refresh/helios-solar--uatsandbox/manual-restore-inventory.json"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "reportFile",
+        "file": "C:/helios/salesforce/scripts/sandbox-refresh/helios-solar--uatsandbox/manual-restore-inventory.json",
+        "title": "Sandbox refresh manual actions inventory (JSON)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Generating sandbox refresh actions report..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/sandbox-refresh-before-actions-helios-solar--uatsandbox-features__HEL-42-installation-checklist.csv",
+        "title": "Sandbox Refresh Actions Report (CSV)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/xls/sandbox-refresh-before-actions-helios-solar--uatsandbox-features__HEL-42-installation-checklist.xlsx",
+        "title": "Sandbox Refresh Actions Report (XLSX)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

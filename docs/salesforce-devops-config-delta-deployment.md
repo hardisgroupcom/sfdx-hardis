@@ -49,7 +49,7 @@ Examples:
 - **hotfixes/fix-stuff to preprod** will be **DELTA** DEPLOYMENT
 - **preprod to production** will be **FULL** DEPLOYMENT
 
-> 💡 If you want to **force the use of full deployment for a Pull Request** on a delta project, add "**NO_DELTA**" in your latest commit title or text, or in your Pull Request description.
+> 💡 If you want to **force the use of full deployment for a Pull Request** on a delta project, add "**NO_DELTA**" in your latest commit title or text, or in your Pull Request description. Any case and spelling works (`no_delta`, `no-delta`, `no delta`, `nodelta`), except inside HTML comments, fenced code blocks, paths and branch names.
 
 ##### Reading the job logs
 
@@ -151,8 +151,8 @@ You can either:
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) course does this, click by click, on an org of your own:
 
-- [Lab 3.4 - Three Pull Requests collide: choose the merge order](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-4-merge-colliding-pull-requests/)
+- [Lab 3.4 - Three Pull Requests in one release: review the merge order](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-4-merge-colliding-pull-requests/)
 
 <!-- training-links:end -->

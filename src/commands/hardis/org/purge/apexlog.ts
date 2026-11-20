@@ -102,11 +102,12 @@ In agent mode:
     const prompt = flags.prompt === false ? false : true;
     const debugMode = flags.debug || false;
 
-    // Build apex logs query
+    // Build apex logs query, on the org given by --target-org
+    const username = flags['target-org'].getUsername();
     const tempDir = './tmp';
     await fs.ensureDir(tempDir);
     const apexLogsToDeleteCsv = path.join(tempDir, 'ApexLogsToDelete_' + Math.random() + '.csv');
-    const queryCommand = `sf data query --query "SELECT Id FROM ApexLog LIMIT 50000" -t -r "csv" > "${apexLogsToDeleteCsv}"`;
+    const queryCommand = `sf data query --query "SELECT Id FROM ApexLog LIMIT 50000" -t -r "csv" --target-org ${username} > "${apexLogsToDeleteCsv}"`;
     await execCommand(queryCommand, this, {
       output: true,
       debug: debugMode,
@@ -114,10 +115,11 @@ In agent mode:
     });
 
     const extractFile = (await fs.readFile(apexLogsToDeleteCsv, 'utf8')).toString();
-    const apexLogsNumber = extractFile.split('\n').filter((line) => line.length > 0).length;
+    // The first line of the CSV is its header
+    const apexLogsNumber = extractFile.split('\n').filter((line) => line.trim().length > 0 && line.trim() !== 'Id').length;
 
     if (apexLogsNumber === 0) {
-      uxLog("action", this, c.cyan(t('thereAreNoApexLogsToDelete', { flags: c.green(flags['target-org'].getUsername()) })));
+      uxLog("action", this, c.cyan(t('thereAreNoApexLogsToDelete', { flags: c.green(username) })));
       return {};
     }
 
@@ -137,7 +139,7 @@ In agent mode:
 
     // Perform delete
     uxLog("action", this, c.cyan(t('deletingApexLogs', { count: apexLogsNumber })));
-    const deleteCommand = `sf data delete bulk --sobject ApexLog --file ${apexLogsToDeleteCsv}`;
+    const deleteCommand = `sf data delete bulk --sobject ApexLog --file ${apexLogsToDeleteCsv} --target-org ${username}`;
     await execCommand(deleteCommand, this, {
       output: true,
       debug: debugMode,

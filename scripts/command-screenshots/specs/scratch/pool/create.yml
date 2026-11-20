@@ -1,0 +1,12 @@
+command: hardis:scratch:pool:create
+run: sf hardis:scratch:pool:create
+mode: replay
+org: none
+caption: "The scratch org pool is configured, its dashboard is created in the git provider and the CI variables to define are listed"
+answers:
+  - q: "storage service"
+    choice: "^gitProvider$"
+    shot: true
+    caption: "Choose where the pool is stored"
+  - q: "maximum number of scratch orgs"
+    value: 5

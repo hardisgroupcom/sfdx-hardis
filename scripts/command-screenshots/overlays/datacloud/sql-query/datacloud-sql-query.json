@@ -1,0 +1,46 @@
+{
+  "mode": "replace",
+  "title": "DataCloud Sql Query Results",
+  "rows": [
+    {
+      "ssot__Name__c": "Oakridge Primary School",
+      "ssot__CreatedDate__c": "2026-11-14T10:22:41.000Z"
+    },
+    {
+      "ssot__Name__c": "Green Valley Farm",
+      "ssot__CreatedDate__c": "2026-11-12T15:03:17.000Z"
+    },
+    {
+      "ssot__Name__c": "Riverside Bakery",
+      "ssot__CreatedDate__c": "2026-11-10T08:47:55.000Z"
+    },
+    {
+      "ssot__Name__c": "Maple Court Apartments",
+      "ssot__CreatedDate__c": "2026-11-07T13:30:09.000Z"
+    },
+    {
+      "ssot__Name__c": "Northfield Dental Clinic",
+      "ssot__CreatedDate__c": "2026-11-05T09:12:26.000Z"
+    },
+    {
+      "ssot__Name__c": "Harbor Street Garage",
+      "ssot__CreatedDate__c": "2026-11-03T16:41:38.000Z"
+    },
+    {
+      "ssot__Name__c": "Lakeview Community Center",
+      "ssot__CreatedDate__c": "2026-10-30T11:05:52.000Z"
+    },
+    {
+      "ssot__Name__c": "Willow Creek Vineyard",
+      "ssot__CreatedDate__c": "2026-10-28T14:19:03.000Z"
+    },
+    {
+      "ssot__Name__c": "Summit Logistics Depot",
+      "ssot__CreatedDate__c": "2026-10-24T07:56:44.000Z"
+    },
+    {
+      "ssot__Name__c": "Brookside Care Home",
+      "ssot__CreatedDate__c": "2026-10-21T12:38:20.000Z"
+    }
+  ]
+}

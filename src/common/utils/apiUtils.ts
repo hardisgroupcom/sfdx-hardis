@@ -28,6 +28,17 @@ export function isUnsupportedSObjectError(error: unknown, sObjectName: string): 
   );
 }
 
+// Describe the sObject and confirm the field exists, before a query references a field that some org
+// editions do not provide (it would throw INVALID_FIELD). On describe failure, the field is considered absent.
+export async function isFieldOnObject(conn: Connection, sobjectName: string, fieldName: string): Promise<boolean> {
+  try {
+    const describeResult = await conn.sobject(sobjectName).describe();
+    return (describeResult.fields || []).some((f: any) => f.name === fieldName);
+  } catch {
+    return false;
+  }
+}
+
 // Start tracking a query in the VS Code UI: the returned object is attached to the start line,
 // then to the completion (or failure) line, so the extension can show the query state and its
 // number of records next to the query text.

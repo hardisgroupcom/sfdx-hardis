@@ -12,6 +12,7 @@ import {
   isCrudIncompatibleAdapter,
   isCrudIncompatibleTypeName,
   partitionCrudCompatibility,
+  removeInactiveEntries,
   DEFAULT_MAX_CHUNK_SIZE,
   SPECIAL_MAX_CHUNK_SIZE,
 } from '../../../src/common/metadata-utils/crudMetadataApi.js';
@@ -316,5 +317,106 @@ describe('buildMetadataXml()', () => {
       '    <description></description>\n' +
       '</CustomObject>\n'
     );
+  });
+});
+
+describe('removeInactiveEntries (--active-only)', () => {
+  const profile = {
+    custom: 'true',
+    userLicense: 'Salesforce',
+    applicationVisibilities: [
+      { application: 'Sales', default: 'false', visible: 'true' },
+      { application: 'Service', default: 'false', visible: 'false' },
+    ],
+    classAccesses: [
+      { apexClass: 'Granted', enabled: true },
+      { apexClass: 'Denied', enabled: false },
+    ],
+    fieldPermissions: [
+      { field: 'Account.A__c', editable: 'false', readable: 'true' },
+      { field: 'Account.B__c', editable: 'false', readable: 'false' },
+    ],
+    objectPermissions: {
+      object: 'Acme__c',
+      allowCreate: 'false',
+      allowDelete: 'false',
+      allowEdit: 'false',
+      allowRead: 'false',
+      modifyAllRecords: 'false',
+      viewAllRecords: 'false',
+    },
+    tabVisibilities: [
+      { tab: 'Acme__c', visibility: 'Hidden' },
+      { tab: 'Other__c', visibility: 'DefaultOn' },
+    ],
+    layoutAssignments: [{ layout: 'Account-Account Layout' }],
+    loginIpRanges: [{ startAddress: '1.1.1.1', endAddress: '1.1.1.2' }],
+  };
+
+  it('drops the entries whose boolean fields are all false, string or boolean values', () => {
+    const { result, removedCount } = removeInactiveEntries('Profile', profile);
+    expect(removedCount).to.equal(4);
+    expect(result.applicationVisibilities).to.deep.equal([{ application: 'Sales', default: 'false', visible: 'true' }]);
+    expect(result.classAccesses).to.deep.equal([{ apexClass: 'Granted', enabled: true }]);
+    expect(result.fieldPermissions).to.deep.equal([{ field: 'Account.A__c', editable: 'false', readable: 'true' }]);
+    // A single entry (not an array) that grants nothing removes the whole property
+    expect(result).to.not.have.property('objectPermissions');
+  });
+
+  it('keeps the entries without any boolean field, Hidden tabs included, and the scalar properties', () => {
+    const { result } = removeInactiveEntries('Profile', profile);
+    expect(result.tabVisibilities).to.deep.equal(profile.tabVisibilities);
+    expect(result.layoutAssignments).to.deep.equal(profile.layoutAssignments);
+    expect(result.loginIpRanges).to.deep.equal(profile.loginIpRanges);
+    expect(result.custom).to.equal('true');
+    expect(result.userLicense).to.equal('Salesforce');
+  });
+
+  it('also applies to PermissionSet and MutingPermissionSet', () => {
+    const permissionSet = { label: 'Crew', userPermissions: [{ name: 'ViewSetup', enabled: 'false' }] };
+    expect(removeInactiveEntries('PermissionSet', permissionSet).removedCount).to.equal(1);
+    expect(removeInactiveEntries('MutingPermissionSet', permissionSet).removedCount).to.equal(1);
+  });
+
+  it('leaves the other metadata types unchanged', () => {
+    const layout = { layoutSections: [{ editHeading: 'false', detailHeading: 'false' }] };
+    const { result, removedCount } = removeInactiveEntries('Layout', layout);
+    expect(removedCount).to.equal(0);
+    expect(result).to.equal(layout);
+  });
+});
+
+describe('removeInactiveEntries with the tabs of the org', () => {
+  const profile = {
+    tabVisibilities: [
+      { tab: 'standard-Account', visibility: 'DefaultOn' },
+      { tab: 'standard-AIPredictionScore', visibility: 'DefaultOn' },
+      { tab: 'Acme__c', visibility: 'Hidden' },
+    ],
+    layoutAssignments: [{ layout: 'Account-Account Layout' }],
+  };
+  const validTabNames = new Set(['standard-Account', 'Acme__c']);
+
+  it('drops the tab settings of tabs that do not exist, and keeps Hidden ones that do', () => {
+    const { result, removedCount } = removeInactiveEntries('Profile', profile, validTabNames);
+    expect(removedCount).to.equal(1);
+    expect(result.tabVisibilities).to.deep.equal([
+      { tab: 'standard-Account', visibility: 'DefaultOn' },
+      { tab: 'Acme__c', visibility: 'Hidden' },
+    ]);
+    expect(result.layoutAssignments).to.deep.equal(profile.layoutAssignments);
+  });
+
+  it('keeps every tab setting when the tabs of the org are not known', () => {
+    const { result, removedCount } = removeInactiveEntries('Profile', profile, null);
+    expect(removedCount).to.equal(0);
+    expect(result.tabVisibilities).to.have.length(3);
+  });
+
+  it('applies to the tabSettings of a Permission Set', () => {
+    const permissionSet = { tabSettings: [{ tab: 'standard-AIPredictionScore', visibility: 'Visible' }] };
+    const { result, removedCount } = removeInactiveEntries('PermissionSet', permissionSet, validTabNames);
+    expect(removedCount).to.equal(1);
+    expect(result).to.not.have.property('tabSettings');
   });
 });

@@ -1,0 +1,69 @@
+{
+  "mode": "replace",
+  "title": "Ticket comments",
+  "rows": [
+    {
+      "ticketId": "HEL-42",
+      "provider": "JIRA",
+      "action": "created",
+      "url": "https://helios.atlassian.net/browse/HEL-42?focusedCommentId=10231",
+      "error": ""
+    },
+    {
+      "ticketId": "HEL-45",
+      "provider": "JIRA",
+      "action": "created",
+      "url": "https://helios.atlassian.net/browse/HEL-45?focusedCommentId=10232",
+      "error": ""
+    },
+    {
+      "ticketId": "HEL-48",
+      "provider": "JIRA",
+      "action": "created",
+      "url": "https://helios.atlassian.net/browse/HEL-48?focusedCommentId=10233",
+      "error": ""
+    },
+    {
+      "ticketId": "HEL-52",
+      "provider": "JIRA",
+      "action": "skipped",
+      "url": "",
+      "error": "HEL-52 is already marked (label or prefixed comment of this account): nothing was written."
+    },
+    {
+      "ticketId": "HEL-57",
+      "provider": "JIRA",
+      "action": "created",
+      "url": "https://helios.atlassian.net/browse/HEL-57?focusedCommentId=10234",
+      "error": ""
+    },
+    {
+      "ticketId": "HEL-58",
+      "provider": "JIRA",
+      "action": "created",
+      "url": "https://helios.atlassian.net/browse/HEL-58?focusedCommentId=10235",
+      "error": ""
+    },
+    {
+      "ticketId": "HEL-61",
+      "provider": "JIRA",
+      "action": "created",
+      "url": "https://helios.atlassian.net/browse/HEL-61?focusedCommentId=10236",
+      "error": ""
+    },
+    {
+      "ticketId": "HEL-63",
+      "provider": "JIRA",
+      "action": "skipped",
+      "url": "",
+      "error": "HEL-63 is already marked (label or prefixed comment of this account): nothing was written."
+    },
+    {
+      "ticketId": "HEL-66",
+      "provider": "JIRA",
+      "action": "created",
+      "url": "https://helios.atlassian.net/browse/HEL-66?focusedCommentId=10237",
+      "error": ""
+    }
+  ]
+}

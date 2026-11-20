@@ -1,3 +1,7 @@
+---
+title: "hardis:project:clean:manageditems - Clean retrieved managed items in dx sources"
+description: "Removes unwanted managed package items from your Salesforce DX project sources."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:clean:manageditems
 
@@ -26,7 +30,7 @@ Key functionalities:
 The command's technical implementation involves:
 
 - **Namespace Validation:** Ensures that a namespace is provided, throwing an `SfError` if it's missing.
-- **File Discovery:** Uses `glob` to find all files and directories within the specified `folder` (defaults to `force-app`) that match the managed package namespace pattern (`**/${this.namespace}__*`).
+- **File Discovery:** Uses `glob` to find all files and directories within the specified `folder` (defaults to `force-app`) that match the managed package namespace pattern, which is the namespace followed by two underscores (for example `**/MyNamespace__*`).
 - **Folder Content Check:** For identified managed folders, the `folderContainsLocalItems` function is called. This function uses `glob` again to check for the presence of any files within that folder that *do not* start with the managed package namespace, indicating local customizations.
 - **Conditional Deletion:** Based on the `folderContainsLocalItems` check, it conditionally removes files and folders using `fs.remove`. If a managed folder contains local items, it is skipped to prevent accidental deletion of custom work.
 - **Compound Filename Detection:** For Layouts (`<Object>-<Name>.layout-meta.xml`), and QuickActions (`<Object>.<Name>.quickAction-meta.xml`), the filename is split into its object and item parts. When the object part is namespaced but the item part is not, the file is preserved as a custom item on a managed object.
@@ -46,13 +50,19 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The items of the DocuSign managed package (namespace dsfs) are removed from the project sources](../../../assets/images/commands/project/clean/manageditems.webp)
+
+_The items of the DocuSign managed package (namespace dsfs) are removed from the project sources_
+
 ## Parameters
 
 | Name             |  Type   | Description                                                   |  Default  | Required | Options |
 |:-----------------|:-------:|:--------------------------------------------------------------|:---------:|:--------:|:-------:|
 | agent            | boolean | Run in non-interactive mode for agents and automation         |           |          |         |
 | debug<br/>-d     | boolean | Activate debug mode (more logs)                               |           |          |         |
-| flags-dir        | option  | undefined                                                     |           |          |         |
+| flags-dir        | option  | Import flag values from a directory.                          |           |          |         |
 | folder<br/>-f    | option  | Root folder                                                   | force-app |          |         |
 | json             | boolean | Format output as json.                                        |           |          |         |
 | namespace<br/>-n | option  | Namespace to remove                                           |           |          |         |

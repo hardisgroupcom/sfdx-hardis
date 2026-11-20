@@ -1,0 +1,206 @@
+{
+  "command": "hardis:ticket:test-cases:upsert",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "About to upsert 10 test case(s) to Xray Cloud"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Upsert 10 test case(s) now?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 60,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "name": "value",
+            "type": "select",
+            "message": "🦙 Upsert 10 test case(s) now?",
+            "description": "Existing test cases are updated, not duplicated.",
+            "choices": [
+              {
+                "title": "✅ Yes",
+                "value": true
+              },
+              {
+                "title": "❌ No",
+                "value": false
+              }
+            ],
+            "initial": 0
+          }
+        ]
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "✅ Yes"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Upserting 10 test case(s)"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "progressStart",
+        "title": "Upserting 10 test case(s)",
+        "totalSteps": 10
+      }
+    },
+    {
+      "delay": 380,
+      "message": {
+        "event": "progressStep",
+        "step": 1,
+        "totalSteps": 10
+      }
+    },
+    {
+      "delay": 380,
+      "message": {
+        "event": "progressStep",
+        "step": 2,
+        "totalSteps": 10
+      }
+    },
+    {
+      "delay": 380,
+      "message": {
+        "event": "progressStep",
+        "step": 3,
+        "totalSteps": 10
+      }
+    },
+    {
+      "delay": 380,
+      "message": {
+        "event": "progressStep",
+        "step": 4,
+        "totalSteps": 10
+      }
+    },
+    {
+      "delay": 380,
+      "message": {
+        "event": "progressStep",
+        "step": 5,
+        "totalSteps": 10
+      }
+    },
+    {
+      "delay": 380,
+      "message": {
+        "event": "progressStep",
+        "step": 6,
+        "totalSteps": 10
+      }
+    },
+    {
+      "delay": 380,
+      "message": {
+        "event": "progressStep",
+        "step": 7,
+        "totalSteps": 10
+      }
+    },
+    {
+      "delay": 380,
+      "message": {
+        "event": "progressStep",
+        "step": 8,
+        "totalSteps": 10
+      }
+    },
+    {
+      "delay": 380,
+      "message": {
+        "event": "progressStep",
+        "step": 9,
+        "totalSteps": 10
+      }
+    },
+    {
+      "delay": 380,
+      "message": {
+        "event": "progressStep",
+        "step": 10,
+        "totalSteps": 10
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "progressEnd",
+        "totalSteps": 10
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "table",
+        "message": "[{\"provider\":\"Xray Cloud\",\"caseId\":\"HEL-42-F01\",\"action\":\"created\",\"trackerId\":\"HEL-101\",\"url\":\"https://helios.atlassian.net/browse/HEL-101\",\"error\":\"\"},{\"provider\":\"Xray Cloud\",\"caseId\":\"HEL-42-F02\",\"action\":\"created\",\"trackerId\":\"HEL-102\",\"url\":\"https://helios.atlassian.net/browse/HEL-102\",\"error\":\"\"},{\"provider\":\"Xray Cloud\",\"caseId\":\"HEL-42-F03\",\"action\":\"created\",\"trackerId\":\"HEL-103\",\"url\":\"https://helios.atlassian.net/browse/HEL-103\",\"error\":\"\"},{\"provider\":\"Xray Cloud\",\"caseId\":\"HEL-42-F04\",\"action\":\"created\",\"trackerId\":\"HEL-104\",\"url\":\"https://helios.atlassian.net/browse/HEL-104\",\"error\":\"\"},{\"provider\":\"Xray Cloud\",\"caseId\":\"HEL-42-F05\",\"action\":\"created\",\"trackerId\":\"HEL-105\",\"url\":\"https://helios.atlassian.net/browse/HEL-105\",\"error\":\"\"},{\"provider\":\"Xray Cloud\",\"caseId\":\"HEL-42-F06\",\"action\":\"created\",\"trackerId\":\"HEL-106\",\"url\":\"https://helios.atlassian.net/browse/HEL-106\",\"error\":\"\"},{\"provider\":\"Xray Cloud\",\"caseId\":\"HEL-42-F07\",\"action\":\"created\",\"trackerId\":\"HEL-107\",\"url\":\"https://helios.atlassian.net/browse/HEL-107\",\"error\":\"\"},{\"provider\":\"Xray Cloud\",\"caseId\":\"HEL-42-F08\",\"action\":\"updated\",\"trackerId\":\"HEL-108\",\"url\":\"https://helios.atlassian.net/browse/HEL-108\",\"error\":\"\"},{\"provider\":\"Xray Cloud\",\"caseId\":\"HEL-42-F09\",\"action\":\"updated\",\"trackerId\":\"HEL-109\",\"url\":\"https://helios.atlassian.net/browse/HEL-109\",\"error\":\"\"},{\"provider\":\"Xray Cloud\",\"caseId\":\"HEL-42-F10\",\"action\":\"updated\",\"trackerId\":\"HEL-110\",\"url\":\"https://helios.atlassian.net/browse/HEL-110\",\"error\":\"\"}]"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/test-cases-upsert-features__HEL-42-installation-checklist-2026-11-17_10-31-02.csv",
+        "title": "Test cases upsert (CSV)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 60,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/xls/test-cases-upsert-features__HEL-42-installation-checklist-2026-11-17_10-31-02.xlsx",
+        "title": "Test cases upsert (XLSX)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "7 created, 3 updated, 0 failed."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

@@ -1,3 +1,7 @@
+---
+title: "hardis:lint:metadatastatus - check inactive metadatas"
+description: "Checks for inactive metadata elements within your Salesforce DX project, helping to maintain a clean and efficient codebase."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:lint:metadatastatus
 
@@ -51,17 +55,37 @@ sf hardis:lint:metadatastatus --agent
 
 In agent mode, the command runs fully automatically with no interactive prompts.
 
+## Screenshots
+
+![Draft flows and inactive validation rules searched in the Helios project sources, before they reach production](../../assets/images/commands/lint/metadatastatus.webp)
+
+_Draft flows and inactive validation rules searched in the Helios project sources, before they reach production_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Inactive metadata
+
+One row per inactive or draft metadata element (flow, validation rule, record type, workflow rule...), to decide whether to activate it or delete it.
+
+Files: `lint-metadatastatus-*.csv`, `xls/lint-metadatastatus-*.xlsx`
+
+![Inactive metadata report in Excel](../../assets/images/commands/lint/metadatastatus-report-lint-metadatastatus.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                   | Default | Required | Options |
 |:------------------|:-------:|:----------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent             | boolean | Run in non-interactive mode for agents and automation. Uses default values and skips prompts. |         |          |         |
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                                                               |         |          |         |
-| flags-dir         | option  | undefined                                                                                     |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                          |         |          |         |
 | json              | boolean | Format output as json.                                                                        |         |          |         |
 | outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                             |         |          |         |
 | skipauth          | boolean | Skip authentication check when a default username is required                                 |         |          |         |
-| target-org<br/>-o | option  | undefined                                                                                     |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org.                                                          |         |          |         |
 | websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                     |         |          |         |
 
 ## Examples

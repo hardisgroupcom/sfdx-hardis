@@ -1,0 +1,27 @@
+{
+  "command": "hardis:scratch:pool:localauth",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 1200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "The git provider token and the encryption key are valid: you can take scratch orgs from the pool"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

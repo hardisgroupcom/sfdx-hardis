@@ -4,10 +4,10 @@ import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { ActionsBlock, Block, Button, SectionBlock, WebClient } from "@slack/web-api";
 import { getCurrentGitBranch, uxLog } from "../utils/index.js";
 import type { NotificationChannel, NotifMessage } from "./types.js";
-import { UtilsNotifs } from "./utils.js";
-import { convertMarkdownToSlackBlocks, convertMarkdownToSlackMrkdwn } from "./slackMarkdown.js";
+import { UtilsNotifs } from "./utils/utils.js";
+import { convertMarkdownToSlackBlocks, convertMarkdownToSlackMrkdwn } from "./utils/slackMarkdown.js";
 import { getEnvVar } from "../../config/index.js";
-import { applyMessageSizeGuard, clampBlockText, SizeGuardLimits } from "./messageSizeGuard.js";
+import { applyMessageSizeGuard, clampBlockText, SizeGuardLimits } from "./utils/messageSizeGuard.js";
 
 // Slack refuses a chat.postMessage call when a section block's text exceeds 3000 characters or the
 // message carries more than 50 blocks (invalid_blocks). Overridable for orgs on different limits.

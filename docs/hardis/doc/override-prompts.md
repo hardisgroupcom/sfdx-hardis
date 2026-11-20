@@ -1,3 +1,7 @@
+---
+title: "hardis:doc:override-prompts - Override AI Prompt Templates"
+description: "Creates local override files for AI prompt templates and variables, allowing for customization of sfdx-hardis AI interactions."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:doc:override-prompts
 
@@ -19,7 +23,7 @@ Key functionalities:
 **Important:** After running this command, you can modify any of the `.md` files in `config/prompt-templates/` to customize the AI's behavior.
 
 Available templates:
-- PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS\n- PROMPT_SOLVE_DEPLOYMENT_ERROR\n- PROMPT_DESCRIBE_FLOW\n- PROMPT_DESCRIBE_FLOW_DIFF\n- PROMPT_DESCRIBE_OBJECT\n- PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD\n- PROMPT_DESCRIBE_APEX\n- PROMPT_DESCRIBE_PAGE\n- PROMPT_DESCRIBE_PACKAGE\n- PROMPT_DESCRIBE_PROFILE\n- PROMPT_DESCRIBE_PERMISSION_SET\n- PROMPT_DESCRIBE_PERMISSION_SET_GROUP\n- PROMPT_DESCRIBE_ASSIGNMENT_RULES\n- PROMPT_DESCRIBE_APPROVAL_PROCESS\n- PROMPT_DESCRIBE_LWC\n- PROMPT_DESCRIBE_AUTORESPONSE_RULES\n- PROMPT_DESCRIBE_ESCALATION_RULES\n- PROMPT_DESCRIBE_WORKFLOW_RULE\n- PROMPT_DESCRIBE_ROLES\n- PROMPT_MONITORING_SUMMARY\n- PROMPT_MONITORING_PPTX_REPORT\n- PROMPT_RELEASE_SUMMARY
+- PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS\n- PROMPT_SOLVE_DEPLOYMENT_ERROR\n- PROMPT_DESCRIBE_FLOW\n- PROMPT_DESCRIBE_FLOW_DIFF\n- PROMPT_DESCRIBE_OBJECT\n- PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD\n- PROMPT_DESCRIBE_APEX\n- PROMPT_DESCRIBE_PAGE\n- PROMPT_DESCRIBE_PACKAGE\n- PROMPT_DESCRIBE_PROFILE\n- PROMPT_DESCRIBE_PERMISSION_SET\n- PROMPT_DESCRIBE_PERMISSION_SET_GROUP\n- PROMPT_DESCRIBE_ASSIGNMENT_RULES\n- PROMPT_DESCRIBE_APPROVAL_PROCESS\n- PROMPT_DESCRIBE_LWC\n- PROMPT_DESCRIBE_AURA_BUNDLE\n- PROMPT_DESCRIBE_VISUALFORCE_PAGE\n- PROMPT_DESCRIBE_VISUALFORCE_COMPONENT\n- PROMPT_DESCRIBE_AUTORESPONSE_RULES\n- PROMPT_DESCRIBE_ESCALATION_RULES\n- PROMPT_DESCRIBE_WORKFLOW_RULE\n- PROMPT_DESCRIBE_ROLES\n- PROMPT_MONITORING_SUMMARY\n- PROMPT_MONITORING_PPTX_REPORT\n- PROMPT_RELEASE_SUMMARY
 
 Available variables:
 - VARIABLE_OUTPUT_FORMAT_MARKDOWN_DOC\n- VARIABLE_FORMATTING_REQUIREMENTS\n- VARIABLE_ADDITIONAL_INSTRUCTIONS
@@ -50,13 +54,21 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The 28 AI prompt templates and variables copied to config/prompt-templates of the Helios project, ready to be edited](../../assets/images/commands/doc/override-prompts.webp)
+
+_The 28 AI prompt templates and variables copied to config/prompt-templates of the Helios project, ready to be edited_
+
+- **(1)** Edit these files to change what the AI writes in the documentation
+
 ## Parameters
 
 | Name         |  Type   | Description                                                   | Default | Required | Options |
 |:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent        | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir    | option  | undefined                                                     |         |          |         |
+| flags-dir    | option  | Import flag values from a directory.                          |         |          |         |
 | json         | boolean | Format output as json.                                        |         |          |         |
 | overwrite    | boolean | Overwrite existing template files if they already exist       |         |          |         |
 | skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |

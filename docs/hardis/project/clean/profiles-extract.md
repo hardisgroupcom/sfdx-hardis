@@ -1,3 +1,7 @@
+---
+title: "hardis:project:clean:profiles-extract"
+description: "Guides administrators through extracting Salesforce profiles, personas, and related metadata into structured CSV/XLSX deliverables."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:clean:profiles-extract
 
@@ -44,16 +48,42 @@ In agent mode:
 </details>
 
 
+## Screenshots
+
+![Pick the objects to document](../../../assets/images/commands/project/clean/profiles-extract-1.webp)
+
+_Pick the objects to document_
+
+- **(1)** A custom object of the Helios project
+
+![An Excel workbook to define the access of 3 personas to Installation__c and Panel_Batch__c, built from the org](../../../assets/images/commands/project/clean/profiles-extract.webp)
+
+_An Excel workbook to define the access of 3 personas to Installation__c and Panel_Batch__c, built from the org_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Profiles extract
+
+One workbook with a sheet per extract (objects, fields, field access, record types, applications, permissions, tabs, permission sets, personas), one row per element, to define the access of each persona.
+
+Files: `profiles-extract-*.csv`, `xls/profiles-extract-*.xlsx`
+
+![Profiles extract report in Excel](../../../assets/images/commands/project/clean/profiles-extract-report-profiles-extract.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                   | Default | Required | Options |
 |:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent             | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir         | option  | undefined                                                     |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                          |         |          |         |
 | json              | boolean | Format output as json.                                        |         |          |         |
 | skipauth          | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-org<br/>-o | option  | The target Salesforce org to fetch SObjects from.             |         |          |         |
+| target-org<br/>-o | option  | The target Salesforce org to fetch SObjects from.             |         |   true   |         |
 | websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
 
 ## Examples

@@ -276,7 +276,7 @@ flowchart TD
     PR_NO_DELTA -->|Yes| BLOCKED[Delta disabled]
     PR_NO_DELTA -->|No| ENV_DISABLE{DISABLE_DELTA_DEPLOYMENT=true?}
     ENV_DISABLE -->|Yes| BLOCKED
-    ENV_DISABLE -->|No| COMMIT_CHECK{Latest commit contains 'nodelta'?}
+    ENV_DISABLE -->|No| COMMIT_CHECK{Latest commit contains NO_DELTA / nodelta?}
     COMMIT_CHECK -->|Yes| BLOCKED
     COMMIT_CHECK -->|No| FORCE_ENABLE{ALWAYS_ENABLE_DELTA or<br/>enableDeltaDeploymentBetweenMajorBranches?}
     FORCE_ENABLE -->|Yes| ALLOWED_WARN[Delta enabled with warning]
@@ -407,14 +407,18 @@ flowchart TD
 
 **Action types:**
 
-| Type                | Description                                                                                                                                                      | Key parameters                                                                                                                     |
-|:--------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------|
-| `command` (default) | Runs any CLI command (sf, sfdx, shell...)                                                                                                                        | `command`: the command line to execute                                                                                             |
-| `data`              | Imports data using an [SFDMU](https://help.sfdmu.com/) project workspace                                                                                         | `parameters.sfdmuProject`: name of the [SFDMU data workspace](https://help.sfdmu.com/full-documentation/configuration/basic-usage) |
-| `apex`              | Executes an [anonymous Apex](https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_anonymous_block.htm) script file                      | `parameters.apexScript`: path to the `.apex` script file                                                                           |
-| `publish-community` | Publishes an [Experience Cloud](https://developer.salesforce.com/docs/atlas.en-us.communities_dev.meta/communities_dev/communities_dev_intro.htm) community/site | `parameters.communityName`: name of the community to publish                                                                       |
-| `schedule-batch`    | Schedules (or re-schedules) a [Schedulable](https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_scheduler.htm) Apex batch              | `parameters.className`: Apex class name, `parameters.cronExpression`: cron schedule, `parameters.jobName` (optional)               |
-| `manual`            | Records manual instructions in the deployment report (not executed automatically)                                                                                | `parameters.instructions`: text instructions for the operator                                                                      |
+| Type                 | Description                                                                                                                                                                                                      | Key parameters                                                                                                                                                                                |
+|:---------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `command` (default)  | Runs any CLI command (sf, sfdx, shell...)                                                                                                                                                                        | `command`: the command line to execute                                                                                                                                                        |
+| `data`               | Imports data using an [SFDMU](https://help.sfdmu.com/) project workspace                                                                                                                                         | `parameters.sfdmuProject`: name of the [SFDMU data workspace](https://help.sfdmu.com/full-documentation/configuration/basic-usage)                                                            |
+| `apex`               | Executes an [anonymous Apex](https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_anonymous_block.htm) script file                                                                      | `parameters.apexScript`: path to the `.apex` script file                                                                                                                                      |
+| `publish-community`  | Publishes an [Experience Cloud](https://developer.salesforce.com/docs/atlas.en-us.communities_dev.meta/communities_dev/communities_dev_intro.htm) community/site                                                 | `parameters.communityName`: name of the community to publish                                                                                                                                  |
+| `schedule-batch`     | Schedules (or re-schedules) a [Schedulable](https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_scheduler.htm) Apex batch                                                              | `parameters.className`: Apex class name, `parameters.cronExpression`: cron schedule, `parameters.jobName` (optional)                                                                          |
+| `run-batch`          | Runs a [Batchable](https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_batch_interface.htm) Apex batch once, and can wait for its result                                               | `parameters.className`: Apex class name, `parameters.runMode`: `wait` or `no-wait`, `parameters.batchSize`, `parameters.waitTimeoutMinutes`, `parameters.successEvenIfBatchErrors` (optional) |
+| `user-access-policy` | Activates [User Access Policies](https://help.salesforce.com/s/articleView?id=platform.perm_user_access_policies.htm&type=5) after the deployment, which leaves them in Design, and can run Apply To All on them | `parameters.policies`: developer names, `parameters.activate` (default `true`), `parameters.applyToAll` (default `false`)                                                                     |
+| `agent-activate`     | Activates the latest version of an [Agentforce agent](salesforce-ci-cd-agentforce-agents.md) in the target org after the deployment                                                                              | `parameters.agentName`: API name of the agent                                                                                                                                                 |
+| `browser`            | Applies a Setup setting the Metadata API cannot deploy, with [Browserforce](https://github.com/amtrack/sfdx-browserforce-plugin) in a headless browser. A deployment check only reports what would change        | `parameters.setting`: key of the Browserforce setting, `parameters.config`: its value (`"${VARIABLE}"` reads a CI/CD variable)                                                                |
+| `manual`             | Records manual instructions in the deployment report (not executed automatically)                                                                                                                                | `parameters.instructions`: text instructions for the operator                                                                                                                                 |
 
 All action types support the following common properties: `id`, `label`, `context`, `allowFailure`, `runOnlyOnceByOrg`, and `customUsername` (to run the action as a different user).
 
@@ -596,8 +600,10 @@ See also the [full environment variables reference](all-env-variables.md).
 | `NO_DELTA`                             | Force full deployment for this PR                                                                                                                                    |
 | `PURGE_FLOW_VERSIONS`                  | Purge inactive/obsolete Flow versions after deployment (runs [`sf hardis:org:purge:flow`](hardis/org/purge/flow.md))                                                 |
 | `DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT` | Run [destructiveChanges.xml](https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_deploy_deleting_files.htm) in a separate post-deploy step |
-| `nodelta` (in commit message)          | Disable delta for this specific deployment                                                                                                                           |
-| `nosmart` (in commit message)          | Disable Smart Deployment Tests for this deployment                                                                                                                   |
+| `nodelta` / `NO_DELTA` (in commit)     | Disable delta for this specific deployment                                                                                                                           |
+| `nosmart` / `NO_SMART` (in commit)     | Disable Smart Deployment Tests for this deployment                                                                                                                   |
+
+Keywords match in any case. `NO_DELTA` and `nosmart` also accept their words joined by `-`, a space or nothing: `NO_DELTA`, `no_delta`, `No-Delta`, `no delta` and `nodelta` are the same keyword. `PURGE_FLOW_VERSIONS` and `DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT` keep their underscores, so a sentence like "we do not purge flow versions" does not trigger them. A keyword inside a path or a branch name (`fix/no-delta-detection`) does not count, nor one inside an HTML comment or a fenced code block, in the Pull Request description or in the commit: a Pull Request template can list them without applying them. `FLOW_DELETE_INTERVIEWS` keeps its stricter rule: on its own line, in uppercase.
 
 ---
 
@@ -616,8 +622,8 @@ See also the [full environment variables reference](all-env-variables.md).
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) course does this, click by click, on an org of your own:
 
-- [Lab 3.3 - Read the deployment log, and what .forceignore hides from it](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-3-deploy-to-integration-and-read-the-log/)
+- [Lab 3.3 - Read the deployment log, and what .forceignore hides from it](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-3-deploy-to-integration-and-read-the-log/)
 
 <!-- training-links:end -->

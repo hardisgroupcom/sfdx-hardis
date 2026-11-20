@@ -1,3 +1,7 @@
+---
+title: "hardis:org:retrieve:sources:metadata - Retrieve sfdx sources from org"
+description: "Retrieves Salesforce metadata from an org into a local directory, primarily for backup and monitoring purposes."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:retrieve:sources:metadata
 
@@ -23,7 +27,7 @@ The command's technical implementation involves:
 
 - **Git Repository Check:** Ensures the current directory is a Git repository and initializes it if necessary.
 - **`MetadataUtils.retrieveMetadatas`:** This utility is the core of the retrieval process. It connects to the Salesforce org, retrieves metadata based on the provided `package.xml` and filtering options (e.g., `filterManagedItems`), and places the retrieved files in a specified folder.
-- **File System Operations:** Uses `fs-extra` to manage directories and copy retrieved files to the target folder.
+- **File System Operations:** Uses Node.js `fs` to manage directories and copy retrieved files to the target folder.
 - **Post-Retrieval Actions (for Monitoring Jobs):** If the command detects it's running within a monitoring CI/CD job (`isMonitoringJob()`):
   - It updates the `.gitlab-ci.yml` file if `AUTO_UPDATE_GITLAB_CI_YML` is set.
   - It converts the retrieved metadata into SFDX format using `sf project convert mdapi`.
@@ -45,21 +49,29 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![Every metadata of the Helios org retrieved in Metadata API format, managed package items left out](../../../../assets/images/commands/org/retrieve/sources/metadata.webp)
+
+_Every metadata of the Helios org retrieved in Metadata API format, managed package items left out_
+
+- **(1)** Items of managed packages are not retrieved
+
 ## Parameters
 
-| Name               |  Type   | Description                                                   | Default | Required | Options |
-|:-------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent              | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
-| debug<br/>-d       | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir          | option  | undefined                                                     |         |          |         |
-| folder<br/>-f      | option  | Folder                                                        |    .    |          |         |
-| includemanaged     | boolean | Include items from managed packages                           |         |          |         |
-| instanceurl<br/>-r | option  | URL of org instance                                           |         |          |         |
-| json               | boolean | Format output as json.                                        |         |          |         |
-| packagexml<br/>-p  | option  | Path to package.xml manifest file                             |         |          |         |
-| skipauth           | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-org<br/>-o  | option  | undefined                                                     |         |          |         |
-| websocket          | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+| Name               |  Type   | Description                                                                                                  | Default | Required | Options |
+|:-------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent              | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| debug<br/>-d       | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir          | option  | Import flag values from a directory.                                                                         |         |          |         |
+| folder<br/>-f      | option  | Folder                                                                                                       |    .    |          |         |
+| includemanaged     | boolean | Include items from managed packages                                                                          |         |          |         |
+| instanceurl<br/>-r | option  | URL of org instance                                                                                          |         |          |         |
+| json               | boolean | Format output as json.                                                                                       |         |          |         |
+| packagexml<br/>-p  | option  | Path to package.xml manifest file                                                                            |         |          |         |
+| skipauth           | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o  | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket          | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

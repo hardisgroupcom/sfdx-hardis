@@ -1,0 +1,5 @@
+command: hardis:scratch:create
+run: sf hardis:scratch:create
+mode: replay
+org: none
+caption: "The scratch org helios-HEL-42 is created from the Dev Hub and initialized with the Helios project steps"

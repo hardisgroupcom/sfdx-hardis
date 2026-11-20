@@ -1,3 +1,7 @@
+---
+title: "hardis:packagexml:remove-managed"
+description: "Removes all managed package items from a package.xml file, while preserving custom metadata created on top of managed objects."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:packagexml:remove-managed
 
@@ -45,13 +49,19 @@ In agent mode all interactive prompts are skipped and default values are used.
 The command is fully non-interactive regardless of this flag.
 
 
+## Screenshots
+
+![The items of managed packages, found by their namespace, removed from a package.xml](../../assets/images/commands/packagexml/remove-managed.webp)
+
+_The items of managed packages, found by their namespace, removed from a package.xml_
+
 ## Parameters
 
 | Name                |  Type   | Description                                                                                                                                                                                                                        |   Default   | Required |             Options             |
 |:--------------------|:-------:|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-----------:|:--------:|:-------------------------------:|
 | agent               | boolean | Run in non-interactive mode for agents and automation                                                                                                                                                                              |             |          |                                 |
 | debug<br/>-d        | boolean | debug                                                                                                                                                                                                                              |             |          |                                 |
-| flags-dir           | option  | undefined                                                                                                                                                                                                                          |             |          |                                 |
+| flags-dir           | option  | Import flag values from a directory.                                                                                                                                                                                               |             |          |                                 |
 | json                | boolean | Format output as json.                                                                                                                                                                                                             |             |          |                                 |
 | namespace-detection | option  | Auto-detection strategy used when --namespaces is not provided. "api-name" (default) infers namespaces from member API name patterns (NS__Name__suffix). "installed-packages" reads InstalledPackage entries from the package.xml. |  api-name   |          | api-name<br/>installed-packages |
 | namespaces<br/>-n   | option  | Comma-separated list of namespace prefixes to remove (e.g. SBQQ,cpq). When provided, --namespace-detection is ignored.                                                                                                             |             |          |                                 |

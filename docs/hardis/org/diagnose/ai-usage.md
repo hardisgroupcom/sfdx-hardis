@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:ai-usage - Check Agentforce and Data 360 credit usage"
+description: "Breaks down Agentforce and Data 360 credit consumption by agent and action."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:ai-usage
 
@@ -13,6 +17,7 @@ Agentforce actions and Data 360 operations are billed in Flex Credits. This comm
 Key functionalities:
 
 - **Consumption Breakdown:** Aggregates credits consumed and event counts per agent, action, usage type and metered flag.
+- **Billed vs Covered Usage:** Only metered usage is charged. Standard generative AI features covered by an add-on run unmetered and are usually the bulk of consumption, so the report leads with billed credits and shows the total alongside. If the org's usage model exposes no metered flag, every credit is counted as billed and the report says so, rather than reporting zero billed credits.
 - **Data 360 Credits:** Reports Data 360 credit consumption alongside Agentforce usage.
 - **Date Windowing:** Restricts the analysis to a recent period, 30 days by default.
 - **CSV Report Generation:** Produces a report of the aggregated consumption rows.
@@ -45,19 +50,37 @@ sf hardis:org:diagnose:ai-usage --agent --target-org myorg@example.com
 
 In agent mode, the command runs fully automatically with no interactive prompts. The analysis window defaults to the last 30 days unless `--days` is provided.
 
+## Screenshots
+
+![Credits consumed by the Agentforce agents of the Helios production org over 30 days: 9420 billed out of 15400, with the report buttons](../../../assets/images/commands/org/diagnose/ai-usage.webp)
+
+_Credits consumed by the Agentforce agents of the Helios production org over 30 days: 9420 billed out of 15400, with the report buttons_
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Credit usage
+
+One row per agent, action and usage type with the credits consumed and whether they are metered (billed), or the raw Data 360 credit rows when no agent usage exists.
+
+Files: `ai-usage-*.csv`, `xls/ai-usage-*.xlsx`
+
+![Credit usage report in Excel](../../../assets/images/commands/org/diagnose/ai-usage-report-ai-usage.webp)
+
 ## Parameters
 
-| Name              |  Type   | Description                                                                                   | Default | Required | Options |
-|:------------------|:-------:|:----------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation. Uses default values and skips prompts. |         |          |         |
-| days              | option  | Number of days to analyze                                                                     |   30    |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                               |         |          |         |
-| flags-dir         | option  | undefined                                                                                     |         |          |         |
-| json              | boolean | Format output as json.                                                                        |         |          |         |
-| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                             |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required                                 |         |          |         |
-| target-org<br/>-o | option  | undefined                                                                                     |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                     |         |          |         |
+| Name              |  Type   | Description                                                                                                  | Default | Required | Options |
+|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation. Uses default values and skips prompts.                |         |          |         |
+| days              | option  | Number of days to analyze                                                                                    |   30    |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                                         |         |          |         |
+| json              | boolean | Format output as json.                                                                                       |         |          |         |
+| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                                            |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

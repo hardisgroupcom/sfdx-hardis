@@ -1,8 +1,12 @@
+---
+title: "hardis:project:promotion:list-candidates - List the User Stories waiting for promotion (Beta)"
+description: "This feature is in Beta. Promotion branches are switched off by default; their behavior may still change from feedback. Please report any issue or feedback on the sfdx-hardis GitHub repository."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
-
 # hardis:project:promotion:list-candidates
 
 ## Description
+
 
 ## Command Behavior (Beta)
 
@@ -15,8 +19,10 @@ This is the read-only half of `sf hardis:project:promotion:create`: same configu
 The command:
 
 - checks that `enablePromotionBranches: true` and `allowedPromotionSteps` are set, and keeps to the allowed steps: only those source and target branches are offered, and naming another one fails;
+- requires the [git provider connection](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integrations-home/) (GitHub, GitLab, Bitbucket or Azure DevOps) and refuses to run without it, like `hardis:project:promotion:create`: the candidates are read from the provider, so the numbers listed are the ones `create` accepts;
 - lists the Pull Requests merged into the source branch since its merge base with the target branch, leaving out the merges between major branches and the promotion branches themselves (they carry other people's work, they are not User Stories);
 - marks the ones another promotion branch already carries to the same target branch. They are left out of the candidates unless `--include-already-promoted` is passed, and always reported in the `alreadyPromoted` result;
+- with `detectManualCherryPicks: true`, also marks the ones that reached the target branch through a cherry-pick made by hand (`alreadyPromotedBy.manualCherryPick`). A story only part of whose commits were found stays a candidate (`partiallyCherryPicked`), and so does a story only matched by its commit title (`probablyCherryPicked`);
 - names the promotion Pull Request already open between the two branches, if any. It is left untouched: `hardis:project:promotion:create` is what closes it, once its replacement exists.
 
 With `--json`, the result holds `candidates` (Pull Request numbers, title, author, source branch, commit, date), `alreadyPromoted`, and `openPromotions`.
@@ -24,10 +30,12 @@ With `--json`, the result holds `candidates` (Pull Request numbers, title, autho
 <details markdown="1">
 <summary>Technical explanations</summary>
 
-- Candidates are the first-parent commits of `origin/<source>` since its merge base with `origin/<target>`, grouped with their Pull Requests like `hardis:work:backpromote` does (Pull Request numbers read from the merge commit messages and completed by the git provider API when a token is available).
+- Candidates are the first-parent commits of `origin/<source>` since its merge base with `origin/<target>`, grouped with their Pull Requests like `hardis:work:backpromote` does (Pull Request numbers read from the merge commit messages and completed by the git provider API, whose connection this command requires).
+- A first-parent commit that only moves other merges (a major-to-major sync like `integration -> uat`, a promotion branch merged into its target) is opened up into the first-parent commits it brought in, so each User Story is a candidate of its own instead of the whole sync window being a single row.
 - A promotion merged into the source branch is expanded into the User Stories its `promotionPullRequests` block declares, recursively, so a story promoted twice in a row keeps its number.
 - A candidate can be a merge commit carrying several Pull Requests: they are listed together, because cherry-picking it carries all of them.
-- Already-promoted detection reads the promotion Pull Requests of the target branch, bounded by the date of the oldest candidate. Without a git provider token, the check is skipped and said out loud.
+- Already-promoted detection reads the promotion Pull Requests of the target branch, bounded by the date of the oldest candidate.
+- Manual cherry-pick detection (`detectManualCherryPicks`, off by default) reads the `git cherry-pick -x` trailers of the target branch (since the merge base, and before it as far as the oldest commit the candidates bring, so a back-merge does not hide a pick), and the commits each Pull Request merged into the target branch since the oldest candidate held (by merge date). A squash merge removes them from the history, not from the provider, which is asked for them; a Pull Request merged with a merge commit is read from the local history. Their trailers and their own SHAs name the candidates. A promotion that declares a story always wins over this detection.
 </details>
 
 ### Agent Mode
@@ -42,6 +50,16 @@ In agent mode:
 
 - `--source-branch` is required; `--target-branch` defaults to the first merge target of the source branch allowed by `allowedPromotionSteps`.
 - Nothing is prompted and nothing is written to git: the command only reads.
+- The git provider token must be available (ex: `GITHUB_TOKEN`), from the environment or from a `.env` file at the repository root: agent mode never prompts for the connection, it stops without it.
+
+
+## Screenshots
+
+![The four Pull Requests merged in uat and waiting for promotion to preprod, one already carried by another promotion](../../../assets/images/commands/project/promotion/list-candidates.webp)
+
+_The four Pull Requests merged in uat and waiting for promotion to preprod, one already carried by another promotion_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
 
 ## Parameters
 
@@ -49,7 +67,7 @@ In agent mode:
 |:-------------------------|:-------:|:------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent                    | boolean | Run in non-interactive mode for agents and automation                                                                                     |         |          |         |
 | debug<br/>-d             | boolean | Activate debug mode (more logs)                                                                                                           |         |          |         |
-| flags-dir                | option  | undefined                                                                                                                                 |         |          |         |
+| flags-dir                | option  | Import flag values from a directory.                                                                                                      |         |          |         |
 | include-already-promoted | boolean | Also list as candidates the Pull Requests another promotion branch already carries to the same target branch (reported apart by default). |         |          |         |
 | json                     | boolean | Format output as json.                                                                                                                    |         |          |         |
 | skipauth                 | boolean | Skip authentication check when a default username is required                                                                             |         |          |         |
@@ -78,3 +96,5 @@ $ sf hardis:project:promotion:list-candidates --agent --source-branch uat --json
 ```shell
 $ sf hardis:project:promotion:list-candidates --agent --source-branch uat --include-already-promoted
 ```
+
+

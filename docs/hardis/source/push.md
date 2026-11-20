@@ -1,3 +1,7 @@
+---
+title: "hardis:source:push"
+description: "sfdx-hardis wrapper for sfdx force:source:push that displays tips to solve deployment errors."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:source:push
 
@@ -21,20 +25,28 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The deprecated wrapper of sfdx force:source:push, with the notice to move to sf project deploy start](../../assets/images/commands/source/push.webp)
+
+_The deprecated wrapper of sfdx force:source:push, with the notice to move to sf project deploy start_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
 ## Parameters
 
-| Name                  |  Type   | Description                                           | Default | Required | Options |
-|:----------------------|:-------:|:------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent                 | boolean | Run in non-interactive mode for agents and automation |         |          |         |
-| debug                 | boolean | debug                                                 |         |          |         |
-| flags-dir             | option  | undefined                                             |         |          |         |
-| forceoverwrite<br/>-f | boolean | forceoverwrite                                        |         |          |         |
-| ignorewarnings<br/>-g | boolean | ignorewarnings                                        |         |          |         |
-| json                  | boolean | Format output as json.                                |         |          |         |
-| quiet                 | boolean | quiet                                                 |         |          |         |
-| target-org<br/>-o     | option  | undefined                                             |         |          |         |
-| wait<br/>-w           | option  | wait                                                  |   60    |          |         |
-| websocket             | option  | websocket                                             |         |          |         |
+| Name                  |  Type   | Description                                                                                                  | Default | Required | Options |
+|:----------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                 | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| debug                 | boolean | debug                                                                                                        |         |          |         |
+| flags-dir             | option  | Import flag values from a directory.                                                                         |         |          |         |
+| forceoverwrite<br/>-f | boolean | forceoverwrite                                                                                               |         |          |         |
+| ignorewarnings<br/>-g | boolean | ignorewarnings                                                                                               |         |          |         |
+| json                  | boolean | Format output as json.                                                                                       |         |          |         |
+| quiet                 | boolean | quiet                                                                                                        |         |          |         |
+| target-org<br/>-o     | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| wait<br/>-w           | option  | wait                                                                                                         |   60    |          |         |
+| websocket             | option  | websocket                                                                                                    |         |          |         |
 
 ## Examples
 

@@ -1,0 +1,162 @@
+{
+  "mode": "replace",
+  "title": "Inactive users found (last 180 days)",
+  "columns": [
+    "Id",
+    "LastLoginDate",
+    "LastName",
+    "FirstName",
+    "Profile.UserLicense.Name",
+    "Profile.Name",
+    "Username",
+    "Profile.UserLicense.LicenseDefinitionKey",
+    "IsActive",
+    "CreatedDate"
+  ],
+  "rows": [
+    {
+      "Id": "005Hb0000007cDxIAI",
+      "LastLoginDate": "2026-05-12T07:41:22.000Z",
+      "LastName": "Garnier",
+      "FirstName": "Julie",
+      "Profile.UserLicense.Name": "Salesforce Platform",
+      "Profile.Name": "Helios Crew",
+      "Username": "julie.garnier@helios-solar.demo",
+      "Profile.UserLicense.LicenseDefinitionKey": "AUL",
+      "IsActive": "true",
+      "CreatedDate": "2024-03-04T09:12:00.000Z"
+    },
+    {
+      "Id": "005Hb0000007eHgIAI",
+      "LastLoginDate": "2026-04-28T16:05:47.000Z",
+      "LastName": "Rinaldi",
+      "FirstName": "Marco",
+      "Profile.UserLicense.Name": "Salesforce",
+      "Profile.Name": "Helios Sales",
+      "Username": "marco.rinaldi@helios-solar.demo",
+      "Profile.UserLicense.LicenseDefinitionKey": "SFDC",
+      "IsActive": "true",
+      "CreatedDate": "2023-11-20T10:30:00.000Z"
+    },
+    {
+      "Id": "005Hb0000007gLPIAY",
+      "LastLoginDate": "2026-03-19T08:22:13.000Z",
+      "LastName": "Kowalczyk",
+      "FirstName": "Anna",
+      "Profile.UserLicense.Name": "Salesforce Platform",
+      "Profile.Name": "Helios Crew",
+      "Username": "anna.kowalczyk@helios-solar.demo",
+      "Profile.UserLicense.LicenseDefinitionKey": "AUL",
+      "IsActive": "true",
+      "CreatedDate": "2024-06-17T08:00:00.000Z"
+    },
+    {
+      "Id": "005Hb0000007iP8IAI",
+      "LastLoginDate": "2026-02-02T12:48:05.000Z",
+      "LastName": "Lambert",
+      "FirstName": "Theo",
+      "Profile.UserLicense.Name": "Salesforce",
+      "Profile.Name": "Standard User",
+      "Username": "theo.lambert@helios-solar.demo",
+      "Profile.UserLicense.LicenseDefinitionKey": "SFDC",
+      "IsActive": "true",
+      "CreatedDate": "2023-05-09T14:20:00.000Z"
+    },
+    {
+      "Id": "005Hb0000007kSrIAI",
+      "LastLoginDate": "2025-12-11T09:31:56.000Z",
+      "LastName": "Jansen",
+      "FirstName": "Nora",
+      "Profile.UserLicense.Name": "Salesforce Platform",
+      "Profile.Name": "Helios Crew",
+      "Username": "nora.jansen@helios-solar.demo",
+      "Profile.UserLicense.LicenseDefinitionKey": "AUL",
+      "IsActive": "true",
+      "CreatedDate": "2024-09-02T07:45:00.000Z"
+    },
+    {
+      "Id": "005Hb0000007mWaIAI",
+      "LastLoginDate": "2025-10-07T15:17:40.000Z",
+      "LastName": "Roussel",
+      "FirstName": "Felix",
+      "Profile.UserLicense.Name": "Salesforce",
+      "Profile.Name": "Helios Sales",
+      "Username": "felix.roussel@helios-solar.demo",
+      "Profile.UserLicense.LicenseDefinitionKey": "SFDC",
+      "IsActive": "true",
+      "CreatedDate": "2022-10-03T09:00:00.000Z"
+    },
+    {
+      "Id": "005Hb0000007oaJIAQ",
+      "LastLoginDate": "2025-08-25T06:58:12.000Z",
+      "LastName": "Castillo",
+      "FirstName": "Maya",
+      "Profile.UserLicense.Name": "Salesforce Platform",
+      "Profile.Name": "Standard Platform User",
+      "Username": "maya.castillo@helios-solar.demo",
+      "Profile.UserLicense.LicenseDefinitionKey": "AUL",
+      "IsActive": "true",
+      "CreatedDate": "2024-02-12T11:10:00.000Z"
+    },
+    {
+      "Id": "005Hb0000007qe2IAA",
+      "LastLoginDate": "2025-06-30T10:04:33.000Z",
+      "LastName": "Sorensen",
+      "FirstName": "Emil",
+      "Profile.UserLicense.Name": "Salesforce Platform",
+      "Profile.Name": "Helios Crew",
+      "Username": "emil.sorensen@helios-solar.demo",
+      "Profile.UserLicense.LicenseDefinitionKey": "AUL",
+      "IsActive": "true",
+      "CreatedDate": "2023-08-28T08:30:00.000Z"
+    },
+    {
+      "Id": "005Hb0000007shlIAA",
+      "LastLoginDate": "2025-03-14T13:39:08.000Z",
+      "LastName": "Fabre",
+      "FirstName": "Zoe",
+      "Profile.UserLicense.Name": "Salesforce",
+      "Profile.Name": "Standard User",
+      "Username": "zoe.fabre@helios-solar.demo",
+      "Profile.UserLicense.LicenseDefinitionKey": "SFDC",
+      "IsActive": "true",
+      "CreatedDate": "2022-04-19T15:00:00.000Z"
+    },
+    {
+      "Id": "005Hb0000007ulUIAQ",
+      "LastLoginDate": "2024-11-21T17:26:51.000Z",
+      "LastName": "Nowicki",
+      "FirstName": "Adam",
+      "Profile.UserLicense.Name": "Salesforce Platform",
+      "Profile.Name": "Helios Crew",
+      "Username": "adam.nowicki@helios-solar.demo",
+      "Profile.UserLicense.LicenseDefinitionKey": "AUL",
+      "IsActive": "true",
+      "CreatedDate": "2023-03-06T09:40:00.000Z"
+    },
+    {
+      "Id": "005Hb0000007wpDIAQ",
+      "LastLoginDate": "",
+      "LastName": "Chevalier",
+      "FirstName": "Lea",
+      "Profile.UserLicense.Name": "Salesforce",
+      "Profile.Name": "Helios Sales",
+      "Username": "lea.chevalier@helios-solar.demo",
+      "Profile.UserLicense.LicenseDefinitionKey": "SFDC",
+      "IsActive": "true",
+      "CreatedDate": "2025-02-17T10:00:00.000Z"
+    },
+    {
+      "Id": "005Hb0000007yswIAA",
+      "LastLoginDate": "",
+      "LastName": "Costa",
+      "FirstName": "Bruno",
+      "Profile.UserLicense.Name": "Salesforce Platform",
+      "Profile.Name": "Standard Platform User",
+      "Username": "bruno.costa@helios-solar.demo",
+      "Profile.UserLicense.LicenseDefinitionKey": "AUL",
+      "IsActive": "true",
+      "CreatedDate": "2025-04-07T08:15:00.000Z"
+    }
+  ]
+}

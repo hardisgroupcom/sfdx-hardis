@@ -19,6 +19,7 @@ import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
 import { CONSTANTS } from '../../../config/index.js';
 import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
 import { t } from '../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -103,6 +104,15 @@ export async function listMetadataStatusFiles(ignorePatterns: string[]): Promise
 
 export default class LintMetadataStatus extends SfCommand<any> {
   public static title = 'check inactive metadatas';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'lint-metadatastatus',
+      title: 'Inactive metadata',
+      description: 'One row per inactive or draft metadata element (flow, validation rule, record type, workflow rule...), to decide whether to activate it or delete it.',
+    },
+  ];
+
   public static description = `
 ## Command Behavior
 

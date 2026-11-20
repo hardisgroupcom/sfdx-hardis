@@ -113,6 +113,12 @@ The default is **work_notes**, the internal journal of the record: on an inciden
 
 Set it to `comments` to write in the customer-visible journal instead, or to any other journal field of your tables.
 
+### Deployment comments
+
+- .sfdx-hardis.yml property: **serviceNowPostDeploymentComments** or ENV variable **SERVICENOW_POST_DEPLOYMENT_COMMENTS** (set to `false` to disable)
+
+Enabled by default: a work note is written on each record when it reaches a major org. Set it to `false` when the CI user must stay read-only on the tickets. They are still looked up and listed, with their title and status, in the Pull Request comments and the deployment notifications.
+
 ### Deployment tag
 
 - .sfdx-hardis.yml property: **serviceNowAddDeploymentTag** or ENV variable **SERVICENOW_ADD_DEPLOYMENT_TAG** (set to `true`)
@@ -156,5 +162,6 @@ This integration uses the following variables, which must be available from the 
 - SERVICENOW_TABLE_PREFIXES
 - SERVICENOW_COMMENT_FIELD
 - SERVICENOW_ADD_DEPLOYMENT_TAG
+- SERVICENOW_POST_DEPLOYMENT_COMMENTS
 
 Records are read and written through the ServiceNow **Table API** (`/api/now/table/...`), with basic authentication, using the shared proxy-aware HTTP client: `HTTP_PROXY` / `HTTPS_PROXY` / `NO_PROXY` are honored.

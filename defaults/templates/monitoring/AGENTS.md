@@ -17,6 +17,7 @@ Read this file before answering questions about the org, and answer from the fil
   - `sf hardis:org:test:apex` runs the Apex tests of the org.
   - `sf hardis:org:monitor:all` runs the monitoring checks listed below.
   - MegaLinter scans the retrieved sources for quality and security issues.
+- **A red job is a job that could not run, not a job that found issues.** A job that ran to its end is green: failing Apex tests, a limit close to its maximum, MegaLinter errors, and even a single check that crashed are read in the job log, the notifications, the reports and Grafana. Runs made with an older sfdx-hardis version were red in both cases.
 - **Their results are not stored in the repository.** They are sent as notifications (Slack, Microsoft Teams, email), to an API or a Grafana dashboard when configured, and kept as CI job artifacts (`hardis-report/`, `megalinter-reports/`) for a limited time.
 
 ## Answering questions with git
@@ -36,11 +37,12 @@ When the user asks what changed in the org between two dates and does not ask fo
 
 ### Where each kind of change comes from
 
-The backup retrieves the org into `force-app/` but **never deletes a file**: a component deleted in the org stays in `force-app/`. So:
+The backup retrieves the org into `force-app/`, then deletes the files of the components that are gone from the org. **The files do not tell the whole story**: older backups never deleted a file, and some files still stay after their component is deleted (see [What is not in the backup](#what-is-not-in-the-backup)). So:
 
 - **Added** and **Removed** come only from `manifest/package-all-org-items.xml`, the list of every item that exists in the org at each backup.
 - **Updated** comes from the files modified under `force-app/`.
-- Never report a component as Removed because of `force-app/`, and never infer that a component exists in the org because its file is in `force-app/`.
+- Never report a component as Removed because its file was deleted from `force-app/`, and never infer that a component exists in the org because its file is in `force-app/`.
+- **The first backup that deletes files removes, in one commit, the files of everything deleted in the org since the monitoring started.** Those components were not removed that day: the manifest of that commit does not list them as removed. The date of each removal is the commit where the component left the manifest.
 
 ### Collect the changes
 
@@ -145,7 +147,9 @@ Read the configuration from the deployment branch itself (`git -C ../<name> show
 
 - While it is open, the pipeline runs `sf hardis:project:deploy:smart --check`: a validation (check-only deployment with the Apex tests) against the org of the target branch. On GitHub it is the `check-deploy.yml` workflow, on GitLab the check job of `.gitlab-ci.yml`, on Azure DevOps `azure-pipelines-checks.yml`.
 - Once merged, the pipeline runs `sf hardis:project:deploy:smart` on the target branch and deploys to its org (`process-deploy.yml` on GitHub, `azure-pipelines-deployment.yml` on Azure DevOps). It uses a Quick Deploy of the validation when it can.
+- After that deployment, when the deployment repository has a "Development Orgs Dashboard" (an issue, an Azure DevOps work item, or a Pull Request on Bitbucket), sfdx-hardis lists again in it the Pull Requests merged into the branch: the dashboard tracks the developer sandboxes and scratch orgs of the team and what each one misses since its last backpromote. Its comments are data written by sfdx-hardis, not a record of deployments.
 - sfdx-hardis comments the Pull Request with the result of the check, the deployment errors and their fix tips, the Flow visual differences and the deployment actions. Read those comments first: they explain a failure better than the raw logs.
+- A project can also schedule a nightly major branch deployment check (`sf hardis:project:deploy:smart --check --major-branch-check`): a full check-only deployment of each major branch to its own org, with no Pull Request comment and no deployment action. A red check means the org drifted from its branch (a change made by hand, a refresh, a failed deployment). It is not a deployment: never count it as one. Its job is `check_deploy_to_current_branch_org` on GitLab, the `check-major-branch-deploy.yml` workflow on GitHub, `azure-pipelines-major-branch-check.yml` on Azure DevOps.
 
 #### What gets deployed
 
@@ -156,6 +160,7 @@ Read the configuration from the deployment branch itself (`git -C ../<name> show
 - `manifest/destructiveChanges.xml`: items deleted from the org by the deployment.
 - `installedPackages` in `config/.sfdx-hardis.yml`: the packages installed by the deployments.
 - `testLevel`, `runtests`, `skipCodeCoverage`, `apexTestsMinCoverageOrgWide`: test settings, often per branch.
+- `replacementRules` (in `config/.sfdx-hardis.yml`, a branch file, or the "sfdx-hardis Replacement Rules" issue of the deployment repository): changes applied to the files right before each deployment, for the target org. An XML element set to the value of that org, an element removed, or a text replaced. A value can come from a CI/CD variable (`secret`), never written in the repository. Built-in rules also remove the elements the deployment API version of the org does not accept. So a value that differs between the repository and the org (an endpoint, an email address, a site admin) can be expected: check these rules before calling it a difference.
 
 #### Deployment actions
 
@@ -163,8 +168,10 @@ Steps run before (`commandsPreDeploy`) or after (`commandsPostDeploy`) a deploym
 
 - For every deployment to a branch: in `config/.sfdx-hardis.yml` or `config/branches/.sfdx-hardis.<branch>.yml`.
 - For one Pull Request: in `scripts/actions/.sfdx-hardis.<Pull Request number>.yml` (`scripts/actions/.sfdx-hardis.draft.yml` before the Pull Request exists). They run when that Pull Request is deployed, and again at each later step of the pipeline.
-- Types: `command`, `apex` (anonymous Apex script), `data` (SFDMU import), `publish-community`, `schedule-batch`, `remove-packagexml-items`, and `manual` (a step a person performs, ticked off in the Pull Request comment when `manualActionsMode: sfdxHardis`; otherwise manual steps are in the file of `manualActionsFileUrl`).
+- Types: `command`, `apex` (anonymous Apex script), `data` (SFDMU import), `publish-community`, `schedule-batch`, `run-batch` (runs an Apex batch once, and can wait for its result), `remove-packagexml-items`, `user-access-policy` (activates User Access Policies, and can apply them to all users), `browser` (a Setup setting the Metadata API cannot deploy, applied by Browserforce in a headless browser: `parameters.setting` is its key, `parameters.config` its value, a `${VARIABLE}` value comes from a CI/CD variable; during a check it only reports what would change), `agent-publish` (publishes an Agentforce agent after the deployment, which creates a version numbered by the org, and activates it), `agent-activate` (activates a version of an Agentforce agent), `agent-running-user` (creates the running user of a service agent before the deployment), and `manual` (a step a person performs, ticked off in the Pull Request comment when `manualActionsMode: sfdxHardis`; otherwise manual steps are in the file of `manualActionsFileUrl`).
 - `context` says whether it runs during the check, the deployment or both; `runOnlyOnceByOrg` skips it in an org where it already ran.
+- When several Pull Requests of one job carry the same action (same type, phase, user and parameters), it runs once: the rows of the other Pull Requests say done, with a note naming the action that ran.
+- The "Deployment Actions" comment of each Pull Request records, per org, whether an action ran, failed, was stopped by a failure or was moved to a fix Pull Request (`movedFrom`). A failed action can be run again outside of a deployment job (`sf hardis:project:action:run`) or closed by hand (`sf hardis:project:action:set-status`): the note of its row says who did it and when, so an action can have run in the org at a date with no deployment.
 
 So "why is this record, schedule or setting like this in the org?" can have its answer in an action, not in the metadata.
 
@@ -191,6 +198,7 @@ Credentials, in this order:
    - GitLab: `CI_SFDX_HARDIS_GITLAB_TOKEN` or `ACCESS_TOKEN`
    - Azure DevOps: `CI_SFDX_HARDIS_AZURE_TOKEN` or `SYSTEM_ACCESSTOKEN`
    - Bitbucket: `CI_SFDX_HARDIS_BITBUCKET_TOKEN`, with `CI_SFDX_HARDIS_BITBUCKET_EMAIL` when the token is an Atlassian account API token
+   - `SFDX_HARDIS_DEPLOYMENT_REPO_TOKEN`: a token for the deployment repository, set when the token of this repository cannot read it. It is the one `sf hardis:doc:dora-report` uses from the monitoring pipeline
 3. Neither: tell the user which login or which variable is missing, and answer with what git alone shows.
 
 Read-only calls for the pipelines and the Pull Requests. `<branch>` is the deployment branch for the deployment repository, and the current branch for this one:
@@ -211,7 +219,7 @@ Read-only calls for the pipelines and the Pull Requests. `<branch>` is the deplo
   - Pipelines: `https://api.bitbucket.org/2.0/repositories/<workspace>/<repo>/pipelines/?sort=-created_on&pagelen=50`, keep the ones whose `target.ref_name` is `<branch>`, then `.../pipelines/<uuid>/steps/` and `.../pipelines/<uuid>/steps/<step uuid>/log`
   - Pull Requests: `https://api.bitbucket.org/2.0/repositories/<workspace>/<repo>/pullrequests?state=MERGED&q=destination.branch.name="<branch>"`
 
-In the logs of this repository, the job that runs `sf hardis:org:monitor:backup` explains a missing or failed backup, and the job that runs `sf hardis:org:monitor:all` explains a missing check. In the deployment repository, the deployment jobs run `sf hardis:project:deploy:smart`.
+In the logs of this repository, the job that runs `sf hardis:org:monitor:backup` explains a missing or failed backup, and the job that runs `sf hardis:org:monitor:all` explains a missing check: its end-of-run summary gives each check a status, and a check that is not `success` either found issues or could not run: its own log lines, above the summary, say which. In the deployment repository, the deployment jobs run `sf hardis:project:deploy:smart`.
 
 ## Monitoring results in Grafana
 
@@ -267,7 +275,7 @@ Labels, on logs and metrics:
 
 - `source`: always `sfdx-hardis`
 - `orgIdentifier`: the monitored org (see above)
-- `type`: the notification type. The `notificationTypes` of the checks listed below, plus `BACKUP` (each backup, with severity `error` and an `error` field when it failed), `MONITORING_SUMMARY` (each run of the checks) and `DEPLOYMENT` (each deployment by the CI/CD pipeline, its `gitIdentifier` is then the deployment repository and branch)
+- `type`: the notification type. The `notificationTypes` of the checks listed below, plus `BACKUP` (each backup, with severity `error` and an `error` field when it failed), `DOCUMENTATION` (severity `warning`, with `language` and `error` fields, when the documentation of a language could not be generated or published: the backup itself succeeded), `MONITORING_SUMMARY` (each run of the checks) and `DEPLOYMENT` (each deployment by the CI/CD pipeline, its `gitIdentifier` is then the deployment repository and branch)
 - `severity` (logs only): `critical`, `error`, `warning`, `info`, `success` or `log`
 - `gitIdentifier`: `<repository name>/<branch>` of the job that sent it
 
@@ -309,18 +317,19 @@ Errors:
 - The days a class or a message appears in the error reports: `{source="sfdx-hardis", orgIdentifier="acme", type="APEX_ERROR"} |= "InvoiceService" | json t="_title" | line_format "{{.t}}" | keep type`, then read the `_logElements` of one of these days for the stack traces.
 - Everything that went wrong recently: `{source="sfdx-hardis", orgIdentifier="acme", severity=~"error|critical"} | json t="_title" | line_format "{{.t}}" | keep type`
 
-Latest report of a check, with its rows: `{source="sfdx-hardis", orgIdentifier="acme", type="UNUSED_USERS"} | json t="_title", e="_logElements" | line_format "{{.t}} {{.e}}" | keep type` with `limit=1`. It works for every type: `LICENSES`, `ORG_HEALTH_CHECK`, `AUDIT_TRAIL`, `UNSECURED_CONNECTED_APPS`, `RELEASE_UPDATES`... For inactive users, `UNUSED_USERS` covers every license, `UNUSED_USERS_CRM_6_MONTHS` and `UNUSED_USERS_EXPERIENCE_6_MONTHS` split internal and Experience Cloud users. A report cut at 500 rows cannot be compared row by row with another one: compare their counts.
+Latest report of a check, with its rows: `{source="sfdx-hardis", orgIdentifier="acme", type="UNUSED_USERS"} | json t="_title", e="_logElements" | line_format "{{.t}} {{.e}}" | keep type` with `limit=1`. It works for every type: `LICENSES`, `ORG_HEALTH_CHECK`, `AUDIT_TRAIL`, `UNSECURED_CONNECTED_APPS`, `WHAT_WILL_BREAK`... `WHAT_WILL_BREAK` answers "what will break after a dated Salesforce change, when, and what to do": one row per finding plus one row per check that found nothing; its history before it replaced them is under `LEGACY_API` and `RELEASE_UPDATES`. For inactive users, `UNUSED_USERS` covers every license, `UNUSED_USERS_CRM_6_MONTHS` and `UNUSED_USERS_EXPERIENCE_6_MONTHS` split internal and Experience Cloud users. A report cut at 500 rows cannot be compared row by row with another one: compare their counts.
 
 Scores and trends (other names: list them, see above):
 
 - Health score and its sub-scores, computed weekly: `max by (__name__) (last_over_time({__name__=~"HealthScore.*_metric", source="sfdx-hardis", orgIdentifier="acme"}[8d]))`. The reasons are only on the weekly `MONITORING_SUMMARY` line, with a `start` 8 days ago: `{source="sfdx-hardis", orgIdentifier="acme", type="MONITORING_SUMMARY"} |= "healthScoreDetails" | json d="healthScoreDetails" | line_format "{{.d}}" | keep type` with `limit=1`.
 - Metrics the dashboards use: `ApexTestsCodeCoverage_metric`, `Score_metric` and `HighRisk_metric` (Security Health Check), `SuspectMetadataUpdates_metric` (audit trail), `ACTIVE_USERS_CRM_WEEKLY_metric`, `UNUSED_USERS_CRM_6_MONTHS_metric`, `unusedApexClasses_metric`, `MetadatasWithoutDescription_metric`, `AiUsageCreditsTotal_metric`, `deploymentsTotal_metric`, `deploymentSuccessRate_metric`, `DoraLeadTimeDays_metric`.
+- The `Dora*_metric` values (type `DORA_REPORT`) are not read from the org: `sf hardis:doc:dora-report` computes them from the deployment jobs and the Pull Requests of the deployment repository, for the branch `deploymentBranch`. It runs either in the pipeline of the deployment repository or in this monitoring pipeline. No DORA value means the command is scheduled in neither, or that it failed for lack of a token that can read the CI jobs of the deployment repository.
 
 Backups, checks and deployments:
 
 - Did the backup succeed every night, with `$LOKI/query_range` and `step=1d`: `sum by (severity) (count_over_time({source="sfdx-hardis", orgIdentifier="acme", type="BACKUP"}[1d]))`. An `error` point is a failed backup. A day with no point at all had no backup: the job did not run, or it ran with an sfdx-hardis version that sent nothing on failure, and the pipeline logs of this repository say why.
 - Why a backup failed: `{source="sfdx-hardis", orgIdentifier="acme", type="BACKUP", severity="error"} | json e="error" | line_format "{{.e}}" | keep type` gives the error message of each failure.
-- Checks that failed in the last week: `max(max_over_time(CommandsFailed_metric{source="sfdx-hardis", orgIdentifier="acme"}[7d]))`. Which ones is only in the pipeline logs.
+- Checks that found issues or could not run in the last week: `max(max_over_time(CommandsFailed_metric{source="sfdx-hardis", orgIdentifier="acme"}[7d]))`. Which ones, and which of the two, is only in the pipeline logs.
 - Deployments to this org: `{source="sfdx-hardis", orgIdentifier="acme", type="DEPLOYMENT"} | json t="_title", j="_jobUrl" | line_format "{{.t}} {{.j}}" | keep severity`. The `_logBodyText` of a deployment lists its deployment actions, its commits and the link of its Pull Request.
 
 All the monitored orgs (leave out `orgIdentifier`):
@@ -353,7 +362,7 @@ Any other command against an org counts as a write: do not run it, even when the
 
 | Path | Content |
 | ---- | ------- |
-| `force-app/main/default/` | The metadata of the org, in Salesforce DX source format: one folder per metadata type (`objects/`, `classes/`, `triggers/`, `flows/`, `lwc/`, `aura/`, `permissionsets/`, `profiles/`, `layouts/`...). This is the backup. Files are added and updated, never deleted: a component deleted in the org stays here. |
+| `force-app/main/default/` | The metadata of the org, in Salesforce DX source format: one folder per metadata type (`objects/`, `classes/`, `triggers/`, `flows/`, `lwc/`, `aura/`, `permissionsets/`, `profiles/`, `layouts/`...). This is the backup. The files of a component deleted in the org are deleted by the next backup, with the exceptions listed in [What is not in the backup](#what-is-not-in-the-backup). |
 | `installedPackages/` | One JSON file per package installed in the org: name, namespace, version name and number. |
 | `manifest/package-all-org-items.xml` | Every metadata item that exists in the org, including the ones that are not backed up. Use it to check if a component exists in the org. |
 | `manifest/package-backup-items.xml` | The items actually retrieved: the full list, minus the filters below. |
@@ -361,12 +370,12 @@ Any other command against an org counts as a write: do not run it, even when the
 | `manifest/package-skip-items-dynamic-do-not-update-manually.xml` | Filters built from the `MONITORING_BACKUP_SKIP_METADATA_TYPES` variable, when it is set. |
 | `manifest/package-backup-datacloud-items.xml` | Data Cloud items (`__dlm`, `__dll` objects and Data Cloud metadata types), retrieved in a separate call. |
 | `manifest/chunks/` | Only in full mode (`--full`): the list of items split in several retrieves. |
-| `docs/` | Project documentation generated from the metadata after each backup, unless disabled: objects, Apex, Flows with their visual history (`docs/flows/*-history.md`), Lightning pages, profiles, permission sets, packages, and an object model diagram. |
+| `docs/` | Project documentation generated from the metadata after each backup, unless disabled: objects, Apex, Flows with their visual history (`docs/flows/*-history.md`), Lightning pages, profiles, permission sets, packages, and an object model diagram. `docs/cache-ai-results/` and `docs/cache-mermaid/` only keep the AI texts and diagram images already generated, so the next run does not compute them again: they are not pages of the site. |
 | `mkdocs.yml` | Menu and settings of the documentation site built from `docs/`. |
 | `.sfdx-hardis.yml` | sfdx-hardis configuration of the branch: monitored org, notification settings, custom `monitoringCommands` and `monitoringDisable`, the `deploymentRepository` (and optional `deploymentBranch`) that deploys to the org, and the `grafanaUrl` (and optional datasource uids) that receives the monitoring results. Never a secret. |
 | `sfdx-project.json` | Salesforce DX project definition, including the API version used for the retrieve. |
-| `.gitlab-ci.yml`, `.github/workflows/`, `azure-pipelines.yml`, `bitbucket-pipelines.yml`, `Jenkinsfile` | The monitoring pipeline for each CI/CD platform. Only one of them is used. On GitHub, the workflow lives on the default branch and runs all monitoring branches. |
-| `.mega-linter.yml`, `.jscpd.json` | MegaLinter and copy-paste detection settings. |
+| `.gitlab-ci.yml`, `.github/workflows/`, `azure-pipelines.yml`, `bitbucket-pipelines.yml`, `Jenkinsfile` | The monitoring pipeline for each CI/CD platform. Only one of them is used. On GitHub, the workflow lives on the default branch and runs all monitoring branches. Each one starts with the URL of the sfdx-hardis template it comes from: to upgrade it, compare it with that template. |
+| `.mega-linter.yml`, `.jscpd.json` | MegaLinter and copy-paste detection settings. The backup adds `DISABLE_ERRORS: true` to `.mega-linter.yml` when the key is missing, so that MegaLinter findings do not fail its job, and creates the file when the repository has none. |
 | `THIS_IS_MONITORING`, `DO_NOT_DEPLOY_FROM_THIS_REPO` | Empty marker files: this repository is for monitoring only. |
 
 ## What is not in the backup
@@ -379,7 +388,29 @@ Any other command against an org counts as a write: do not run it, even when the
 
 If a component is in `manifest/package-all-org-items.xml` but not in `force-app/`, one of these filters skipped it.
 
-The other way around, a component in `force-app/` but not in `manifest/package-all-org-items.xml` was deleted from the org: the backup never deletes files. To know whether a component exists in the org today, always check the manifest.
+The other way around, a component in `force-app/` but not in `manifest/package-all-org-items.xml` was deleted from the org. The backup deletes the files of such components, but a file stays when nothing proves that its component is gone:
+
+- the fields, list views, record types and other children of an object that is not retrieved
+- the types that the org does not list by name
+- the value set translations (`globalValueSetTranslations/`, `standardValueSetTranslations/`): the org lists one language of a value set and not the others, so their files are never deleted
+- the types of which nothing is retrieved, like a type skipped as a whole in `manifest/package-skip-items.xml`: there, only a component that the previous backup listed and that the org no longer lists has its files deleted, so the files of older deletions stay
+- every file, when the branch sets `monitoringBackupSkipDeletions: true` in `.sfdx-hardis.yml` or the `MONITORING_BACKUP_SKIP_DELETIONS` variable
+- every file, in the commits made before sfdx-hardis deleted files
+
+A component that still exists in the org but is skipped since (`manifest/package-skip-items.xml`, `MONITORING_BACKUP_SKIP_METADATA_TYPES`) keeps the file of its last backup: that file can be old.
+
+Before deleting the files of a component, the backup asks the org for it with the Metadata API, and keeps the files when the org still returns it or can not be asked about it (a type the Metadata API does not read, like `Settings`). So a file deleted by a backup commit is a component the org itself said was gone, and a file that stays proves nothing.
+
+To know whether a component exists in the org today, always check the manifest.
+
+## How Profiles are stored
+
+The files in `force-app/main/default/profiles/` are read with the CRUD Metadata API after the retrieve, so each one holds everything the Profile grants, including on standard objects, managed package items and components the backup skips.
+
+- **Only what is granted is written.** An entry whose flags are all false is left out: a field with no read and no edit access, an Apex class or a Visualforce page that is not enabled, a user permission that is off. So a field, a class or a permission that is not in the file is not granted by the Profile, and a permission revoked in the org shows as removed lines in the diff.
+- Tab visibilities are kept even when `Hidden`, except for tabs that do not exist in the org.
+- **Older commits hold truncated Profiles.** Before sfdx-hardis read them this way, a Profile file only held the permissions related to the components retrieved with it. The first backup made with the new behavior modifies every Profile file at once, with thousands of added lines: that commit is not a change in the org. Never report it as one, and do not compare a Profile across it to say what was granted.
+- Permission Sets are retrieved whole and written as the org returns them, false entries included: there, read the flags.
 
 ## Monitoring checks configured on this branch
 

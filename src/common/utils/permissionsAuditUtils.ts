@@ -625,7 +625,7 @@ export async function buildPermissionsAuditReport(
   data: PermissionsAuditData,
   outputFile: string | null,
   sourceMode: PermissionsAuditSource
-): Promise<{ xlsxFile: string; csvFiles: string[] }> {
+): Promise<{ xlsxFile: string | undefined; csvFiles: string[] }> {
   const includeOrigin = sourceMode === 'both';
   const csvFiles: string[] = [];
   const worksheetNames: Record<string, string> = {};
@@ -710,7 +710,8 @@ export async function buildPermissionsAuditReport(
   const orderedCsvFiles = [indexPath, ...csvFiles.filter((f) => f !== indexPath)];
 
   const consolidatedBase = outputFile || (await generateReportPath('unsecure-permissions', '', { withDate: true }));
-  await createXlsxFromCsvFiles(orderedCsvFiles, consolidatedBase, {
+  // The path written: another name when the usual file is open in Excel
+  const xlsxFile = await createXlsxFromCsvFiles(orderedCsvFiles, consolidatedBase, {
     fileTitle: t('unsecurePermissionsFileTitle'),
     worksheetNames,
     postProcessWorkbook: (workbook, context) =>
@@ -719,7 +720,6 @@ export async function buildPermissionsAuditReport(
         sheetCsvByLabel,
       }),
   });
-  const xlsxFile = path.join(path.dirname(consolidatedBase), 'xls', path.basename(consolidatedBase).replace('.csv', '.xlsx'));
 
   return { xlsxFile, csvFiles: orderedCsvFiles };
 }

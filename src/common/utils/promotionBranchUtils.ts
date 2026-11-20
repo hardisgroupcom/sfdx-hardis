@@ -85,6 +85,15 @@ export function getPromotionBranchConfig(config: any): PromotionBranchConfig {
 }
 
 /**
+ * detectManualCherryPicks: also recognize the stories that reached the target branch through a
+ * cherry-pick made by hand. It only exists on top of promotion branches, so it is off whenever they
+ * are.
+ */
+export function isManualCherryPickDetectionEnabled(config: any): boolean {
+  return getPromotionBranchConfig(config).enabled && config?.detectManualCherryPicks === true;
+}
+
+/**
  * Read allowedPromotionSteps: the source and target branches a release manager may assemble a
  * promotion between. Entries are objects ({ source: uat, target: preprod }); a "uat > preprod"
  * string is accepted too, since the config file is often edited by hand. An entry without a
@@ -631,5 +640,6 @@ export function buildAlreadyPromotedMarkdown(
   if (lines.length === 0) {
     return '';
   }
-  return `ℹ️ Some Pull Requests of this promotion window were already deployed through a promotion branch. Their metadata is redeployed as a no-op and their actions are skipped where already performed:\n${lines.join('\n')}`;
+  // The blank line before the list is needed by Bitbucket, which otherwise draws it as one paragraph
+  return `ℹ️ Some Pull Requests of this promotion window were already deployed through a promotion branch. Their metadata is redeployed as a no-op and their actions are skipped where already performed:\n\n${lines.join('\n')}`;
 }

@@ -1,4 +1,4 @@
-import { UtilsAi } from "./utils.js";
+import { UtilsAi } from "./utils/utils.js";
 import path from "path";
 import fs from '../utils/fsUtils.js';
 import { PromptTemplateDefinition } from "./promptTemplates/types.js";

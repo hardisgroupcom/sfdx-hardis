@@ -1,3 +1,7 @@
+---
+title: "hardis:config:monitoring-defaults - Get monitoring & notification defaults"
+description: "Returns the hardcoded default monitoring and notification configuration baked into sfdx-hardis."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:config:monitoring-defaults
 
@@ -42,14 +46,14 @@ The data is assembled in `getMonitoringConfigDefaults()` (`src/common/monitoring
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|json|boolean|Format output as json.||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name         |  Type   | Description                                                   | Default | Required | Options |
+|:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent        | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
+| debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
+| flags-dir    | option  | Import flag values from a directory.                          |         |          |         |
+| json         | boolean | Format output as json.                                        |         |          |         |
+| skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
+| websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
 
 ## Examples
 

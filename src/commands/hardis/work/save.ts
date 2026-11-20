@@ -6,6 +6,7 @@ import c from 'chalk';
 import fs from '../../../common/utils/fsUtils.js';
 import { open } from '../../../common/utils/openUtils.js';
 import * as path from 'path';
+import { createHash } from 'crypto';
 import {
   createTempDir,
   execCommand,
@@ -38,12 +39,32 @@ import { GitProvider } from '../../../common/gitProvider/index.js';
 import { t } from '../../../common/utils/i18n.js';
 import { getPromotionBranchConfig, isPromotionBranchName } from '../../../common/utils/promotionBranchUtils.js';
 import { isBackpromoteBranchName, parseBackpromoteBranchName } from '../../../common/utils/backpromoteRules.js';
+import { registerDevOrgUsage } from '../../../common/utils/devOrgsRegistry.js';
+import type { CommandReport } from '../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class SaveTask extends SfCommand<any> {
   public static title = 'Save User Story';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'commit-files-package-xml-updates',
+      title: 'Package.xml updates',
+      description: 'One row per file committed with the package.xml updates, with its status (created, modified or deleted).',
+    },
+    {
+      file: 'commit-files-cleaned-sources',
+      title: 'Cleaned files',
+      description: 'One row per source file cleaned and committed by the save, so the cleaning is visible in the User Story.',
+    },
+    {
+      file: 'commit-files-deployment-plan',
+      title: 'Deployment plan files',
+      description: 'One row per file committed with the deployment plan updates, with its status (created, modified or deleted).',
+    },
+  ];
 
   public static description = `
 ## Command Behavior
@@ -124,6 +145,8 @@ autoRemoveUserPermissions:
   - WorkCalibrationUser
 \`\`\`
 
+After the push, the org is recorded in the [development orgs](https://sfdx-hardis.cloudity.com/salesforce-devops-dev-orgs/) list of the project with the User Story branch, so its users know when to run a backpromote. Without a git provider token, the command only says it could not record it.
+
 Advanced instructions are available in the [Publish a User Story documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-publish-user-story/).
 
 <details markdown="1">
@@ -146,20 +169,20 @@ The command's technical implementation involves a series of orchestrated steps:
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course runs this command, click by click, on an org of your own, in these labs:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) course runs this command, click by click, on an org of your own, in these labs:
 
-- [Lab 1.5 - Retrieve, commit and publish your Salesforce changes](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-5-retrieve-commit-and-publish-your-changes/)
-- [Lab 1.7 - Capstone: deliver a User Story on your own](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-7-capstone-deliver-a-user-story-on-your-own/)
-- [Lab 2.2 - Fix a deployment error caused by a missing dependency](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-2-fix-a-missing-dependency-deployment-error/)
-- [Lab 2.3 - Fix broken records with an Apex deployment action](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-3-fix-broken-records-with-an-apex-deployment-action/)
-- [Lab 2.4 - Ship reference data and a batch with deployment actions](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-4-ship-reference-data-and-a-batch-with-deployment-actions/)
-- [Lab 2.5 - Pass the code quality gate and Apex test coverage](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-5-pass-code-quality-and-apex-test-coverage/)
-- [Lab 2.6 - Permission sets, profiles and why a grant disappears](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-6-permission-sets-and-profiles/)
-- [Lab 2.7 - Resolve a Git merge conflict with a teammate](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-7-resolve-a-git-merge-conflict/)
-- [Lab 2.8 - Recover from committing the wrong metadata](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-8-recover-from-committing-the-wrong-metadata/)
-- [Lab 2.9 - Capstone: deliver a User Story that has it all](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-9-capstone-deliver-a-user-story-that-has-it-all/)
-- [Lab 3.7 - Production is broken: hotfix and retrofit](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-7-hotfix-and-retrofit/)
-- [Lab 3.10 - Promote a subset with promotion branches (Beta)](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-10-promote-a-subset-with-promotion-branches/)
+- [Lab 1.5 - Retrieve, commit and publish your Salesforce changes](https://sfdx-hardis-training.cloudity.com/en/level-1-contributor-basics/1-5-retrieve-commit-and-publish-your-changes/)
+- [Lab 1.7 - Capstone: deliver a User Story on your own](https://sfdx-hardis-training.cloudity.com/en/level-1-contributor-basics/1-7-capstone-deliver-a-user-story-on-your-own/)
+- [Lab 2.2 - Fix a deployment error caused by a missing dependency](https://sfdx-hardis-training.cloudity.com/en/level-2-contributor-advanced/2-2-fix-a-missing-dependency-deployment-error/)
+- [Lab 2.3 - Fix broken records with an Apex deployment action](https://sfdx-hardis-training.cloudity.com/en/level-2-contributor-advanced/2-3-fix-broken-records-with-an-apex-deployment-action/)
+- [Lab 2.4 - Ship reference data and a batch with deployment actions](https://sfdx-hardis-training.cloudity.com/en/level-2-contributor-advanced/2-4-ship-reference-data-and-a-batch-with-deployment-actions/)
+- [Lab 2.5 - Pass the code quality gate and Apex test coverage](https://sfdx-hardis-training.cloudity.com/en/level-2-contributor-advanced/2-5-pass-code-quality-and-apex-test-coverage/)
+- [Lab 2.6 - Permission sets, profiles and why a grant disappears](https://sfdx-hardis-training.cloudity.com/en/level-2-contributor-advanced/2-6-permission-sets-and-profiles/)
+- [Lab 2.7 - Resolve a Git merge conflict with a teammate](https://sfdx-hardis-training.cloudity.com/en/level-2-contributor-advanced/2-7-resolve-a-git-merge-conflict/)
+- [Lab 2.8 - Recover from committing the wrong metadata](https://sfdx-hardis-training.cloudity.com/en/level-2-contributor-advanced/2-8-recover-from-committing-the-wrong-metadata/)
+- [Lab 2.9 - Capstone: deliver a User Story that has it all](https://sfdx-hardis-training.cloudity.com/en/level-2-contributor-advanced/2-9-capstone-deliver-a-user-story-that-has-it-all/)
+- [Lab 3.7 - Production is broken: hotfix and retrofit](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-7-hotfix-and-retrofit/)
+- [Lab 3.10 - Promote a subset with promotion branches (Beta)](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-10-promote-a-subset-with-promotion-branches/)
 
 <!-- training-links:end -->
 `;
@@ -223,6 +246,8 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
   protected noClean = false;
   // Flow API names of the git delta package.xml. null when the delta could not be computed
   protected deltaFlowNames: string[] | null = null;
+  // Commit the git delta starts from, so the cleanings never delete a file that already exists there
+  protected deltaFromCommit: string | null = null;
   protected auto = false;
   protected agentMode = false;
   protected expertMode = false;
@@ -302,6 +327,8 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
 
     // Push new commit(s)
     await this.manageCommitPush(gitStatusWithConfig, gitStatusAfterDeployPlan);
+    // The org stays known in the development orgs list, with this User Story branch
+    await registerDevOrgUsage({ username: flags['target-org'].getUsername(), targetBranch: this.targetBranch, featureBranch: this.currentBranch, commandThis: this });
 
 
     // If a Pull Request is already open from the current branch to its target branch,
@@ -546,6 +573,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
     uxLog("action", this, c.cyan(t('updatingManifestPackageXmlAndManifestDestructivechanges')));
     // Retrieving info about current branch latest commit and master branch latest commit
     const gitDeltaScope = await getGitDeltaScope(this.currentBranch, this.targetBranch || '');
+    this.deltaFromCommit = gitDeltaScope.fromCommit || null;
 
     // Build package.xml delta between most recent commit and developpement
     const localPackageXml = path.join('manifest', 'package.xml');
@@ -658,8 +686,13 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
   private async applyCleaningOnSources() {
     const config = await getConfig('branch');
     if (!this.noClean) {
-      const gitStatusFilesBeforeClean = (await git().status()).files.map((file) => file.path);
+      // Every untracked file, not only its folder: a cleaning may write a file into a new folder
+      const gitStatusFilesBeforeClean = (await git().status(['--untracked-files=all'])).files.map((file) => file.path);
       uxLog("other", this, JSON.stringify(gitStatusFilesBeforeClean, null, 2));
+      // The agents cleaning can write into a deployment actions file that was already modified (the draft
+      // file for example): those files are followed. Any other file modified before the cleaning stays out
+      // of the commit, as the developer left it
+      const snapshotBeforeClean = await this.snapshotFiles(gitStatusFilesBeforeClean, config);
       // References cleaning: Flow cleanings are restricted to the Flows of the delta when it is known
       const cleanReferencesArgs = ['--type', 'all'];
       if (this.expertMode) {
@@ -670,6 +703,9 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
       if (this.deltaFlowNames !== null) {
         uxLog("log", this, c.grey(t('cleaningWillBeRestrictedToChangedFlows', { number: this.deltaFlowNames.length })));
         cleanReferencesArgs.push('--flows', this.deltaFlowNames.join(','));
+      }
+      if (this.deltaFromCommit) {
+        cleanReferencesArgs.push('--delta-from', this.deltaFromCommit);
       }
       await CleanReferences.run(cleanReferencesArgs);
       if (globalThis?.displayProfilesWarning === true) {
@@ -687,11 +723,15 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
       }
 
       // Manage git after cleaning
-      const gitStatusAfterClean = await git().status();
+      const gitStatusAfterClean = await git().status(['--untracked-files=all']);
       uxLog("other", this, JSON.stringify(gitStatusAfterClean, null, 2));
+      const modifiedBeforeAndCleaned = await this.listChangedSinceSnapshot(snapshotBeforeClean);
       const cleanedFiles = gitStatusAfterClean.files
-        .filter((file) => !gitStatusFilesBeforeClean.includes(file.path))
+        .filter((file) => !gitStatusFilesBeforeClean.includes(file.path) || modifiedBeforeAndCleaned.includes(file.path))
         .map((file) => normalizeFileStatusPath(file.path, config));
+      if (modifiedBeforeAndCleaned.length > 0 && !this.noGit) {
+        uxLog("warning", this, c.yellow(t('cleaningCommitsFilesModifiedBefore', { files: modifiedBeforeAndCleaned.join(', ') })));
+      }
       if (cleanedFiles.length > 0) {
         if (!this.noGit) {
           try {
@@ -720,6 +760,56 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
           }
         }
       }
+    }
+  }
+
+  // State of the Pull Request deployment actions files among the git status paths, keyed by git status
+  // path: size, modification time and content hash, null for a file that does not exist (deleted)
+  private async snapshotFiles(
+    gitStatusPaths: string[],
+    config: any
+  ): Promise<Map<string, { file: string; state: { size: number; mtimeMs: number; hash: string } | null }>> {
+    const snapshot = new Map<string, { file: string; state: { size: number; mtimeMs: number; hash: string } | null }>();
+    for (const gitStatusPath of gitStatusPaths) {
+      // Relative to the project, which may be a subfolder of the git repository
+      const file = normalizeFileStatusPath(gitStatusPath, config);
+      if (/^scripts\/actions\/\.sfdx-hardis\.[^/]+\.yml$/.test(file.replace(/\\/g, '/'))) {
+        snapshot.set(gitStatusPath, { file, state: await this.readFileState(file, null) });
+      }
+    }
+    return snapshot;
+  }
+
+  // Git status paths of the snapshot whose content changed: a file with the same size and time is not read again
+  private async listChangedSinceSnapshot(
+    snapshot: Map<string, { file: string; state: { size: number; mtimeMs: number; hash: string } | null }>
+  ): Promise<string[]> {
+    const changed: string[] = [];
+    for (const [gitStatusPath, before] of snapshot) {
+      const after = await this.readFileState(before.file, before.state);
+      if (before.state?.hash !== after?.hash) {
+        changed.push(gitStatusPath);
+      }
+    }
+    return changed;
+  }
+
+  // State of a file, its hash taken from previous when its size and time did not change
+  private async readFileState(
+    file: string,
+    previous: { size: number; mtimeMs: number; hash: string } | null
+  ): Promise<{ size: number; mtimeMs: number; hash: string } | null> {
+    try {
+      const stat = await fs.stat(file);
+      if (!stat.isFile()) {
+        return null;
+      }
+      if (previous && previous.size === stat.size && previous.mtimeMs === stat.mtimeMs) {
+        return previous;
+      }
+      return { size: stat.size, mtimeMs: stat.mtimeMs, hash: createHash('sha1').update(await fs.readFile(file)).digest('hex') };
+    } catch {
+      return null;
     }
   }
 

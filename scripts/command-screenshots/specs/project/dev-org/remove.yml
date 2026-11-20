@@ -1,0 +1,12 @@
+command: hardis:project:dev-org:remove
+run: sf hardis:project:dev-org:remove
+mode: replay
+org: none
+caption: The sandbox tomaszdev, nobody uses anymore, removed from the development orgs list
+answers:
+  - q: "Which development org do you want to remove"
+    choice: "^tomaszdev"
+    shot: true
+    caption: Pick the development org to remove from the list
+  - q: "Remove tomaszdev from the development orgs list"
+    choice: "Yes"

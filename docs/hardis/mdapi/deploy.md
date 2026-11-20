@@ -1,3 +1,7 @@
+---
+title: "hardis:mdapi:deploy"
+description: "A wrapper command for Salesforce CLI's sf project deploy start (formerly sfdx force:mdapi:deploy), designed to assist with deployment error resolution."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:mdapi:deploy
 
@@ -45,30 +49,36 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![A folder in Metadata API format validated in a scratch org, with the deployment tips of sfdx-hardis](../../assets/images/commands/mdapi/deploy.webp)
+
+_A folder in Metadata API format validated in a scratch org, with the deployment tips of sfdx-hardis_
+
 ## Parameters
 
-| Name                            |  Type   | Description                                           |  Default  | Required |                                Options                                 |
-|:--------------------------------|:-------:|:------------------------------------------------------|:---------:|:--------:|:----------------------------------------------------------------------:|
-| agent                           | boolean | Run in non-interactive mode for agents and automation |           |          |                                                                        |
-| checkonly<br/>-c                | boolean | checkOnly                                             |           |          |                                                                        |
-| concise                         | boolean | concise                                               |           |          |                                                                        |
-| debug                           | boolean | debug                                                 |           |          |                                                                        |
-| deploydir<br/>-d                | option  | deployDir                                             |           |          |                                                                        |
-| flags-dir                       | option  | undefined                                             |           |          |                                                                        |
-| ignoreerrors                    | boolean | ignoreErrors                                          |           |          |                                                                        |
-| ignorewarnings<br/>-g           | boolean | ignoreWarnings                                        |           |          |                                                                        |
-| json                            | boolean | Format output as json.                                |           |          |                                                                        |
-| purgeondelete                   | boolean | purgeOnDelete                                         |           |          |                                                                        |
-| runtests<br/>-r                 | option  | runTests                                              |           |          |                                                                        |
-| singlepackage<br/>-s            | boolean | singlePackage                                         |           |          |                                                                        |
-| soapdeploy                      | boolean | soapDeploy                                            |           |          |                                                                        |
-| target-org<br/>-o               | option  | undefined                                             |           |          |                                                                        |
-| testlevel<br/>-l                | option  | testLevel                                             | NoTestRun |          | NoTestRun<br/>RunSpecifiedTests<br/>RunLocalTests<br/>RunAllTestsInOrg |
-| validateddeployrequestid<br/>-q | option  | validatedDeployRequestId                              |           |          |                                                                        |
-| verbose                         | boolean | verbose                                               |           |          |                                                                        |
-| wait<br/>-w                     | option  | wait                                                  |    120    |          |                                                                        |
-| websocket                       | option  | websocket                                             |           |          |                                                                        |
-| zipfile<br/>-f                  | option  | zipFile                                               |           |          |                                                                        |
+| Name                            |  Type   | Description                                                                                                  |  Default  | Required |                                Options                                 |
+|:--------------------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:---------:|:--------:|:----------------------------------------------------------------------:|
+| agent                           | boolean | Run in non-interactive mode for agents and automation                                                        |           |          |                                                                        |
+| checkonly<br/>-c                | boolean | checkOnly                                                                                                    |           |          |                                                                        |
+| concise                         | boolean | concise                                                                                                      |           |          |                                                                        |
+| debug                           | boolean | debug                                                                                                        |           |          |                                                                        |
+| deploydir<br/>-d                | option  | deployDir                                                                                                    |           |          |                                                                        |
+| flags-dir                       | option  | Import flag values from a directory.                                                                         |           |          |                                                                        |
+| ignoreerrors                    | boolean | ignoreErrors                                                                                                 |           |          |                                                                        |
+| ignorewarnings<br/>-g           | boolean | ignoreWarnings                                                                                               |           |          |                                                                        |
+| json                            | boolean | Format output as json.                                                                                       |           |          |                                                                        |
+| purgeondelete                   | boolean | purgeOnDelete                                                                                                |           |          |                                                                        |
+| runtests<br/>-r                 | option  | runTests                                                                                                     |           |          |                                                                        |
+| singlepackage<br/>-s            | boolean | singlePackage                                                                                                |           |          |                                                                        |
+| soapdeploy                      | boolean | soapDeploy                                                                                                   |           |          |                                                                        |
+| target-org<br/>-o               | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |           |   true   |                                                                        |
+| testlevel<br/>-l                | option  | testLevel                                                                                                    | NoTestRun |          | NoTestRun<br/>RunSpecifiedTests<br/>RunLocalTests<br/>RunAllTestsInOrg |
+| validateddeployrequestid<br/>-q | option  | validatedDeployRequestId                                                                                     |           |          |                                                                        |
+| verbose                         | boolean | verbose                                                                                                      |           |          |                                                                        |
+| wait<br/>-w                     | option  | wait                                                                                                         |    120    |          |                                                                        |
+| websocket                       | option  | websocket                                                                                                    |           |          |                                                                        |
+| zipfile<br/>-f                  | option  | zipFile                                                                                                      |           |          |                                                                        |
 
 ## Examples
 

@@ -6,6 +6,7 @@ import { authOrg } from '../utils/authUtils.js';
 import { findUserByUsernameLike } from '../utils/orgUtils.js';
 import { t } from '../utils/i18n.js';
 import type { PipelineContext } from '../utils/pipelineContextUtils.js';
+import type { IdenticalActionRef } from '../utils/deploymentActionIdentityUtils.js';
 
 export type ActionWhen = 'pre-deploy' | 'post-deploy';
 
@@ -17,7 +18,28 @@ export type BuiltInActionType =
   | 'publish-community'
   | 'manual'
   | 'schedule-batch'
-  | 'remove-packagexml-items';
+  | 'run-batch'
+  | 'remove-packagexml-items'
+  | 'user-access-policy'
+  | 'agent-activate'
+  | 'agent-publish'
+  | 'agent-running-user'
+  | 'browser'
+  // Org initialization steps only (orgInitSteps), never deployment actions
+  | 'install-packages'
+  | 'deploy-sources'
+  | 'assign-permission-sets';
+
+/** What an org initialization step needs to know about the org it initializes. */
+export interface OrgInitContext {
+  orgUsername: string;
+  orgAlias: string;
+  orgType: 'scratch' | 'sandbox';
+  projectScratchDef: any;
+  debugMode: boolean;
+  // Config the run reads (getConfig('user')), so every step sees the same values
+  config: any;
+}
 
 export interface PrePostCommand {
   id: string;
@@ -32,10 +54,18 @@ export interface PrePostCommand {
     sfdmuProject?: string;   // for 'data' actions
     communityName?: string;  // for 'publish-community' actions
     instructions?: string;   // for 'manual' actions
-    className?: string;      // for 'schedule-batch' actions
+    className?: string;      // for 'schedule-batch' and 'run-batch' actions
     cronExpression?: string;  // for 'schedule-batch' actions
     jobName?: string;        // for 'schedule-batch' actions (optional, defaults to <className>_Schedule)
+    runMode?: 'wait' | 'no-wait'; // for 'run-batch' actions (optional, defaults to wait)
+    batchSize?: number;      // for 'run-batch' actions (optional, defaults to 200)
+    waitTimeoutMinutes?: number; // for 'run-batch' actions in wait mode (optional, defaults to 60)
+    successEvenIfBatchErrors?: boolean; // for 'run-batch' actions in wait mode (optional, defaults to false)
+    permissionSets?: string[]; // for 'assign-permission-sets' org initialization steps
     packageXmlItems?: string[] | string; // for 'remove-packagexml-items' actions (each item: "TypeName:Member1,Member2"; a single string is accepted for a single entry)
+    agentName?: string;      // for 'agent-activate', 'agent-publish' and 'agent-running-user' actions
+    setting?: string;        // for 'browser' actions: the Browserforce setting key (densitySettings...)
+    config?: any;            // for 'browser' actions: the value of that setting
     [key: string]: any;
   };
   command: string;
@@ -49,12 +79,36 @@ export interface PrePostCommand {
   allowFailure?: boolean;
   runOnlyOnceByOrg?: boolean;
   customUsername?: string;
+  // Pull Request this action was moved from, to fix a definition after its deployment failed.
+  // The action keeps the same id: the copy of the original Pull Request no longer runs.
+  movedFrom?: number;
   // If command comes from a PR, we attach PR info
   pullRequest?: CommonPullRequestInfo;
   result?: ActionResult;
   // Pipeline variables of the current run, attached by the execution loop before the action runs.
   // Custom function actions pass them to their script as SFDX_HARDIS_* environment variables.
   pipelineContext?: PipelineContext;
+  // Org initialization steps (orgInitSteps) only
+  enabled?: boolean;
+  orgTypes?: ('scratch' | 'sandbox')[];
+  runAtPoolFill?: boolean;
+  // Attached by the org initialization runner before the step runs
+  orgInitContext?: OrgInitContext;
+}
+
+/** One field of an action definition, as hardis:project:action:types describes it. */
+export interface ActionParameterDescription {
+  // Name of the field
+  name: string;
+  // Where the field is stored in the action: 'parameters.<name>', or 'command' for a command action
+  path: string;
+  // Flag of hardis:project:action:create and update that sets it
+  flag?: string;
+  type: 'string' | 'string[]' | 'boolean' | 'integer' | 'json';
+  required: boolean;
+  default?: any;
+  enum?: string[];
+  description: string;
 }
 
 export type ActionResult = {
@@ -66,7 +120,16 @@ export type ActionResult = {
   skippedReason?: string;
   // Machine-readable skip cause: skippedReason is user-facing wording that may change,
   // code must branch on this field instead
-  skippedCode?: 'already-run-in-org' | 'branch-not-targeted' | 'unresolved-reference';
+  skippedCode?: 'already-run-in-org' | 'branch-not-targeted' | 'unresolved-reference' | 'identical-action-already-run'
+    | 'context-validation-only' | 'context-deployment-only' | 'stopped-by-failure' | 'deployment-failed';
+  // Label of the failed action that stopped this one (stopped-by-failure)
+  stoppedByLabel?: string;
+  // The action only read the org and reported what it would change (a deployment check): it is
+  // shown in the comment of this job, but never recorded as run in the org, so the deployment job
+  // after the merge still runs it
+  dryRun?: boolean;
+  // The action of the same run that already did the work of this one (identical-action-already-run)
+  identicalTo?: IdenticalActionRef;
   // Values a custom function returned on the last line of its stdout, consumable by later actions
   // through ${{ actions.<id>.outputs.<name> }}. Raw, so an action can pass a real value on.
   // Stays in memory for the duration of the run and is never reported as is.
@@ -90,7 +153,8 @@ export function buildActionOutput(res: any): string {
     (part) => typeof part === 'string' && part.trim() !== ''
   );
   if (streams.length > 0) {
-    return streams.join('\n').trim();
+    // stdout usually ends with a new line: no blank line between the two streams
+    return streams.map((part) => part.trimEnd()).join('\n').trim();
   }
   return (res?.errorMessage || (res?.error as Error)?.message || '').trim();
 }
@@ -99,7 +163,9 @@ export abstract class ActionsProvider {
 
   public customUsernameToUse: string | null = null;
 
-  public static async buildActionInstance(cmd: PrePostCommand): Promise<ActionsProvider> {
+  // quiet: an unknown type returns null without logging an error nor writing cmd.result, for the
+  // callers that only read what an action does (identical actions, forecast)
+  public static async buildActionInstance(cmd: PrePostCommand, options: { quiet?: boolean } = {}): Promise<ActionsProvider> {
     let actionInstance: any = null;
     const type = cmd.type || 'command';
     if (type === 'command') {
@@ -126,9 +192,45 @@ export abstract class ActionsProvider {
       const ScheduleBatchAction = await import('./scheduleBatchAction.js');
       actionInstance = new ScheduleBatchAction.ScheduleBatchAction();
     }
+    else if (type === 'run-batch') {
+      const RunBatchAction = await import('./runBatchAction.js');
+      actionInstance = new RunBatchAction.RunBatchAction();
+    }
     else if (type === 'remove-packagexml-items') {
       const RemovePackageXmlItemsAction = await import('./removePackageXmlItemsAction.js');
       actionInstance = new RemovePackageXmlItemsAction.RemovePackageXmlItemsAction();
+    }
+    else if (type === 'user-access-policy') {
+      const UserAccessPolicyAction = await import('./userAccessPolicyAction.js');
+      actionInstance = new UserAccessPolicyAction.UserAccessPolicyAction();
+    }
+    else if (type === 'agent-activate') {
+      const AgentActivateAction = await import('./agentActivateAction.js');
+      actionInstance = new AgentActivateAction.AgentActivateAction();
+    }
+    else if (type === 'agent-publish') {
+      const AgentPublishAction = await import('./agentPublishAction.js');
+      actionInstance = new AgentPublishAction.AgentPublishAction();
+    }
+    else if (type === 'agent-running-user') {
+      const AgentRunningUserAction = await import('./agentRunningUserAction.js');
+      actionInstance = new AgentRunningUserAction.AgentRunningUserAction();
+    }
+    else if (type === 'browser') {
+      const BrowserAction = await import('./browserAction.js');
+      actionInstance = new BrowserAction.BrowserAction();
+    }
+    else if (type === 'install-packages') {
+      const InstallPackagesAction = await import('./installPackagesAction.js');
+      actionInstance = new InstallPackagesAction.InstallPackagesAction();
+    }
+    else if (type === 'deploy-sources') {
+      const DeploySourcesAction = await import('./deploySourcesAction.js');
+      actionInstance = new DeploySourcesAction.DeploySourcesAction();
+    }
+    else if (type === 'assign-permission-sets') {
+      const AssignPermissionSetsAction = await import('./assignPermissionSetsAction.js');
+      actionInstance = new AssignPermissionSetsAction.AssignPermissionSetsAction();
     }
     else {
       // Not a built-in type: it must be the id of a project custom function. Resolving it here
@@ -138,7 +240,7 @@ export abstract class ActionsProvider {
       if (customFunction) {
         const CustomFunctionActionModule = await import('./customFunctionAction.js');
         actionInstance = new CustomFunctionActionModule.CustomFunctionAction();
-      } else {
+      } else if (!options.quiet) {
         uxLog("error", this, c.yellow(`[DeploymentActions] Action type [${cmd.type}] is not yet implemented for action [${cmd.id}]: ${cmd.label}`));
         cmd.result = {
           statusCode: "failed",
@@ -157,6 +259,118 @@ export abstract class ActionsProvider {
   // (for example actions that only alter the current deployment context, not the org)
   public supportsRunOnlyOnceByOrg(): boolean {
     return true;
+  }
+
+  // Phases an action of this type may run in, or null when it may run in both
+  public getAllowedWhen(): ActionWhen[] | null {
+    return null;
+  }
+
+  // Context of a new action of this type when none is given, or null for the generic default
+  public getDefaultContext(): PrePostCommand['context'] | null {
+    return null;
+  }
+
+  // Flags of hardis:project:action:create and update that only this type accepts
+  public getFlagNames(): string[] {
+    return [];
+  }
+
+  /**
+   * What an action of this type takes, for hardis:project:action:types: one entry per field the
+   * action definition holds, with the flag of hardis:project:action:create that sets it.
+   */
+  public getParameterDescriptions(): ActionParameterDescription[] {
+    return [];
+  }
+
+  /**
+   * Documentation page of an action of this type with these parameters, for the deployment error
+   * tips that suggest one. null: the sfdx-hardis page of the type.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public getDocumentationUrl(_parameters: PrePostCommand['parameters']): string | null {
+    return null;
+  }
+
+  /** What a user must know before creating the action a deployment error tip suggests */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public getDeployTipNotes(_parameters: PrePostCommand['parameters']): string[] {
+    return [];
+  }
+
+  /**
+   * What this type can do that a metadata deployment cannot, for the AI prompt that solves a
+   * deployment error no tip matched. null: nothing worth telling. Never installs anything.
+   */
+  public async describeForDeployErrorAi(): Promise<string | null> {
+    return null;
+  }
+
+  /** Data only this type has, for hardis:project:action:types (flags of that command included) */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async describeTypeDetails(_flags: any): Promise<Record<string, any> | null> {
+    return null;
+  }
+
+  // Shows the details of describeTypeDetails in the terminal and the VS Code command runner
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async logTypeDetails(_details: Record<string, any>, _commandThis: any): Promise<void> {
+    return;
+  }
+
+  /**
+   * Parameters of a new or edited action of this type, for hardis:project:action:create and update:
+   * from the flags when headless, from prompts seeded with the current values otherwise.
+   * null when the type does not collect its parameters itself.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async collectParameters(_flags: any, _headless: boolean, _current: PrePostCommand['parameters']): Promise<Record<string, any> | null> {
+    return null;
+  }
+
+  // Parameters of the action once the flags of hardis:project:action:update are applied
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public applyFlags(parameters: PrePostCommand['parameters'], _flags: any): PrePostCommand['parameters'] {
+    return parameters;
+  }
+
+  /**
+   * Errors of an action definition of this type, as translated messages (empty when valid), checked
+   * when the action is saved. null when the type is checked by the generic validation.
+   * `previous` is the action before an update, when there is one.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async getDefinitionErrors(_action: Partial<PrePostCommand>, _when?: ActionWhen, _previous?: Partial<PrePostCommand>): Promise<string[] | null> {
+    return null;
+  }
+
+  /**
+   * What helps fixing an invalid definition of this type (expected format, example), returned with
+   * the validation error of hardis:project:action:create and update, so an agent can fix it in one try.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async getDefinitionHelp(_action: Partial<PrePostCommand>): Promise<Record<string, any> | null> {
+    return null;
+  }
+
+  /**
+   * What the user has to know once an action of this type is saved (variables to declare...),
+   * returned as typeDetails by hardis:project:action:create and update.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async getSaveDetails(_action: Partial<PrePostCommand>): Promise<Record<string, any> | null> {
+    return null;
+  }
+
+  /**
+   * What the action does, compared to run identical actions once per run: two actions of the same
+   * type and phase, run as the same user, with the same identity parameters, do the same thing.
+   * null for an action that must never be merged with another one.
+   * The parameters as written by default; a type with defaults or paths normalizes them.
+   */
+  public getIdentityParameters(cmd: PrePostCommand): Record<string, any> | null {
+    return { ...(cmd.parameters || {}) };
   }
 
   /**

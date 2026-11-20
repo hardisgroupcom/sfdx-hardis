@@ -1,3 +1,7 @@
+---
+title: "hardis:org:retrieve:sources:dx - Retrieve sfdx sources from org"
+description: "Retrieves Salesforce metadata from an org and converts it into Salesforce DX (SFDX) source format."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:retrieve:sources:dx
 
@@ -31,7 +35,7 @@ The command's technical implementation involves:
 - **`MetadataUtils.retrieveMetadatas`:** This utility is used to connect to the Salesforce org and retrieve metadata in Metadata API format. It supports filtering by metadata types and excluding certain items.
 - **SFDX Project Creation:** It executes `sf project generate` to create a new SFDX project structure within a temporary directory.
 - **MDAPI to SFDX Conversion:** It then uses `sf project convert mdapi` to convert the retrieved metadata from the MDAPI format to the SFDX source format.
-- **File System Operations:** It uses `fs-extra` to copy the converted SFDX sources to the main project folder, while preserving important project files like `.gitignore` and `sfdx-project.json`.
+- **File System Operations:** It uses Node.js `fs` to copy the converted SFDX sources to the main project folder, while preserving important project files like `.gitignore` and `sfdx-project.json`.
 - **Org Shape Handling:** If `--shape` is enabled, it copies the generated `package.xml` and stores information about installed packages using `setConfig`.
 - **Error Handling:** Includes robust error handling for Salesforce CLI commands and file system operations.
 - **WebSocket Communication:** Uses `WebSocketClient.sendRefreshCommandsMessage` to notify connected VS Code clients about changes to the project.
@@ -49,23 +53,31 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![Every metadata of the Helios org retrieved, managed items left out, and converted into an SFDX project](../../../../assets/images/commands/org/retrieve/sources/dx.webp)
+
+_Every metadata of the Helios org retrieved, managed items left out, and converted into an SFDX project_
+
+- **(1)** The folder where the SFDX project is written
+
 ## Parameters
 
-| Name                     |  Type   | Description                                                                        | Default | Required | Options |
-|:-------------------------|:-------:|:-----------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent                    | boolean | Run in non-interactive mode for agents and automation                              |         |          |         |
-| debug<br/>-d             | boolean | Activate debug mode (more logs)                                                    |         |          |         |
-| filteredmetadatas<br/>-m | option  | Comma separated list of Metadatas keys to remove from PackageXml file              |         |          |         |
-| flags-dir                | option  | undefined                                                                          |         |          |         |
-| folder<br/>-f            | option  | Folder                                                                             |    .    |          |         |
-| instanceurl<br/>-r       | option  | URL of org instance                                                                |         |          |         |
-| json                     | boolean | Format output as json.                                                             |         |          |         |
-| keepmetadatatypes<br/>-k | option  | Comma separated list of metadatas types that will be the only ones to be retrieved |         |          |         |
-| shape<br/>-s             | boolean | Updates project-scratch-def.json from org shape                                    |         |          |         |
-| skipauth                 | boolean | Skip authentication check when a default username is required                      |         |          |         |
-| target-org<br/>-o        | option  | undefined                                                                          |         |          |         |
-| tempfolder<br/>-t        | option  | Temporary folder                                                                   |  ./tmp  |          |         |
-| websocket                | option  | Websocket host:port for VsCode SFDX Hardis UI integration                          |         |          |         |
+| Name                     |  Type   | Description                                                                                                  | Default | Required | Options |
+|:-------------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                    | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| debug<br/>-d             | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| filteredmetadatas<br/>-m | option  | Comma separated list of Metadatas keys to remove from PackageXml file                                        |         |          |         |
+| flags-dir                | option  | Import flag values from a directory.                                                                         |         |          |         |
+| folder<br/>-f            | option  | Folder                                                                                                       |    .    |          |         |
+| instanceurl<br/>-r       | option  | URL of org instance                                                                                          |         |          |         |
+| json                     | boolean | Format output as json.                                                                                       |         |          |         |
+| keepmetadatatypes<br/>-k | option  | Comma separated list of metadatas types that will be the only ones to be retrieved                           |         |          |         |
+| shape<br/>-s             | boolean | Updates project-scratch-def.json from org shape                                                              |         |          |         |
+| skipauth                 | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o        | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| tempfolder<br/>-t        | option  | Temporary folder                                                                                             |  ./tmp  |          |         |
+| websocket                | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

@@ -5,7 +5,9 @@ import * as yaml from 'js-yaml';
 import * as path from 'path';
 import { getCurrentGitBranch, isCI, uxLog } from './index.js';
 import { ActionWhen, PrePostCommand } from '../actionsProvider/actionsProvider.js';
-import { findDataWorkspaceByName } from './dataUtils.js';
+import { resolveDataWorkspacePath } from './dataUtils.js';
+import { DEPLOYMENT_ACTION_TYPES, DEPLOYMENT_ONLY_ACTION_TYPES, RESERVED_ACTION_TYPES } from '../actionsProvider/actionTypes.js';
+import type { ActionsProvider } from '../actionsProvider/actionsProvider.js';
 import { getConfig } from '../../config/index.js';
 import { GitProvider } from '../gitProvider/index.js';
 import { clearListMajorOrgsCache } from './orgConfigUtils.js';
@@ -43,7 +45,9 @@ export async function getActionConfigFilePath(scope: ActionScope, branch?: strin
     return path.join('config', '.sfdx-hardis.yml');
   }
   if (scope === 'branch') {
-    const branchName = branch || await getCurrentGitBranch({ formatted: true }) || 'main';
+    // A branch name read from git or from a Pull Request target (release/uat) is written in the file
+    // name the way the config loader reads it (release__uat), as getCurrentGitBranch formats it
+    const branchName = (branch || await getCurrentGitBranch({ formatted: true }) || 'main').replace('/', '__');
     return path.join('config', 'branches', `.sfdx-hardis.${branchName}.yml`);
   }
   // scope === 'pr'
@@ -78,7 +82,13 @@ export async function writeActions(scope: ActionScope, when: ActionWhen, actions
   if (fs.existsSync(configFile)) {
     doc = yaml.load(fs.readFileSync(configFile, 'utf-8')) || {};
   }
-  doc[configKey] = actions;
+  // The key the actions are stored under already says when they run: readActions sets
+  // "when" on each of them for its callers, and it must not be written back into the file
+  doc[configKey] = actions.map((action) => {
+    const stored: any = { ...action };
+    delete stored.when;
+    return stored;
+  });
   await fs.ensureDir(path.dirname(configFile));
   await fs.writeFile(configFile, dumpRepositoryYaml(doc));
   // A created or updated branch config file changes the major orgs list: drop its cache.
@@ -95,6 +105,22 @@ export async function writeActions(scope: ActionScope, when: ActionWhen, actions
  */
 export function normalizeBranchName(name: string): string {
   return String(name || '').trim().toLowerCase().replace(/\//g, '__');
+}
+
+/**
+ * Context an action really runs in. Some types are deployment-only actions, whatever their
+ * context holds (DEPLOYMENT_ONLY_ACTION_TYPES). A manual step to do before the deployment
+ * runs nothing and has to be done before the merge: the validation job always lists it, whatever
+ * its context holds, or a step declared for the deployment job only would never hold the merge.
+ */
+export function getEffectiveActionContext(cmd: Pick<PrePostCommand, 'type' | 'context' | 'when'>, when?: ActionWhen): PrePostCommand['context'] {
+  if (DEPLOYMENT_ONLY_ACTION_TYPES.includes(cmd.type)) {
+    return "process-deployment-only";
+  }
+  if (cmd.type === "manual" && (when || cmd.when) === "pre-deploy") {
+    return "all";
+  }
+  return cmd.context || "all";
 }
 
 /**
@@ -204,10 +230,79 @@ export async function listActionTargetBranchChoices(): Promise<{ title: string; 
 }
 
 /**
+ * True when --run-only-once-by-org or --no-run-only-once-by-org is on the command line.
+ * The flag defaults to true, so its parsed value cannot tell a default from a choice.
+ */
+export function isRunOnlyOnceByOrgFlagPassed(argv: string[]): boolean {
+  return (argv || []).some((arg) => /^--(no-)?run-only-once-by-org(=|$)/.test(arg));
+}
+
+/**
+ * Provider class of a built-in action type: its methods say what is specific to the type (flags,
+ * prompts, allowed phases, validation). null for a custom function or an unknown type.
+ */
+export async function getBuiltInActionProvider(type: string | undefined | null): Promise<ActionsProvider | null> {
+  if (!type || !RESERVED_ACTION_TYPES.includes(type)) {
+    return null;
+  }
+  const { ActionsProvider: ActionsProviderClass } = await import('../actionsProvider/actionsProvider.js');
+  return ActionsProviderClass.buildActionInstance({ type } as PrePostCommand, { quiet: true });
+}
+
+/** Refuses a flag that only another built-in type accepts: it would be silently ignored. */
+export async function assertNoFlagsOfOtherTypes(type: string, flags: any): Promise<void> {
+  // A flag shared with the type itself is valid (--agent-name is on the three agent types)
+  const ownFlags = new Set((await getBuiltInActionProvider(type))?.getFlagNames() || []);
+  for (const otherType of DEPLOYMENT_ACTION_TYPES) {
+    if (otherType === type) {
+      continue;
+    }
+    const provider = await getBuiltInActionProvider(otherType);
+    const passedFlags = (provider?.getFlagNames() || []).filter((flag) => !ownFlags.has(flag) && flags?.[flag] !== undefined);
+    if (passedFlags.length > 0) {
+      throw new SfError(
+        t('actionFlagsOnOtherType', { flags: passedFlags.map((flag) => `--${flag}`).join(', '), owner: otherType, type })
+      );
+    }
+  }
+}
+
+/**
+ * Throws the validation errors of an action. The error data carries what helps fixing the definition
+ * when its type provides it (expected format, example): an agent reads it in the --json output.
+ */
+export async function throwActionValidationErrors(action: Partial<PrePostCommand>, errors: string[]): Promise<never> {
+  const error = new SfError(t('actionValidationErrors', { errors: errors.join('\n') }), 'ActionValidationError');
+  const provider = await getBuiltInActionProvider(action.type);
+  const help = await provider?.getDefinitionHelp(action).catch(() => null);
+  if (help) {
+    error.setData({ errors, ...help });
+  }
+  throw error;
+}
+
+/**
+ * What the user has to know once the action is saved, from its type (variables to declare...).
+ * The action is already written: a failure here is a warning, never an error a caller would read
+ * as "not saved" and create the action again.
+ */
+export async function getActionSaveDetails(action: Partial<PrePostCommand>): Promise<Record<string, any> | undefined> {
+  try {
+    const provider = await getBuiltInActionProvider(action.type);
+    return (await provider?.getSaveDetails(action)) || undefined;
+  } catch (e) {
+    uxLog("warning", this, c.yellow(t('actionSaveDetailsUnavailable', { message: (e as Error).message })));
+    return undefined;
+  }
+}
+
+/**
  * Validate type-specific parameters for an action.
  * Returns an array of error messages (empty if valid).
+ * `previous` is the action as it was before an update: a type may skip a costly check of what did
+ * not change.
  */
-export async function validateActionParameters(action: Partial<PrePostCommand>, when?: ActionWhen): Promise<string[]> {
+export async function validateActionParameters(action: Partial<PrePostCommand>, when?: ActionWhen, previous?: Partial<PrePostCommand>): Promise<string[]> {
   const errors: string[] = [];
   const type = action.type || 'command';
   // Actions read from a config file carry `when`; a freshly built one does not, so the caller
@@ -216,6 +311,20 @@ export async function validateActionParameters(action: Partial<PrePostCommand>, 
 
   if ((action.includeTargetBranches || []).length > 0 && (action.excludeTargetBranches || []).length > 0) {
     errors.push(t('actionValidationBranchFiltersMutuallyExclusive'));
+  }
+
+  // The phases a built-in type may run in are declared by its provider class
+  const provider = await getBuiltInActionProvider(type);
+  const allowedWhen = provider?.getAllowedWhen();
+  if (allowedWhen && actionWhen && !allowedWhen.includes(actionWhen)) {
+    errors.push(t('actionTypeWrongPhase', { type, when: allowedWhen.join(', ') }));
+  }
+
+  // A type whose provider checks its own definition
+  const providerErrors = await provider?.getDefinitionErrors(action, actionWhen, previous);
+  if (providerErrors) {
+    errors.push(...providerErrors);
+    return errors;
   }
 
   if (type === 'command') {
@@ -234,7 +343,7 @@ export async function validateActionParameters(action: Partial<PrePostCommand>, 
     if (!sfdmuProject) {
       errors.push(t('actionValidationNoSfdmuProject'));
     } else {
-      const workspace = await findDataWorkspaceByName(sfdmuProject, false);
+      const workspace = await resolveDataWorkspacePath(sfdmuProject);
       if (!workspace) {
         errors.push(t('sfdmuWorkspaceNotFound', { name: sfdmuProject }));
       }
@@ -265,14 +374,62 @@ export async function validateActionParameters(action: Partial<PrePostCommand>, 
         errors.push(t('actionValidationInvalidPackageXmlItems', { items: invalidItems.join(' | ') }));
       }
     }
-    if (actionWhen === 'post-deploy') {
-      errors.push(t('actionValidationPackageXmlItemsPreDeployOnly'));
-    }
   } else {
     errors.push(...(await validateCustomFunctionAction(action, type, actionWhen)));
   }
 
   return errors;
+}
+
+/**
+ * A movedFrom written as a quoted number in YAML ("12") is the number 12: coerced in place
+ */
+export function normalizeMovedFrom(action: Partial<PrePostCommand>): void {
+  if (typeof action.movedFrom === 'string' && /^\d+$/.test((action.movedFrom as string).trim())) {
+    action.movedFrom = parseInt(action.movedFrom as string, 10);
+  }
+}
+
+/**
+ * Validate the movedFrom property of an action: the number of the Pull Request it was moved from.
+ * Only an action of a Pull Request can be moved, and never from its own Pull Request.
+ * Returns an array of error messages (empty if valid).
+ */
+export function validateMovedFrom(action: Partial<PrePostCommand>, scope: ActionScope, prId?: string): string[] {
+  if (action.movedFrom === undefined || action.movedFrom === null) {
+    return [];
+  }
+  normalizeMovedFrom(action);
+  if (!Number.isInteger(action.movedFrom) || action.movedFrom < 1) {
+    return [t('actionValidationMovedFromInvalid', { value: String(action.movedFrom) })];
+  }
+  if (scope !== 'pr') {
+    return [t('actionValidationMovedFromPrScopeOnly')];
+  }
+  if (prId && prId === String(action.movedFrom)) {
+    return [t('actionValidationMovedFromSamePr', { pr: prId })];
+  }
+  return [];
+}
+
+/**
+ * Actions declared in the YAML block of a Pull Request description, for the given phase.
+ * Each one carries its Pull Request, like the actions collected by a deployment job.
+ */
+export async function readPullRequestDescriptionActions(prNumber: number, when: ActionWhen): Promise<PrePostCommand[]> {
+  const gitProvider = await GitProvider.getInstance();
+  if (!gitProvider) {
+    return [];
+  }
+  const pr = await gitProvider.getPullRequestById(prNumber);
+  if (!pr) {
+    return [];
+  }
+  const { getYamlFromPrDescription } = await import('./pullRequestUtils.js');
+  const config: any = getYamlFromPrDescription(pr) || {};
+  const property = when === 'pre-deploy' ? 'commandsPreDeploy' : 'commandsPostDeploy';
+  const actions: PrePostCommand[] = Array.isArray(config[property]) ? config[property] : [];
+  return actions.map((action) => ({ ...action, when, pullRequest: pr }));
 }
 
 /**
@@ -359,10 +516,15 @@ async function validateCustomFunctionAction(
  */
 export async function listAvailableActionTypes(when?: ActionWhen): Promise<{ title: string; value: string; description?: string }[]> {
   const { listCustomFunctions } = await import('./customFunctionUtils.js');
-  const choices: { title: string; value: string; description?: string }[] = ACTION_TYPES.map((actionType) => ({
-    title: String(actionType),
-    value: String(actionType),
-  }));
+  const choices: { title: string; value: string; description?: string }[] = [];
+  for (const actionType of ACTION_TYPES) {
+    // A built-in type restricted to the other phase is not offered
+    const allowedWhen = when ? (await getBuiltInActionProvider(String(actionType)))?.getAllowedWhen() : null;
+    if (allowedWhen && !allowedWhen.includes(when!)) {
+      continue;
+    }
+    choices.push({ title: String(actionType), value: String(actionType) });
+  }
   const customFunctions = (await listCustomFunctions()).filter((fn) => !when || !fn.when || fn.when === when);
   for (const customFunction of customFunctions) {
     choices.push({
@@ -445,7 +607,8 @@ export function logActionSummary(commandThis: any, action: PrePostCommand): void
   }
   if (action.parameters) {
     for (const [key, value] of Object.entries(action.parameters)) {
-      uxLog("log", commandThis, c.grey(`  ${key}: ${value}`));
+      // An object value (the config of a browser action...) would print as [object Object]
+      uxLog("log", commandThis, c.grey(`  ${key}: ${value !== null && typeof value === 'object' ? JSON.stringify(value) : value}`));
     }
   }
 }
@@ -573,7 +736,8 @@ export async function getPrIdFromUserConfig(): Promise<string | null> {
   }
 }
 
-export const ACTION_TYPES: PrePostCommand['type'][] = ['command', 'data', 'apex', 'publish-community', 'manual', 'schedule-batch', 'remove-packagexml-items'];
+// Org initialization types (install-packages, deploy-sources...) are left out on purpose: they only exist in orgInitSteps
+export const ACTION_TYPES: PrePostCommand['type'][] = [...DEPLOYMENT_ACTION_TYPES];
 export const ACTION_CONTEXTS: PrePostCommand['context'][] = ['all', 'check-deployment-only', 'process-deployment-only'];
 export const ACTION_SCOPES: ActionScope[] = ['project', 'branch', 'pr'];
 export const ACTION_WHENS: ActionWhen[] = ['pre-deploy', 'post-deploy'];

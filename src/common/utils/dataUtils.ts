@@ -2,11 +2,11 @@ import { Connection, SfError } from '@salesforce/core';
 import c from 'chalk';
 import fs from './fsUtils.js';
 import * as path from 'path';
-import { elapseEnd, elapseStart, isAgentMode, isCI, uxLog } from './index.js';
+import { elapseEnd, elapseStart, execSfdxJson, isAgentMode, isCI, uxLog } from './index.js';
 import { getConfig } from '../../config/index.js';
 import { prompts } from './prompts.js';
-import { isProductionOrg } from './orgUtils.js';
 import { uxLogTableWithReport } from './filesUtils.js';
+import { soqlQuery } from './apiUtils.js';
 import { executeSfdmuCommand, SfdmuOperationType } from './sfdmuProgress.js';
 import { t } from './i18n.js';
 
@@ -97,6 +97,8 @@ export async function importData(sfdmuPath: string, commandThis: any, options: a
     targetUsername = conn.getUsername();
   }
   uxLog("action", commandThis, c.cyan(t('importingDataFromInto', { dtl: c.green(dtl?.full_label), targetUsername })));
+  // Needed for production orgs
+  const canModify = await resolveSfdmuCanModify(commandThis, targetUsername, options);
   /* jscpd:ignore-start */
   await displayDataWorkspaceAndConfirm(commandThis, dtl, {
     operation: 'import',
@@ -104,15 +106,13 @@ export async function importData(sfdmuPath: string, commandThis: any, options: a
     promptConfirm: options.promptConfirm === true,
   });
   await fs.ensureDir(path.join(sfdmuPath, 'logs'));
-  const config = await getConfig('branch');
   const dataImportCommand =
     'sf sfdmu:run' +
     ` --sourceusername csvfile` +
     ` --targetusername ${targetUsername}` + // Keep targetusername until sfdmu switches to target-org
     ` -p "${sfdmuPath}"` +
     ' --noprompt' +
-    // Needed for production orgs
-    (config.sfdmuCanModify || process.env.SFDMU_CAN_MODIFY ? ` --canmodify ${config.sfdmuCanModify || process.env.SFDMU_CAN_MODIFY}` : '');
+    (canModify ? ` --canmodify ${canModify}` : '');
   /* jscpd:ignore-end */
   elapseStart(`import ${dtl?.full_label}`);
   const res = await executeSfdmuCommand(dataImportCommand, commandThis, {
@@ -129,7 +129,6 @@ export async function importData(sfdmuPath: string, commandThis: any, options: a
 
 // Delete data using sfdmu folder
 export async function deleteData(sfdmuPath: string, commandThis: any, options: any = { cwd: process.cwd() }) {
-  const config = await getConfig('branch');
   const cwd = options?.cwd || process.cwd();
   const dtl = await getDataWorkspaceDetail(sfdmuPath);
   if (dtl?.isDelete === false) {
@@ -137,17 +136,18 @@ export async function deleteData(sfdmuPath: string, commandThis: any, options: a
       'Your export.json does not contain deletion information. Please check http://help.sfdmu.com/full-documentation/advanced-features/delete-from-source'
     );
   }
+  const targetUsername = options.targetUsername || options.conn.username;
   // If org is production, make sure that "runnableInProduction": true is present in export.json
-  const isProdOrg = await isProductionOrg(options?.targetUsername || options?.conn?.username || "ERROR", options);
+  const isProdOrg = await isSfdmuProductionOrg(commandThis, targetUsername, options);
   if (isProdOrg === true && (dtl?.runnableInProduction || false) !== true) {
     throw new SfError(`To run this delete SFDMU script in production, you need to define "runnableInProduction": true in its export.json file`);
   }
-  if (isProdOrg === true && !config.sfdmuCanModify) {
-    uxLog("warning", commandThis, c.yellow(`If you see a sfdmu error, you probably need to add a property sfdmuCanModify: YOUR_ORG_INSTANCE_URL in the related config/branches/.sfdx-hardis.YOUR_BRANCH.yml config file.`));
-  }
   uxLog("action", commandThis, c.cyan(t('deletingDataFrom', { dtl: c.green(dtl?.full_label) })));
 
-  const targetUsername = options.targetUsername || options.conn.username;
+  const canModify = await resolveSfdmuCanModify(commandThis, targetUsername, options, isProdOrg);
+  if (isProdOrg === true && !canModify) {
+    uxLog("warning", commandThis, c.yellow(`If you see a sfdmu error, you probably need to add a property sfdmuCanModify: YOUR_ORG_INSTANCE_URL in the related config/branches/.sfdx-hardis.YOUR_BRANCH.yml config file.`));
+  }
   await displayDataWorkspaceAndConfirm(commandThis, dtl, {
     operation: 'delete',
     orgUsername: targetUsername,
@@ -159,7 +159,7 @@ export async function deleteData(sfdmuPath: string, commandThis: any, options: a
     ` --sourceusername ${targetUsername}` +
     ` -p "${sfdmuPath}"` +
     ' --noprompt' +
-    (config.sfdmuCanModify ? ` --canmodify ${config.sfdmuCanModify}` : '');
+    (canModify ? ` --canmodify ${canModify}` : '');
   elapseStart(`delete ${dtl?.full_label}`);
   const res = await executeSfdmuCommand(dataImportCommand, commandThis, {
     fail: true,
@@ -211,6 +211,23 @@ export async function findDataWorkspaceByName(projectName: string, throwIfNotFou
     return null;
   }
   throw new SfError(`There is no sfdmu folder named ${projectName} in your workspace (${DATA_FOLDERS_ROOT})`);
+}
+
+/**
+ * Folder of an SFDMU workspace: a workspace name under scripts/data, or a project-relative path to
+ * an SFDMU folder (dataPackages entries can point outside scripts/data). Null when neither exists.
+ */
+export async function resolveDataWorkspacePath(sfdmuProject: string): Promise<string | null> {
+  if (!sfdmuProject) {
+    return null;
+  }
+  const workspacePath = await findDataWorkspaceByName(sfdmuProject, false);
+  if (workspacePath) {
+    return workspacePath;
+  }
+  // A path is a workspace only when it holds the export.json of SFDMU: a typo in a folder name
+  // must fail when the action is defined, not during the deployment
+  return fs.existsSync(path.join(sfdmuProject, 'export.json')) ? sfdmuProject : null;
 }
 
 export async function hasDataWorkspaces(cwd: string = process.cwd()) {
@@ -302,4 +319,90 @@ export function isDeleteDataWorkspace(exportFileJson: any) {
     }
   }
   return isDelete;
+}
+
+// What resolveSfdmuCanModify needs from its environment: tests give fakes, other callers use the defaults
+export type SfdmuCanModifyDeps = {
+  canPrompt: () => boolean;
+  ask: typeof prompts;
+};
+
+const DEFAULT_SFDMU_CAN_MODIFY_DEPS: SfdmuCanModifyDeps = {
+  canPrompt: () => !isCI && !isAgentMode(),
+  ask: prompts,
+};
+
+/**
+ * SFDMU refuses to modify a production org unless --canmodify matches the instance domain of the org,
+ * and its own prompt can not be answered when sfdx-hardis runs it with --noprompt.
+ * Returns sfdmuCanModify (config or SFDMU_CAN_MODIFY), or, in interactive mode, the instance domain of the
+ * production org once the user confirmed. Returns an empty string when nothing is authorized.
+ */
+export async function resolveSfdmuCanModify(
+  commandThis: any,
+  targetUsername: string,
+  options: any,
+  isProdOrg?: boolean,
+  deps: SfdmuCanModifyDeps = DEFAULT_SFDMU_CAN_MODIFY_DEPS
+): Promise<string> {
+  const config = await getConfig('branch');
+  const configuredCanModify = config.sfdmuCanModify || process.env.SFDMU_CAN_MODIFY || '';
+  if (configuredCanModify) {
+    return configuredCanModify;
+  }
+  if (options?.promptConfirm !== true || !deps.canPrompt()) {
+    return '';
+  }
+  const isProd = isProdOrg ?? (await isSfdmuProductionOrg(commandThis, targetUsername, options));
+  if (isProd !== true) {
+    return '';
+  }
+  const instanceDomain = await getOrgInstanceDomain(commandThis, targetUsername, options);
+  if (!instanceDomain) {
+    return '';
+  }
+  const confirmRes = await deps.ask({
+    type: 'confirm',
+    message: t('confirmSfdmuModifyProductionOrg', { org: instanceDomain }),
+    description: t('confirmSfdmuModifyProductionOrgDescription', { org: instanceDomain }),
+  });
+  if (confirmRes.value !== true) {
+    throw new SfError(t('dataOperationCancelledByUser'));
+  }
+  // The VS Code UI hides everything that follows a prompt until the next action log
+  uxLog('action', commandThis, c.cyan(t('sfdmuProductionOrgModificationAuthorized', { org: c.green(instanceDomain) })));
+  return instanceDomain;
+}
+
+// Same rule as SFDMU: Developer Edition orgs are not production orgs, even if they are not sandboxes
+export async function isSfdmuProductionOrg(commandThis: any, targetUsername: string, options: any): Promise<boolean> {
+  const orgQuery = 'SELECT IsSandbox, OrganizationType FROM Organization LIMIT 1';
+  let orgRecords: any[];
+  if (options?.conn?.username && options.conn.username === targetUsername) {
+    orgRecords = (await soqlQuery(orgQuery, options.conn)).records;
+  }
+  else {
+    const orgQueryRes = await execSfdxJson(`sf data query --query "${orgQuery}" --target-org ${targetUsername}`, commandThis, {
+      output: false,
+      fail: true,
+    });
+    orgRecords = orgQueryRes?.result?.records || [];
+  }
+  return orgRecords[0]?.IsSandbox === false && orgRecords[0]?.OrganizationType !== 'Developer Edition';
+}
+
+export async function getOrgInstanceDomain(commandThis: any, targetUsername: string, options: any): Promise<string> {
+  let instanceUrl: string = options?.conn?.username === targetUsername ? options.conn.instanceUrl : '';
+  if (!instanceUrl) {
+    const displayResult = await execSfdxJson(`sf org display --target-org ${targetUsername}`, commandThis, {
+      fail: false,
+      output: false,
+    });
+    instanceUrl = displayResult?.result?.instanceUrl || '';
+  }
+  try {
+    return new URL(instanceUrl).hostname.toLowerCase();
+  } catch {
+    return '';
+  }
 }

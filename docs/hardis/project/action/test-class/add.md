@@ -1,3 +1,7 @@
+---
+title: "hardis:project:action:test-class:add - Add deployment Apex test class"
+description: "Adds one or more Apex test classes to the deployment test class list for the project configuration."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:action:test-class:add
 
@@ -37,6 +41,16 @@ Defaults applied: validates each class exists in sources before adding.
 </details>
 
 
+## Screenshots
+
+![Declare the test class for every deployment, one branch, or one Pull Request](../../../../assets/images/commands/project/action/test-class/add-1.webp)
+
+_Declare the test class for every deployment, one branch, or one Pull Request_
+
+![A test class is added to the ones that run with every deployment of the project](../../../../assets/images/commands/project/action/test-class/add.webp)
+
+_A test class is added to the ones that run with every deployment of the project_
+
 ## Parameters
 
 | Name         |  Type   | Description                                                                              | Default | Required |          Options          |
@@ -45,7 +59,7 @@ Defaults applied: validates each class exists in sources before adding.
 | branch       | option  | Target branch name (for branch scope, defaults to current branch)                        |         |          |                           |
 | class-name   | option  | Apex test class name(s) to add (required in agent mode; can be specified multiple times) |         |          |                           |
 | debug<br/>-d | boolean | Activate debug mode (more logs)                                                          |         |          |                           |
-| flags-dir    | option  | undefined                                                                                |         |          |                           |
+| flags-dir    | option  | Import flag values from a directory.                                                     |         |          |                           |
 | json         | boolean | Format output as json.                                                                   |         |          |                           |
 | pr-id        | option  | Pull request ID (for pr scope, defaults to draft)                                        |         |          |                           |
 | scope        | option  | Configuration scope: project, branch, or pr                                              |         |          | project<br/>branch<br/>pr |

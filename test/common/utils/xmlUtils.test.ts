@@ -12,6 +12,7 @@ import {
   countPackageXmlItems,
   isPackageXmlEmpty,
   listDuplicateFolderMetadataApiNames,
+  listPackageXmlItemsMatchingNoOverwrite,
   parseXmlFile,
   parseXmlString,
   parsePackageXmlFile,
@@ -244,19 +245,19 @@ describe('package.xml helpers', () => {
   });
 });
 
+function packageXmlWith(types: { [type: string]: string[] }): string {
+  const typesXml = Object.keys(types)
+    .map(
+      (type) =>
+        `    <types>\n${types[type].map((m) => `        <members>${m}</members>`).join('\n')}\n        <name>${type}</name>\n    </types>`
+    )
+    .join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<Package xmlns="http://soap.sforce.com/2006/04/metadata">\n${typesXml}\n    <version>62.0</version>\n</Package>`;
+}
+
 // A Report or a Dashboard API name is unique in the whole org, so the same API name in two folders is
 // the same component: package-no-overwrite.xml must protect it whatever the folder it sits in the org.
 describe('folder based metadata with an org unique API name', () => {
-  function packageXmlWith(types: { [type: string]: string[] }): string {
-    const typesXml = Object.keys(types)
-      .map(
-        (type) =>
-          `    <types>\n${types[type].map((m) => `        <members>${m}</members>`).join('\n')}\n        <name>${type}</name>\n    </types>`
-      )
-      .join('\n');
-    return `<?xml version="1.0" encoding="UTF-8"?>\n<Package xmlns="http://soap.sforce.com/2006/04/metadata">\n${typesXml}\n    <version>62.0</version>\n</Package>`;
-  }
-
   // Target org content: My_Report sits in the GlobalFollowup folder
   const orgManifest = packageXmlWith({
     Report: ['GlobalFollowup/', 'GlobalFollowup/My_Report', 'Mercury/', 'Mercury/Another_Report'],
@@ -368,4 +369,128 @@ describe('folder based metadata with an org unique API name', () => {
       await fs.remove(tmpDir);
     }
   });
+});
+
+// deploy:smart lists the whole target org (minutes on a large org) only when an item of the deployment
+// package could be protected by package-no-overwrite.xml
+describe('listPackageXmlItemsMatchingNoOverwrite', () => {
+  async function matchingItems(packageTypes: { [type: string]: string[] }, noOverwriteTypes: { [type: string]: string[] }) {
+    const tmpDir = await makeTmpDir();
+    try {
+      const packageXmlFile = path.join(tmpDir, 'package.xml');
+      const noOverwriteFile = path.join(tmpDir, 'package-no-overwrite.xml');
+      await fs.writeFile(packageXmlFile, packageXmlWith(packageTypes));
+      await fs.writeFile(noOverwriteFile, packageXmlWith(noOverwriteTypes));
+      return await listPackageXmlItemsMatchingNoOverwrite(packageXmlFile, noOverwriteFile);
+    } finally {
+      await fs.remove(tmpDir);
+    }
+  }
+
+  it('returns nothing when the types match but not the members', async () => {
+    const result = await matchingItems(
+      { CustomObject: ['Lead'], ListView: ['Lead.AllOpenLeads'] },
+      { CustomObject: ['Account'], ListView: ['Account.MyAccounts'] }
+    );
+    expect(result).to.deep.equal([]);
+  });
+
+  it('returns nothing when no type matches', async () => {
+    expect(await matchingItems({ ApexClass: ['MyClass'] }, { ListView: ['Account.MyAccounts'] })).to.deep.equal([]);
+  });
+
+  it('returns the members listed in package-no-overwrite.xml', async () => {
+    const result = await matchingItems(
+      { CustomObject: ['Account', 'Lead'], ApexClass: ['MyClass'] },
+      { CustomObject: ['Account'] }
+    );
+    expect(result).to.deep.equal([{ type: 'CustomObject', member: 'Account' }]);
+  });
+
+  it('matches every member of a type protected with a wildcard', async () => {
+    const result = await matchingItems({ ListView: ['Lead.A', 'Account.B'] }, { ListView: ['*'] });
+    expect(result).to.deep.equal([
+      { type: 'ListView', member: 'Lead.A' },
+      { type: 'ListView', member: 'Account.B' },
+    ]);
+  });
+
+  it('matches glob patterns', async () => {
+    const result = await matchingItems({ CustomObject: ['Sales__dlm', 'Account'] }, { CustomObject: ['*__dlm'] });
+    expect(result).to.deep.equal([{ type: 'CustomObject', member: 'Sales__dlm' }]);
+  });
+
+  it('does not match a package wildcard with explicit members, as the filtering never removes it', async () => {
+    expect(await matchingItems({ ListView: ['*'] }, { ListView: ['Account.MyAccounts'] })).to.deep.equal([]);
+  });
+
+  it('matches a Report listed under another folder, but not an EmailTemplate', async () => {
+    const result = await matchingItems(
+      { Report: ['Mercury/My_Report'], EmailTemplate: ['Mercury/My_Template'] },
+      { Report: ['GlobalFollowup/My_Report'], EmailTemplate: ['GlobalFollowup/My_Template'] }
+    );
+    expect(result).to.deep.equal([{ type: 'Report', member: 'Mercury/My_Report' }]);
+  });
+
+  // Runs the real deploy:smart filtering (keep the protected items existing in the org, then remove them
+  // from the package) against an org holding every concrete item, which is the worst case
+  async function itemsRemovedByNoOverwriteFiltering(
+    packageTypes: { [type: string]: string[] },
+    noOverwriteTypes: { [type: string]: string[] }
+  ): Promise<number> {
+    const tmpDir = await makeTmpDir();
+    try {
+      const orgTypes: { [type: string]: string[] } = {};
+      for (const types of [packageTypes, noOverwriteTypes]) {
+        for (const type of Object.keys(types)) {
+          const concreteMembers = types[type].filter((member) => !member.includes('*'));
+          orgTypes[type] = Array.from(new Set((orgTypes[type] || []).concat(concreteMembers)));
+        }
+      }
+      const packageXmlFile = path.join(tmpDir, 'package.xml');
+      const noOverwriteFile = path.join(tmpDir, 'package-no-overwrite.xml');
+      const orgFile = path.join(tmpDir, 'org.xml');
+      await fs.writeFile(packageXmlFile, packageXmlWith(packageTypes));
+      await fs.writeFile(noOverwriteFile, packageXmlWith(noOverwriteTypes));
+      await fs.writeFile(orgFile, packageXmlWith(orgTypes));
+      const before = await countPackageXmlItems(packageXmlFile);
+      await removePackageXmlFilesContent(noOverwriteFile, orgFile, {
+        outputXmlFile: noOverwriteFile,
+        removedOnly: true,
+        context: 'no-overwrite-keep',
+      });
+      if (await isPackageXmlEmpty(noOverwriteFile)) {
+        return 0;
+      }
+      await removePackageXmlFilesContent(packageXmlFile, noOverwriteFile, {
+        outputXmlFile: packageXmlFile,
+        keepEmptyTypes: true,
+        context: 'no-overwrite-remove',
+      });
+      return before - (await countPackageXmlItems(packageXmlFile));
+    } finally {
+      await fs.remove(tmpDir);
+    }
+  }
+
+  const scenarios: { label: string; pkg: { [type: string]: string[] }; noOverwrite: { [type: string]: string[] } }[] = [
+    { label: 'same type, other members', pkg: { CustomObject: ['Lead'] }, noOverwrite: { CustomObject: ['Account'] } },
+    { label: 'exact member', pkg: { CustomObject: ['Account', 'Lead'] }, noOverwrite: { CustomObject: ['Account'] } },
+    { label: 'wildcard type', pkg: { ListView: ['Lead.A'] }, noOverwrite: { ListView: ['*'] } },
+    { label: 'package wildcard', pkg: { ListView: ['*'] }, noOverwrite: { ListView: ['Lead.A'] } },
+    { label: 'Report in another folder', pkg: { Report: ['A/R1'] }, noOverwrite: { Report: ['B/R1'] } },
+    { label: 'Report folder entries', pkg: { Report: ['A/'] }, noOverwrite: { Report: ['B/'] } },
+  ];
+  for (const scenario of scenarios) {
+    it(`never skips the org listing when the filtering would protect an item: ${scenario.label}`, async () => {
+      const matches = await matchingItems(scenario.pkg, scenario.noOverwrite);
+      const removed = await itemsRemovedByNoOverwriteFiltering(scenario.pkg, scenario.noOverwrite);
+      if (matches.length === 0) {
+        expect(removed).to.equal(0);
+      }
+      if (removed > 0) {
+        expect(matches.length).to.be.greaterThan(0);
+      }
+    });
+  }
 });

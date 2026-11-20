@@ -1,3 +1,7 @@
+---
+title: "hardis:org:list:metadata - List metadata components of an org"
+description: "Lists the metadata components of one type in an org, for scripts, agents and user interfaces."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:list:metadata
 
@@ -35,20 +39,30 @@ The command has no prompt: `--type` is required, and `--agent` only confirms the
 </details>
 
 
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Metadata components
+
+One row per component (or folder) of the listed metadata type, with its full name and id; the file name continues with the type and the folder, and it is written only when the list has more than 20 rows.
+
+Files: `list-metadata-*.csv`, `xls/list-metadata-*.xlsx`
+
 ## Parameters
 
-| Name              |  Type   | Description                                                              |                 Default                  | Required | Options |
-|:------------------|:-------:|:-------------------------------------------------------------------------|:----------------------------------------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation                    |                                          |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                          |                                          |          |         |
-| flags-dir         | option  | undefined                                                                |                                          |          |         |
-| folder            | option  | Folder to list, for Report, Dashboard, Document and EmailTemplate        |                                          |          |         |
-| json              | boolean | Format output as json.                                                   |                                          |          |         |
-| refresh           | boolean | List the org again instead of using the cached listing                   |                                          |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required            |                                          |          |         |
-| target-org<br/>-o | option  | undefined                                                                | veurtio+demo.73193ee31bf8@agentforce.com |          |         |
-| type              | option  | Metadata API type to list (for example ApexClass, CustomField or Report) |                                          |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                |                                          |          |         |
+| Name              |  Type   | Description                                                                                                  | Default | Required | Options |
+|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                                         |         |          |         |
+| folder            | option  | Folder to list, for Report, Dashboard, Document and EmailTemplate                                            |         |          |         |
+| json              | boolean | Format output as json.                                                                                       |         |          |         |
+| refresh           | boolean | List the org again instead of using the cached listing                                                       |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| type              | option  | Metadata API type to list (for example ApexClass, CustomField or Report)                                     |         |   true   |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

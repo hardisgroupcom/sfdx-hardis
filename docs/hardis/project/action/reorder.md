@@ -1,3 +1,7 @@
+---
+title: "hardis:project:action:reorder - Reorder deployment actions"
+description: "Reorders deployment actions in the project configuration."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:action:reorder
 
@@ -38,6 +42,12 @@ Required in agent mode:
 </details>
 
 
+## Screenshots
+
+![The crew notification now runs first among the post-deployment actions](../../../assets/images/commands/project/action/reorder.webp)
+
+_The crew notification now runs first among the post-deployment actions_
+
 ## Parameters
 
 | Name         |  Type   | Description                                                                 | Default | Required |          Options           |
@@ -46,7 +56,7 @@ Required in agent mode:
 | agent        | boolean | Run in non-interactive mode for agents and automation                       |         |          |                            |
 | branch       | option  | Target branch name (for branch scope, defaults to current branch)           |         |          |                            |
 | debug<br/>-d | boolean | Activate debug mode (more logs)                                             |         |          |                            |
-| flags-dir    | option  | undefined                                                                   |         |          |                            |
+| flags-dir    | option  | Import flag values from a directory.                                        |         |          |                            |
 | json         | boolean | Format output as json.                                                      |         |          |                            |
 | order        | option  | Comma-separated list of all action IDs in desired order (full reorder mode) |         |          |                            |
 | position     | option  | New 1-based position for the action (single move mode)                      |         |          |                            |

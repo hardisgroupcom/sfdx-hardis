@@ -15,6 +15,7 @@ export class GenericTicketingProvider extends TicketProviderRoot {
   public static readonly providerLabel = "Generic ticketing";
   // No deep fetch: at most a subject and a status, read from genericTicketingProviderDetailsUrlBuilder
   public static readonly supportsTicketDetails = false;
+  public static readonly supportsComments = false;
 
   private ticketRefRegex: string | null;
   private ticketUrlBuilder: string | null;

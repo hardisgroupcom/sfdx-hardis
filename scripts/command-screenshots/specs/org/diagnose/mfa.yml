@@ -1,0 +1,10 @@
+command: hardis:org:diagnose:mfa
+run: sf hardis:org:diagnose:mfa
+org: showcase
+caption: "MFA audit of the Helios org: each setting to change in Setup, with the users and settings it affects"
+pills:
+  - text: "MFA configuration has errors"
+    legend: "The verdict: some logins of the org are not covered by MFA"
+  - text: "MFA configuration audit"
+    legend: "One row per finding of the six MFA checks, with its recommendation"
+    button: true

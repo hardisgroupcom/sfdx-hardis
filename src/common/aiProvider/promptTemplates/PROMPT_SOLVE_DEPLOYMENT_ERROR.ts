@@ -6,6 +6,11 @@ const template: PromptTemplateDefinition = {
       name: "ERROR",
       description: "The Salesforce deployment error message to analyze and solve.",
       example: "Cannot deploy component: missing field 'X' on object 'Y'"
+    },
+    {
+      name: "DEPLOYMENT_ACTION_HINTS",
+      description: "What sfdx-hardis deployment actions can do that a metadata deployment cannot (Setup settings applied in a browser...), or None.",
+      example: "A sfdx-hardis deployment action of type \"browser\" applies Salesforce Setup settings that the Metadata API cannot deploy. Its settings:\n  - recordTypes: RecordTypes - Deletes inactive record types"
     }
   ], text: {
     "en": `You are a Salesforce release manager using Salesforce CLI commands to perform deployments. Your goal is to help solve the following Salesforce deployment error in a clear, actionable way for a technical user. 
@@ -20,6 +25,7 @@ const template: PromptTemplateDefinition = {
     - Provide a step-by-step solution to resolve the error.
     - If applicable, include the correct sfdx source format or XML example.
     - Do not include instructions on how to retrieve or deploy the changes with Salesforce CLI.
+    - When the error comes from a setting that one of the deployment actions below can apply, suggest that deployment action, with its command.
 
 3. {{VARIABLE_FORMATTING_REQUIREMENTS}}
 
@@ -27,6 +33,9 @@ const template: PromptTemplateDefinition = {
 
 - The deployment error returned by Salesforce CLI is:
 {{ERROR}}
+
+- The sfdx-hardis deployment actions that can solve what a metadata deployment cannot:
+{{DEPLOYMENT_ACTION_HINTS}}
 
 {{VARIABLE_ADDITIONAL_INSTRUCTIONS}}
 `,

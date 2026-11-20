@@ -92,6 +92,9 @@ _See [Configure CI authentication](salesforce-devops-setup-auth.md)_
 - [ ] `SFDX_CLIENT_KEY_<ALIAS>` (AES passphrase) and/or `SFDX_CLIENT_CERT_<ALIAS>` is defined, matching the [certificate storage mode](salesforce-devops-setup-auth.md#certificate-storage-modes) you selected.
 - [ ] All credential variables are **masked / secret**, and not restricted to protected branches only if your pipelines run on other branches.
 - [ ] If you use scratch orgs, Dev Hub authentication is configured too (`sf hardis:project:configure:auth --devhub` plus the `SFDX_CLIENT_*_<DEVHUB_ALIAS>` variables).
+- [ ] If you use scratch orgs with GitHub, Azure, Bitbucket or Jenkins, the variable `USE_SCRATCH_ORGS` is set to `"true"` (the scratch org jobs are off by default there).
+- [ ] The [org initialization steps](salesforce-devops-org-initialization.md) give a new scratch org or sandbox what a contributor needs (packages, permission sets, scripts, data), checked once with `sf hardis:org:init` on a test org.
+- [ ] If you use a [scratch org pool](salesforce-devops-setup-scratch-org-pool.md), its refresh job is scheduled with `SCRATCH_ORG_POOL` set to `"true"`, and with a pool stored in the git provider the masked variable `SFDX_HARDIS_POOL_ENCRYPTION_KEY` is defined.
 - [ ] No `SFDX_AUTH_URL_*` variable is used for a major org (it embeds a long-lived refresh token, reserve it for scratch orgs and Dev Hub).
 - [ ] Login works from the CI server: a pipeline job reaches the org without falling back to an interactive prompt.
 
@@ -102,7 +105,7 @@ Find your platform below and tick only its items. Only what **you** have to do i
 - **GitHub / GitHub Actions** _(see [variables](salesforce-devops-setup-auth-github.md), [integration](salesforce-devops-setup-integration-github.md))_
   - [ ] Folder `.github/workflows` is kept, the workflow files of the other providers are deleted.
   - [ ] Secrets are created in **Settings -> Secrets and variables -> Actions**.
-  - [ ] Any secret **not already wired** in the `env` blocks of the templates is added there, since GitHub Actions does not expose secrets to jobs automatically. The templates wire the `SFDX_CLIENT_*` of the default branch names plus `SLACK_*`, `NOTIF_EMAIL_ADDRESS` and `JIRA_*`, so add for example your other branch aliases, `MS_TEAMS_WEBHOOK_URL`, `GOOGLE_CHAT_WEBHOOK_URL`, `NOTIF_API_*`, or the AI keys that are commented out.
+  - [ ] Any secret **not already wired** in the `env` blocks of the templates is added there, since GitHub Actions does not expose secrets to jobs automatically. The templates wire the `SFDX_CLIENT_*` of the default branch names plus `SLACK_*`, `NOTIF_EMAIL_ADDRESS`, `JIRA_*` and `AHA_*`, so add for example your other branch aliases, `MS_TEAMS_WEBHOOK_URL`, `GOOGLE_CHAT_WEBHOOK_URL`, `NOTIF_API_*`, or the AI keys that are commented out.
   - [ ] Branch protection rules require the check deploy and MegaLinter status checks to pass before merge.
 - **GitLab / GitLab CI** _(see [variables](salesforce-devops-setup-auth-gitlab.md), [integration](salesforce-devops-setup-integration-gitlab.md))_
   - [ ] Files `.gitlab-ci.yml` and `gitlab-ci-config.yml` are kept, the workflow files of the other providers are deleted.
@@ -116,7 +119,7 @@ Find your platform below and tick only its items. Only what **you** have to do i
   - [ ] Pipeline **Check Pull Request** is created from `azure-pipelines-checks.yml`, with the continuous integration trigger **disabled**.
   - [ ] Pipeline **Deploy to org** is created from `azure-pipelines-deployment.yml`, with continuous integration **enabled** and branch filters including all major branches.
   - [ ] Branch policies on the major branches include **Build Validation** with the Check Pull Request pipeline.
-  - [ ] Variables are defined on the pipelines (**Edit -> Variables**), and those **not already wired** in the templates are added to the YAML with `$(VARIABLE_NAME)`: the templates wire `SFDX_CLIENT_*_INTEGRATION` only, plus `SLACK_*`, `NOTIF_EMAIL_ADDRESS`, `JIRA_*` and `OPENAI_API_KEY`, so add for example your other branch aliases, `MS_TEAMS_WEBHOOK_URL`, `GOOGLE_CHAT_WEBHOOK_URL` or `NOTIF_API_*`.
+  - [ ] Variables are defined on the pipelines (**Edit -> Variables**), and those **not already wired** in the templates are added to the YAML with `$(VARIABLE_NAME)`: the templates wire `SFDX_CLIENT_*_INTEGRATION` only, plus `SLACK_*`, `NOTIF_EMAIL_ADDRESS`, `JIRA_*`, `AHA_*` and `OPENAI_API_KEY`, so add for example your other branch aliases, `MS_TEAMS_WEBHOOK_URL`, `GOOGLE_CHAT_WEBHOOK_URL` or `NOTIF_API_*`.
   - [ ] **Contribute** and **Contribute to Pull Requests** are allowed on the Build Service, so the pipeline can post on Pull Requests.
   - [ ] A Work Item named **sfdx-hardis tech attachments** exists (or `AZURE_ATTACHMENTS_WORK_ITEM_ID` is defined), so Flow visual git diff images can be uploaded.
 - **Bitbucket / Bitbucket Pipelines** _(see [variables](salesforce-devops-setup-auth-bitbucket.md), [integration](salesforce-devops-setup-integration-bitbucket.md))_
@@ -137,7 +140,7 @@ The default workflow files already declare the three jobs (check deploy, code qu
 - [ ] The **branch lists** of the workflow files are updated with **your** major branch names, if they differ from the defaults (`integration`, `uat`, `preprod`, `main`): each template has an `Add your major branches here` comment at the right place, and GitLab uses `DEPLOY_BRANCHES` in `gitlab-ci-config.yml`.
 - [ ] The sfdx-hardis Docker image or plugin version used by the pipeline is the one you want (pin a version instead of `latest` if you need reproducible runs).
 - [ ] The CI runner has enough minutes / capacity for the deployments.
-- [ ] `SFDX_DEPLOY_WAIT_MINUTES` is increased if your deployments need more than the default 120 minutes.
+- [ ] `SFDX_DEPLOY_WAIT_MINUTES` is increased if your deployments need more than the default 120 minutes, and the job timeout declared in the workflow files stays above it: `timeout` on GitLab, `timeoutInMinutes` on Azure, `timeout` in the Jenkinsfile, repository variable `CI_JOB_TIMEOUT_MINUTES` on GitHub. On Bitbucket Cloud a step cannot run more than 120 minutes, so the wait must stay below that.
 
 #### Project configuration
 
@@ -157,7 +160,7 @@ Then the rest of the project configuration:
 
 - [ ] [Automated sources cleaning](salesforce-devops-config-cleaning.md) is configured (`autoCleanTypes`), so User Story branches are cleaned before Pull Requests.
 - [ ] Apex test configuration matches your policy (test level, minimum coverage).
-- [ ] New User Story options are set (`availableTargetBranches`, `availableTargetBranchesLabels`, `sharedDevSandboxes`, `offerSandboxInit`, `allowedOrgTypes`...) so contributors get the right prompts.
+- [ ] New User Story options are set (`availableTargetBranches`, `availableTargetBranchesLabels`, `sharedDevSandboxes`, `allowedOrgTypes`...) so contributors get the right prompts.
 - [ ] Delta deployments are **NOT activated**: `useDeltaDeployment` is absent from `config/.sfdx-hardis.yml`, or set to `false`. The initialization Pull Request must deploy the **full package**. _See [Delta deployments](salesforce-devops-config-delta-deployment.md)_
 
 #### Notification channels
@@ -194,6 +197,10 @@ At least one channel must be configured, otherwise nobody is told when a deploym
 - **Azure Boards** _(see [Azure Boards integration](salesforce-devops-setup-integration-azure-boards.md))_
   - [ ] `SYSTEM_COLLECTIONURI`, `SYSTEM_ACCESSTOKEN`, `SYSTEM_TEAMPROJECT` and `BUILD_REPOSITORY_ID` are available from the pipelines.
   - [ ] The team knows that Work Items must be **linked to the Pull Requests** to be detected.
+- **Aha!** _(see [Aha! integration](salesforce-devops-setup-integration-aha.md))_
+  - [ ] `ticketingProvider: AHA` and `ahaHost` are defined in `.sfdx-hardis.yml`, so the VS Code extension can use them too.
+  - [ ] `AHA_API_KEY` is configured as a CI/CD secret, created by a dedicated Aha! user who can comment on the features of your workspaces.
+  - [ ] `ahaTicketRegex` is tuned to your workspace prefixes in `.sfdx-hardis.yml`, if the default expression catches too much.
 - **Any other ticketing tool** _(see [Generic ticketing](salesforce-devops-setup-integration-generic-ticketing.md))_
   - [ ] `genericTicketingProviderRegex` is defined in `.sfdx-hardis.yml` and tested against real ticket references.
   - [ ] `genericTicketingProviderUrlBuilder` is defined in `.sfdx-hardis.yml`, with its `{REF}` segment.
@@ -334,8 +341,8 @@ Not part of the CI/CD pipeline itself, but usually set up right after.
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) course does this, click by click, on an org of your own:
 
-- [Lab 3.11 - Capstone: run a weekly release cycle](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-11-capstone-run-a-weekly-release-cycle/)
+- [Lab 3.11 - Capstone: run a weekly release cycle](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-11-capstone-run-a-weekly-release-cycle/)
 
 <!-- training-links:end -->

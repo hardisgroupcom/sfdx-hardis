@@ -1,3 +1,7 @@
+---
+title: "hardis:project:generate:bypass"
+description: "Generates custom permissions and permission sets to bypass specified Salesforce automations (Flows, Triggers, and Validation Rules) for specific sObjects, with optional automatic implementation of bypass logic."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:generate:bypass
 
@@ -46,7 +50,7 @@ The command's technical implementation involves:
   - Queries `FlowDefinitionView` to find record-triggered flows for selected sObjects.
 - **Interactive Prompts:** Uses the `prompts` library for user-friendly selection of sObjects, automation types, and implementation options when flags are not provided.
 - **XML Generation:** Dynamically generates Custom Permission and Permission Set XML files with descriptive labels and comments indicating their purpose.
-- **File System Operations:** Uses `fs-extra` to create directory structures and write metadata files to `force-app/main/default/customPermissions/` and `force-app/main/default/permissionsets/`.
+- **File System Operations:** Uses Node.js `fs` to create directory structures and write metadata files to `force-app/main/default/customPermissions/` and `force-app/main/default/permissionsets/`.
 - **Metadata Retrieval:** When `--metadata-source org` is used, executes `sf project retrieve start --metadata` commands in chunks of 25 records to retrieve current automation metadata from the org.
 - **Smart Bypass Implementation:**
   - **Validation Rules:** Modifies `errorConditionFormula` XML nodes to wrap existing formulas with `AND(NOT($Permission.Bypass...), ...)` checks.
@@ -77,6 +81,42 @@ In agent mode:
 - `--apply-to-vrs`, `--apply-to-triggers`, `--apply-to-flows` default to false if not explicitly set
 
 
+## Screenshots
+
+![Pick the objects whose automations can be bypassed](../../../assets/images/commands/project/generate/bypass-1.webp)
+
+_Pick the objects whose automations can be bypassed_
+
+![Pick the kinds of automation to bypass](../../../assets/images/commands/project/generate/bypass-2.webp)
+
+_Pick the kinds of automation to bypass_
+
+![Bypass custom permissions for Installation__c and Panel_Batch__c, applied to their Flows and validation rules](../../../assets/images/commands/project/generate/bypass.webp)
+
+_Bypass custom permissions for Installation__c and Panel_Batch__c, applied to their Flows and validation rules_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Bypass generation
+
+One row per sObject and automation type, with the custom permission and permission set generated and the outcome.
+
+Files: `project-generate-bypass-generation-*.csv`, `xls/project-generate-bypass-generation-*.xlsx`
+
+![Bypass generation report in Excel](../../../assets/images/commands/project/generate/bypass-report-project-generate-bypass-generation.webp)
+
+### Bypass implementation
+
+One row per validation rule, trigger or flow where the bypass was added or skipped, with the outcome and a comment.
+
+Files: `project-generate-bypass-implementation-*.csv`, `xls/project-generate-bypass-implementation-*.xlsx`
+
+![Bypass implementation report in Excel](../../../assets/images/commands/project/generate/bypass-report-project-generate-bypass-implementation.webp)
+
 ## Parameters
 
 | Name                   |  Type   | Description                                                                                                                 | Default | Required | Options |
@@ -86,14 +126,14 @@ In agent mode:
 | apply-to-triggers      | boolean | Apply bypass to Triggers                                                                                                    |         |          |         |
 | apply-to-vrs           | boolean | Apply bypass to Validation Rules                                                                                            |         |          |         |
 | automations<br/>-a     | option  | Comma-separated automations to bypass: Flow, Trigger, VR                                                                    |         |          |         |
-| flags-dir              | option  | undefined                                                                                                                   |         |          |         |
+| flags-dir              | option  | Import flag values from a directory.                                                                                        |         |          |         |
 | json                   | boolean | Format output as json.                                                                                                      |         |          |         |
 | metadata-source<br/>-r | option  | Source of metadata elements to apply bypass to. Options: 'org' or 'local'.                                                  |         |          |         |
 | objects<br/>-s         | option  | Comma-separated list of sObjects to bypass (e.g., Account,Contact,Opportunity). If omitted, you will be prompted to select. |         |          |         |
 | outputfile<br/>-f      | option  | Force the path and name of output report file. Must end with .csv                                                           |         |          |         |
 | skip-credits<br/>-k    | boolean | Omit the "Generated by" line in the XML files                                                                               |         |          |         |
 | skipauth               | boolean | Skip authentication check when a default username is required                                                               |         |          |         |
-| target-org<br/>-o      | option  | undefined                                                                                                                   |         |          |         |
+| target-org<br/>-o      | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set.                |         |   true   |         |
 | websocket              | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                   |         |          |         |
 
 ## Examples

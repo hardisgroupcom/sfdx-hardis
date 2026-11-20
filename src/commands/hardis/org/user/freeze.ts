@@ -8,12 +8,21 @@ import { promptProfiles } from '../../../../common/utils/orgUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { soqlQuery, bulkQuery, bulkUpdate } from '../../../../common/utils/apiUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class OrgFreezeUser extends SfCommand<any> {
   public static title = 'Freeze user logins';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'users-to-freeze',
+      title: 'Users to freeze',
+      description: 'One row per user whose login is about to be frozen, with username, name and profile.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior
@@ -224,7 +233,7 @@ The command's technical implementation involves:
       return {
         Username: matchingUser.Username,
         Name: matchingUser.Name,
-        Profile: profileNames.filter((profile) => profile[0] === matchingUser.ProfileId)[1],
+        Profile: profileNames.find((profile) => profile[0] === matchingUser.ProfileId)?.[1] ?? '',
       };
     });
     uxLog("action", this, c.cyan(t('listOfUsersThatWillBeFrozen', { userLoginsToFreeze: userLoginsToFreeze.length })));

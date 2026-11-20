@@ -1,3 +1,7 @@
+---
+title: "hardis:project:deploy:notify - Deployment Notifications"
+description: "Post notifications related to: Deployment simulation (use with --check-only), Deployment process (to call only if your deployment is successful)"
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:deploy:notify
 
@@ -17,7 +21,7 @@ According to the [integrations you configured](https://sfdx-hardis.cloudity.com/
 
   - Slack, Microsoft Teams, Email deployment summary after a successful deployment
 
-  - JIRA tags and comments on tickets that just has been deployed
+  - JIRA, Azure Boards, ServiceNow or Aha! comments and tags on the tickets that have just been deployed
 
 ![](https://sfdx-hardis.cloudity.com/assets/images/screenshot-jira-gitlab.jpg)
 
@@ -82,6 +86,12 @@ sf hardis:project:deploy:notify --agent
 In agent mode, all interactive prompts are skipped and default values are used.
 
 
+## Screenshots
+
+![The notifications of a successful deployment to helios-uat - Pull Request comment, Jira tickets commented and labelled, Slack message](../../../assets/images/commands/project/deploy/notify.webp)
+
+_The notifications of a successful deployment to helios-uat - Pull Request comment, Jira tickets commented and labelled, Slack message_
+
 ## Parameters
 
 | Name                 |  Type   | Description                                                                                                            | Default | Required |            Options            |
@@ -90,11 +100,11 @@ In agent mode, all interactive prompts are skipped and default values are used.
 | check-only<br/>-c    | boolean | Use this option to send notifications from a Deployment simulation job                                                 |         |          |                               |
 | debug<br/>-d         | boolean | Activate debug mode (more logs)                                                                                        |         |          |                               |
 | deploy-status<br/>-s | option  | Send success, failure or unknown (default) to indicate if the deployment or deployment simulation is in success or not | unknown |          | valid<br/>invalid<br/>unknown |
-| flags-dir            | option  | undefined                                                                                                              |         |          |                               |
+| flags-dir            | option  | Import flag values from a directory.                                                                                   |         |          |                               |
 | json                 | boolean | Format output as json.                                                                                                 |         |          |                               |
 | message<br/>-m       | option  | Custom message that you want to be added in notifications (string or markdown format)                                  |         |          |                               |
 | skipauth             | boolean | Skip authentication check when a default username is required                                                          |         |          |                               |
-| target-org<br/>-o    | option  | undefined                                                                                                              |         |          |                               |
+| target-org<br/>-o    | option  | Username or alias of the target org.                                                                                   |         |          |                               |
 | websocket            | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                              |         |          |                               |
 
 ## Examples

@@ -165,3 +165,38 @@ describe('preselection reaches both prompt front ends', () => {
     expect(prepared.choices.map((choice: any) => choice.selected === true)).to.deep.equal([true, false, true]);
   });
 });
+
+describe('sensitive terminal questions', () => {
+  const configs: any[] = [];
+  const fakes: TerminalPromptFunctions = {
+    select: async () => undefined,
+    checkbox: async () => [],
+    input: async (config) => {
+      configs.push(config);
+      return 'typed';
+    },
+    number: async () => 0,
+  };
+
+  beforeEach(() => {
+    configs.length = 0;
+    setTerminalPromptFunctionsForTests(fakes);
+  });
+
+  afterEach(() => {
+    setTerminalPromptFunctionsForTests(null);
+  });
+
+  it('masks what is typed for a secret, and never prints its default', async () => {
+    await askTerminalQuestion({ type: 'text', message: 'Token', description: 'd', sensitive: true, default: 'glpat-existing' });
+    expect(configs[0].transformer('glpat-abc')).to.equal('*********');
+    expect(configs[0].transformer('')).to.equal('');
+    expect(configs[0].default).to.equal(undefined);
+  });
+
+  it('leaves any other text question readable, with its default', async () => {
+    await askTerminalQuestion({ type: 'text', message: 'Name', description: 'd', default: 'jane' });
+    expect(configs[0].transformer).to.equal(undefined);
+    expect(configs[0].default).to.equal('jane');
+  });
+});

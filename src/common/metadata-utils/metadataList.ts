@@ -1361,6 +1361,13 @@ export function listMetadataTypes() {
         xmlName: 'DataWeaveResource',
       },
       {
+        directoryName: 'debugLevels',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'debugLevel',
+        xmlName: 'DebugLevel',
+      },
+      {
         directoryName: 'decisionMatrixDefinition',
         inFolder: false,
         metaFile: false,
@@ -1475,6 +1482,13 @@ export function listMetadataTypes() {
         metaFile: true,
         suffix: 'story',
         xmlName: 'DiscoveryStory',
+      },
+      {
+        directoryName: 'docProcDefinitions',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'docProcDefinition',
+        xmlName: 'DocProcDefinition',
       },
       {
         directoryName: 'documents',
@@ -1741,6 +1755,13 @@ export function listMetadataTypes() {
         xmlName: 'ExperienceBundle',
       },
       {
+        directoryName: 'experienceContainers',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'experienceContainer',
+        xmlName: 'ExperienceContainer',
+      },
+      {
         directoryName: 'experiencePropertyTypeBundles',
         inFolder: false,
         metaFile: false,
@@ -1882,6 +1903,20 @@ export function listMetadataTypes() {
         metaFile: false,
         suffix: 'ExternalStoragePrvdConfigSet',
         xmlName: 'ExternalStoragePrvdConfig',
+      },
+      {
+        directoryName: 'extlClntAppAttestPolicies',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'ecaAttestPlcy',
+        xmlName: 'ExtlClntAppAttestConfigurablePolicies',
+      },
+      {
+        directoryName: 'extlClntAppAttestSettings',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'ecaAttest',
+        xmlName: 'ExtlClntAppAttestSettings',
       },
       {
         directoryName: 'extlClntAppCanvasSettings',
@@ -2220,6 +2255,13 @@ export function listMetadataTypes() {
         metaFile: false,
         suffix: 'genAiPromptTemplateActivation',
         xmlName: 'GenAiPromptTemplateActv',
+      },
+      {
+        directoryName: 'GenOpPlanEligibilityConfig',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'genOpPlanEligibilityConfig',
+        xmlName: 'GenOpPlanEligibilityConfig',
       },
       {
         directoryName: 'giftEntryGridTemplates',
@@ -2826,6 +2868,13 @@ export function listMetadataTypes() {
         metaFile: false,
         suffix: 'config',
         xmlName: 'NotificationTypeConfig',
+      },
+      {
+        directoryName: 'notificationDefinitions',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'notificationDefinition',
+        xmlName: 'NtfcnDefinition',
       },
       {
         directoryName: 'oauthcustomscopes',

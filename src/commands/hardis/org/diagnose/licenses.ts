@@ -9,12 +9,21 @@ import { generateCsvFile, generateReportPath } from '../../../../common/utils/fi
 import { NotifProvider } from '../../../../common/notifProvider/index.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class DiagnoseUnusedUsers extends SfCommand<any> {
   public static title = 'List licenses subscribed and used in a Salesforce org';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'licenses',
+      title: 'Licenses',
+      description: 'One row per license of the org (user licenses, permission set licenses), with the number of licenses bought and used.',
+    },
+  ];
 
   public static description = `
 **Lists and analyzes User Licenses and Permission Set Licenses subscribed and used in a Salesforce org.**
@@ -187,7 +196,7 @@ In agent mode, the command runs fully automatically with no interactive prompts.
     return {
       status: 0,
       licenses: this.licenses,
-      csvLogFile: this.outputFile,
+      csvLogFile: this.outputFilesRes?.csvFile ?? this.outputFile,
       xlsxLogFile: this.outputFilesRes.xlsxFile,
     };
   }

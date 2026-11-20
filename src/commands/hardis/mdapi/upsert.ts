@@ -6,6 +6,7 @@ import { isCI, uxLog } from '../../../common/utils/index.js';
 import { uxLogTableWithReport } from '../../../common/utils/filesUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { t } from '../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../common/docBuilder/commandScreenshots.js';
 import {
   buildTargetComponentSet,
   crudUpsertMetadatas,
@@ -17,6 +18,29 @@ import {
 
 export default class MdapiUpsert extends SfCommand<any> {
   public static title = 'Upsert metadata using the CRUD-based Metadata API';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'mdapi-upsert-components',
+      title: 'Components to overwrite',
+      description: 'One row per metadata component that will be overwritten as a whole in the org, listed before the confirmation prompt.',
+    },
+    {
+      file: 'mdapi-upsert-successes',
+      title: 'Upsert successes',
+      description: 'One row per metadata component created or updated in the org.',
+    },
+    {
+      file: 'mdapi-upsert-failures',
+      title: 'Upsert failures',
+      description: 'One row per metadata component that could not be upserted, with the error returned by the Metadata API.',
+    },
+    {
+      file: 'mdapi-upsert-skipped',
+      title: 'Upsert skipped items',
+      description: 'One row per metadata component skipped because its type is not supported by the CRUD-based Metadata API.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

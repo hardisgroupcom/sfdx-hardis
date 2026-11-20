@@ -1,0 +1,8 @@
+command: hardis:project:action:test-class:list
+run: sf hardis:project:action:test-class:list
+org: none
+caption: The Apex test classes declared for the deployments of the project, its branches and its Pull Requests
+answers:
+  - q: Select the configuration scope
+    choice: ^Project$
+    optional: true

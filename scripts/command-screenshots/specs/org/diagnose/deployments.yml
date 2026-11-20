@@ -1,0 +1,9 @@
+command: hardis:org:diagnose:deployments
+run: sf hardis:org:diagnose:deployments
+org: showcase
+caption: Deployments and validations of the last 30 days, with their duration and status
+answers:
+  - q: How many days back to analyze
+    value: 30
+    shot: true
+    caption: Type how many days back to analyze

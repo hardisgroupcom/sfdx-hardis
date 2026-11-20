@@ -8,7 +8,6 @@ import { uxLog } from "../utils/index.js";
 import { soqlQuery } from "../utils/apiUtils.js";
 import { deployMetadatas } from "../utils/deployUtils.js";
 import { KeyValueProviderInterface } from "../utils/keyValueUtils.js";
-import { setPoolStorage } from "../utils/poolUtils.js";
 import { t } from '../utils/i18n.js';
 
 export class SalesforceProvider implements KeyValueProviderInterface {
@@ -115,7 +114,8 @@ You mut create manually an Custom Object SfdxHardisKeyValueStore__c:
     }
     // Initialize storage
     try {
-      await setPoolStorage({}, options);
+      await this.manageSfdcOrgAuth(options);
+      await this.setValue(null, {});
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       uxLog("warning", this, c.yellow(t('youMayHaveToCreatePermissionSet')));

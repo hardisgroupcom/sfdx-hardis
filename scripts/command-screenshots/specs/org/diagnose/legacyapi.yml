@@ -1,0 +1,11 @@
+command: hardis:org:diagnose:legacyapi
+run: sf hardis:org:diagnose:legacyapi
+org: showcase
+caption: "Calls to retired API versions found in the Helios org event logs, counted by retirement wave: none here"
+pills:
+  - text: "Legacy API Calls"
+    legend: "One row per legacy call, with the client and the API version it used"
+    button: true
+  - text: "Article (EN)"
+    legend: "How to fix the calls before the retirement"
+    button: true

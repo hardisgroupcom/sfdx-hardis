@@ -1,3 +1,7 @@
+---
+title: "hardis:org:monitor:health-check - Check org security health"
+description: "Retrieves the Salesforce Security Health Check score together with every risk indicator, then exports the dataset for monitoring dashboards."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:monitor:health-check
 
@@ -49,18 +53,39 @@ sf hardis:org:monitor:health-check --agent --target-org myorg@example.com
 
 In agent mode, the command runs fully automatically with no interactive prompts.
 
+## Screenshots
+
+![Security Health Check score of the Helios org, then every setting below the Salesforce baseline by severity](../../../assets/images/commands/org/monitor/health-check.webp)
+
+_Security Health Check score of the Helios org, then every setting below the Salesforce baseline by severity_
+
+- **(1)** The score Salesforce shows in Setup > Health Check
+- **(2)** One row per indicator, with the org value and the baseline value
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Security health check
+
+One row per Salesforce Health Check setting, with the value set in the org, the standard value and the risk level, so you can fix the risky settings.
+
+Files: `org-health-check-*.csv`, `xls/org-health-check-*.xlsx`
+
+![Security health check report in Excel](../../../assets/images/commands/org/monitor/health-check-report-org-health-check.webp)
+
 ## Parameters
 
-| Name              |  Type   | Description                                                                                   | Default | Required | Options |
-|:------------------|:-------:|:----------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation. Uses default values and skips prompts. |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                               |         |          |         |
-| flags-dir         | option  | undefined                                                                                     |         |          |         |
-| json              | boolean | Format output as json.                                                                        |         |          |         |
-| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                             |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required                                 |         |          |         |
-| target-org<br/>-o | option  | undefined                                                                                     |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                     |         |          |         |
+| Name              |  Type   | Description                                                                                                  | Default | Required | Options |
+|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation. Uses default values and skips prompts.                |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                                         |         |          |         |
+| json              | boolean | Format output as json.                                                                                       |         |          |         |
+| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                                            |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

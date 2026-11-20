@@ -1,0 +1,85 @@
+{
+  "command": "hardis:project:promotion:list-candidates",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Promotion steps allowed by allowedPromotionSteps: uat > preprod"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Git provider connected: GitHub"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Listing the Pull Requests merged into uat and not yet promoted to preprod..."
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "table",
+        "message": "[{\"Pull Requests\":\"#118\",\"Title\":\"HEL-42 Installation checklist\",\"Author\":\"mariia-kowalska\",\"Commit\":\"7c41ab9\",\"Date\":\"2026-11-09 14:12\",\"Already promoted by\":\"\"},{\"Pull Requests\":\"#119\",\"Title\":\"HEL-52 Warranty term on panel batch\",\"Author\":\"romain-lefebvre\",\"Commit\":\"a91c0e4\",\"Date\":\"2026-11-10 09:40\",\"Already promoted by\":\"promotion/uat/preprod/2026-11-14-0900\"},{\"Pull Requests\":\"#121\",\"Title\":\"HEL-57 Installation scheduler batch\",\"Author\":\"lucia-fernandez\",\"Commit\":\"2f90d34\",\"Date\":\"2026-11-11 16:05\",\"Already promoted by\":\"\"},{\"Pull Requests\":\"#122\",\"Title\":\"HEL-61 Installation close check\",\"Author\":\"tomasz-nowak\",\"Commit\":\"c07e5b2\",\"Date\":\"2026-11-12 08:55\",\"Already promoted by\":\"\"},{\"Pull Requests\":\"#124\",\"Title\":\"HEL-66 Gate code of a site\",\"Author\":\"amelie-dubois\",\"Commit\":\"5d19e8a\",\"Date\":\"2026-11-13 11:20\",\"Already promoted by\":\"\"}]"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/promotion-candidates-features__HEL-42-installation-checklist.csv",
+        "title": "Pull Requests waiting for promotion from uat to preprod (CSV)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 60,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/xls/promotion-candidates-features__HEL-42-installation-checklist.xlsx",
+        "title": "Pull Requests waiting for promotion from uat to preprod (XLSX)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "1 Pull Request(s) are already carried by another promotion branch to this target branch and are left out: #119 -> promotion/uat/preprod/2026-11-14-0900. Use --include-already-promoted to promote them again"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "4 Pull Request(s) can be promoted from uat to preprod: #118, #121, #122, #124"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

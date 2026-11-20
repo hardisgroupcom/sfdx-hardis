@@ -1,0 +1,165 @@
+{
+  "command": "hardis:package:create",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Please input the name of the package (ex: MyPackage)",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "name": "packageName",
+            "type": "text",
+            "message": "🦙 Please input the name of the package (ex: MyPackage)",
+            "description": "Enter a clear name for your new Salesforce package",
+            "placeholder": "Ex: MyPackage"
+          }
+        ]
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Helios Core"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Please input the path of the package (ex: sfdx-source/apex-mocks)",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "name": "packagePath",
+            "type": "text",
+            "message": "🦙 Please input the path of the package (ex: sfdx-source/apex-mocks)",
+            "description": "Specify the directory path where the package source code is located",
+            "placeholder": "Ex: sfdx-source/apex-mocks"
+          }
+        ]
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "force-app"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Please select the type of the package",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "name": "packageType",
+            "type": "select",
+            "message": "🦙 Please select the type of the package",
+            "description": "Choose whether this is an unlocked package or managed package",
+            "placeholder": "Select package type",
+            "choices": [
+              {
+                "title": "Managed",
+                "value": "Managed",
+                "description": "Managed packages code is hidden and the package can be distributed on AppExchange"
+              },
+              {
+                "title": "Unlocked",
+                "value": "Unlocked",
+                "description": "Unlocked packages code is readable and the package is meant for internal use"
+              }
+            ],
+            "optionsPerPage": 9999
+          }
+        ]
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Unlocked"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Creating package Helios Core..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf package create --name \"Helios Core\" --package-type Unlocked --path \"force-app\"",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf package create --name \"Helios Core\" --package-type Unlocked --path \"force-app\"",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Created package Id: 0Ho0b000000HeLiOS associated to DevHub helios-devhub"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

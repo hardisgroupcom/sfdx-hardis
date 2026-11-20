@@ -1,3 +1,7 @@
+---
+title: "hardis:org:user:unlink-security-key - Unlink user security keys / MFA methods"
+description: "Disconnects MFA registrations (default: Security Key / U2F + WebAuthn) from selected Salesforce users by driving a real browser session against Salesforce Setup."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:user:unlink-security-key
 
@@ -18,7 +22,7 @@ Key functionalities:
 - **Per-user result:** Each username receives one of the following statuses: `unlinked`, `notLinked`, `notFound`, `inactive`, or `error`.
 - **Locale-independent detection:** Disconnect links are located by the brand / spec tokens (`U2F`, `WebAuthn`, `Salesforce Authenticator`, `One-Time Password Authenticator`, `TOTP`) that Salesforce does not translate, plus known French section labels and removal-action words (`Supprimer`, `Déconnecter`), so English and French orgs work out of the box. For other languages, extend the matching set with `--text-markers`.
 - **Reporting:** A console table summarises the run, and CSV / XLSX reports are generated for audit trails, including a `TriggeredBy` column naming who ran the command.
-- **Notifications:** Sends a notification (Slack, Microsoft Teams, email, API/Grafana) summarising which users had MFA methods unlinked, so security admins are alerted. Routing thresholds follow the `SECURITY_KEY_UNLINK` notification type configuration.
+- **Notifications:** Sends a notification (Slack, Microsoft Teams, email, API/Grafana) summarising which users had MFA methods unlinked, so security admins are alerted. Routing thresholds follow the `SECURITY_KEY_UNLINK` notification type configuration. At anonymization level `standard`, the Slack, Teams and email text shows the unlinked usernames, while the log elements and the API channel keep pseudonyms.
 - **Triggering user:** The notification ends with a line naming the person behind the run and whether it came from a CI pipeline or a manual run. Set `SFDX_HARDIS_TRIGGERED_BY` to override the detected value.
 
 ### Agent Mode
@@ -52,6 +56,38 @@ Reference: [Salesforce Help - Remove a user's security key](https://help.salesfo
 </details>
 
 
+## Screenshots
+
+![Type the users whose security keys to unlink](../../../assets/images/commands/org/user/unlink-security-key-1.webp)
+
+_Type the users whose security keys to unlink_
+
+![Security keys and authenticator apps unlinked from 13 of the 24 Helios users listed, with the targets and results reports](../../../assets/images/commands/org/user/unlink-security-key.webp)
+
+_Security keys and authenticator apps unlinked from 13 of the 24 Helios users listed, with the targets and results reports_
+
+- **(1)** One row per username, found or not, active or not
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Targeted users
+
+One row per user targeted by the unlink, with its id, whether it is active and its status before the run.
+
+Files: `unlink-security-key-targets-*.csv`, `xls/unlink-security-key-targets-*.xlsx`
+
+![Targeted users report in Excel](../../../assets/images/commands/org/user/unlink-security-key-report-unlink-security-key-targets.webp)
+
+### Unlink results
+
+One row per user, with the MFA methods unlinked, the ones that were not linked, the final status and who triggered the run.
+
+Files: `users-security-key-unlink-*.csv`, `xls/users-security-key-unlink-*.xlsx`
+
+![Unlink results report in Excel](../../../assets/images/commands/org/user/unlink-security-key-report-users-security-key-unlink.webp)
+
 ## Parameters
 
 | Name                             |  Type   | Description                                                                                                                                                   | Default | Required | Options |
@@ -59,13 +95,13 @@ Reference: [Salesforce Help - Remove a user's security key](https://help.salesfo
 | agent                            | boolean | Run in non-interactive mode for agents and automation                                                                                                         |         |          |         |
 | debug<br/>-d                     | boolean | Activate debug mode (more logs)                                                                                                                               |         |          |         |
 | dump-anchors                     | boolean | Diagnostic: print every anchor found on each user detail page (use with --debug to refine markers)                                                            |         |          |         |
-| flags-dir                        | option  | undefined                                                                                                                                                     |         |          |         |
+| flags-dir                        | option  | Import flag values from a directory.                                                                                                                          |         |          |         |
 | include-salesforce-authenticator | boolean | Also unlink the Salesforce Authenticator mobile app registration                                                                                              |         |          |         |
 | include-security-key             | boolean | Unlink the Security Key (U2F + WebAuthn combined) registration (default: true). Use --no-include-security-key to skip.                                        |         |          |         |
 | include-totp                     | boolean | Also unlink the One-Time Password Authenticator (TOTP) registration                                                                                           |         |          |         |
 | json                             | boolean | Format output as json.                                                                                                                                        |         |          |         |
 | skipauth                         | boolean | Skip authentication check when a default username is required                                                                                                 |         |          |         |
-| target-org<br/>-o                | option  | undefined                                                                                                                                                     |         |          |         |
+| target-org<br/>-o                | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set.                                                  |         |   true   |         |
 | text-markers                     | option  | JSON object adding text markers per method, useful on non-English orgs. Example: --text-markers '{"salesforceAuthenticator":["Authentificateur Salesforce"]}' |         |          |         |
 | usernames<br/>-u                 | option  | Comma-separated list of Salesforce usernames whose security keys should be unlinked                                                                           |         |          |         |
 | websocket                        | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                     |         |          |         |

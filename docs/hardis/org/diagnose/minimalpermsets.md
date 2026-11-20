@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:minimalpermsets - Detect permission sets with minimal permissions"
+description: "Analyzes permission set metadata files in the sfdx project to identify permission sets with very few permissions (configurable threshold, default: 5 or fewer)."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:minimalpermsets
 
@@ -29,18 +33,38 @@ sf hardis:org:diagnose:minimalpermsets --agent
 
 In agent mode, the command runs fully automatically. The permission threshold defaults to 5 (or `MINIMAL_PERMSETS_THRESHOLD` env var) when `--threshold` is not provided.
 
+## Screenshots
+
+![Permission sets of the Helios project with 16 permissions or fewer, candidates to merge into another one](../../../assets/images/commands/org/diagnose/minimalpermsets.webp)
+
+_Permission sets of the Helios project with 16 permissions or fewer, candidates to merge into another one_
+
+- **(1)** One row per permission set, with its file and its number of permissions
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Minimal permission sets
+
+One row per permission set of the project that grants very few permissions, with its file path and permission count, as candidates to merge into another permission set.
+
+Files: `minimal-permission-sets-*.csv`, `xls/minimal-permission-sets-*.xlsx`
+
+![Minimal permission sets report in Excel](../../../assets/images/commands/org/diagnose/minimalpermsets-report-minimal-permission-sets.webp)
+
 ## Parameters
 
 | Name                |  Type   | Description                                                                                                          | Default | Required | Options |
 |:--------------------|:-------:|:---------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent               | boolean | Run in non-interactive mode for agents and automation. Uses default values and skips prompts.                        |         |          |         |
 | debug<br/>-d        | boolean | Activate debug mode (more logs)                                                                                      |         |          |         |
-| flags-dir           | option  | undefined                                                                                                            |         |          |         |
+| flags-dir           | option  | Import flag values from a directory.                                                                                 |         |          |         |
 | json                | boolean | Format output as json.                                                                                               |         |          |         |
 | metadata-dir<br/>-m | option  | Directory containing .permissionset-meta.xml files. If not set, scans entire project for **/*.permissionset-meta.xml |         |          |         |
 | outputfile<br/>-f   | option  | Force the path and name of output report file. Must end with .csv                                                    |         |          |         |
 | skipauth            | boolean | Skip authentication check when a default username is required                                                        |         |          |         |
-| target-org<br/>-o   | option  | undefined                                                                                                            |         |          |         |
+| target-org<br/>-o   | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set.         |         |   true   |         |
 | threshold<br/>-t    | option  | Maximum number of permissions to be considered minimal. Overrides MINIMAL_PERMSETS_THRESHOLD env var.                |         |          |         |
 | websocket           | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                            |         |          |         |
 

@@ -15,12 +15,21 @@ import {
   PermissionGrant,
   PermissionsAuditSource,
 } from '../../../../common/utils/permissionsAuditUtils.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class DiagnoseUnsecurePermissions extends SfCommand<any> {
   public static title = 'Audit dangerous permissions';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'unsecure-permissions',
+      title: 'Dangerous permissions',
+      description: 'One workbook with a sheet each for the profiles, permission sets, permission set groups and users that hold dangerous permissions, with a criticality tier per row.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior
@@ -175,7 +184,10 @@ The command has no interactive prompts, so agent mode behaves like a normal run.
       uxLogTable(this, summaryRows);
 
       const report = await buildPermissionsAuditReport(this, auditData, outputFile, source);
-      uxLog('action', this, c.cyan(t('unsecurePermissionsReportGenerated', { file: report.xlsxFile })));
+      // No file when the XLSX could not be written (the cause is already logged)
+      if (report.xlsxFile) {
+        uxLog('action', this, c.cyan(t('unsecurePermissionsReportGenerated', { file: report.xlsxFile })));
+      }
     }
 
     if ((this.argv || []).includes('unsecure-permissions')) {

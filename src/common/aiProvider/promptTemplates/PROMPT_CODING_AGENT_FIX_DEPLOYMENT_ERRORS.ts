@@ -35,6 +35,7 @@ const template: PromptTemplateDefinition = {
 - Focus on fixing the root cause in the local metadata files
 - If a fix requires removing a reference to something that does not exist in the target org, remove it from the local file
 - If a fix requires adding a missing dependency, add it to the local metadata files
+- When an error comes with a "Deployment action" command (\`sf hardis:project:action:create ...\`), the error is solved by a deployment action, not by a metadata change: run that command (it only writes a local configuration file) and report it in the summary with the notes that come with it. When its notes list values to replace (like OBJECT_NAME), find them first in the local sources or by querying the target org; never run a command that still holds one, and if you cannot find them, do not run it and explain what to replace
 
 ## DEPLOYMENT ERRORS TO FIX
 

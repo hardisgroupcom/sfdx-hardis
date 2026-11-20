@@ -2,13 +2,14 @@
 import c from "chalk";
 import { getAllTips } from "./deployTipsList.js";
 import { formatTemplate as format } from "./stringUtils.js";
-import { deployErrorsToMarkdown, testFailuresToMarkdown } from "../gitProvider/utilsMarkdown.js";
+import { deployErrorsToMarkdown, testFailuresToMarkdown } from "../gitProvider/utils/utilsMarkdown.js";
 import { findJsonInString, stripAnsi, uxLog } from "./index.js";
 import { AiProvider, AiResponse } from "../aiProvider/index.js";
-import { analyzeDeployErrorLogsJson } from "./deployTipJson.js";
+import { analyzeDeployErrorLogsJson, buildNetworkErrorAndTip, extractShortNetworkCause, isNetworkFailureText } from "./deployTipJson.js";
 import { PullRequestData } from "../gitProvider/index.js";
 import { setPullRequestData } from "./gitUtils.js";
 import { t } from './i18n.js';
+import { buildTipDeploymentAction, formatDeploymentActionHint, getSolveDeploymentErrorPromptVariables } from "./deployTipActions.js";
 
 let logRes: string | null = null;
 let errorsAndTips: any[] = [];
@@ -61,7 +62,7 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
           },
         });
       } else {
-        const promptText = await AiProvider.buildPrompt("PROMPT_SOLVE_DEPLOYMENT_ERROR", { "ERROR": logLine.trim() });
+        const promptText = await AiProvider.buildPrompt("PROMPT_SOLVE_DEPLOYMENT_ERROR", await getSolveDeploymentErrorPromptVariables(logLine.trim()));
         // No tip found, give the user an AI prompt
         logResLines.push(c.yellow("No sfdx-hardis tip to solve this error. You can try the following prompt:"));
         logResLines.push(c.yellow(promptText));
@@ -85,6 +86,18 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
   if (failedTests.length === 0) {
     // Legacy sfdx force:source:deploy output
     extractFailedTestsInfoForSfdxCommand(logRaw, failedTests);
+  }
+  // A command that lost its connection to Salesforce prints no JSON when it was not run with --json:
+  // its only error lines ("Error (TypeError): fetch failed") are the network failure, not a metadata error.
+  // "read ECONNRESET" also matches the "Network issue" tip: the same failure, reported the same way.
+  const onlyNetworkErrors = errorsAndTips.length > 0
+    ? errorsAndTips.every((err) => (!err.tip || err.tip.label === "Network issue") && isNetworkFailureText(err.error.message))
+    : isNetworkFailureText(logRaw);
+  if (failedTests.length === 0 && onlyNetworkErrors) {
+    const networkErrorLine = logRaw.split(/\r?\n/).find((line) => isNetworkFailureText(line)) || "";
+    const networkError = buildNetworkErrorAndTip(extractShortNetworkCause(networkErrorLine.trim().replace(/^.*?Error(\s*\([^)]*\))?:\s*/, ""), logRaw));
+    errorsAndTips = [networkError];
+    logResLines.push(c.red(c.bold(networkError.error.message)), c.yellow(networkError.tip.message));
   }
   // Fallback in case we have not been able to identify errors
   if (errorsAndTips.length === 0 && failedTests.length === 0) {
@@ -176,6 +189,8 @@ async function matchesTip(tipDefinition: any, includeInLog = true): Promise<bool
   ) {
     if (includeInLog) {
       const logLines = returnErrorLines(logRes);
+      // A string tip has no placeholder to fill: its action is the same for every line
+      const deploymentAction = await buildTipDeploymentAction(tipDefinition, []);
       for (const line of logLines) {
         newLogLines.push(line);
         let found = false;
@@ -184,6 +199,9 @@ async function matchesTip(tipDefinition: any, includeInLog = true): Promise<bool
             found = true;
             newLogLines.push(c.yellow(c.italic("Tip for " + tipDefinition.label + ":")));
             newLogLines.push(...tipDefinition.tip.split(/\r?\n/).map((str: string) => c.yellow(str)));
+            if (deploymentAction) {
+              newLogLines.push(...formatDeploymentActionHint(deploymentAction, "console"));
+            }
             newLogLines.push(c.yellow(" "));
             // Update output list
             errorsAndTips.push({
@@ -191,7 +209,8 @@ async function matchesTip(tipDefinition: any, includeInLog = true): Promise<bool
               tip: {
                 label: tipDefinition.label,
                 message: tipDefinition.tip,
-                docUrl: tipDefinition.docUrl
+                docUrl: tipDefinition.docUrl,
+                ...(deploymentAction ? { deploymentAction } : {}),
               },
             });
           }
@@ -241,6 +260,10 @@ async function matchesTip(tipDefinition: any, includeInLog = true): Promise<bool
             newLogLines.push(c.yellow(c.italic(format(tipDefinition.label, replacements))));
             const tip = tipDefinition.tip;
             newLogLines.push(...tip.split(/\r?\n/).map((str: string) => c.yellow(format(str, replacements))));
+            const deploymentAction = await buildTipDeploymentAction(tipDefinition, [...m]);
+            if (deploymentAction) {
+              newLogLines.push(...formatDeploymentActionHint(deploymentAction, "console"));
+            }
             newLogLines.push(c.yellow(" "));
             // Update output list
             errorsAndTips.push({
@@ -249,6 +272,7 @@ async function matchesTip(tipDefinition: any, includeInLog = true): Promise<bool
                 label: tipDefinition.label,
                 docUrl: tipDefinition.docUrl,
                 message: stripAnsi(format(tipDefinition.tip, replacementsMarkdown).replace(/\*\*.\*\*/gm, ".")),
+                ...(deploymentAction ? { deploymentAction } : {}),
               },
             });
           }
@@ -291,6 +315,13 @@ export async function updatePullRequestResult(errorsAndTips: Array<any>, failedT
     deployStatus: "valid",
     // Also set the comment status, otherwise it stays "tovalidate" and the comment displays no banner
     status: "valid",
+    errorCount: errorsAndTips.length,
+    failedTestsCount: failedTests.length,
+    // Salesforce refuses a deployment whose Apex classes are not covered enough: an error of the
+    // tests, not of the metadata
+    coverageWarningsCount: errorsAndTips.filter((err) => err?.tip?.label === "CodeCoverageWarning").length,
+    // The connection to Salesforce was lost: nothing to fix in the metadata, the job must run again
+    networkErrorsCount: errorsAndTips.filter((err) => err?.tip?.label === "NetworkError").length,
   };
   if (errorsAndTips.length > 0) {
     prData.title = options.check ? "❌ Deployment check failure" : "❌ Deployment failure";
@@ -314,7 +345,7 @@ async function findAiTip(errorLine: any): Promise<AiResponse | null> {
       uxLog("warning", this, c.yellow(`[AI] Maximum number of AI calls for deployment tips reached. Increase with env var MAX_DEPLOYMENT_TIPS_AI_CALLS`));
       return null;
     }
-    const prompt = await AiProvider.buildPrompt("PROMPT_SOLVE_DEPLOYMENT_ERROR", { "ERROR": errorLine });
+    const prompt = await AiProvider.buildPrompt("PROMPT_SOLVE_DEPLOYMENT_ERROR", await getSolveDeploymentErrorPromptVariables(errorLine));
     try {
       const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_SOLVE_DEPLOYMENT_ERROR");
       return aiResponse;

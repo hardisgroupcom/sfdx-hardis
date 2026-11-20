@@ -1,0 +1,5 @@
+command: hardis:scratch:snapshot:refresh
+run: sf hardis:scratch:snapshot:refresh
+mode: replay
+org: none
+caption: "A snapshot of the uat branch is taken from a fresh scratch org, then the oldest snapshot is pruned"

@@ -1,0 +1,80 @@
+# Source of this file: the sfdx-hardis default template
+#   https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/azure-pipelines-major-branch-check.yml
+#   raw: https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/defaults/ci/azure-pipelines-major-branch-check.yml
+# To upgrade it, compare it with the latest version of that template and bring in its changes,
+# keeping what is specific to this project (branch names, secrets, runner tags, image, custom jobs).
+# What changed between versions: https://github.com/hardisgroupcom/sfdx-hardis/blob/main/CHANGELOG.md
+# Pipeline for Salesforce major branch deployment check
+#
+# Simulates the full deployment of a major branch to its own org, to know whether the org drifted from
+# its branch (manual changes, refresh, failed deployment). Nothing is deployed, no Pull Request is
+# commented, no deployment action runs.
+#
+# Setup:
+#   - Go to Pipelines
+#   - Create a new pipeline from this file (Create new -> Existing Azure Pipelines YAML file)
+#   - Rename it "Check Major Branch Deployment": the VS Code DevOps Pipeline finds the check by this name
+#   - Add the variables of your major branches (SFDX_CLIENT_ID_<BRANCH>, SFDX_CLIENT_KEY_<BRANCH>), like in the deployment pipeline
+#   - Edit the pipeline, open the menu ⋮ and select Triggers
+#   - In "Scheduled", add a schedule (ex: every night at 1am) and "Include" all your major branches,
+#     as in the branch filter of the deployment pipeline
+#   - Define enableMajorBranchDeploymentCheck: true in config/.sfdx-hardis.yml to see the result of each
+#     branch in the VS Code DevOps Pipeline
+#
+# More info at https://sfdx-hardis.cloudity.com/salesforce-devops-setup-major-branch-check/
+
+name: Check Major Branch Deployment
+
+# Only started by its schedule (defined in the pipeline Triggers) or by hand
+trigger: none
+pr: none
+
+# Mandatory variables, used by jobs
+variables:
+  - name: FORCE_COLOR
+    value: "1"
+  - name: BRANCH_NAME
+    value: $[replace(variables['Build.SourceBranch'], 'refs/heads/', '')]
+
+jobs:
+  - job: MajorBranchDeploymentCheck
+    displayName: Check Major Branch Deployment
+    timeoutInMinutes: 150
+    pool:
+      vmImage: ubuntu-latest
+    # Job runs in sfdx-hardis docker image, that includes Salesforce CLI and all required plugins & dependencies.
+    # Images are also mirrored on Docker Hub: hardisgroupcom/sfdx-hardis-ubuntu:latest
+    container: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
+    steps:
+      - checkout: self
+        fetchDepth: 0
+        displayName: Git Checkout
+
+      - script: |
+          echo "Check deployment of major branch \"${BRANCH_NAME}\" to its org"
+          sf hardis:auth:login
+          sf hardis:project:deploy:smart --check --major-branch-check
+        env:
+          SFDX_CLIENT_ID_INTEGRATION: $(SFDX_CLIENT_ID_INTEGRATION)
+          SFDX_CLIENT_KEY_INTEGRATION: $(SFDX_CLIENT_KEY_INTEGRATION)
+          CI_COMMIT_REF_NAME: $(BRANCH_NAME)
+          CONFIG_BRANCH: $(BRANCH_NAME)
+          ORG_ALIAS: $(BRANCH_NAME)
+          SFDX_DEPLOY_WAIT_MINUTES: $(SFDX_DEPLOY_WAIT_MINUTES)
+          SFDX_AUTH_URL_TECHNICAL_ORG: $(SFDX_AUTH_URL_TECHNICAL_ORG)
+          CI: "true"
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+          CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
+          SYSTEM_COLLECTIONURI: $(System.CollectionUri)
+          SYSTEM_TEAMPROJECT: $(System.TeamProject)
+          BUILD_REPOSITORY_ID: $(Build.Repository.ID)
+          BUILD_REPOSITORYNAME: $(Build.Repository.Name)
+          BUILD_SOURCEBRANCHNAME: $(Build.SourceBranchName)
+          BUILD_BUILD_ID: $(Build.BuildId)
+        displayName: "Check major branch deployment to its SF Org"
+      # Publish sfdx-hardis reports, including the complete deployment result JSON
+      - publish: $(System.DefaultWorkingDirectory)/hardis-report/
+        condition: succeededOrFailed()
+        continueOnError: true
+        artifact: hardis-report
+        displayName: Publish sfdx-hardis reports

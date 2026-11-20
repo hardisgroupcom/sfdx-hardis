@@ -2,7 +2,7 @@ import { XMLBuilder } from "fast-xml-parser";
 import { getLargeXmlParser } from '../utils/xmlUtils.js';
 import { PromptTemplate } from "../aiProvider/promptTemplates.js";
 import { DocBuilderRoot } from "./docBuilderRoot.js";
-import { mdTableCell, mdTableCellHtml } from "../gitProvider/utilsMarkdown.js";
+import { mdTableCell, mdTableCellHtml } from "../gitProvider/utils/utilsMarkdown.js";
 import { t } from '../utils/i18n.js';
 
 export class DocBuilderObject extends DocBuilderRoot {

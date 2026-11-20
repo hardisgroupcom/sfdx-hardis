@@ -12,12 +12,31 @@ import { prompts } from '../../../../common/utils/prompts.js';
 import { CONSTANTS } from '../../../../config/index.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class DiagnoseUnusedLicenses extends SfCommand<any> {
   public static title = 'Detect unused Permission Set Licenses (beta)';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'unused-ps-license-assignments',
+      title: 'Unused license assignments',
+      description: 'One row per permission set license assigned to an active user who holds no permission set that needs it, so you can free the license.',
+    },
+    {
+      file: 'failed-delete-ps-license-assignments',
+      title: 'Failed deletions',
+      description: 'One row per license assignment the command could not delete, written in interactive mode after you confirm the deletion.',
+    },
+    {
+      file: 'deleted-ps-license-assignments',
+      title: 'Deleted assignments',
+      description: 'One row per license assignment submitted for deletion, written in interactive mode after you confirm the deletion.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior
@@ -242,7 +261,7 @@ In agent mode, the bulk-delete confirmation prompt is skipped (no unused PSLAs a
       message: msg,
       summary: summary,
       unusedPermissionSetLicenseAssignments: this.unusedPermissionSetLicenseAssignments,
-      csvLogFile: this.outputFile,
+      csvLogFile: this.outputFilesRes?.csvFile ?? this.outputFile,
     };
   }
 
@@ -433,8 +452,9 @@ In agent mode, the bulk-delete confirmation prompt is skipped (no unused PSLAs a
             c.yellow(t('assignmentsDeletionErrors', { count: c.red(c.bold(deleteErrorNb)) }))
           );
           uxLogTable(this, deleteRes.failedResults);
-          this.outputFile = await generateReportPath('failed-delete-ps-license-assignments', this.outputFile);
-          this.outputFilesRes = await generateCsvFile(deleteRes.failedResults, this.outputFile, { fileTitle: "Failed PSL assignments deletions" });
+          // A file of its own: the report of the unused assignments stays as it was
+          const failedReportFile = await generateReportPath('failed-delete-ps-license-assignments', '');
+          await generateCsvFile(deleteRes.failedResults, failedReportFile, { fileTitle: "Failed PSL assignments deletions" });
           this.statusCode = 1;
         } else {
           this.statusCode = 0;
@@ -443,8 +463,8 @@ In agent mode, the bulk-delete confirmation prompt is skipped (no unused PSLAs a
         uxLog("success", this, c.green(t('assignmentsDeletedSuccess', { count: c.bold(deleteSuccessNb) })));
         if (deleteSuccessNb) {
           uxLogTable(this, deleteRes.successfulResults);
-          this.outputFile = await generateReportPath('deleted-ps-license-assignments', this.outputFile);
-          this.outputFilesRes = await generateCsvFile(this.unusedPermissionSetLicenseAssignments, this.outputFile, { fileTitle: "Deleted PSL assignments" });
+          const deletedReportFile = await generateReportPath('deleted-ps-license-assignments', '');
+          await generateCsvFile(this.unusedPermissionSetLicenseAssignments, deletedReportFile, { fileTitle: "Deleted PSL assignments" });
         }
       }
     }

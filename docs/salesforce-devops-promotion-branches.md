@@ -146,6 +146,22 @@ Both keys are read from the **project** configuration. `hardis:project:promotion
 
 </details>
 
+### Stories cherry-picked by hand before promotion branches (Beta)
+
+A project that moved stories between major branches with hand-made cherry-picks before adopting promotion branches has a history sfdx-hardis cannot read from the promotion Pull Requests: those stories are already in the next branch, yet they are still offered as candidates, and the DevOps Pipeline still lists them in the branch they left.
+
+Turn on **Detect manual cherry-picks** (`detectManualCherryPicks: true`, next to `enablePromotionBranches`) and sfdx-hardis also looks at the target branch itself:
+
+- the `git cherry-pick -x` trailers of its commits, `(cherry picked from commit <sha>)`, including the ones a later merge of the target branch back into the source branch made common to both;
+- the commits the git provider still lists for each Pull Request merged into it. A release branch gathering several cherry-picks, merged with a squash, leaves a single commit in the history, but GitLab, GitHub, Azure DevOps and Bitbucket keep the commits it held, trailers included. A Pull Request merged with a merge commit is read from the git history instead: it holds the same commits.
+
+A story found that way is treated like a promoted one: `hardis:project:promotion:create` no longer offers it, and the DevOps Pipeline lists it in the branch where it is waiting: the one it reached, or a branch further down when that branch was merged on since. Two cases stay where they are, flagged instead of moved, so nothing that did not travel is hidden:
+
+- **partially cherry-picked**: only some of the commits of the story were found;
+- **probably cherry-picked**: nothing names the story, but one commit of the target side has exactly the same title. Titles are reused ("--V2", the same fix twice), so a title alone never moves a story.
+
+The setting is off by default and only works with `enablePromotionBranches`: it costs one git provider call per Pull Request squash-merged into the target branch since the oldest candidate, counted on the merge date. Once every story moves through promotion branches, it has nothing left to find, and you can turn it off again.
+
 ### Naming
 
 A promotion branch is named after the step it serves and the minute it was assembled, so the name alone says where the stories come from and where they go:
@@ -259,11 +275,13 @@ promotionConflictMarkersIgnoredFiles:
   - labs/**/*.md
 ```
 
-The four answers in full:
+The answers in full:
 
 - **commit the story and every following conflict with their conflict markers, without asking again** (recommended): the promotion is assembled whole, conflicts and all, for the coding agent to solve;
-- **commit-with-markers**: the same for this story only, so you are asked again on the next conflict;
+- **commit-with-markers**: the same as the first answer, for this story only, so you are asked again on the next conflict;
+- **solve the conflicts of this User Story now, then continue**: the command lists the conflicting files, and opens them when it runs in VS Code. Solve them, save, and answer "I solved them, continue". The command checks that no conflict marker is left in those files, commits the story with your resolution and goes on with the next one. If markers are left, it names the files and asks again. Until then you can still commit with the markers, skip the story or stop. You are asked again at the next conflict;
 - **skip**: leave that story out, it is listed as such in the Pull Request description;
+- **keep the source branch version of the conflicting lines** (⚠️ **risky**), for this conflict or for every following one: the story is cherry-picked again with git taking the source side of each conflicting block, the rest of each file still merging both sides. Nobody looks at what it decides: a change made in the target branch on the same lines (a hotfix, a retrofit) can be lost, and lines of User Stories that are not part of the promotion can come along, half a story without its deployment actions. No validation job notices, since no marker is left. The files are listed under a warning in the Pull Request description and in the commit message: review them before merging. A file deleted on one side and changed on the other gets the source side too: kept as the story has it, or deleted when the story deleted it, so nothing is asked again;
 - **abort**: stop, the branch is deleted and nothing is pushed.
 
 The [sf-git-merge-driver](https://github.com/scolladon/sf-git-merge-driver) plugin solves many XML conflicts by itself, so install it and you will see far fewer of them.
@@ -275,7 +293,9 @@ A story whose change is already in the target branch (brought by a hotfix, a ret
 
 With **commit-with-markers**, the Pull Request description warns about the conflicts, lists the files to fix and embeds a ready-to-paste prompt for a coding agent, also saved in `hardis-report/promotion-conflicts-prompt-*.md`. The validation job stops with an error naming the files while a marker is still in the sources; on a provider that caps the description length (Azure DevOps stops at 4000 characters), the prompt is left out of the description and only the saved file carries it.
 
-`--on-conflict commit-with-markers` is the equivalent of the "and all the following conflicts" answer for a non-interactive run.
+`--on-conflict commit-with-markers` is the equivalent of the "and all the following conflicts" answer for a non-interactive run. "Solve now" has no flag value: nothing can solve a conflict unattended. `--on-conflict take-source` applies the risky "keep the source branch version" answer to every conflict; it uses `git cherry-pick -X theirs`, where "theirs" is the story being picked.
+
+The commit that carries conflict markers skips the git hooks of your project (Husky, pre-commit, lefthook...): a pre-commit hook running a linter or a formatter fails on a file full of `<<<<<<<`, which used to stop the command halfway. The commit that solves the markers later, and the "solve now" commit, run the hooks as usual.
 
 The coding agent prompt asks for a commit message that explains, file by file, what was on the target side, what the story added, and what was kept: the reviewer of the promotion Pull Request reads the resolutions without opening the diff.
 
@@ -403,7 +423,7 @@ The window of a branch runs since its last direct merge into the next branch, an
 
 A promotion carries **commits**, not Pull Request numbers. On a pipeline where User Stories are merged into `integration` and `integration` is then merged into `uat`, every first-parent commit of `uat` is one of those syncs: they are opened up into the User Story merges they brought in, so each story is a candidate of its own and can be carried alone. What stays grouped is a single commit that really brought several Pull Requests in at once (a squashed sync, an octopus merge, a back-merge from the target branch): promoting one of them carries the others too. The command names them before cherry-picking anything, and declares them all in the Pull Request.
 
-The lists and counters of the DevOps Pipeline leave out the Pull Requests that **move** other Pull Requests: a merge between two major branches, and a promotion Pull Request. Everything that carries its own change stays listed, whatever the branch is named (`feature/`, `fix/`, `retrofit/`, `hotfix/`...). The "Show merge and promotion Pull Requests" toggle at the top of the branch window brings the others back. The rule for major-to-major merges applies to **every** project, promotion branches or not, since such a merge is plumbing in any pipeline; a `promotion/` branch is only treated as a vehicle when the feature is enabled, exactly as the deployment jobs treat it.
+The lists and counters of the DevOps Pipeline leave out the Pull Requests that **move** other Pull Requests: a merge between two major branches, and a promotion Pull Request. Everything that carries its own change stays listed, whatever the branch is named (`feature/`, `fix/`, `retrofit/`, `hotfix/`...). The **Merges and promotions** filter of the Pull Requests tab of the branch window brings the others back. The rule for major-to-major merges applies to **every** project, promotion branches or not, since such a merge is plumbing in any pipeline; a `promotion/` branch is only treated as a vehicle when the feature is enabled, exactly as the deployment jobs treat it.
 
 The deployment jobs still see the stories in the `uat` promotion window: their original merge commits have not reached `preprod`, so their metadata is redeployed as a no-op and their already performed actions are skipped. That is a deployment concern, not a listing one.
 
@@ -474,8 +494,8 @@ Set `NO_CACHE=true` or `SFDX_HARDIS_NO_PR_CACHE=true` to bypass it entirely, and
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) course does this, click by click, on an org of your own:
 
-- [Lab 3.10 - Promote a subset with promotion branches (Beta)](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-10-promote-a-subset-with-promotion-branches/)
+- [Lab 3.10 - Promote a subset with promotion branches (Beta)](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-10-promote-a-subset-with-promotion-branches/)
 
 <!-- training-links:end -->

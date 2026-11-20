@@ -1,0 +1,5 @@
+command: hardis:ticket:set-label
+run: sf hardis:ticket:set-label --id HEL-42 --label deployed-uat
+mode: replay
+org: none
+caption: "The label deployed-uat added to the Jira ticket HEL-42"

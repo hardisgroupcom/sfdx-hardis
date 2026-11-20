@@ -8,11 +8,47 @@ import * as yaml from 'js-yaml';
 import { parseDocument as parseYamlDocument, isMap as isYamlMap, isSeq as isYamlSeq } from 'yaml';
 import { glob } from 'glob';
 import { SfError } from "@salesforce/core";
-import { UtilsAi } from "../aiProvider/utils.js";
+import { UtilsAi } from "../aiProvider/utils/utils.js";
 import { AiProvider } from "../aiProvider/index.js";
 import { uxLog, execCommand } from "../utils/index.js";
 import { SUPPORTED_LOCALES, t } from '../utils/i18n.js';
+import { removeDocCacheFromSite } from './docSiteUtils.js';
 
+
+// The two lines every generated page starts with. Whoever writes in a page sets the second one
+// to TRUE, and the next generation leaves that page alone.
+export const DOC_PROTECTION_HEADER_LINES = [
+  '<!-- This file is auto-generated. if you do not want it to be overwritten, set TRUE in the line below -->',
+  '<!-- DO_NOT_OVERWRITE_DOC=FALSE -->',
+];
+
+// Only the head of a page is read: an Apex page embeds the source of its class, which may well
+// quote these markers, and must not freeze itself or lose its own lines because of it
+const DOC_PROTECTION_HEAD_LENGTH = 1024;
+const DOC_PROTECTED_REGEX = /<!--\s*DO_NOT_OVERWRITE_DOC\s*=\s*TRUE\s*-->/i;
+const DOC_PROTECTION_LINE_REGEX = /<!--\s*DO_NOT_OVERWRITE_DOC\s*=\s*(TRUE|FALSE)\s*-->/i;
+
+/** True when a generated page exists and its author marked it DO_NOT_OVERWRITE_DOC=TRUE */
+export function isDocProtected(file: string): boolean {
+  if (!fs.existsSync(file)) {
+    return false;
+  }
+  const head = Buffer.alloc(DOC_PROTECTION_HEAD_LENGTH);
+  const fd = fs.openSync(file, 'r');
+  try {
+    const bytesRead = fs.readSync(fd, head, 0, DOC_PROTECTION_HEAD_LENGTH, 0);
+    return DOC_PROTECTED_REGEX.test(head.toString('utf8', 0, bytesRead));
+  } finally {
+    fs.closeSync(fd);
+  }
+}
+
+/** The page with the two protection lines on top, unless it already has them */
+export function withDocProtectionHeader(markdown: string): string {
+  return DOC_PROTECTION_LINE_REGEX.test(markdown.slice(0, DOC_PROTECTION_HEAD_LENGTH))
+    ? markdown
+    : [...DOC_PROTECTION_HEADER_LINES, '', markdown].join('\n');
+}
 
 /**
  * Builds a Set of all known translated values for docMdMenu* and docMdAll* i18n keys
@@ -563,31 +599,39 @@ export async function generateMkDocsHTML() {
     // Generate HTML pages with local Zensical
     uxLog("action", this, c.cyan(t('generatingHtmlPagesWithZensical')));
     const buildCommands = ["zensical build", "python -m zensical build", "py -m zensical build"];
-    const zensicalBuildRes = await execCommand(buildCommands.join(" || "), this, { fail: false, output: true, debug: false });
-    if (zensicalBuildRes.status !== 0) {
-      throw new SfError('Zensical build failed:\n' + zensicalBuildRes.stderr + "\n" + zensicalBuildRes.stdout);
+    const zensicalBuildRes = await runZensicalCommand(buildCommands.join(" || "));
+    if (!zensicalBuildRes.ok) {
+      throw new SfError('Zensical build failed:\n' + zensicalBuildRes.output);
     }
   }
   else {
     // Generate HTML pages with Docker
     uxLog("action", this, c.cyan(t('generatingHtmlPagesWithDocker')));
-    const zensicalBuildRes = await execCommand(`docker run --rm -v $(pwd):/docs ${ZENSICAL_DOCKER_IMAGE} build`, this, { fail: false, output: true, debug: false });
-    if (zensicalBuildRes.status !== 0) {
-      throw new SfError('Zensical build with docker failed:\n' + zensicalBuildRes.stderr + "\n" + zensicalBuildRes.stdout);
+    const zensicalBuildRes = await runZensicalCommand(`docker run --rm -v $(pwd):/docs ${ZENSICAL_DOCKER_IMAGE} build`);
+    if (!zensicalBuildRes.ok) {
+      throw new SfError('Zensical build with docker failed:\n' + zensicalBuildRes.output);
     }
+  }
+  // The AI and Mermaid caches are only read to regenerate the doc, never shown as site pages.
+  // A cleaning that fails (a site written by the root user of the Docker build...) leaves the
+  // built site as it is: it must not turn a build that worked into a failed one.
+  try {
+    const removedSearchEntries = await removeDocCacheFromSite(path.join(process.cwd(), "site"));
+    if (removedSearchEntries > 0) {
+      uxLog("log", this, c.grey(t('docCacheRemovedFromSite', { count: removedSearchEntries })));
+    }
+  } catch (e: any) {
+    uxLog("warning", this, c.yellow(t('docCacheRemovalFromSiteFailed', { message: e?.message || String(e) })));
   }
 }
 
 export async function installMkDocs() {
   uxLog("action", this, c.cyan(t('managingZensicalLocalInstallation')));
-  let zensicalLocalOk = false;
   const pipCommands = ["pip", "python -m pip", "py -m pip", "python3 -m pip", "py3 -m pip"]
     .map((pipCmd) => `${pipCmd} install ${ZENSICAL_PIP_PACKAGES}`);
-  const installZensicalRes = await execCommand(pipCommands.join(" || "), this, { fail: false, output: true, debug: false });
-  if (installZensicalRes.status === 0) {
-    zensicalLocalOk = true;
-  }
-  return zensicalLocalOk;
+  // A refused install (no pip, PEP 668 externally managed Python...) falls back to the Zensical Docker image
+  const installZensicalRes = await runZensicalCommand(pipCommands.join(" || "));
+  return installZensicalRes.ok;
 }
 
 // Index tables used to be rendered in the order the metadata files happened to be walked in:
@@ -724,4 +768,14 @@ ${content}
 <!-- Cache file end: ${cacheFilePath} -->`
   }
 
+}
+
+// execCommand throws when a command fails, whatever its fail option: return the outcome instead
+async function runZensicalCommand(command: string): Promise<{ ok: boolean; output: string }> {
+  try {
+    const res = await execCommand(command, this, { fail: false, output: true, debug: false });
+    return { ok: res.status === 0, output: `${res.stderr || ""}\n${res.stdout || ""}` };
+  } catch (e) {
+    return { ok: false, output: (e as Error).message };
+  }
 }

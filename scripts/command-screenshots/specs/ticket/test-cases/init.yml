@@ -1,0 +1,5 @@
+command: hardis:ticket:test-cases:init
+run: sf hardis:ticket:test-cases:init --testsjsonfile test-cases/HEL-42.json --kind functional
+mode: replay
+org: none
+caption: "A functional test notebook for HEL-42, ten test cases written to Excel with the tester columns left empty"

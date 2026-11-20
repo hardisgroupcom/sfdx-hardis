@@ -22,9 +22,12 @@ Read `.claude/rules/` for coding conventions, i18n rules, and translation rules 
    - Use native `fs` for file operations (or `src/common/utils/fsUtils.ts` for its extra helpers), never `fs-extra`
    - Use `prompts()` for user input
    - Follow the provider pattern for external integrations
+   - A deployment action type keeps everything specific to it (flags, prompts, validation, phases, defaults) in its `ActionsProvider` subclass, never in `base.ts`, `create.ts`, `update.ts` or `actionUtils.ts`: see "Deployment action types" in the `architecture` skill
+   - Every provider family (git, notification, ticketing, AI, actions...) is agnostic outside its implementation classes: commands, index.ts, root classes and shared utils never name an implementation nor use its native syntax (JQL, WIQL, API filters, Slack blocks...); they speak a common format each provider converts in its own class. See "Rule for every provider family" in the `architecture` skill
 3. **Extension side**: When the design touches vscode-sfdx-hardis, load the `vscode-sfdx-hardis` skill and implement that part in `../vscode-sfdx-hardis`, following that repository's `CLAUDE.md` and `.claude/skills/implement/SKILL.md` rather than the sfdx-hardis conventions. The CLI stays the engine: the extension passes flags, it does not duplicate CLI logic.
 4. **Add translations**: If new i18n keys were introduced, add them to **all 9 locale files** (`en`, `de`, `es`, `fr`, `it`, `ja`, `nl`, `pl`, `pt-BR`), sorted alphabetically.
 5. **Verify patterns**: Ensure new code matches existing patterns in the codebase.
+6. **Update CHANGELOG.md**: Read `.claude/skills/changelog/SKILL.md` first and follow it: one short line for end users under `## [beta] (main)`, added to the group of its command or feature when there is one, in a beta section ordered by theme.
 5b. **Monitoring AGENTS.md**: if the change touches what a monitoring repository's `AGENTS.md` describes (the backup output, the monitoring pipelines and commands, what is sent to Grafana, monitoring config keys, the CI/CD pipeline behavior, git provider APIs or token variables), read `.claude/skills/monitoring-agents-md/SKILL.md` and update `defaults/templates/monitoring/AGENTS.md` in the same change.
 
 Continue iterating until all changes from the design are implemented. Do not stop to ask whether to continue.

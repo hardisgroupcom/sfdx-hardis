@@ -1,3 +1,7 @@
+---
+title: "hardis:org:purge:flow - Purge Flow versions"
+description: "Purges old or unwanted Flow versions from a Salesforce org, with an option to delete related Flow Interviews."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:purge:flow
 
@@ -44,6 +48,47 @@ In agent mode:
 - Flow version and Flow Interview deletions proceed without confirmation.
 
 
+## Screenshots
+
+![Pick the statuses of the Flow versions to delete](../../../assets/images/commands/org/purge/flow-1.webp)
+
+_Pick the statuses of the Flow versions to delete_
+
+![Draft, inactive and obsolete Flow versions deleted from the Helios test org, with the list before and the result after](../../../assets/images/commands/org/purge/flow.webp)
+
+_Draft, inactive and obsolete Flow versions deleted from the Helios test org, with the list before and the result after_
+
+- **(1)** The versions selected, to check before confirming
+- **(2)** The deletion status of each version
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Flow versions to delete
+
+One row per Flow version selected for deletion, so you can check the list before confirming.
+
+Files: `org-purge-flow-to-delete-*.csv`, `xls/org-purge-flow-to-delete-*.xlsx`
+
+![Flow versions to delete report in Excel](../../../assets/images/commands/org/purge/flow-report-org-purge-flow-to-delete.webp)
+
+### Flow interviews to delete
+
+One row per Flow interview that blocks the deletion of a Flow version, with its name, label, status and creator; written only when there are more than 20 rows.
+
+Files: `flow-interviews-to-delete-*.csv`, `xls/flow-interviews-to-delete-*.xlsx`
+
+![Flow interviews to delete report in Excel](../../../assets/images/commands/org/purge/flow-report-flow-interviews-to-delete.webp)
+
+### Deleted records
+
+One row per Flow version or Flow interview the command tried to delete, with its deletion status and error if any.
+
+Files: `org-purge-flow-deleted-*.csv`, `xls/org-purge-flow-deleted-*.xlsx`
+
+![Deleted records report in Excel](../../../assets/images/commands/org/purge/flow-report-org-purge-flow-deleted.webp)
+
 ## Parameters
 
 | Name                          |  Type   | Description                                                                                                              |           Default            | Required | Options |
@@ -52,14 +97,14 @@ In agent mode:
 | allowpurgefailure<br/>-f      | boolean | Allows purges to fail without exiting with 1. Use --no-allowpurgefailure to disable                                      |                              |          |         |
 | debug<br/>-d                  | boolean | Activate debug mode (more logs)                                                                                          |                              |          |         |
 | delete-flow-interviews<br/>-w | boolean | If the presence of Flow interviews prevent to delete flows versions, delete them before retrying to delete flow versions |                              |          |         |
-| flags-dir                     | option  | undefined                                                                                                                |                              |          |         |
+| flags-dir                     | option  | Import flag values from a directory.                                                                                     |                              |          |         |
 | instanceurl<br/>-r            | option  | URL of org instance                                                                                                      | https://login.salesforce.com |          |         |
 | json                          | boolean | Format output as json.                                                                                                   |                              |          |         |
 | name<br/>-n                   | option  | Filter according to Name criteria                                                                                        |                              |          |         |
 | prompt<br/>-z                 | boolean | Prompt for confirmation (true by default, use --no-prompt to skip)                                                       |                              |          |         |
 | skipauth                      | boolean | Skip authentication check when a default username is required                                                            |                              |          |         |
 | status<br/>-s                 | option  | Filter according to Status criteria                                                                                      |                              |          |         |
-| target-org<br/>-o             | option  | undefined                                                                                                                |                              |          |         |
+| target-org<br/>-o             | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set.             |                              |   true   |         |
 | websocket                     | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                |                              |          |         |
 
 ## Examples

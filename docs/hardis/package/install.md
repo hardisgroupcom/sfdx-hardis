@@ -1,3 +1,7 @@
+---
+title: "hardis:package:install - Install packages in an org"
+description: "Install a package in an org using its id (starting with 04t)"
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:package:install
 
@@ -17,19 +21,29 @@ Use `--agent` to disable all interactive prompts. Required flags in agent mode:
 All interactive package selection prompts are skipped. The `managePackageConfig` step is also skipped.
 
 
+## Screenshots
+
+![Pick a package from the list, or Other to give a package version id](../../assets/images/commands/package/install-1.webp)
+
+_Pick a package from the list, or Other to give a package version id_
+
+![Package version 04t0b000000HeLiOSAA of Helios Core is installed in the org](../../assets/images/commands/package/install.webp)
+
+_Package version 04t0b000000HeLiOSAA of Helios Core is installed in the org_
+
 ## Parameters
 
-| Name                   |  Type   | Description                                                   | Default | Required | Options |
-|:-----------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent                  | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
-| debug<br/>-d           | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir              | option  | undefined                                                     |         |          |         |
-| installationkey<br/>-k | option  | installation key for key-protected package (default: null)    |         |          |         |
-| json                   | boolean | Format output as json.                                        |         |          |         |
-| package<br/>-p         | option  | Package Version Id to install (04t...)                        |         |          |         |
-| skipauth               | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-org<br/>-o      | option  | undefined                                                     |         |          |         |
-| websocket              | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+| Name                   |  Type   | Description                                                                                                  | Default | Required | Options |
+|:-----------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                  | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| debug<br/>-d           | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir              | option  | Import flag values from a directory.                                                                         |         |          |         |
+| installationkey<br/>-k | option  | installation key for key-protected package (default: null)                                                   |         |          |         |
+| json                   | boolean | Format output as json.                                                                                       |         |          |         |
+| package<br/>-p         | option  | Package Version Id to install (04t...)                                                                       |         |          |         |
+| skipauth               | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o      | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket              | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

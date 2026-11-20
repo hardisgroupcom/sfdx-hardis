@@ -1,4 +1,4 @@
-import { ActionsProvider, ActionResult, PrePostCommand, buildActionOutput } from './actionsProvider.js';
+import { ActionsProvider, ActionResult, PrePostCommand, buildActionOutput, ActionParameterDescription } from './actionsProvider.js';
 import { execCommand, getCurrentGitBranch, isCI, uxLog } from '../utils/index.js';
 import { AuthOrgOptions, authOrg, safeDeleteAuthTempFile } from '../utils/authUtils.js';
 import { GitProvider } from '../gitProvider/index.js';
@@ -21,6 +21,12 @@ export class CommandAction extends ActionsProvider {
     return 'CommandAction';
   }
 
+  public getParameterDescriptions(): ActionParameterDescription[] {
+    return [
+      { name: 'command', path: 'command', flag: 'command', type: 'string', required: true, description: 'Shell command to run, from the root of the repository' },
+    ];
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async checkParameters(cmd: PrePostCommand): Promise<ActionResult | null> {
     const command = cmd.command;
@@ -31,6 +37,11 @@ export class CommandAction extends ActionsProvider {
     return null;
   }
 
+  // The command line is what a command action does, its parameters are not used
+  public getIdentityParameters(cmd: PrePostCommand): Record<string, any> | null {
+    return { command: (cmd.command || '').trim() };
+  }
+
   public async run(cmd: PrePostCommand): Promise<ActionResult> {
     const validity = await this.checkValidityIssues(cmd);
     if (validity) return validity;
@@ -38,8 +49,10 @@ export class CommandAction extends ActionsProvider {
 
     // For cert-dependent commands in CI, re-authenticate keeping the JWT certificate file
     // available during execution, then delete it whatever the command outcome.
+    // Not during an org initialization: the re-authentication targets the major org of the branch,
+    // and would make it the default org while the steps initialize a scratch org or a sandbox
     const keptCertFilePath =
-      isCI && commandNeedsCertKeepAlive(cmd.command) ? await this.reauthKeepingCertFile() : null;
+      isCI && !cmd.orgInitContext && commandNeedsCertKeepAlive(cmd.command) ? await this.reauthKeepingCertFile() : null;
     try {
       const res = await execCommand(cmd.command, null, { fail: false, output: true });
       return { statusCode: res.status === 0 ? 'success' : 'failed', output: buildActionOutput(res) };

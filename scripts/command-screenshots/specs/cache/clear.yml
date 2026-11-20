@@ -1,0 +1,2 @@
+command: hardis:cache:clear
+skip: "It runs without the VS Code command runner: the extension calls it in the background."

@@ -62,7 +62,7 @@ Do not edit anything when returning this block.
 
 - Edit sources under `src/` (commands in `src/commands/hardis/**/*.ts`, shared utils in `src/common/`, i18n in `src/i18n/<locale>.json`, schema in `config/sfdx-hardis.jsonschema.json`, workflows in `.github/workflows/`).
 - Follow ESM `.js` import suffixes, `uxLog` for logging, `t()` for user-visible strings, 9-locale parity.
-- Run local validation that needs no Salesforce org: `yarn compile`, `yarn lint`, `yarn test:only` (skip if it requires CI=true and that is not feasible locally), and `yarn build:doc` if you changed a command `description`/flags/examples.
+- Run local validation that needs no Salesforce org: `yarn compile`, `yarn lint`, `yarn test:only` (skip if it requires CI=true and that is not feasible locally), and `yarn build:doc --commands <command id>` (after `yarn compile`) if you changed a command `description`/flags/examples, so only the pages of the commands you changed are rewritten.
 - Do NOT introduce defensive hacks (skip-on-fail, retries, `|| true`, weakened assertions, broad jscpd ignores) to force green - fix the root cause.
 - Do NOT run `yarn build` and commit `lib/`. **Yarn only**, never `npm install`.
 

@@ -1,0 +1,797 @@
+import { expect } from 'chai';
+import * as fs from 'fs';
+import * as http from 'http';
+import * as os from 'os';
+import * as path from 'path';
+import { execFileSync } from 'child_process';
+import { pathToFileURL } from 'url';
+import { getExhaustedSnapshotLimit, getSnapshotDescription, getSnapshotLimitError, getSnapshotScope, getSnapshotSignupError, isSnapshotSignupRetryable, getSnapshotName, parsePositiveSetting, pickScratchSnapshot, pickSnapshotTargetBranch, extendSnapshotDeltaWithDependencies, fetchFullHistoryIfShallow, orgInitStepChangedSince, getConfigOfSnapshotBranch, resolveScratchSnapshot, isScratchSnapshotBranch, scopeDeltaToDeployManifest, scratchDefChangedSince, selectSnapshotOrgInitStepIds } from '../../../src/common/utils/scratchSnapshotUtils.js';
+import { parsePackageXmlFile } from '../../../src/common/utils/xmlUtils.js';
+import { clearListMajorOrgsCache } from '../../../src/common/utils/orgConfigUtils.js';
+import { getConfig } from '../../../src/config/index.js';
+import { t } from '../../../src/common/utils/i18n.js';
+import { WebSocketClient } from '../../../src/common/websocketClient.js';
+
+const shaNew = 'a'.repeat(40);
+const shaOld = 'b'.repeat(40);
+const record = (name: string, description: string) => ({ SnapshotName: name, Description: description });
+const main = 'project=acme branch=main';
+
+describe('pickScratchSnapshot', () => {
+  const records = [
+    record('SH0000000000001', `sfdx-hardis project=acme branch=main sha=${shaNew}`),
+    record('SH0000000000002', `sfdx-hardis project=acme branch=main sha=${shaOld}`),
+  ];
+
+  it('takes the newest snapshot whose commit is in the history of HEAD', () => {
+    expect(pickScratchSnapshot(records, main, () => true)).to.deep.equal({ name: 'SH0000000000001', sha: shaNew });
+  });
+
+  it('takes an older snapshot when the newest commit is not in the history, as for a branch behind its target', () => {
+    expect(pickScratchSnapshot(records, main, (sha) => sha === shaOld)).to.deep.equal({ name: 'SH0000000000002', sha: shaOld });
+  });
+
+  it('returns null when no snapshot commit is in the history', () => {
+    expect(pickScratchSnapshot(records, main, () => false)).to.equal(null);
+  });
+
+  it('ignores the snapshots of a branch whose name only starts the same, which the LIKE query also returns', () => {
+    const other = [record('SH0000000000003', `sfdx-hardis project=acme branch=main_v2 sha=${shaNew}`)];
+    expect(pickScratchSnapshot(other, main, () => true)).to.equal(null);
+  });
+
+  it('accepts the 64 character commit sha of a SHA-256 repository', () => {
+    const sha256 = 'c'.repeat(64);
+    const records256 = [record('SH0000000000003', `sfdx-hardis project=acme branch=main sha=${sha256}`)];
+    expect(pickScratchSnapshot(records256, main, () => true)).to.deep.equal({ name: 'SH0000000000003', sha: sha256 });
+  });
+
+  it('ignores a description without a full commit sha', () => {
+    const broken = [record('SH0000000000004', 'sfdx-hardis project=acme branch=main sha=abc123')];
+    expect(pickScratchSnapshot(broken, main, () => true)).to.equal(null);
+  });
+
+  it('ignores the snapshots of another project on the same Dev Hub, whatever their branch', () => {
+    const otherProject = [record('SH0000000000005', `sfdx-hardis project=other branch=main sha=${shaNew}`)];
+    expect(pickScratchSnapshot(otherProject, main, () => true)).to.equal(null);
+  });
+});
+
+describe('pickSnapshotTargetBranch', () => {
+  const names = ['FORCE_TARGET_BRANCH', 'GITHUB_BASE_REF', 'CI_MERGE_REQUEST_TARGET_BRANCH_NAME', 'SYSTEM_PULLREQUEST_TARGETBRANCH', 'BITBUCKET_PR_DESTINATION_BRANCH', 'CHANGE_TARGET'];
+  const saved: Record<string, string | undefined> = {};
+  beforeEach(() => names.forEach((name) => { saved[name] = process.env[name]; delete process.env[name]; }));
+  afterEach(() => names.forEach((name) => (saved[name] === undefined ? delete process.env[name] : (process.env[name] = saved[name]))));
+
+  it('takes the Pull Request of the git provider over FORCE_TARGET_BRANCH', () => {
+    process.env.FORCE_TARGET_BRANCH = 'other';
+    expect(pickSnapshotTargetBranch('main')).to.equal('main');
+  });
+
+  it('falls back to FORCE_TARGET_BRANCH when the provider gives no Pull Request, before the CI variables', () => {
+    process.env.FORCE_TARGET_BRANCH = 'uat';
+    process.env.GITHUB_BASE_REF = 'main';
+    expect(pickSnapshotTargetBranch(null)).to.equal('uat');
+  });
+
+  for (const name of names.slice(1)) {
+    it(`reads ${name} when the provider and FORCE_TARGET_BRANCH give nothing`, () => {
+      process.env[name] = 'integration';
+      expect(pickSnapshotTargetBranch(undefined)).to.equal('integration');
+    });
+  }
+
+  it('strips refs/heads/ from the Azure Repos target branch', () => {
+    process.env.SYSTEM_PULLREQUEST_TARGETBRANCH = 'refs/heads/integration';
+    expect(pickSnapshotTargetBranch(null)).to.equal('integration');
+  });
+
+  it('ignores an Azure variable left unresolved as $(NAME)', () => {
+    process.env.FORCE_TARGET_BRANCH = '$(BRANCH_NAME)';
+    process.env.CHANGE_TARGET = 'main';
+    expect(pickSnapshotTargetBranch(null)).to.equal('main');
+  });
+
+  it('gives nothing when no source knows the target branch, as in a local run', () => {
+    expect(pickSnapshotTargetBranch(null)).to.equal(undefined);
+  });
+});
+
+describe('snapshot name and description', () => {
+  it('names the snapshot with 15 alphanumeric characters, as Salesforce requires', () => {
+    expect(getSnapshotName(main, '0123456789abcdef0123456789abcdef01234567')).to.match(/^SH0123456[0-9a-f]{6}$/);
+  });
+
+  it('gives two branches, or two projects, at the same commit different snapshot names', () => {
+    const sha = '0123456789abcdef0123456789abcdef01234567';
+    expect(getSnapshotName('project=acme branch=uat', sha)).to.not.equal(getSnapshotName('project=acme branch=integration', sha));
+    expect(getSnapshotName('project=acme branch=main', sha)).to.not.equal(getSnapshotName('project=other branch=main', sha));
+  });
+
+  it('writes a description that the Pull Request side reads back', () => {
+    const scope = 'project=acme branch=release/1.0';
+    const record = { SnapshotName: 'SH0000000000001', Description: getSnapshotDescription(scope, shaNew) };
+    expect(pickScratchSnapshot([record], scope, () => true)).to.deep.equal({ name: 'SH0000000000001', sha: shaNew });
+  });
+
+  it('scopes the snapshots by the project name, PROJECT_NAME first', async () => {
+    const previous = process.env.PROJECT_NAME;
+    process.env.PROJECT_NAME = 'acme';
+    try {
+      expect(await getSnapshotScope('main')).to.equal('project=acme branch=main');
+    } finally {
+      if (previous === undefined) delete process.env.PROJECT_NAME;
+      else process.env.PROJECT_NAME = previous;
+    }
+  });
+});
+
+describe('getExhaustedSnapshotLimit', () => {
+  const limits = (daily: number, active: number) => ({
+    DailyOrgSnapshots: { Max: 5, Remaining: daily },
+    ActiveOrgSnapshots: { Max: 5, Remaining: active },
+  });
+
+  it('names the daily limit when no snapshot is left today', () => {
+    expect(getExhaustedSnapshotLimit(limits(0, 3))).to.equal('DailyOrgSnapshots (0 of 5 left)');
+  });
+
+  it('names the active limit when every snapshot slot is taken', () => {
+    expect(getExhaustedSnapshotLimit(limits(4, 0))).to.equal('ActiveOrgSnapshots (0 of 5 left)');
+  });
+
+  it('returns null when both limits have room', () => {
+    expect(getExhaustedSnapshotLimit(limits(1, 1))).to.equal(null);
+  });
+
+  it('returns null when the Dev Hub does not report the limits, so the refresh goes on as before', () => {
+    expect(getExhaustedSnapshotLimit(null)).to.equal(null);
+    expect(getExhaustedSnapshotLimit({ DailyScratchOrgs: { Max: 6, Remaining: 0 } })).to.equal(null);
+  });
+});
+
+describe('isSnapshotSignupRetryable', () => {
+  // The shape execSfdxJson returns for a failed `sf org create scratch --json`
+  const failure = (name: string, message: string) => ({
+    status: 1,
+    errorMessage: `[sfdx-hardis][ERROR] Error processing command\n{\n  "name": "${name}",\n  "message": "${message}"\n}`,
+  });
+
+  it('retries a signup the snapshot itself refused', () => {
+    expect(isSnapshotSignupRetryable(failure('INVALID_ACCESS_LEVEL', 'We couldn’t create the snapshot INVALID_ACCESS_LEVEL.'))).to.equal(true);
+  });
+
+  it('does not retry a signup that timed out, as the first org may still be created', () => {
+    expect(isSnapshotSignupRetryable(failure('ScratchOrgInfoTimeoutError', 'The scratch org did not complete within your wait time.'))).to.equal(false);
+    expect(isSnapshotSignupRetryable(failure('MyDomainResolverTimeoutError', 'Unable to resolve the My Domain URL.'))).to.equal(false);
+    expect(isSnapshotSignupRetryable({ status: 1, errorMessage: 'Socket timeout occurred while listening for results' })).to.equal(false);
+  });
+
+  it('does not retry a signup timeout as sf reports it: a plain Error with exit code 69', () => {
+    // plugin-org rethrows ScratchOrgInfoTimeoutError as this.error(message, { exit: 69 }), so the name is lost
+    const timeout = { ...failure('Error', 'The scratch org did not complete within your wait time. Resume with sf org resume scratch.'), error: { code: 69 } };
+    expect(isSnapshotSignupRetryable(timeout)).to.equal(false);
+  });
+
+  it('does not retry a failure after the org was created, as the settings deployment, which sf gives exit code 68', () => {
+    const settingsFailure = { ...failure('SfError', 'Failed to deploy the scratch org settings.'), error: { code: 68 } };
+    expect(isSnapshotSignupRetryable(settingsFailure)).to.equal(false);
+  });
+
+  it('does not retry when the org was created and only its login failed, or the Dev Hub has no login', () => {
+    expect(isSnapshotSignupRetryable(failure('AuthCodeExchangeError', 'Error authenticating with auth code due to: ERROR_HTTP_420'))).to.equal(false);
+    expect(isSnapshotSignupRetryable(failure('NamedOrgNotFoundError', 'No authorization information found for DevHub2.'))).to.equal(false);
+  });
+
+  it('does not retry when no scratch org is left', () => {
+    expect(isSnapshotSignupRetryable(failure('LIMIT_EXCEEDED', 'The signup request failed because this organization has reached its daily scratch org signup limit'))).to.equal(false);
+  });
+});
+
+describe('getSnapshotSignupError', () => {
+  // The shape execSfdxJson returns: errorMessage is header + stdout + stderr, error is the child process error
+  const HEADER = '[sfdx-hardis][ERROR] Error processing command';
+  const failed = (stdout: string, stderr = '') => ({ status: 1, errorMessage: `${HEADER}\n${stdout}\n${stderr}`, error: { code: 1, stdout, stderr } });
+  // Keys and values of a real failed signup from a missing snapshot, hub 3, 2026-11-08 (stack and cause left out)
+  const missingSnapshot = JSON.stringify({ name: 'MULTIPLE_API_ERRORS', message: 'Multiple errors returned.\n  Check `error.data` for the error details', exitCode: 1, context: 'OrgCreateScratch', warnings: [], code: 'MULTIPLE_API_ERRORS', status: 1, commandName: 'OrgCreateScratch' }, null, 2);
+
+  it('names the Salesforce error of a signup from a missing snapshot (real Dev Hub output)', () => {
+    expect(getSnapshotSignupError(failed(missingSnapshot))).to.equal('MULTIPLE_API_ERRORS: Multiple errors returned.');
+  });
+
+  it('still names it when stderr carries a warning after the JSON', () => {
+    expect(getSnapshotSignupError(failed(missingSnapshot, '(node:123) Warning: something deprecated\n'))).to.equal('MULTIPLE_API_ERRORS: Multiple errors returned.');
+  });
+
+  it('adds the first Salesforce error of data when the CLI gives one', () => {
+    const withData = JSON.stringify({ name: 'MULTIPLE_API_ERRORS', message: 'Multiple errors returned.', data: [{ errorCode: 'NOT_FOUND', message: 'Snapshot SHx not found' }] });
+    expect(getSnapshotSignupError(failed(withData))).to.equal('MULTIPLE_API_ERRORS: Multiple errors returned. NOT_FOUND: Snapshot SHx not found');
+  });
+
+  it('reads the JSON when the CLI prints its update warning before it on stdout', () => {
+    expect(getSnapshotSignupError(failed(`Warning: @salesforce/cli update available from 2.1 to 2.2.\n${missingSnapshot}`))).to.equal('MULTIPLE_API_ERRORS: Multiple errors returned.');
+  });
+
+  it('takes the first non-empty line of the message, and a data entry given as text', () => {
+    expect(getSnapshotSignupError(failed(JSON.stringify({ name: 'SfError', message: '\nScratch org signup failed' })))).to.equal('SfError: Scratch org signup failed');
+    expect(getSnapshotSignupError(failed(JSON.stringify({ name: 'X', message: 'Failed', data: ['Snapshot SHx not found'] })))).to.equal('X: Failed Snapshot SHx not found');
+  });
+
+  it('gives null for CLI JSON that names no error, rather than a line of it', () => {
+    expect(getSnapshotSignupError(failed('{\n  "status": 1,\n  "result": {}\n}'))).to.equal(null);
+  });
+
+  it('skips Node warnings in stderr', () => {
+    const stderr = '(node:4242) [DEP0040] DeprecationWarning: The punycode module is deprecated.\nError: INVALID_INPUT bad definition';
+    expect(getSnapshotSignupError(failed('', stderr))).to.equal('Error: INVALID_INPUT bad definition');
+  });
+
+  it('falls back to the first line after the sfdx-hardis header, and gives null when there is nothing', () => {
+    expect(getSnapshotSignupError(failed('', 'Socket hang up\nat x'))).to.equal('Socket hang up');
+    expect(getSnapshotSignupError({ status: 1, message: 'Plain failure' })).to.equal('Plain failure');
+    expect(getSnapshotSignupError(failed('undefined', 'undefined'))).to.equal(null);
+    expect(getSnapshotSignupError(null)).to.equal(null);
+  });
+});
+
+describe('getSnapshotLimitError', () => {
+  const failed = (stdout: string) => ({ status: 1, errorMessage: `[sfdx-hardis][ERROR] Error processing command\n${stdout}\n`, error: { code: 1, stdout, stderr: '' } });
+  // Keys and values of the real refusal, hub 3, 2026-11-08 (stack and cause left out)
+  const limitExceeded = JSON.stringify({ name: 'LIMIT_EXCEEDED', message: 'Unable to create snapshot: active org snapshots 6 exceed limit 5', exitCode: 1, context: 'SnapshotCreate', data: { message: 'Unable to create snapshot: active org snapshots 6 exceed limit 5', errorCode: 'LIMIT_EXCEEDED', fields: [] }, warnings: [], code: '1', status: 1, commandName: 'SnapshotCreate' }, null, 2);
+
+  it('names the Salesforce error of a snapshot the Dev Hub refused for a limit (real Dev Hub output)', () => {
+    expect(getSnapshotLimitError(failed(limitExceeded))).to.equal('LIMIT_EXCEEDED: Unable to create snapshot: active org snapshots 6 exceed limit 5');
+  });
+
+  it('gives null for any other failure, which must stop the refresh', () => {
+    expect(getSnapshotLimitError(failed(JSON.stringify({ name: 'INVALID_INPUT', message: 'Bad source org' })))).to.equal(null);
+    expect(getSnapshotLimitError(null)).to.equal(null);
+  });
+});
+
+describe('parsePositiveSetting', () => {
+  it('keeps a whole number of at least 1', () => {
+    expect(parsePositiveSetting('90', 60)).to.equal(90);
+  });
+
+  it('gives the default when unset or not a number, as an undefined Azure variable is', () => {
+    expect(parsePositiveSetting(undefined, 60)).to.equal(60);
+    expect(parsePositiveSetting('', 60)).to.equal(60);
+    expect(parsePositiveSetting('$(SCRATCH_ORG_SNAPSHOT_WAIT)', 60)).to.equal(60);
+  });
+
+  it('raises a number below 1 to 1 instead of giving the default', () => {
+    expect(parsePositiveSetting(0, 2)).to.equal(1);
+  });
+});
+
+describe('scopeDeltaToDeployManifest', () => {
+  const packageXml = (types: Record<string, string[]>) =>
+    '<?xml version="1.0" encoding="UTF-8"?>\n<Package xmlns="http://soap.sforce.com/2006/04/metadata">\n' +
+    Object.entries(types)
+      .map(([name, members]) => `  <types>\n${members.map((m) => `    <members>${m}</members>\n`).join('')}    <name>${name}</name>\n  </types>\n`)
+      .join('') +
+    '  <version>62.0</version>\n</Package>\n';
+  let dir: string;
+  let delta: string;
+
+  beforeEach(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scope-delta-'));
+    delta = path.join(dir, 'package', 'package.xml');
+    fs.mkdirSync(path.dirname(delta));
+    fs.writeFileSync(delta, packageXml({ ApexClass: ['ClassA', 'ClassC'], CustomObject: ['Foo__c'], Flow: ['FlowX'] }));
+    fs.writeFileSync(path.join(dir, 'manifest.xml'), packageXml({ ApexClass: ['ClassA', 'ClassB'], CustomObject: ['*'] }));
+    process.env.PACKAGE_XML_TO_DEPLOY = path.join(dir, 'manifest.xml');
+  });
+
+  afterEach(() => {
+    delete process.env.DEBUG_DEPLOY;
+    delete process.env.PACKAGE_XML_TO_DEPLOY;
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('keeps only the changed items the manifest deploys in deploy mode, a wildcard type included', async () => {
+    process.env.DEBUG_DEPLOY = 'true';
+    const scoped = await scopeDeltaToDeployManifest(delta, {});
+    expect(await parsePackageXmlFile(scoped)).to.deep.equal({ ApexClass: ['ClassA'], CustomObject: ['Foo__c'] });
+  });
+
+  it('returns the delta unchanged when the sources are pushed', async () => {
+    expect(await scopeDeltaToDeployManifest(delta, {})).to.equal(delta);
+  });
+});
+
+describe('scratchDefChangedSince', () => {
+  let dir: string;
+  let sha: string;
+  const git = (...args: string[]) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: dir }).toString().trim();
+  const write = (file: string, text: string) => {
+    fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
+    fs.writeFileSync(path.join(dir, file), text);
+  };
+  const commit = () => {
+    git('add', '-A');
+    git('commit', '-q', '-m', 'change');
+  };
+
+  beforeEach(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scratch-def-'));
+    git('init', '-q');
+    write('config/project-scratch-def.json', JSON.stringify({ edition: 'Developer', settingsPath: 'config/settings' }));
+    write('config/settings/Security.settings-meta.xml', '<SecuritySettings/>');
+    write('force-app/main/default/classes/A.cls', 'public class A {}');
+    git('add', '-A');
+    git('commit', '-q', '-m', 'snapshot commit');
+    sha = git('rev-parse', 'HEAD');
+  });
+
+  afterEach(() => {
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('is false when only the sources changed since the snapshot commit', () => {
+    write('force-app/main/default/classes/A.cls', 'public class A { }');
+    commit();
+    expect(scratchDefChangedSince(sha, dir)).to.equal(false);
+  });
+
+  it('is true when the scratch org definition changed, as the snapshot child cannot take new features', () => {
+    write('config/project-scratch-def.json', JSON.stringify({ edition: 'Developer', settingsPath: 'config/settings', features: ['Communities'] }));
+    commit();
+    expect(scratchDefChangedSince(sha, dir)).to.equal(true);
+  });
+
+  it('is true when a file under the settingsPath of the definition changed', () => {
+    write('config/settings/Security.settings-meta.xml', '<SecuritySettings><x/></SecuritySettings>');
+    commit();
+    expect(scratchDefChangedSince(sha, dir)).to.equal(true);
+  });
+});
+
+describe('orgInitStepChangedSince', () => {
+  const originalCwd = process.cwd();
+  let dir: string;
+  let sha: string;
+  const git = (...args: string[]) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: dir }).toString().trim();
+  const write = (file: string, text: string) => {
+    fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
+    fs.writeFileSync(path.join(dir, file), text);
+  };
+  const commit = () => {
+    git('add', '-A');
+    git('commit', '-q', '-m', 'change');
+  };
+  const config = (extra = '', command = 'echo fill') => `projectName: acme${extra}
+orgInitSteps:
+  - id: script
+    type: apex
+    parameters:
+      apexScript: scripts/apex/init.apex
+  - id: users
+    type: data
+    parameters:
+      sfdmuProject: scripts/data/Users
+  - id: cmd
+    type: command
+    command: ${command}
+  - id: per-org
+    type: apex
+    runAtPoolFill: false
+    parameters:
+      apexScript: scripts/apex/per-org.apex
+`;
+
+  beforeEach(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'org-init-changed-'));
+    git('init', '-q');
+    write('config/.sfdx-hardis.yml', config());
+    write('scripts/apex/init.apex', 'System.debug(1);');
+    write('scripts/apex/per-org.apex', 'System.debug(2);');
+    write('scripts/data/Users/export.json', '{"objects":[]}');
+    commit();
+    sha = git('rev-parse', 'HEAD');
+    // The data workspace is resolved from the current folder, as in a CI job
+    process.chdir(dir);
+  });
+
+  afterEach(() => {
+    process.chdir(originalCwd);
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('keeps the snapshot when another config key changed', async () => {
+    write('config/.sfdx-hardis.yml', config('\nscratchOrgDuration: 3'));
+    commit();
+    expect(await orgInitStepChangedSince(sha, 'main', dir)).to.equal(null);
+  });
+
+  it('keeps the snapshot when only the key order of a step changed', async () => {
+    write('config/.sfdx-hardis.yml', config().replace('    type: apex\n    parameters:\n      apexScript: scripts/apex/init.apex\n', '    parameters:\n      apexScript: scripts/apex/init.apex\n    type: apex\n'));
+    commit();
+    expect(await orgInitStepChangedSince(sha, 'main', dir)).to.equal(null);
+  });
+
+  it('names the step whose Apex script changed', async () => {
+    write('scripts/apex/init.apex', 'System.debug(3);');
+    commit();
+    expect(await orgInitStepChangedSince(sha, 'main', dir)).to.equal('script');
+  });
+
+  it('names the step whose data workspace changed', async () => {
+    write('scripts/data/Users/export.json', '{"objects":[{"query":"SELECT Id FROM User"}]}');
+    commit();
+    expect(await orgInitStepChangedSince(sha, 'main', dir)).to.equal('users');
+  });
+
+  it('names a step whose definition changed', async () => {
+    write('config/.sfdx-hardis.yml', config('', 'echo other'));
+    commit();
+    expect(await orgInitStepChangedSince(sha, 'main', dir)).to.equal('cmd');
+  });
+
+  it('names the first step whose position changed, as the snapshot holds the result of the old order', async () => {
+    const script = '  - id: script\n    type: apex\n    parameters:\n      apexScript: scripts/apex/init.apex\n';
+    const users = '  - id: users\n    type: data\n    parameters:\n      sfdmuProject: scripts/data/Users\n';
+    write('config/.sfdx-hardis.yml', config().replace(script + users, users + script));
+    commit();
+    expect(await orgInitStepChangedSince(sha, 'main', dir)).to.equal('users');
+  });
+
+  it('names a step moved across the deployment of the sources', async () => {
+    const script = '  - id: script\n    type: apex\n    parameters:\n      apexScript: scripts/apex/init.apex\n';
+    const sources = '  - id: sources\n    type: deploy-sources\n';
+    write('config/.sfdx-hardis.yml', config().replace(script, script + sources));
+    commit();
+    const snapshotSha = git('rev-parse', 'HEAD');
+    write('config/.sfdx-hardis.yml', config().replace(script, sources + script));
+    commit();
+    expect(await orgInitStepChangedSince(snapshotSha, 'main', dir)).to.equal('sources');
+  });
+
+  it('names a step removed since the snapshot, whose result the snapshot still holds', async () => {
+    write('config/.sfdx-hardis.yml', config().replace('  - id: cmd\n    type: command\n    command: echo fill\n', ''));
+    commit();
+    expect(await orgInitStepChangedSince(sha, 'main', dir)).to.equal('cmd');
+  });
+
+  it('keeps the snapshot when only a step run after the pool fetch changed, as a child runs it anyway', async () => {
+    write('scripts/apex/per-org.apex', 'System.debug(4);');
+    commit();
+    expect(await orgInitStepChangedSince(sha, 'main', dir)).to.equal(null);
+  });
+
+  it('reads the steps of the branch config of the target branch', async () => {
+    const branchConfig = (command: string) => `orgInitSteps:\n  - id: branch-step\n    type: command\n    command: ${command}\n`;
+    write('config/branches/.sfdx-hardis.release__1.yml', branchConfig('echo one'));
+    commit();
+    const branchSha = git('rev-parse', 'HEAD');
+    write('config/branches/.sfdx-hardis.release__1.yml', branchConfig('echo two'));
+    commit();
+    expect(await orgInitStepChangedSince(branchSha, 'release/1', dir)).to.equal('branch-step');
+    expect(await orgInitStepChangedSince(branchSha, 'main', dir)).to.equal(null);
+  });
+});
+
+describe('fetchFullHistoryIfShallow', () => {
+  let origin: string;
+  let clone: string;
+  let first: string;
+  const git = (cwd: string, ...args: string[]) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd }).toString().trim();
+
+  beforeEach(() => {
+    origin = fs.mkdtempSync(path.join(os.tmpdir(), 'shallow-origin-'));
+    clone = fs.mkdtempSync(path.join(os.tmpdir(), 'shallow-clone-'));
+    git(origin, 'init', '-q');
+    for (const n of [1, 2, 3]) {
+      git(origin, 'commit', '-q', '--allow-empty', '-m', `commit ${n}`);
+      first = first || git(origin, 'rev-parse', 'HEAD');
+    }
+  });
+
+  afterEach(() => {
+    first = '';
+    fs.rmSync(origin, { recursive: true, force: true });
+    fs.rmSync(clone, { recursive: true, force: true });
+  });
+
+  it('fetches the full history of a shallow clone, so an older snapshot commit is in the history of HEAD', () => {
+    git(clone, 'clone', '-q', '--depth', '1', pathToFileURL(origin).href, '.');
+    expect(git(clone, 'rev-parse', '--is-shallow-repository')).to.equal('true');
+    expect(fetchFullHistoryIfShallow(clone)).to.equal(true);
+    expect(git(clone, 'rev-parse', '--is-shallow-repository')).to.equal('false');
+    expect(git(clone, 'merge-base', '--is-ancestor', first, 'HEAD')).to.equal('');
+  });
+
+  it('leaves a full clone alone, where --unshallow would fail', () => {
+    git(clone, 'clone', '-q', pathToFileURL(origin).href, '.');
+    expect(fetchFullHistoryIfShallow(clone)).to.equal(false);
+  });
+});
+
+describe('extendSnapshotDeltaWithDependencies', () => {
+  const xml = (types: Record<string, string[]>) =>
+    '<?xml version="1.0" encoding="UTF-8"?>\n<Package xmlns="http://soap.sforce.com/2006/04/metadata">\n' +
+    Object.entries(types)
+      .map(([name, members]) => `  <types>\n${members.map((m) => `    <members>${m}</members>\n`).join('')}    <name>${name}</name>\n  </types>\n`)
+      .join('') +
+    '  <version>62.0</version>\n</Package>\n';
+  const fullManifest = { CustomField: ['Account.Foo__c'], CustomObject: ['Account'], RecordType: ['Account.Business', 'Account.Partner'] };
+  const cwd = process.cwd();
+  let dir: string;
+  let sha: string;
+  let delta: string;
+  let destructive: string;
+  const git = (...args: string[]) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: dir }).toString().trim();
+  const commitManifest = (types: Record<string, string[]>) => {
+    fs.writeFileSync(path.join(dir, 'manifest', 'package.xml'), xml(types));
+    git('add', '-A');
+    git('commit', '-q', '-m', 'manifest');
+  };
+
+  beforeEach(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapshot-deps-'));
+    fs.mkdirSync(path.join(dir, 'manifest'));
+    git('init', '-q');
+    commitManifest(fullManifest);
+    sha = git('rev-parse', 'HEAD');
+    delta = path.join(dir, 'delta.xml');
+    destructive = path.join(dir, 'destructive.xml');
+    fs.writeFileSync(delta, xml({ CustomField: ['Account.Foo__c'] }));
+    fs.writeFileSync(destructive, xml({}));
+    process.env.DEBUG_DEPLOY = 'true';
+    process.env.PACKAGE_XML_TO_DEPLOY = 'manifest/package.xml';
+    process.chdir(dir);
+  });
+
+  afterEach(() => {
+    process.chdir(cwd);
+    delete process.env.DEBUG_DEPLOY;
+    delete process.env.PACKAGE_XML_TO_DEPLOY;
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('adds the record types of the object of a changed field, as deploy:smart does', async () => {
+    await extendSnapshotDeltaWithDependencies(sha, delta, destructive, { useDeltaDeploymentWithDependencies: true });
+    expect((await parsePackageXmlFile(delta)).RecordType).to.deep.equal(['Account.Business', 'Account.Partner']);
+  });
+
+  it('adds the items added to the manifest since the snapshot commit', async () => {
+    commitManifest({ ...fullManifest, ApexClass: ['NewService'] });
+    await extendSnapshotDeltaWithDependencies(sha, delta, destructive, { useDeltaDeploymentWithDependencies: true });
+    expect((await parsePackageXmlFile(delta)).ApexClass).to.deep.equal(['NewService']);
+  });
+
+  it('leaves the delta unchanged when the sources are pushed, as there is no full manifest to read', async () => {
+    delete process.env.DEBUG_DEPLOY;
+    await extendSnapshotDeltaWithDependencies(sha, delta, destructive, { useDeltaDeploymentWithDependencies: true });
+    expect(await parsePackageXmlFile(delta)).to.deep.equal({ CustomField: ['Account.Foo__c'] });
+  });
+
+  it('leaves the delta unchanged when useDeltaDeploymentWithDependencies is off', async () => {
+    await extendSnapshotDeltaWithDependencies(sha, delta, destructive, {});
+    expect(await parsePackageXmlFile(delta)).to.deep.equal({ CustomField: ['Account.Foo__c'] });
+  });
+});
+
+describe('selectSnapshotOrgInitStepIds', () => {
+  const config = {
+    orgInitSteps: [
+      { id: 'packages', type: 'install-packages' },
+      { id: 'sources', type: 'deploy-sources' },
+      { id: 'permsets', type: 'assign-permission-sets', parameters: { permissionSets: ['Admin'] } },
+      { id: 'script', type: 'apex', parameters: { apexScript: 'scripts/apex/init.apex' } },
+      { id: 'per-org-data', type: 'data', runAtPoolFill: false, parameters: { sfdmuProject: 'Users' } },
+      { id: 'off', type: 'apex', enabled: false },
+      { id: 'sandbox-only', type: 'apex', orgTypes: ['sandbox'] },
+    ],
+  };
+
+  it('runs in the source what a pool fill runs', () => {
+    expect(selectSnapshotOrgInitStepIds(config, 'source')).to.deep.equal(['packages', 'sources', 'permsets', 'script']);
+  });
+
+  it('runs in a child the steps left, plus the permission set assignments, never the full deployment', () => {
+    expect(selectSnapshotOrgInitStepIds(config, 'child')).to.deep.equal(['permsets', 'per-org-data']);
+  });
+
+  it('installs the packages in a child before its delta, so a package the delta needs is there', () => {
+    expect(selectSnapshotOrgInitStepIds(config, 'child-packages')).to.deep.equal(['packages']);
+    const late = { orgInitSteps: config.orgInitSteps.map((step) => (step.id === 'packages' ? { ...step, runAtPoolFill: false } : step)) };
+    expect(selectSnapshotOrgInitStepIds(late, 'child-packages')).to.deep.equal(['packages']);
+    expect(selectSnapshotOrgInitStepIds(late, 'child')).to.not.include('packages');
+  });
+
+  it('runs only the permission set assignments when filling a pool org from a snapshot', () => {
+    expect(selectSnapshotOrgInitStepIds(config, 'pool-fill')).to.deep.equal(['permsets']);
+    const late = { orgInitSteps: config.orgInitSteps.map((step) => (step.id === 'permsets' ? { ...step, runAtPoolFill: false } : step)) };
+    expect(selectSnapshotOrgInitStepIds(late, 'pool-fill')).to.deep.equal([]);
+  });
+
+  it('installs the packages of a project without orgInitSteps in a child too', () => {
+    expect(selectSnapshotOrgInitStepIds({ installedPackages: [] }, 'child-packages')).to.deep.equal(['legacy-install-packages']);
+  });
+
+  it('always deploys the sources in the source, even when the deployment is kept for after a pool fetch', () => {
+    const late = { orgInitSteps: config.orgInitSteps.map((step) => (step.id === 'sources' ? { ...step, runAtPoolFill: false } : step)) };
+    expect(selectSnapshotOrgInitStepIds(late, 'source')).to.include('sources');
+    expect(selectSnapshotOrgInitStepIds(late, 'child')).to.not.include('sources');
+  });
+
+  it('installs the packages in the source too when they are kept for after a pool fetch, as its sources need them', () => {
+    const late = {
+      orgInitSteps: config.orgInitSteps.map((step) => (['packages', 'sources'].includes(step.id) ? { ...step, runAtPoolFill: false } : step)),
+    };
+    expect(selectSnapshotOrgInitStepIds(late, 'source')).to.include.members(['packages', 'sources']);
+  });
+});
+
+describe('isScratchSnapshotBranch', () => {
+  const originalCwd = process.cwd();
+  let projectDir: string;
+
+  beforeEach(() => {
+    projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapshot-branch-'));
+    fs.mkdirSync(path.join(projectDir, 'config', 'branches'), { recursive: true });
+    fs.writeFileSync(path.join(projectDir, 'config', 'branches', '.sfdx-hardis.main.yml'), 'useScratchOrgSnapshot: true\n');
+    process.chdir(projectDir);
+    clearListMajorOrgsCache();
+  });
+
+  afterEach(() => {
+    process.chdir(originalCwd);
+    clearListMajorOrgsCache();
+    fs.rmSync(projectDir, { recursive: true, force: true });
+  });
+
+  it('reads the snapshot setting of the branch', async () => {
+    expect(await isScratchSnapshotBranch('main', null)).to.equal(true);
+    expect(await isScratchSnapshotBranch('uat', null)).to.equal(false);
+  });
+
+  it('answers false with a warning instead of throwing when the config of another branch is not valid YAML, so a pool refresh goes on', async () => {
+    fs.writeFileSync(path.join(projectDir, 'config', 'branches', '.sfdx-hardis.uat.yml'), 'key: [unclosed\n  other: : :\n');
+    // The level only reaches the VS Code log channel: record what it is sent
+    const sent: Array<{ text: string; logType?: string }> = [];
+    const { isAlive, sendCommandLogLineMessage } = WebSocketClient;
+    WebSocketClient.isAlive = () => true;
+    WebSocketClient.sendCommandLogLineMessage = (text: string, logType?: any) => {
+      sent.push({ text, logType });
+    };
+    try {
+      expect(await isScratchSnapshotBranch('main', { ux: { log: () => undefined } })).to.equal(false);
+    } finally {
+      WebSocketClient.isAlive = isAlive;
+      WebSocketClient.sendCommandLogLineMessage = sendCommandLogLineMessage;
+    }
+    const expected = t('scratchSnapshotSettingUnread', { branch: 'main', message: '@@' }).split('@@')[0];
+    expect(sent.filter((line) => line.text.includes(expected)).map((line) => line.logType)).to.deep.equal(['warning']);
+  });
+});
+
+describe('getConfigOfSnapshotBranch', () => {
+  const originalCwd = process.cwd();
+  const originalConfigBranch = process.env.CONFIG_BRANCH;
+  let projectDir: string;
+
+  beforeEach(() => {
+    projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapshot-config-'));
+    execFileSync('git', ['init', '-q', '-b', 'feature/story'], { cwd: projectDir });
+    fs.mkdirSync(path.join(projectDir, 'config', 'branches'), { recursive: true });
+    fs.writeFileSync(path.join(projectDir, 'config', '.sfdx-hardis.yml'), 'projectName: demo\ninstalledPackages: []\n');
+    // The refresh of main built the snapshot with this package, the PR job runs on another branch
+    fs.writeFileSync(
+      path.join(projectDir, 'config', 'branches', '.sfdx-hardis.main.yml'),
+      'useScratchOrgSnapshot: true\ninstalledPackages:\n  - SubscriberPackageName: MainOnly\n    SubscriberPackageVersionId: 04t000000000001\n'
+    );
+    process.chdir(projectDir);
+    delete process.env.CONFIG_BRANCH;
+  });
+
+  afterEach(() => {
+    process.chdir(originalCwd);
+    if (originalConfigBranch === undefined) {
+      delete process.env.CONFIG_BRANCH;
+    } else {
+      process.env.CONFIG_BRANCH = originalConfigBranch;
+    }
+    fs.rmSync(projectDir, { recursive: true, force: true });
+  });
+
+  it('loads the branch file of the snapshot branch, not of the branch the job runs on', async () => {
+    const config = await getConfigOfSnapshotBranch('main');
+    expect(config.installedPackages.map((p: any) => p.SubscriberPackageName)).to.deep.equal(['MainOnly']);
+    expect(config.projectName).to.equal('demo');
+  });
+
+  it('reads the snapshot branch even when CONFIG_BRANCH names the job branch, as Azure jobs set it', async () => {
+    process.env.CONFIG_BRANCH = 'feature__story';
+    const config = await getConfigOfSnapshotBranch('main');
+    expect(config.installedPackages.map((p: any) => p.SubscriberPackageName)).to.deep.equal(['MainOnly']);
+  });
+
+  it('leaves the cached config of the job as it was, so cached readers do not get the snapshot branch', async () => {
+    await getConfig('user');
+    await getConfigOfSnapshotBranch('main');
+    expect((await getConfig('user', { cache: true })).installedPackages).to.deep.equal([]);
+  });
+});
+
+describe('resolveScratchSnapshot', () => {
+  const originalCwd = process.cwd();
+  let projectDir: string;
+
+  beforeEach(() => {
+    projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapshot-resolve-'));
+    const git = (...args: string[]) => execFileSync('git', args, { cwd: projectDir });
+    git('init', '-q', '-b', 'main');
+    fs.mkdirSync(path.join(projectDir, 'config', 'branches'), { recursive: true });
+    fs.writeFileSync(path.join(projectDir, 'config', '.sfdx-hardis.yml'), 'projectName: demo\n');
+    fs.writeFileSync(path.join(projectDir, 'config', 'branches', '.sfdx-hardis.main.yml'), 'useScratchOrgSnapshot: true\n');
+    git('add', '.');
+    git('-c', 'user.email=t@example.com', '-c', 'user.name=t', 'commit', '-q', '-m', 'init');
+    process.chdir(projectDir);
+    clearListMajorOrgsCache();
+  });
+
+  afterEach(() => {
+    process.chdir(originalCwd);
+    clearListMajorOrgsCache();
+    fs.rmSync(projectDir, { recursive: true, force: true });
+  });
+
+  it('returns the branch the snapshot was taken on, so the org is finished with its config', async () => {
+    const sha = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: projectDir, encoding: 'utf8' }).trim();
+    const description = getSnapshotDescription(await getSnapshotScope('main'), sha);
+    const devHubConn = {
+      instanceUrl: 'https://hub.example.com',
+      query: async () => ({ done: true, records: [{ SnapshotName: 'SH0000000000001', Description: description }] }),
+    };
+    const { snapshot, reason } = await resolveScratchSnapshot(devHubConn, 'main');
+    expect(reason).to.equal(undefined);
+    expect(snapshot).to.deep.equal({ name: 'SH0000000000001', sha, branch: 'main' });
+  });
+});
+
+describe('getConfigOfSnapshotBranch with a remote extends', () => {
+  const originalCwd = process.cwd();
+  let projectDir: string;
+  let server: http.Server;
+
+  beforeEach(async () => {
+    server = http.createServer((_req, res) => res.end('baseKey: base\n'));
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()));
+    const port = (server.address() as any).port;
+    projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapshot-extends-'));
+    execFileSync('git', ['init', '-q', '-b', 'feature/story'], { cwd: projectDir });
+    fs.mkdirSync(path.join(projectDir, 'config', 'branches'), { recursive: true });
+    // A unique URL per run: remote configs are cached by URL for the whole process
+    fs.writeFileSync(path.join(projectDir, 'config', '.sfdx-hardis.yml'), `extends: http://127.0.0.1:${port}/base-${path.basename(projectDir)}.yml\n`);
+    fs.writeFileSync(path.join(projectDir, 'config', 'branches', '.sfdx-hardis.main.yml'), 'useScratchOrgSnapshot: true\n');
+    process.chdir(projectDir);
+  });
+
+  afterEach(async () => {
+    process.chdir(originalCwd);
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+    fs.rmSync(projectDir, { recursive: true, force: true });
+  });
+
+  it('does not carry the job branch keys into the snapshot branch config when the job config is read first', async () => {
+    fs.writeFileSync(path.join(projectDir, 'config', 'branches', '.sfdx-hardis.feature__story.yml'), 'jobOnly: true\n');
+    // A commit, so git can name the job branch
+    execFileSync('git', ['add', '.'], { cwd: projectDir });
+    execFileSync('git', ['-c', 'user.email=t@example.com', '-c', 'user.name=t', 'commit', '-q', '-m', 'init'], { cwd: projectDir });
+    expect((await getConfig('user')).jobOnly).to.equal(true);
+    const snapshotConfig = await getConfigOfSnapshotBranch('main');
+    expect(snapshotConfig.useScratchOrgSnapshot).to.equal(true);
+    expect(snapshotConfig.jobOnly).to.equal(undefined);
+    expect((await getConfig('project')).jobOnly).to.equal(undefined);
+  });
+
+  it('does not write the snapshot branch keys into the remote config the project layer shares', async () => {
+    expect((await getConfigOfSnapshotBranch('main')).useScratchOrgSnapshot).to.equal(true);
+    const project = await getConfig('project');
+    expect(project.baseKey).to.equal('base');
+    expect(project.useScratchOrgSnapshot).to.equal(undefined);
+  });
+});

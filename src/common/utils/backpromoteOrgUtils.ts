@@ -18,6 +18,7 @@ import { t } from './i18n.js';
 import {
   BackpromoteTargetOrgRefusal,
   countDifferingLines,
+  deriveOrgLabel,
   deriveSandboxName,
   findBackpromoteTargetOrgRefusal,
   isBinaryMetadataFile,
@@ -40,6 +41,8 @@ export interface BackpromoteTargetOrgInfo {
   orgType: 'sandbox' | 'scratch' | 'developer' | 'production';
   orgId: string;
   sandboxName: string;
+  // The day a scratch org expires, null for any other org
+  expirationDate?: string | null;
   tracksSource: boolean;
   refusal: BackpromoteTargetOrgRefusal | null;
   message: string;
@@ -52,6 +55,11 @@ export interface BackpromoteTargetOrgInfo {
  */
 export function backpromoteOrgDisplayName(targetOrg: Pick<BackpromoteTargetOrgInfo, 'orgType' | 'alias' | 'sandboxName'>): string {
   return targetOrg.orgType === 'scratch' && targetOrg.alias ? targetOrg.alias : targetOrg.sandboxName;
+}
+
+/** The label written in the rows of the Backpromotes comments for this org (deriveOrgLabel) */
+export function backpromoteOrgLabel(targetOrg: Pick<BackpromoteTargetOrgInfo, 'instanceUrl' | 'alias' | 'username'>): string {
+  return deriveOrgLabel({ instanceUrl: targetOrg.instanceUrl, alias: targetOrg.alias, username: targetOrg.username });
 }
 
 /**
@@ -87,7 +95,8 @@ export async function getBackpromoteTargetOrgInfo(options: {
   } else if (refusal?.reason === 'majorOrg') {
     message = t('backpromoteTargetOrgIsMajorOrg', { username: options.username, branch: refusal.branchName });
   }
-  return { alias: options.alias, username: options.username, instanceUrl, orgType, orgId, sandboxName, tracksSource: options.tracksSource, refusal, message };
+  const expirationDate = organization.TrialExpirationDate ? String(organization.TrialExpirationDate) : null;
+  return { alias: options.alias, username: options.username, instanceUrl, orgType, orgId, sandboxName, expirationDate, tracksSource: options.tracksSource, refusal, message };
 }
 
 // ---- Comparison ----
@@ -946,7 +955,12 @@ export async function deployBackpromotePackage(options: {
     ` -o ${options.username}` +
     ` --wait ${getEnvVar('SFDX_DEPLOY_WAIT_MINUTES') || '120'}` +
     ' --json';
-  const result = await runDeploy(command, 'backpromote', options.commandThis, options.debugMode);
+  // A developer sandbox gets the default values of the replacement rules
+  const { runWithReplacementRules } = await import('../replacementRules/engine/ruleEngine.js');
+  const result = await runWithReplacementRules(
+    { targetBranch: null, targetUsername: options.username, packageXmlFiles: [packageXml], commandThis: options.commandThis },
+    () => runDeploy(command, 'backpromote', options.commandThis, options.debugMode)
+  );
   const reportPath = await writeDeployReport({ ...result, username: options.username, itemCount: options.keys.length, packageXml, destructiveXml: null, commandThis: options.commandThis });
   if (result.success) {
     uxLog('action', options.commandThis, c.green(t('backpromoteDeploySuccess', { count: options.keys.length })));

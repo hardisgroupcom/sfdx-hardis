@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:apex-api-version - Check Apex classes and triggers for deprecated API versions"
+description: "Detects Apex classes and triggers deployed with API versions at or below a configurable threshold."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:apex-api-version
 
@@ -28,18 +32,38 @@ sf hardis:org:diagnose:apex-api-version --agent --target-org myorg@example.com
 
 In agent mode, the command runs fully automatically. The API version threshold defaults to 50 (or `DEPRECATED_APEX_API_VERSION` env var) when `--threshold` is not provided.
 
+## Screenshots
+
+![Helios Apex classes and triggers at API version 64 or below, listed with their version to plan the upgrade](../../../assets/images/commands/org/diagnose/apex-api-version.webp)
+
+_Helios Apex classes and triggers at API version 64 or below, listed with their version to plan the upgrade_
+
+- **(1)** One row per class or trigger to upgrade, with its API version
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Deprecated API versions
+
+One row per Apex class or trigger whose API version is at or below the threshold, with its name and API version, to know what to upgrade.
+
+Files: `apex-api-version-*.csv`, `xls/apex-api-version-*.xlsx`
+
+![Deprecated API versions report in Excel](../../../assets/images/commands/org/diagnose/apex-api-version-report-apex-api-version.webp)
+
 ## Parameters
 
 | Name                      |  Type   | Description                                                                                                                       | Default | Required | Options |
 |:--------------------------|:-------:|:----------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent                     | boolean | Run in non-interactive mode for agents and automation. Uses default values and skips prompts.                                     |         |          |         |
 | debug<br/>-d              | boolean | Activate debug mode (more logs)                                                                                                   |         |          |         |
-| flags-dir                 | option  | undefined                                                                                                                         |         |          |         |
+| flags-dir                 | option  | Import flag values from a directory.                                                                                              |         |          |         |
 | includetestclasses<br/>-i | boolean | Include @isTest classes in the report (excluded by default)                                                                       |         |          |         |
 | json                      | boolean | Format output as json.                                                                                                            |         |          |         |
 | outputfile<br/>-f         | option  | Force the path and name of output report file. Must end with .csv                                                                 |         |          |         |
 | skipauth                  | boolean | Skip authentication check when a default username is required                                                                     |         |          |         |
-| target-org<br/>-o         | option  | undefined                                                                                                                         |         |          |         |
+| target-org<br/>-o         | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set.                      |         |   true   |         |
 | threshold<br/>-t          | option  | API version threshold. Classes/triggers with ApiVersion <= this value are flagged. Overrides DEPRECATED_APEX_API_VERSION env var. |         |          |         |
 | websocket                 | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                         |         |          |         |
 

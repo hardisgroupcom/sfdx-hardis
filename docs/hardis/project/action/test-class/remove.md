@@ -1,3 +1,7 @@
+---
+title: "hardis:project:action:test-class:remove - Remove deployment Apex test class"
+description: "Removes one or more Apex test classes from the deployment test class list for the project configuration."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:action:test-class:remove
 
@@ -36,6 +40,12 @@ Required in agent mode:
 </details>
 
 
+## Screenshots
+
+![The InstallationSchedulerTest class no longer runs with every deployment of the project](../../../../assets/images/commands/project/action/test-class/remove.webp)
+
+_The InstallationSchedulerTest class no longer runs with every deployment of the project_
+
 ## Parameters
 
 | Name         |  Type   | Description                                                                       | Default | Required |          Options          |
@@ -45,7 +55,7 @@ Required in agent mode:
 | branch       | option  | Target branch name (for branch scope, defaults to current branch)                 |         |          |                           |
 | class-name   | option  | Apex test class name(s) to remove (can be specified multiple times)               |         |          |                           |
 | debug<br/>-d | boolean | Activate debug mode (more logs)                                                   |         |          |                           |
-| flags-dir    | option  | undefined                                                                         |         |          |                           |
+| flags-dir    | option  | Import flag values from a directory.                                              |         |          |                           |
 | json         | boolean | Format output as json.                                                            |         |          |                           |
 | pr-id        | option  | Pull request ID (for pr scope, defaults to draft)                                 |         |          |                           |
 | scope        | option  | Configuration scope: project, branch, or pr                                       |         |          | project<br/>branch<br/>pr |

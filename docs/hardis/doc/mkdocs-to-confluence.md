@@ -1,3 +1,7 @@
+---
+title: "hardis:doc:mkdocs-to-confluence - MkDocs to Confluence"
+description: "Reads MkDocs markdown pages and navigation structure, converts them into Confluence-compatible format, and publishes them to a Confluence space."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:doc:mkdocs-to-confluence
 
@@ -82,6 +86,26 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![Every page of the project documentation is published to the HELIOS Confluence space, with its images and diagrams](../../assets/images/commands/doc/mkdocs-to-confluence.webp)
+
+_Every page of the project documentation is published to the HELIOS Confluence space, with its images and diagrams_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Confluence deployment summary
+
+One row per page, image or Mermaid diagram published to Confluence, with its file, status, failure reason and page URL, to find what failed to publish.
+
+Files: `mkdocs-to-confluence-*.csv`, `xls/mkdocs-to-confluence-*.xlsx`
+
+![Confluence deployment summary report in Excel](../../assets/images/commands/doc/mkdocs-to-confluence-report-mkdocs-to-confluence.webp)
+
 ## Parameters
 
 | Name                   |  Type   | Description                                                                      | Default | Required | Options |
@@ -92,7 +116,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 | confluenceParentPageId | option  | Confluence parent page ID. Overrides CONFLUENCE_PARENT_PAGE_ID[_<LANG>] env vars |         |          |         |
 | confluenceSpaceKey     | option  | Confluence space key. Overrides CONFLUENCE_SPACE_KEY[_<LANG>] env vars           |         |          |         |
 | debug<br/>-d           | boolean | Activate debug mode (more logs)                                                  |         |          |         |
-| flags-dir              | option  | undefined                                                                        |         |          |         |
+| flags-dir              | option  | Import flag values from a directory.                                             |         |          |         |
 | json                   | boolean | Format output as json.                                                           |         |          |         |
 | skipauth               | boolean | Skip authentication check when a default username is required                    |         |          |         |
 | websocket              | option  | Websocket host:port for VsCode SFDX Hardis UI integration                        |         |          |         |

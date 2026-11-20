@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, optionalOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages, SfError } from '@salesforce/core';
+import { Messages, Org, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import fs from '../../../../common/utils/fsUtils.js';
@@ -17,6 +17,7 @@ import {
   git,
   gitAddCommitPush,
   isCI,
+  isGitWorkflowScopeError,
   uxLog,
 } from '../../../../common/utils/index.js';
 import {
@@ -74,16 +75,17 @@ The command's technical implementation involves a series of Git operations, file
 - **Configuration Management:** Updates the \`.sfdx-hardis.yml\` file using \`setInConfigFile\` to store org-specific monitoring configurations.
 - **SSL Certificate Generation:** Leverages \`generateSSLCertificate\` to create the necessary SSL certificates for JWT-based authentication to the Salesforce org.
 - **External Tool Integration:** Requires \`openssl\` to be installed on the system for SSL certificate generation.
-- **WebSocket Communication:** Uses \`WebSocketClient.sendRunSfdxHardisCommandMessage\` to restart the command in VS Code if the default org changes, and \`WebSocketClient.sendRefreshStatusMessage\` to update the status.
+- **Org Switch:** When the selected org differs from the one the command started with, it loads the selected org with \`Org.create\` and continues with it, instead of restarting the command.
+- **WebSocket Communication:** Uses \`WebSocketClient.sendRefreshStatusMessage\` to update the status.
 </details>
 
 <!-- training-links:start -->
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course runs this command, click by click, on an org of your own:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) course runs this command, click by click, on an org of your own:
 
-- [Lab 3.8 - Monitor your production org](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-8-monitor-your-production-org/)
+- [Lab 3.8 - Monitor your production org](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-8-monitor-your-production-org/)
 
 <!-- training-links:end -->
 `;
@@ -190,13 +192,10 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
         defaultOrgUsername: flags['target-org']?.getUsername(),
       });
 
-      // Restart command so the org is selected as default org (will help to select profiles)
+      // Continue with the selected org instead of restarting the command: every later step reads
+      // it from the flags. Restarting made the user pick the same org twice.
       if (currentOrgId !== org.orgId) {
-        const infoMsg = t('defaultOrgChangedRestartCommand');
-        uxLog("action", this, c.cyan(infoMsg));
-        const currentCommand = 'sf ' + this.id + ' ' + this.argv.join(' ') + ' --orginstanceurl ' + org.instanceUrl;
-        WebSocketClient.sendRunSfdxHardisCommandMessage(currentCommand);
-        return { outputString: infoMsg };
+        flags['target-org'] = await Org.create({ aliasOrUsername: org.username });
       }
     }
 
@@ -248,6 +247,10 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
         await fs.remove('README.md');
       }
       await fs.copy(path.join(PACKAGE_ROOT_DIR, 'defaults/monitoring', '.'), process.cwd(), { overwrite: true });
+      // npm never publishes a file named .gitignore, so the package ships it as gitignore
+      if (fs.existsSync('gitignore')) {
+        await fs.move('gitignore', '.gitignore', { overwrite: true });
+      }
     }
 
     // The CI/CD repository that deploys to this org: the AGENTS.md written by the backup tells coding agents to search it too
@@ -293,7 +296,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
     }
 
     // Generate SSL certificate (requires openssl to be installed on computer)
-    await generateSSLCertificate(branchName, './.ssh', this, flags['target-org'].getConnection(), { usageType: 'monitoring' });
+    await generateSSLCertificate(branchName, './.ssh', this, flags['target-org'].getConnection(), { usageType: 'monitoring', workflowReferencesWrittenByCommand: true });
 
     // Confirm & push on server
     const confirmPush = await prompts({
@@ -320,8 +323,10 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
     // copied into every monitoring repository, so the remote says which server this is
     const scheduledFromMain = confirmPush.value === true && fs.existsSync(GITHUB_MONITORING_WORKFLOW_PATH) && (await this.isGithubRemote())
       ? await this.scheduleGithubMonitoringFromMain(branchName)
-      : false;
-    if (!scheduledFromMain) {
+      : 'notScheduled';
+    // After a refused push, the instruction is to sign in again and run the command again,
+    // already given: the manual scheduling steps would contradict it
+    if (scheduledFromMain === 'notScheduled') {
       const branch = await getCurrentGitBranch();
       uxLog(
         "warning",
@@ -366,7 +371,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
     }
   }
 
-  private async scheduleGithubMonitoringFromMain(branchName: string): Promise<boolean> {
+  private async scheduleGithubMonitoringFromMain(branchName: string): Promise<'scheduled' | 'notScheduled' | 'pushRefused'> {
     let stashed = false;
     try {
       // The command has just rewritten the certificate key of this branch, so the
@@ -401,16 +406,28 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
         if (status.files.some((file) => file.path === GITHUB_MONITORING_WORKFLOW_PATH)) {
           await git().add([GITHUB_MONITORING_WORKFLOW_PATH]);
           await git().commit(buildConventionalCommitMessage({ subject: `run the monitoring of ${branchName}` }), [GITHUB_MONITORING_WORKFLOW_PATH]);
+        }
+        // Push whenever main is ahead, not only after a new commit: when a previous run had its
+        // push refused (workflow scope), the workflow commit is already on the local main, this
+        // run finds nothing to change, and main on GitHub would stay without the workflow
+        const ahead = Number((await git().raw(['rev-list', '--count', 'origin/main..main'])).trim());
+        if (ahead > 0) {
           await git().push('origin', 'main');
         }
       } finally {
         await git().checkout(branchName);
       }
       uxLog("success", this, c.green(t('monitoringWorkflowScheduledFromMain', { branchName })));
-      return true;
+      return 'scheduled';
     } catch (e) {
+      // A refused push is fixed by signing in again and running the command again, not by
+      // copying the workflow by hand: give that one instruction only
+      if (isGitWorkflowScopeError(e)) {
+        uxLog("action", this, c.yellow(t('gitPushRefusedWorkflowScope')), { alwaysVisible: true });
+        return 'pushRefused';
+      }
       uxLog("warning", this, c.yellow(t('monitoringWorkflowNotScheduled', { message: (e as Error).message })));
-      return false;
+      return 'notScheduled';
     } finally {
       // Whatever happened above, the learner gets their working tree back
       if (stashed) {

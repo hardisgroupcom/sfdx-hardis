@@ -1,3 +1,7 @@
+---
+title: "hardis:datacloud:extract:agentforce-feedback - Extract Agentforce Feedback Data from Data Cloud"
+description: "Extracts Agentforce feedback data (Good/Bad) from Data Cloud and sends notifications."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:datacloud:extract:agentforce-feedback
 
@@ -47,22 +51,42 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The good and bad feedback left on the Helios Installation Assistant in the last 30 days, with the full conversation of each](../../../assets/images/commands/datacloud/extract/agentforce-feedback.webp)
+
+_The good and bad feedback left on the Helios Installation Assistant in the last 30 days, with the full conversation of each_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Agentforce feedback
+
+One row per feedback (good or bad) left on an Agentforce answer, with the feedback message, the full conversation and a link to it, to review what users found wrong.
+
+Files: `datacloud-agentforce-feedback-*.csv`, `xls/datacloud-agentforce-feedback-*.xlsx`
+
+![Agentforce feedback report in Excel](../../../assets/images/commands/datacloud/extract/agentforce-feedback-report-datacloud-agentforce-feedback.webp)
+
 ## Parameters
 
-| Name                     |  Type   | Description                                                                                   | Default | Required | Options |
-|:-------------------------|:-------:|:----------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent                    | boolean | Run in non-interactive mode for agents and automation                                         |         |          |         |
-| conversation-time-filter | option  | Time filter (days) appended to the Lightning analytics URL when generating conversation links |   30    |          |         |
-| date-from                | option  | Optional ISO-8601 timestamp (UTC) to include conversations starting from this date            |         |          |         |
-| date-to                  | option  | Optional ISO-8601 timestamp (UTC) to include conversations up to this date                    |         |          |         |
-| debug<br/>-d             | boolean | Activate debug mode (more logs)                                                               |         |          |         |
-| flags-dir                | option  | undefined                                                                                     |         |          |         |
-| json                     | boolean | Format output as json.                                                                        |         |          |         |
-| last-n-days              | option  | Optional rolling window (days) to include only the most recent conversations                  |         |          |         |
-| outputfile<br/>-f        | option  | Force the path and name of output report file. Must end with .csv                             |         |          |         |
-| skipauth                 | boolean | Skip authentication check when a default username is required                                 |         |          |         |
-| target-org<br/>-o        | option  | undefined                                                                                     |         |          |         |
-| websocket                | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                     |         |          |         |
+| Name                     |  Type   | Description                                                                                                  | Default | Required | Options |
+|:-------------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                    | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| conversation-time-filter | option  | Time filter (days) appended to the Lightning analytics URL when generating conversation links                |   30    |          |         |
+| date-from                | option  | Optional ISO-8601 timestamp (UTC) to include conversations starting from this date                           |         |          |         |
+| date-to                  | option  | Optional ISO-8601 timestamp (UTC) to include conversations up to this date                                   |         |          |         |
+| debug<br/>-d             | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir                | option  | Import flag values from a directory.                                                                         |         |          |         |
+| json                     | boolean | Format output as json.                                                                                       |         |          |         |
+| last-n-days              | option  | Optional rolling window (days) to include only the most recent conversations                                 |         |          |         |
+| outputfile<br/>-f        | option  | Force the path and name of output report file. Must end with .csv                                            |         |          |         |
+| skipauth                 | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o        | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket                | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

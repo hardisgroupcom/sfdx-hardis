@@ -1,3 +1,7 @@
+---
+title: "sfdx-hardis contributors"
+description: "The organization behind sfdx-hardis, the authors of its Pull Requests, and the people it thanks."
+---
 ### Organization
 
 sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudity.com/), but has many external contributors that we cant thank enough !
@@ -17,6 +21,8 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 - [Taha Basri](https://www.linkedin.com/in/tahabasri/), for his work about generating documentation of LWC
 - [Anush Poudel](https://www.linkedin.com/in/anushpoudel/), for integrating sfdx-hardis with multiple LLMs using langchainJs
 - [Sebastien Colladon](https://www.linkedin.com/in/sebastien-colladon/), for providing sfdx-git-delta which is highly used within sfdx-hardis
+- [Haim Knokh](https://github.com/hknokh), for providing SFDMU (Salesforce Data Move Utility) which runs the data imports and exports of sfdx-hardis
+- [Matthias Rolke](https://github.com/amtrack), for providing Browserforce (sfdx-browserforce-plugin) which applies the Setup settings of browser deployment actions
 - [Stepan Stepanov](https://www.linkedin.com/in/stepan-stepanov-79a48734/), for implementing the deployment mode _delta with dependencies_
 - [Shamina Mossodeean](https://www.linkedin.com/in/shaminam/), for automating SF decomposed metadata
 - [Michael Havrilla](https://www.linkedin.com/in/%F0%9F%92%BB-michael-havrilla-69063036/), for the integration with Vector.dev allowing to provide monitoring logs to external systems like DataDog
@@ -54,6 +60,10 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 - [Mehdi](https://github.com/Mehdi-Cloudity), for the [bypass generation command](https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/) and its application to Flows, Validation Rules and Triggers
 - [Mathieu Rodrigues](https://github.com/MathieuRodriguesCloudity), for the SFDMU configuration for CPQ projects
 - [Hasnioui-Ysf](https://github.com/Hasnioui-Ysf), for the work on Permission Sets management
+- [Olivier Mulot](https://www.linkedin.com/in/olivier-m-aa6111124/), for the qualification and testing of the [sfdx-hardis DevOps trainings](https://sfdx-hardis-training.cloudity.com/)
+- [fkramer690](https://github.com/fkramer690), for the step template of the [sfdx-hardis training](https://sfdx-hardis-training.cloudity.com/) labs
+- [Dave Renald Saavedra](https://github.com/drsaavedra), for creating Pull Request scratch orgs from a snapshot of the target branch
+- [availomani](https://github.com/availomani), for the retrieve, deployment and activation of Agentforce agents
 
 > Translations have been performed by GitHub Copilot with Claude Sonnet 4.6, then reviewed and arranged by real humans !
 

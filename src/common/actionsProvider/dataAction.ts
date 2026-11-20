@@ -1,11 +1,18 @@
-import { ActionsProvider, ActionResult, PrePostCommand, buildActionOutput } from './actionsProvider.js';
+import { ActionsProvider, ActionResult, PrePostCommand, buildActionOutput, ActionParameterDescription } from './actionsProvider.js';
 import { uxLog } from '../utils/index.js';
 import c from 'chalk';
-import { findDataWorkspaceByName, importData } from '../utils/dataUtils.js';
+import { normalizeIdentityPath } from '../utils/deploymentActionIdentityUtils.js';
+import { importData, resolveDataWorkspacePath } from '../utils/dataUtils.js';
 
 export class DataAction extends ActionsProvider {
   public getLabel(): string {
     return 'DataAction';
+  }
+
+  public getParameterDescriptions(): ActionParameterDescription[] {
+    return [
+      { name: 'sfdmuProject', path: 'parameters.sfdmuProject', flag: 'sfdmu-project', type: 'string', required: true, description: 'Name or path of the SFDMU workspace to import (scripts/data/<name>)' },
+    ];
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -15,7 +22,7 @@ export class DataAction extends ActionsProvider {
       uxLog('error', this, c.red(`[DeploymentActions] No sfdmuProject parameter provided for action ${cmd.label}`));
       return { statusCode: 'failed', skippedReason: 'No sfdmuProject parameter provided' };
     }
-    const sfdmuProjectPath = await findDataWorkspaceByName(sfdmuProject, false);
+    const sfdmuProjectPath = await resolveDataWorkspacePath(sfdmuProject);
     if (!sfdmuProjectPath) {
       uxLog('error', this, c.red(`[DeploymentActions] Data workspace ${sfdmuProject} does not exist for action ${cmd.label}`));
       return { statusCode: 'failed', skippedReason: `Data workspace ${sfdmuProject} does not exist` };
@@ -23,11 +30,16 @@ export class DataAction extends ActionsProvider {
     return null;
   }
 
+  // The workspace path is relative to scripts/data, written by hand with either slash
+  public getIdentityParameters(cmd: PrePostCommand): Record<string, any> | null {
+    return { sfdmuProject: normalizeIdentityPath(cmd.parameters?.sfdmuProject) };
+  }
+
   public async run(cmd: PrePostCommand): Promise<ActionResult> {
     const validity = await this.checkValidityIssues(cmd);
     if (validity) return validity;
     const sfdmuProject = (cmd.parameters?.sfdmuProject as string) || '';
-    const sfdmuProjectPath = await findDataWorkspaceByName(sfdmuProject);
+    const sfdmuProjectPath = await resolveDataWorkspacePath(sfdmuProject);
     const importOptions: any = {}
     if (this.customUsernameToUse) {
       importOptions.targetUsername = this.customUsernameToUse;

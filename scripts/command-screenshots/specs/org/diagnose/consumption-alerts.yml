@@ -1,0 +1,9 @@
+command: hardis:org:diagnose:consumption-alerts
+run: sf hardis:org:diagnose:consumption-alerts --target-org helios-prod
+mode: replay
+org: none
+caption: "Three consumption cards in alert on the Helios production org, the Platform Services card at 100% of its allowance"
+pills:
+  - text: "Consumption Utilization Alerts (XLSX)"
+    legend: "One row per threshold Salesforce raised, with its card, value and date"
+    button: true

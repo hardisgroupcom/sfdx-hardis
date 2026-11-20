@@ -1,3 +1,7 @@
+---
+title: "hardis:misc:servicenow-report - ServiceNow Report"
+description: "This command retrieves user stories from Salesforce and enriches them with data from ServiceNow."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:misc:servicenow-report
 
@@ -75,6 +79,30 @@ In agent mode:
 - All interactive prompts are skipped.
   
 
+## Screenshots
+
+![Choose which deployments to check against ServiceNow](../../assets/images/commands/misc/servicenow-report-1.webp)
+
+_Choose which deployments to check against ServiceNow_
+
+![The user stories of UAT are cross-checked with their ServiceNow change requests, all valid, with a report of the matches](../../assets/images/commands/misc/servicenow-report.webp)
+
+_The user stories of UAT are cross-checked with their ServiceNow change requests, all valid, with a report of the matches_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### ServiceNow cross-report
+
+One row per Salesforce user story enriched with its ServiceNow ticket, with an "Is Valid" column and the invalid fields; a second file ending with -invalid lists only the invalid rows.
+
+Files: `service-now-report-*.csv`, `xls/service-now-report-*.xlsx`
+
+![ServiceNow cross-report report in Excel](../../assets/images/commands/misc/servicenow-report-report-service-now-report.webp)
+
 ## Parameters
 
 | Name                |  Type   | Description                                                                                                 | Default | Required | Options |
@@ -82,11 +110,11 @@ In agent mode:
 | agent               | boolean | Run in non-interactive mode for agents and automation                                                       |         |          |         |
 | config<br/>-c       | option  | Path to JSON config file containing user stories and ServiceNow configuration                               |         |          |         |
 | debug<br/>-d        | boolean | Activate debug mode (more logs)                                                                             |         |          |         |
-| flags-dir           | option  | undefined                                                                                                   |         |          |         |
+| flags-dir           | option  | Import flag values from a directory.                                                                        |         |          |         |
 | json                | boolean | Format output as json.                                                                                      |         |          |         |
 | outputfile<br/>-f   | option  | Force the path and name of output report file. Must end with .csv                                           |         |          |         |
 | skipauth            | boolean | Skip authentication check when a default username is required                                               |         |          |         |
-| target-org<br/>-o   | option  | undefined                                                                                                   |         |          |         |
+| target-org<br/>-o   | option  | Username or alias of the target org.                                                                        |         |          |         |
 | websocket           | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                   |         |          |         |
 | where-choice<br/>-w | option  | Where selection for user stories. If not provided, you will be prompted to select one from the config file. |         |          |         |
 

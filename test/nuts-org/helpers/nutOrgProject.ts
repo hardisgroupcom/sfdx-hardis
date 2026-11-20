@@ -25,6 +25,20 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url));
 export const FIXTURE_PROJECT_DIR = path.resolve(currentDir, '../../fixtures/nut-org-project');
 export const FIXTURE_BROKEN_DIR = path.resolve(currentDir, '../../fixtures/nut-org-project-broken');
 
+// What the Dev Hub answers when it has no scratch org left to give: active slots or daily quota
+const SCRATCH_ORG_LIMIT_REGEX = /LIMIT_EXCEEDED|active scratch org limit|no more scratch orgs available|daily scratch org signup limit/i;
+
+/**
+ * The Dev Hub refused a scratch org because of its limits (active orgs or daily creation quota).
+ * Not a defect of sfdx-hardis: the NUT files that need the org skip instead of failing.
+ */
+export class ScratchOrgLimitError extends Error {
+  public constructor(message: string) {
+    super(message);
+    this.name = 'ScratchOrgLimitError';
+  }
+}
+
 export interface NutOrgContext {
   session: TestSession;
   projectDir: string;
@@ -427,7 +441,7 @@ export async function createNutOrgSession(scenario: string): Promise<NutOrgConte
     // The Dev Hub allows a limited number of active scratch orgs, and a crashed job leaks its
     // own. When we hit the limit, free the slots taken by previous NUT runs and try once more.
     if (createResult.shellOutput.code !== 0) {
-      if (/LIMIT_EXCEEDED|active scratch org limit|no more scratch orgs available/i.test(scratchCreateOutput)) {
+      if (SCRATCH_ORG_LIMIT_REGEX.test(scratchCreateOutput)) {
         // eslint-disable-next-line no-console
         console.log('[nuts-org] Scratch org limit reached, deleting the orgs left by previous runs...');
         const freed = freeNutScratchOrgSlots(devHubUsername);
@@ -435,7 +449,7 @@ export async function createNutOrgSession(scenario: string): Promise<NutOrgConte
           // Nothing could be freed, so tell which limit is actually blocking: deleting orgs
           // frees ActiveScratchOrgs but never restores the daily creation quota.
           const limits = getScratchOrgLimits(devHubUsername);
-          throw new Error(
+          throw new ScratchOrgLimitError(
             'Scratch org limit reached on the Dev Hub and no NUT scratch org could be freed.\n' +
             `ActiveScratchOrgs: ${limits.active}\n` +
             `DailyScratchOrgs: ${limits.daily}\n` +
@@ -446,9 +460,9 @@ export async function createNutOrgSession(scenario: string): Promise<NutOrgConte
         createResult = createScratchOrg();
         scratchCreateOutput = createResult.shellOutput.stdout + createResult.shellOutput.stderr;
         if (createResult.shellOutput.code !== 0) {
-          throw new Error(
-            `hardis:scratch:create failed again after freeing ${freed} scratch org slot(s):\n${scratchCreateOutput.slice(-4000)}`
-          );
+          const message = `hardis:scratch:create failed again after freeing ${freed} scratch org slot(s):\n${scratchCreateOutput.slice(-4000)}`;
+          // Freed slots do not restore the daily creation quota: still a limit, not a defect
+          throw SCRATCH_ORG_LIMIT_REGEX.test(scratchCreateOutput) ? new ScratchOrgLimitError(message) : new Error(message);
         }
       } else {
         throw new Error(`hardis:scratch:create failed:\n${scratchCreateOutput}`);
@@ -477,16 +491,48 @@ export async function createNutOrgSession(scenario: string): Promise<NutOrgConte
  * which also catches orgs leaked by a crashed run.
  */
 let sharedSession: NutOrgContext | null = null;
+// A Dev Hub limit hit by the first file: the next files do not ask for a scratch org again
+let sharedSessionLimitError: ScratchOrgLimitError | null = null;
 
 export async function getSharedNutOrgSession(): Promise<NutOrgContext> {
   if (sharedSession) {
     return sharedSession;
   }
-  sharedSession = await createNutOrgSession('shared');
+  if (sharedSessionLimitError) {
+    throw sharedSessionLimitError;
+  }
+  try {
+    sharedSession = await createNutOrgSession('shared');
+  } catch (e) {
+    if (e instanceof ScratchOrgLimitError) {
+      sharedSessionLimitError = e;
+    }
+    throw e;
+  }
   if (sharedSession.reused) {
     purgeNutApexClasses(sharedSession);
   }
   return sharedSession;
+}
+
+/**
+ * The shared scratch org, for the before() hook of a NUT file: when the Dev Hub has no scratch
+ * org left to give (active slots or daily creation quota), the file is skipped with a warning
+ * instead of failing, since nothing in sfdx-hardis is wrong. Any other error still fails it.
+ */
+export async function getSharedNutOrgSessionOrSkip(mochaContext: Mocha.Context): Promise<NutOrgContext> {
+  try {
+    return await getSharedNutOrgSession();
+  } catch (e) {
+    if (e instanceof ScratchOrgLimitError) {
+      // eslint-disable-next-line no-console
+      console.log(`::warning title=nuts-org skipped::${e.message.split('\n')[0]} The scenarios of this run were skipped, not failed.`);
+      // eslint-disable-next-line no-console
+      console.log(e.message);
+      mochaContext.skip();
+    }
+    throw e;
+  }
 }
 
 /**

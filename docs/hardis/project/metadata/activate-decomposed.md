@@ -1,3 +1,7 @@
+---
+title: "hardis:project:metadata:activate-decomposed - Activate Decomposed Metadata (Beta)"
+description: "Activate decomposed metadata types in Salesforce DX projects."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:metadata:activate-decomposed
 
@@ -58,13 +62,23 @@ In agent mode:
 - All interactive prompts are skipped
 
 
+## Screenshots
+
+![Pick the metadata types to decompose](../../../assets/images/commands/project/metadata/activate-decomposed-1.webp)
+
+_Pick the metadata types to decompose_
+
+![The permission sets of the Helios project converted to the decomposed source format, one file per access](../../../assets/images/commands/project/metadata/activate-decomposed.webp)
+
+_The permission sets of the Helios project converted to the decomposed source format, one file per access_
+
 ## Parameters
 
 | Name         |  Type   | Description                                                   | Default | Required | Options |
 |:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent        | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | debug<br/>-d | boolean | Run command in debug mode                                     |         |          |         |
-| flags-dir    | option  | undefined                                                     |         |          |         |
+| flags-dir    | option  | Import flag values from a directory.                          |         |          |         |
 | json         | boolean | Format output as json.                                        |         |          |         |
 | skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
 | websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |

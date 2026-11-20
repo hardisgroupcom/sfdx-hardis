@@ -27,7 +27,7 @@ Re-check these once before any publishing session: the Trailhead UI changes.
 | Award a Trailhead badge                                      | **No**           | Cloudity issues its own                                                    |
 | Gate a step behind another                                   | **No**           | Order is a suggestion, so every lab states its own preconditions and reset |
 | Nest a Trailmix inside a Trailmix                            | **No (assumed)** | Each level links the next with a plain Link step                           |
-| Author-side reporting on who completed what                  | **No**           | Completion data comes from the closed claim issues and `badges/`           |
+| Author-side reporting on who completed what                  | **No**           | The course builds its own, from the forks and the claims: see below        |
 | Localize one Trailmix                                        | **No**           | A translated course is a new Trailmix per language                         |
 
 Authoring a real Trailhead badge is not an option: there is no self-serve program, and
@@ -43,9 +43,54 @@ Trailhead-native surface open to us.
 | Level 2 Trailmix         | `Salesforce DevOps with sfdx-hardis - Contributor Advanced`                                                         |
 | Level 3 Trailmix         | `Salesforce DevOps with sfdx-hardis - Release Manager`                                                              |
 | Expected URL shape       | `https://trailhead.salesforce.com/users/nvuillamy/trailmixes/salesforce-devops-with-sfdx-hardis-contributor-basics` |
-| Training site            | `https://hardisgroupcom.github.io/sfdx-hardis-training/`                                                            |
+| Training site            | `https://sfdx-hardis-training.cloudity.com/`                                                                        |
 | Lab URL shape            | `<site>/en/level-2-contributor-advanced/2-7-resolve-a-git-merge-conflict/`                                          |
 | Badge URL shape          | `<site>/badges/<github-handle>/`                                                                                    |
+
+**The training site URL is final.** `https://sfdx-hardis-training.cloudity.com/` is the custom
+domain of the organization site `sfdx-hardis-training/sfdx-hardis-training.github.io`. The course
+had two addresses before, and both redirect to it:
+
+| Address                                                  | Until      | What answers there                                         |
+|----------------------------------------------------------|------------|------------------------------------------------------------|
+| `https://hardisgroupcom.github.io/sfdx-hardis-training/` | 2026-09-30 | The redirect site built by `pages.yml` of the training     |
+| `https://sfdx-hardis-training.github.io/`                | 2026-10-12 | GitHub itself: a 301 to the same path, with no CORS header |
+
+Never write either of them in new content.
+
+- The custom domain is held by the `CNAME` file of the `gh-pages` branch, which the publish step of
+  `pages.yml` writes on every run (`cname:`). `check-site.mjs` fails when it differs from the course
+  URL. Setting the domain by hand in the Pages settings does not last: the next push wipes it.
+- The DNS record is `sfdx-hardis-training.cloudity.com CNAME sfdx-hardis-training.github.io`, in the
+  `cloudity.com` zone, which is not managed from these repositories.
+- [Trailhead Banner](https://github.com/nabondance/Trailhead-Banner) reads
+  `<site>/badges/<trailblazer>.json` and only trusts the hosts listed in its
+  `src/utils/sfdxHardisBadgeUtils.js`, for the record, for `issuer.course` and for `bannerImage`. A
+  change of `course.site`, or of the shape of a badge record, needs a Pull Request there, or the
+  badge silently leaves every banner.
+
+Should the address ever change, replace it in every source of the three repositories, in one Pull
+Request per repository:
+
+```bash
+# from each of sfdx-hardis, ../vscode-sfdx-hardis and ../sfdx-hardis-training
+git grep -lI 'sfdx-hardis-training.cloudity.com' -- . ':!CHANGELOG.md'
+```
+
+- Here the URL sits in `README.md`, `docs/`, the command descriptions under `src/commands/`
+  (and the pages `yarn build:doc` generates from them), `CLAUDE.md` and the `training-*` skills.
+  Update this table and this note in the same change.
+- Released `CHANGELOG.md` sections keep the URL they were written with.
+- In the training repository the URL is written as `course.site` in `training-universe.json` and
+  in `course-site.yml` (a check compares the two), as `cname:` in `pages.yml` (same check), and by
+  hand in `config/.sfdx-hardis.yml`: the ticketing URL builders and the Training menu links.
+  Replace all four, then redraw the cards that print the address with
+  `node scripts/badges/rerender.mjs`.
+- `LEGACY_SITE_URL` in `scripts/lib/urls.mjs` is the first address of the course and never changes:
+  the forks learners made before the move still call it, and it redirects.
+- `test/fixtures/training-project/.sfdx-hardis.yml` of the extension is a copy of the training
+  `config/.sfdx-hardis.yml`: the two must stay identical.
+- The path after the host does not change: only the base URL does.
 
 Two cautions, both permanent:
 
@@ -173,11 +218,41 @@ credentials. Its failure messages are the only support channel a learner has, so
 the lab, what was looked for and where. The rules live in `scripts/verify/rules.mjs`; editing
 them is [[training-update]]'s job.
 
+## Course statistics
+
+A Trailmix reports nothing, so the course counts for itself. `scripts/stats/course-stats.mjs` in the
+training repository reads the forks of the course, the `badge-claim` issues and `badges/`, and
+writes `stats/course-stats.json`: learners who started and completed each level, and the median
+time of the labs next to the time they announce. `course-stats.yml` commits it every Monday, and
+the site builds its Statistics page (`<site>/stats/`) and the totals of the Badges page from it.
+`STATS.md` at the root of the repository is the same page in English, rendered from the same file:
+after changing the words of the page in `i18n/en.json`, run `course-stats.mjs --render`, or the
+site build fails on the drift.
+
+- **The committed file names nobody.** Counts and medians only, and a median appears once five
+  learners are behind it. `--details` writes one row per learner to `hardis-report/course-stats/`,
+  git-ignored, for a maintainer's own machine: never run it in a workflow, never upload it.
+- **Time is read from GitHub, not timed.** A lab ends when its Pull Request is merged and runs from
+  the end of the one before, a break over 45 minutes counts for nothing, and Labs 1.1 and 1.2 are
+  not measured because the repository only appears when they end. Every figure is a low estimate.
+- **The pages announce what was observed.** A generator writes the median into the markdown of
+  each lab and level, rounded down (five minutes for a lab, a quarter of an hour for a level),
+  with the median and the fastest plausible time next to it, and the weekly workflow commits it. The
+  Statistics page keeps the first estimate in its own column. Details in the Times section of
+  [[training-update]].
+- **Receipts refine it.** A receipt keeps the time its lab first passed, so a learner who runs
+  Check my work after each lab is measured lab by lab.
+- **The maintainers and the end to end test accounts are left out**, of the statistics and of the
+  badge totals: `scripts/stats/ignore.json`. Add an account there before it claims a badge.
+- **A level is started when its first branch exists**, and every fork has `integration`, because
+  Set up my training environment is what creates the fork.
+
 ## Translation
 
 The course ships in **English and French**, `labs/en/` and `labs/fr/`, mirrored file for file, with
-English as the reference. Every translated page carries a `source_rev` front matter key naming the
-English commit it was made from, so staleness is detectable.
+English as the reference. Every translated page carries a `source_rev` front matter key holding the
+content hash of the English page it was made from (`git hash-object`, which a squash merge does not
+change), so staleness is detectable.
 
 **A Trailmix cannot be localized, so each language is its own Trailmix per level**: six today, three
 English and three French. They are built from the same step list with `/fr/` in place of `/en/` in
@@ -213,4 +288,4 @@ Small, and each can be settled when the phase that needs it arrives:
 - [[training-update]] edits the labs, the universe, the rules and the screenshots.
 - [[training-impact]] decides whether a change here or in the extension breaks a lab.
 - [[vscode-sfdx-hardis]] for the panels the labs click through.
-- [[training-e2e]] walks the labs for real, including the claim and the badge audit.
+- [[e2e]] (`training` scenario) walks the labs for real, including the claim and the badge audit.

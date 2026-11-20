@@ -10,6 +10,7 @@ import { GenericTicketingProvider } from '../../../src/common/ticketProvider/gen
 import { JiraProvider } from '../../../src/common/ticketProvider/jiraProvider.js';
 import { ServiceNowProvider } from '../../../src/common/ticketProvider/serviceNowProvider.js';
 import { setFetchForTests } from '../../../src/common/utils/httpUtils.js';
+import { restoreProcessEnv } from '../utils/envTestHelper.js';
 
 /** Sets env vars for the duration of one test, and restores whatever was there before */
 function withEnv(vars: Record<string, string>, run: () => Promise<void>): () => Promise<void> {
@@ -256,7 +257,7 @@ describe('ticket providers', () => {
       expect(details!.extra.category).to.equal('Software');
       expect(details!.comments).to.have.lengthOf(1);
       expect(details!.comments[0].author).to.equal('Alice Martin');
-      expect(details!.comments[0].body).to.equal('[work_notes] Assign the permission set manually.');
+      expect(details!.comments[0].body).to.equal('Assign the permission set manually.\n\n[work_notes]');
       expect(details!.manualActions.join(' ')).to.contain('permission set');
     }));
 
@@ -309,7 +310,7 @@ describe('unified provider surface', () => {
   });
 
   it('exposes as deep-fetch capable only the connectors that have an API', () => {
-    expect(ticketDetailsProviderKeys()).to.deep.equal(['jira', 'azure', 'servicenow']);
+    expect(ticketDetailsProviderKeys()).to.deep.equal(['jira', 'azure', 'servicenow', 'aha']);
     expect(GenericTicketingProvider.supportsTicketDetails).to.equal(false);
   });
 
@@ -437,7 +438,7 @@ describe('ServiceNowProvider deployment comments', () => {
       calls.push({ url, method, body: init?.body ? JSON.parse(init.body) : null });
       let body: any = { result: [] };
       if (url.includes('/api/now/table/label_entry')) {
-        body = method === 'GET' ? { result: [] } : { result: { sys_id: 'entry1' } };
+        body = method === 'GET' ? { result: [] } : { result: { sys_id: 'entry1', label: { value: 'label1' }, table_key: { value: 'sys1' } } };
       } else if (url.includes('/api/now/table/label')) {
         body = method === 'GET'
           ? { result: existingLabelSysId ? [{ sys_id: existingLabelSysId }] : [] }
@@ -483,7 +484,7 @@ describe('ServiceNowProvider deployment comments', () => {
     expect(tickets[0].reporterLabel).to.equal('Bob Durand');
     // The sys_id is kept, so posting the deployment note needs no second lookup
     expect(tickets[0].providerRecordId).to.equal('abc123');
-    expect(tickets[0].url).to.equal('https://acme.service-now.com/nav_to.do?uri=/incident.do?sys_id=abc123');
+    expect(tickets[0].url).to.equal('https://acme.service-now.com/incident.do?sys_id=abc123');
   }));
 
   it('leaves a ticket no record answers for untouched', withEnv(SERVICENOW_ENV, async () => {
@@ -507,8 +508,10 @@ describe('ServiceNowProvider deployment comments', () => {
     expect(writes).to.have.lengthOf(1);
     expect(writes[0].url).to.equal('https://acme.service-now.com/api/now/table/incident/abc123');
     expect(Object.keys(writes[0].body)).to.deep.equal(['work_notes']);
-    expect(writes[0].body.work_notes).to.contain('Deployed by sfdx-hardis in Salesforce org acme--uat.sandbox');
-    expect(writes[0].body.work_notes).to.contain('Pull Request: Block a past close date (https://github.com/acme/sfdx-project/pull/812) by Alice Martin');
+    // Plain text of the deployment markdown every connector shares: the links are spelled out
+    expect(writes[0].body.work_notes).to.contain('Deployed by sfdx-hardis (https://sfdx-hardis.cloudity.com/) in acme--uat.sandbox (https://acme--uat.sandbox.my.salesforce.com)');
+    expect(writes[0].body.work_notes).to.contain('Related PR: Block a past close date (https://github.com/acme/sfdx-project/pull/812), by Alice Martin');
+    expect(writes[0].body.work_notes).to.not.match(/[*[\]]/);
     // Tagging is opt-in: nothing was written to the label tables
     expect(calls.some((call) => call.url.includes('/api/now/table/label'))).to.equal(false);
   }));
@@ -601,7 +604,7 @@ describe('GenericTicketingProvider.collectTicketsInfo', () => {
   const envBefore = { ...process.env };
   afterEach(() => {
     setFetchForTests(null);
-    process.env = { ...envBefore };
+    restoreProcessEnv(envBefore);
   });
 
   const ticket = (id: string): Ticket => ({ provider: 'GENERIC', id, url: `https://x.invalid/backlog/${id}/` });

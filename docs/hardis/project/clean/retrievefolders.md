@@ -1,3 +1,7 @@
+---
+title: "hardis:project:clean:retrievefolders - Retrieve dashboards, documents and report folders in DX sources"
+description: "Retrieves specific folders of Dashboards, Documents, Email Templates, and Reports from a Salesforce org into your DX project sources."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:clean:retrievefolders
 
@@ -37,17 +41,23 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The report, dashboard, document and email template folders of the Helios sources retrieved again from the org](../../../assets/images/commands/project/clean/retrievefolders.webp)
+
+_The report, dashboard, document and email template folders of the Helios sources retrieved again from the org_
+
 ## Parameters
 
-| Name              |  Type   | Description                                                   | Default | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir         | option  | undefined                                                     |         |          |         |
-| json              | boolean | Format output as json.                                        |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-org<br/>-o | option  | undefined                                                     |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+| Name              |  Type   | Description                                                                                                  | Default | Required | Options |
+|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                                         |         |          |         |
+| json              | boolean | Format output as json.                                                                                       |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

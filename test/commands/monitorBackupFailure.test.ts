@@ -20,7 +20,7 @@ describe('hardis:org:monitor:backup failure notification', () => {
   });
 
   const postFailure = (flags: any, error: any) =>
-    (MonitorBackup.prototype as any).postBackupFailureNotification.call({}, flags, error);
+    (MonitorBackup.prototype as any).postBackupFailureNotification.call(Object.create(MonitorBackup.prototype), flags, error);
 
   it('sends an error BACKUP notification with the error message', async () => {
     await postFailure({}, new Error('Retrieve failed: INVALID_SESSION_ID'));
@@ -42,7 +42,7 @@ describe('hardis:org:monitor:backup failure notification', () => {
   });
 
   it('says only the report failed when the retrieve already succeeded', async () => {
-    await (MonitorBackup.prototype as any).postBackupFailureNotification.call({}, {}, new Error('ENOSPC'), true);
+    await (MonitorBackup.prototype as any).postBackupFailureNotification.call(Object.create(MonitorBackup.prototype), {}, new Error('ENOSPC'), true);
     expect(posted[0].text).to.include('retrieved, but its report of the changes failed');
     expect(posted[0].severity).to.equal('error');
   });

@@ -1,3 +1,7 @@
+---
+title: "hardis:project:configure:auth - Configure authentication"
+description: "Configures authentication between a Git branch and a target Salesforce org for CI/CD deployments."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:configure:auth
 
@@ -16,7 +20,7 @@ It creates an **External Client App** that uses the JWT Bearer flow with SSL cer
 
 Key functionalities include:
 
-- **Org Selection/Login:** Guides the user to select an existing Salesforce org or log in to a new one.
+- **Org Selection/Login:** Guides the user to select an existing Salesforce org or log in to a new one. The selected org becomes the default org, and the command continues with it without asking again.
 - **Config Naming:** Names the auth config after an existing Git branch (default), or derives a name from the org domain with `--name-type org-domain` (or pass an explicit name with `--name`). Org-domain configs are not tied to a Git branch, so the merge targets step is skipped.
 - **Git Branch Association:** Allows associating a specific Git branch with the chosen Salesforce org.
 - **Merge Target Definition:** Enables defining target Git branches into which the configured branch can merge, ensuring controlled deployment flows.
@@ -45,9 +49,40 @@ prompts
 - **Configuration Management:** Leverages internal utilities (`checkConfig`, `getConfig`, `setConfig`, `setInConfigFile`) to read from and write to project-specific configuration files (e.g., `.sfdx-hardis.<branchName>.yml`).
 - **Salesforce CLI Execution:** Executes Salesforce CLI commands programmatically via `execSfdxJson` for org interactions.
 - **SSL Certificate Generation:** Calls `generateSSLCertificate` to create necessary SSL certificates for JWT-based authentication.
-- **WebSocket Communication:** Uses `WebSocketClient` for potential communication with external tools or processes, such as restarting the command in VS Code.
+- **WebSocket Communication:** Uses `WebSocketClient` to communicate with the VS Code extension.
+- **Org Switch:** When the selected org differs from the one the command started with, it loads the selected org with `Org.create` and continues with it, instead of restarting the command.
 - **Dependency Check:** Ensures the presence of `openssl` on the system, which is required for SSL certificate generation.
 
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) course runs this command, click by click, on an org of your own:
+
+- [Lab 3.1 - Configure the CI/CD pipeline up to production](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-1-configure-the-pipeline-up-to-production/)
+
+<!-- training-links:end -->
+
+
+## Screenshots
+
+![Pick the org that the branch deploys to](../../../assets/images/commands/project/configure/auth-1.webp)
+
+_Pick the org that the branch deploys to_
+
+![Pick the git branch to configure](../../../assets/images/commands/project/configure/auth-2.webp)
+
+_Pick the git branch to configure_
+
+![Pick the branches the uat branch merges into](../../../assets/images/commands/project/configure/auth-3.webp)
+
+_Pick the branches the uat branch merges into_
+
+![The uat branch is linked to its sandbox, with its branch config file, certificate, External Client App and CI/CD variables](../../../assets/images/commands/project/configure/auth.webp)
+
+_The uat branch is linked to its sandbox, with its branch config file, certificate, External Client App and CI/CD variables_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
 
 ## Parameters
 
@@ -58,13 +93,13 @@ prompts
 | debug<br/>-d          | boolean | Activate debug mode (more logs)                                                                                                                                                                                                                           |            |          |                               |
 | devhub<br/>-b         | boolean | Configure project DevHub                                                                                                                                                                                                                                  |            |          |                               |
 | external-storage      | boolean | Do not store the encrypted certificate in a file in the repository. Instead, the user is asked to keep it in a password manager and provide it at authentication time. The other secrets (client id, decryption key) are still stored as CI/CD variables. |            |          |                               |
-| flags-dir             | option  | undefined                                                                                                                                                                                                                                                 |            |          |                               |
+| flags-dir             | option  | Import flag values from a directory.                                                                                                                                                                                                                      |            |          |                               |
 | json                  | boolean | Format output as json.                                                                                                                                                                                                                                    |            |          |                               |
 | name                  | option  | Name of the org-based auth config to create in config/branches (skips Git branch selection and merge targets). Auto-derived from the org domain when --name-type=org-domain.                                                                              |            |          |                               |
 | name-type             | option  | How to name the auth config: git-branch (select an existing Git branch) or org-domain (derive the name from the org domain)                                                                                                                               | git-branch |          |   git-branch<br/>org-domain   |
 | skipauth              | boolean | Skip authentication check when a default username is required                                                                                                                                                                                             |            |          |                               |
-| target-dev-hub<br/>-v | option  | undefined                                                                                                                                                                                                                                                 |            |          |                               |
-| target-org<br/>-o     | option  | undefined                                                                                                                                                                                                                                                 |            |          |                               |
+| target-dev-hub<br/>-v | option  | Username or alias of the Dev Hub org.                                                                                                                                                                                                                     |            |          |                               |
+| target-org<br/>-o     | option  | Username or alias of the target org.                                                                                                                                                                                                                      |            |          |                               |
 | usage                 | option  | Usage of the External Client App, used to set its description. With "other", the description is taken from --app-description or prompted                                                                                                                  |    cicd    |          | cicd<br/>monitoring<br/>other |
 | websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                                                                                                 |            |          |                               |
 

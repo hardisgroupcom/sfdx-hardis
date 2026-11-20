@@ -1,0 +1,4 @@
+command: hardis:project:function:list
+run: sf hardis:project:function:list --check-runtimes
+org: none
+caption: The notifyCrew custom function of the Helios project, its script, its channel input and whether its Node.js runtime is installed

@@ -1,0 +1,18 @@
+command: hardis:org:diagnose:storage-stats
+run: sf hardis:org:diagnose:storage-stats
+org: showcase
+caption: Records of the Helios objects by year of creation, to see what fills the data storage
+answers:
+  - q: Select the SObjects to analyze
+    choice: ^(Account|Contact|Opportunity|Installation__c|Panel_Batch__c)$
+    shot: true
+    caption: Pick the objects to count
+    pills:
+      - text: Installation__c
+        legend: A custom object of the project
+  - q: Select the date field
+    choice: ^Created Date$
+  - q: Select the breakdown granularity
+    choice: ^By Year
+  - q: optional WHERE condition
+    value: ""

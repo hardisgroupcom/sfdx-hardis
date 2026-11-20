@@ -1,0 +1,8 @@
+command: hardis:org:diagnose:unused-apex-classes
+run: sf hardis:org:diagnose:unused-apex-classes
+org: showcase
+caption: "Batch, Queueable and Schedulable Apex classes of the Helios org not run for 365 days: none here"
+pills:
+  - text: "Unused Apex Classes"
+    legend: "One row per async class, with the date of its latest job"
+    button: true

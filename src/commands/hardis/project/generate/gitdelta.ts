@@ -143,7 +143,8 @@ The command's technical implementation involves:
         const headItem = {
           title: t('choiceHead'),
           description: `Current git HEAD`,
-          value: { hash: 'HEAD' },
+          // HEAD is the first commit of the list
+          value: { hash: 'HEAD', pos: 0, message: branchCommits.all[0]?.message || 'HEAD' },
         };
         const commitFromResp = await prompts({
           type: 'select',
@@ -170,18 +171,22 @@ The command's technical implementation involves:
           description: `Local files not committed yet`,
           value: { hash: '*' },
         };
-        const singleCommitChoice = {
-          title: t('choiceSingleCommit'),
-          description: `Only for ${selectedFirstCommitLabel}`,
-          value: branchCommitsChoices[selectedFirstCommitPos + 1].value
-        };
+        // The oldest commit of the branch has no commit before it to compare with
+        const previousCommitChoice = branchCommitsChoices[selectedFirstCommitPos + 1];
+        const singleCommitChoices = previousCommitChoice
+          ? [{
+            title: t('choiceSingleCommit'),
+            description: `Only for ${selectedFirstCommitLabel}`,
+            value: previousCommitChoice.value
+          }]
+          : [];
         const commitToResp = await prompts({
           type: 'select',
           name: 'value',
           message: t('pleaseSelectTheCommitHashThatYou'),
           description: t('chooseEndingCommitForDeltaGeneration'),
           placeholder: t('selectACommit'),
-          choices: [currentItem, singleCommitChoice, ...branchCommitsChoices],
+          choices: [currentItem, ...singleCommitChoices, ...branchCommitsChoices],
         });
         toCommit = commitToResp.value.hash;
       } else {
@@ -193,6 +198,12 @@ The command's technical implementation involves:
     // Generate package.xml & destructiveChanges.xml using sfdx-git-delta
     uxLog("action", this, c.cyan(t('generatingDeltaFromCommitToCommitOn', { fromCommit: c.bold(fromCommit), toCommit: c.bold(toCommit), gitBranch: c.bold(gitBranch) })));
     const tmpDir = await createTempDir();
+    // sfdx-git-delta only compares commits: the local files not committed yet are compared through a
+    // commit object of the working tree that `git stash create` builds without changing anything
+    // (HEAD when nothing is modified)
+    if (toCommit === '*') {
+      toCommit = (await git().raw(['stash', 'create'])).trim() || 'HEAD';
+    }
     await callSfdxGitDelta(fromCommit || '', toCommit || '', tmpDir, { debug: this.debugMode });
 
     const diffPackageXml = path.join(tmpDir, 'package', 'package.xml');

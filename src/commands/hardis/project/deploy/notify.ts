@@ -30,7 +30,7 @@ According to the [integrations you configured](${CONSTANTS.DOC_URL_ROOT}/salesfo
 
   - Slack, Microsoft Teams, Email deployment summary after a successful deployment
 
-  - JIRA tags and comments on tickets that just has been deployed
+  - JIRA, Azure Boards, ServiceNow or Aha! comments and tags on the tickets that have just been deployed
 
 ![](${CONSTANTS.DOC_URL_ROOT}/assets/images/screenshot-jira-gitlab.jpg)
 
@@ -176,7 +176,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
     // Post notifications after successful deployment
     if (this.checkOnly === false && this.deployStatus === "valid") {
-      await handlePostDeploymentNotifications(flags, flags["target-org"]?.getUsername(), false, false, this.debugMode, this.message);
+      await handlePostDeploymentNotifications(flags["target-org"], flags["target-org"]?.getUsername(), false, false, this.debugMode, this.message);
     }
     // Fallback
     else {

@@ -1,0 +1,11 @@
+command: hardis:project:action:test-class:add
+run: sf hardis:project:action:test-class:add
+org: none
+caption: A test class is added to the ones that run with every deployment of the project
+answers:
+  - q: Select the configuration scope
+    choice: ^Project$
+    shot: true
+    caption: Declare the test class for every deployment, one branch, or one Pull Request
+  - q: Select the Apex test classes to add
+    choice: ^InstallationSchedulerTest \(already added\)$

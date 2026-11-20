@@ -1,0 +1,8 @@
+command: hardis:project:clean:xml
+run: sf hardis:project:clean:xml --globpattern "/**/*.flexipage-meta.xml" --xpath "//ns:itemInstances//ns:componentName[contains(text(),'runtime_sales_activities:activityPanel')]"
+org: none
+caption: The activity panel removed from the Lightning pages of the Helios project, with an XPath given on the command line
+answers:
+  - q: Do you want to ALWAYS apply removal of xpath
+    value: false
+    optional: true

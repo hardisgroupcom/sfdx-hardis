@@ -20,10 +20,20 @@ import { t } from '../../../../common/utils/i18n.js';
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
+// Branch names from git branch -a, as git show accepts them: remotes/origin/main becomes origin/main, HEAD pointers are skipped
+export function getBranchRefs(branchNames: string[]): string[] {
+  const refs = branchNames
+    .map((branchName) => branchName.replace(/^remotes\//, ''))
+    .filter((branchName) => branchName !== '' && branchName !== 'HEAD' && !branchName.endsWith('/HEAD') && !branchName.startsWith('('));
+  return [...new Set(refs)];
+}
+
 export default class GenerateFlowGitDiff extends SfCommand<any> {
   public static title = 'Generate Flow Visual Gif Diff';
 
-  public static description = `Generate Flow Visual Git Diff markdown between 2 commits
+  public static description = `Generate Flow Visual Git Diff markdown between 2 commits, or between 2 branches
+
+\`--commit-before\` and \`--commit-after\` accept a commit hash or a branch name (ex: \`origin/main\`), and the interactive prompts list the branches after the commits of the Flow.
 
 Note: This command might requires @mermaid-js/mermaid-cli to be installed.
 
@@ -47,6 +57,7 @@ In agent mode:
     '$ sf hardis:project:generate:flow-git-diff',
     '$ sf hardis:project:generate:flow-git-diff --flow "force-app/main/default/flows/Opportunity_AfterUpdate_Cloudity.flow-meta.xml" --commit-before 8bd290e914c9dbdde859dad7e3c399776160d704 --commit-after e0835251bef6e400fb91e42f3a31022f37840f65',
     '$ sf hardis:project:generate:flow-git-diff --agent --flow "force-app/main/default/flows/MyFlow.flow-meta.xml" --commit-before abc123 --commit-after def456',
+    '$ sf hardis:project:generate:flow-git-diff --flow "force-app/main/default/flows/MyFlow.flow-meta.xml" --commit-before origin/main --commit-after origin/integration',
   ];
 
   public static flags: any = {
@@ -54,11 +65,11 @@ In agent mode:
       description: 'Path to flow file (will be prompted if not set)',
     }),
     "commit-before": Flags.string({
-      description: 'Hash of the commit of the previous flow state, or "allStates" (will be prompted if not set)',
+      description: 'Commit hash or branch name (ex: origin/main) of the previous flow state, or "allStates" (will be prompted if not set)',
       default: ""
     }),
     "commit-after": Flags.string({
-      description: 'Hash of the commit of the new flow state (will be prompted if not set)',
+      description: 'Commit hash or branch name (ex: origin/integration) of the new flow state (will be prompted if not set)',
       default: "",
     }),
     debug: Flags.boolean({
@@ -110,14 +121,17 @@ In agent mode:
 
     // List states of flow file using git
     const fileHistory = await git().log({ file: this.flowFile });
-    if (fileHistory.all.length === 1) {
+    const promptNeeded = (this.commitBefore === "" || this.commitAfter === "") && !isCI && !agentMode;
+    const branchChoices = promptNeeded ? await this.listBranchChoices() : [];
+    // A Flow with one commit on the current branch can still differ in another branch
+    if (fileHistory.all.length === 1 && branchChoices.length === 0 && (this.commitBefore === "" || this.commitAfter === "")) {
       uxLog("action", this, c.cyan(t('thereIsOnlyOneStateForFlow', { flowFile: this.flowFile })));
       return {};
     }
 
     // Build prompt choices
     let allChoices: any[] = [];
-    if ((this.commitBefore === "" || this.commitAfter === "") && !isCI && !agentMode) {
+    if (promptNeeded) {
       allChoices = fileHistory.all.map(log => {
         return {
           value: log.hash,
@@ -125,6 +139,7 @@ In agent mode:
           description: `By ${log.author_name}(${log.author_email}) in ${log.refs}`
         }
       });
+      allChoices.push(...branchChoices);
     }
 
     // Prompt commits if not sent as input parameter
@@ -166,8 +181,15 @@ In agent mode:
         })
         this.commitAfter = commitAfterSelectRes.after;
       }
+      await this.checkGitRef(this.commitBefore);
+      await this.checkGitRef(this.commitAfter);
       // Generate diff
-      const { outputDiffMdFile } = await generateFlowVisualGitDiff(this.flowFile, this.commitBefore, this.commitAfter, { svgMd: true, pngMd: false, mermaidMd: this.debugMode, debug: this.debugMode })
+      const { outputDiffMdFile, isFlowDeletedOrAdded } = await generateFlowVisualGitDiff(this.flowFile, this.commitBefore, this.commitAfter, { svgMd: true, pngMd: false, mermaidMd: this.debugMode, debug: this.debugMode })
+      // Ex: a Flow created in a feature branch does not exist in origin/main
+      if (isFlowDeletedOrAdded) {
+        uxLog("warning", this, c.yellow(t('flowDiffFlowMissingInOneState', { flowFile: this.flowFile, before: this.commitBefore, after: this.commitAfter })));
+        return {};
+      }
       diffMdFile = outputDiffMdFile;
     }
 
@@ -186,4 +208,26 @@ In agent mode:
     };
   }
 
+  // Local and remote branches, listed after the commits of the Flow in the prompts
+  private async listBranchChoices(): Promise<any[]> {
+    const branchSummary = await git().branch(['-a']);
+    return getBranchRefs(branchSummary.all).map((branchRef) => {
+      return {
+        value: branchRef,
+        title: t('flowDiffBranchChoice', { branch: branchRef }),
+        description: t('flowDiffBranchChoiceDescription'),
+      };
+    });
+  }
+
+  // Fails early with a readable error when a commit or branch does not exist, instead of an empty diff
+  private async checkGitRef(gitRef: string) {
+    try {
+      await git().raw(['rev-parse', '--verify', `${gitRef}^{commit}`]);
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    catch (err: any) {
+      throw new SfError(t('flowDiffUnknownGitRef', { gitRef }));
+    }
+  }
 }

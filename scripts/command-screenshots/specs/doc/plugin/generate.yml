@@ -1,0 +1,2 @@
+command: hardis:doc:plugin:generate
+skip: "It builds this documentation site and runs without the VS Code command runner."

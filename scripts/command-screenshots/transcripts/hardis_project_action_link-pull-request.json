@@ -1,0 +1,43 @@
+{
+  "command": "hardis:project:action:link-pull-request",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Resolved pull request ID 118 from current branch"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Saving deployment actions..."
+      }
+    },
+    {
+      "delay": 600,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Draft actions linked to pull request 118: scripts/actions/.sfdx-hardis.118.yml"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

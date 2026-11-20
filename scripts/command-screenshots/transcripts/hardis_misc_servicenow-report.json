@@ -1,0 +1,211 @@
+{
+  "command": "hardis:misc:servicenow-report",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "No WHERE choice provided. Please select one from the available choices."
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Select a WHERE condition for user stories:",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "name": "value",
+            "type": "select",
+            "message": "🦙 Select a WHERE condition for user stories:",
+            "description": "Choose a predefined WHERE condition to filter user stories",
+            "placeholder": "Select a condition",
+            "choices": [
+              {
+                "title": "UAT all",
+                "description": "Target_Environment__c ='UAT'",
+                "value": "UAT all"
+              },
+              {
+                "title": "UAT postponed",
+                "description": "Target_Environment__c ='UAT' AND Release__r.Name = 'postponed'",
+                "value": "UAT postponed"
+              },
+              {
+                "title": "UAT in progress",
+                "description": "Target_Environment__c ='UAT' AND Release__r.Name != 'postponed' AND Release__r.Name != 'cancelled'",
+                "value": "UAT in progress"
+              }
+            ],
+            "optionsPerPage": 9999
+          }
+        ]
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "UAT all"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Fetching user stories from Salesforce..."
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[SOQL Query] SELECT Id, Name, Change_Request__c, Deployment_Title__c, CreatedBy.Name, Release__r.Name, Target_Environment__c FROM Helios_Deployment__c WHERE Target_Environment__c ='UAT' ORDER BY Change_Request__c ASC",
+        "query": {
+          "id": "hardis:misc:servicenow-report-q1",
+          "type": "soql",
+          "status": "running"
+        }
+      }
+    },
+    {
+      "delay": 800,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[SOQL Query] Retrieved 9 records",
+        "query": {
+          "id": "hardis:misc:servicenow-report-q1",
+          "type": "soql",
+          "status": "completed",
+          "recordCount": 9,
+          "batchCount": 1
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "9 user stories fetched from Salesforce, with 9 unique ticket numbers."
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Ticket Numbers:\n- CHG003101\n- CHG003104\n- CHG003107\n- CHG003110\n- CHG003112\n- CHG003115\n- CHG003118\n- CHG003121\n- CHG003124"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Fetching tickets from ServiceNow..."
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Fetching ServiceNow change_request table using query: https://helios-solar.service-now.com/api/now/table/change_request?sysparm_query=numberINCHG003101,CHG003104,CHG003107,CHG003110,CHG003112,CHG003115,CHG003118,CHG003121,CHG003124&sysparm_display_value=true"
+      }
+    },
+    {
+      "delay": 1000,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "ServiceNow API call succeeded"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Matching ServiceNow records with user stories..."
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Building final results..."
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Final results built with 9 records."
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "table",
+        "message": "[{\"Is Valid\":true,\"Invalid Fields\":\"\",\"Deployment Name\":\"HD-0231\",\"Change Request\":\"CHG003101\",\"Deployment Title\":\"Add the installation checklist to the crew app\",\"Deployment Created By\":\"Mariia Kowalska\",\"Deployment Environment\":\"UAT\",\"Deployment Release\":\"Release 2026.11\",\"SN Identifier\":\"CHG003101\",\"SN Title\":\"Add the installation checklist to the crew app\",\"SN Status\":\"Implement\",\"SN Created By\":\"mariia.kowalska\",\"SN URL\":\"https://helios-solar.service-now.com/nav_to.do?uri=/change_request.do?sys_id=4130eb230d71b889c9143dd388788199\"},{\"Is Valid\":true,\"Invalid Fields\":\"\",\"Deployment Name\":\"HD-0232\",\"Change Request\":\"CHG003104\",\"Deployment Title\":\"Assign crews automatically on new installations\",\"Deployment Created By\":\"Romain Lefebvre\",\"Deployment Environment\":\"UAT\",\"Deployment Release\":\"Release 2026.11\",\"SN Identifier\":\"CHG003104\",\"SN Title\":\"Assign crews automatically on new installations\",\"SN Status\":\"Scheduled\",\"SN Created By\":\"romain.lefebvre\",\"SN URL\":\"https://helios-solar.service-now.com/nav_to.do?uri=/change_request.do?sys_id=4cb1007bf92640f1060c76bc7f9abd1a\"},{\"Is Valid\":true,\"Invalid Fields\":\"\",\"Deployment Name\":\"HD-0235\",\"Change Request\":\"CHG003107\",\"Deployment Title\":\"Block the close of an installation without sign-off\",\"Deployment Created By\":\"Victor Martin\",\"Deployment Environment\":\"UAT\",\"Deployment Release\":\"Release 2026.11\",\"SN Identifier\":\"CHG003107\",\"SN Title\":\"Block the close of an installation without sign-off\",\"SN Status\":\"Implement\",\"SN Created By\":\"victor.martin\",\"SN URL\":\"https://helios-solar.service-now.com/nav_to.do?uri=/change_request.do?sys_id=745d5b1830ae440eb45d7f86f243b8a2\"},{\"Is Valid\":true,\"Invalid Fields\":\"\",\"Deployment Name\":\"HD-0238\",\"Change Request\":\"CHG003110\",\"Deployment Title\":\"Panel batch approval screen\",\"Deployment Created By\":\"Lucia Fernandez\",\"Deployment Environment\":\"UAT\",\"Deployment Release\":\"Release 2026.11\",\"SN Identifier\":\"CHG003110\",\"SN Title\":\"Panel batch approval screen\",\"SN Status\":\"Review\",\"SN Created By\":\"lucia.fernandez\",\"SN URL\":\"https://helios-solar.service-now.com/nav_to.do?uri=/change_request.do?sys_id=4d93f316d797af6fee2b6b4bb6edced1\"},{\"Is Valid\":true,\"Invalid Fields\":\"\",\"Deployment Name\":\"HD-0240\",\"Change Request\":\"CHG003112\",\"Deployment Title\":\"Delivery manager permission set update\",\"Deployment Created By\":\"Tomasz Nowak\",\"Deployment Environment\":\"UAT\",\"Deployment Release\":\"Release 2026.11\",\"SN Identifier\":\"CHG003112\",\"SN Title\":\"Delivery manager permission set update\",\"SN Status\":\"Scheduled\",\"SN Created By\":\"tomasz.nowak\",\"SN URL\":\"https://helios-solar.service-now.com/nav_to.do?uri=/change_request.do?sys_id=f2541879341e37cb5e7bd69747781e5d\"},{\"Is Valid\":true,\"Invalid Fields\":\"\",\"Deployment Name\":\"HD-0243\",\"Change Request\":\"CHG003115\",\"Deployment Title\":\"Scheduler: skip public holidays\",\"Deployment Created By\":\"Amelie Dubois\",\"Deployment Environment\":\"UAT\",\"Deployment Release\":\"Release 2026.12\",\"SN Identifier\":\"CHG003115\",\"SN Title\":\"Scheduler: skip public holidays\",\"SN Status\":\"Authorize\",\"SN Created By\":\"amelie.dubois\",\"SN URL\":\"https://helios-solar.service-now.com/nav_to.do?uri=/change_request.do?sys_id=b75a7388ade5cb4c403e83b672c93502\"},{\"Is Valid\":true,\"Invalid Fields\":\"\",\"Deployment Name\":\"HD-0244\",\"Change Request\":\"CHG003118\",\"Deployment Title\":\"Installation report layout for crews\",\"Deployment Created By\":\"Mariia Kowalska\",\"Deployment Environment\":\"UAT\",\"Deployment Release\":\"Release 2026.12\",\"SN Identifier\":\"CHG003118\",\"SN Title\":\"Installation report layout for crews\",\"SN Status\":\"Scheduled\",\"SN Created By\":\"mariia.kowalska\",\"SN URL\":\"https://helios-solar.service-now.com/nav_to.do?uri=/change_request.do?sys_id=c0c29a3a4e5423b2731fe8ec846bc189\"},{\"Is Valid\":true,\"Invalid Fields\":\"\",\"Deployment Name\":\"HD-0247\",\"Change Request\":\"CHG003121\",\"Deployment Title\":\"Customer reminder email template\",\"Deployment Created By\":\"Romain Lefebvre\",\"Deployment Environment\":\"UAT\",\"Deployment Release\":\"Release 2026.12\",\"SN Identifier\":\"CHG003121\",\"SN Title\":\"Customer reminder email template\",\"SN Status\":\"Authorize\",\"SN Created By\":\"romain.lefebvre\",\"SN URL\":\"https://helios-solar.service-now.com/nav_to.do?uri=/change_request.do?sys_id=7f709902734dee7a49aa440eb9c226f2\"},{\"Is Valid\":true,\"Invalid Fields\":\"\",\"Deployment Name\":\"HD-0250\",\"Change Request\":\"CHG003124\",\"Deployment Title\":\"Panel batch status on the installation page\",\"Deployment Created By\":\"Victor Martin\",\"Deployment Environment\":\"UAT\",\"Deployment Release\":\"Release 2026.12\",\"SN Identifier\":\"CHG003124\",\"SN Title\":\"Panel batch status on the installation page\",\"SN Status\":\"Scheduled\",\"SN Created By\":\"victor.martin\",\"SN URL\":\"https://helios-solar.service-now.com/nav_to.do?uri=/change_request.do?sys_id=48431ee0459babf98280f44992d41093\"}]"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "0 invalid result(s) found"
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/service-now-report-features__HEL-42-installation-checklist.csv",
+        "title": "ServiceNow cross-report (CSV)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 80,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/xls/service-now-report-features__HEL-42-installation-checklist.xlsx",
+        "title": "ServiceNow cross-report (XLSX)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

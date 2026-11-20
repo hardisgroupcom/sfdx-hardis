@@ -39,6 +39,14 @@ autoCleanTypes:
 ```
 ___
 
+### Agentforce agents deployment actions
+
+Property: **autoAddAgentsDeploymentActions**
+
+For each [Agentforce agent](salesforce-ci-cd-agentforce-agents.md) whose authoring bundle changed in the User Story, writes in the deployment actions of the Pull Request an `agent-publish` action, which publishes the agent in each org and activates the new version, and, for an agent that runs as a user, an `agent-running-user` action. See [hardis:project:clean:agents-deployment-actions](hardis/project/clean/agents-deployment-actions.md).
+
+___
+
 ### Dashboards
 
 Property: **dashboards**
@@ -131,9 +139,9 @@ Removes [all Product Request fields](https://github.com/hardisgroupcom/sfdx-hard
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own, in these labs:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) course does this, click by click, on an org of your own, in these labs:
 
-- [Lab 1.5 - Retrieve, commit and publish your Salesforce changes](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-5-retrieve-commit-and-publish-your-changes/)
-- [Lab 3.4 - Three Pull Requests collide: choose the merge order](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-4-merge-colliding-pull-requests/)
+- [Lab 1.5 - Retrieve, commit and publish your Salesforce changes](https://sfdx-hardis-training.cloudity.com/en/level-1-contributor-basics/1-5-retrieve-commit-and-publish-your-changes/)
+- [Lab 3.4 - Three Pull Requests in one release: review the merge order](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-4-merge-colliding-pull-requests/)
 
 <!-- training-links:end -->

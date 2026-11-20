@@ -1,0 +1,102 @@
+{
+  "mode": "replace",
+  "title": "Agentforce and Data 360 Credit Usage",
+  "columns": [
+    "agent",
+    "action",
+    "usageType",
+    "metered",
+    "credits",
+    "events"
+  ],
+  "rows": [
+    {
+      "agent": "Helios_Installation_Assistant",
+      "action": "Schedule_Installation",
+      "usageType": "Agentforce_CustomAction",
+      "metered": "true",
+      "credits": 1240,
+      "events": 62
+    },
+    {
+      "agent": "Helios_Installation_Assistant",
+      "action": "Check_Panel_Batch_Stock",
+      "usageType": "Agentforce_CustomAction",
+      "metered": "true",
+      "credits": 860,
+      "events": 43
+    },
+    {
+      "agent": "Helios_Installation_Assistant",
+      "action": "Get_Inverter_Specs",
+      "usageType": "Agentforce_CustomAction",
+      "metered": "true",
+      "credits": 520,
+      "events": 26
+    },
+    {
+      "agent": "Helios_Installation_Assistant",
+      "action": "Answer_Questions_with_Knowledge",
+      "usageType": "Agentforce_StandardAction",
+      "metered": "false",
+      "credits": 2140,
+      "events": 107
+    },
+    {
+      "agent": "Helios_Service_Agent",
+      "action": "Create_Case",
+      "usageType": "Agentforce_StandardAction",
+      "metered": "true",
+      "credits": 980,
+      "events": 49
+    },
+    {
+      "agent": "Helios_Service_Agent",
+      "action": "Identify_Customer_By_Email",
+      "usageType": "Agentforce_StandardAction",
+      "metered": "false",
+      "credits": 760,
+      "events": 38
+    },
+    {
+      "agent": "Helios_Service_Agent",
+      "action": "Get_Installation_Status",
+      "usageType": "Agentforce_CustomAction",
+      "metered": "true",
+      "credits": 1460,
+      "events": 73
+    },
+    {
+      "agent": "Helios_Service_Agent",
+      "action": "Answer_Questions_with_Knowledge",
+      "usageType": "Agentforce_StandardAction",
+      "metered": "false",
+      "credits": 3080,
+      "events": 154
+    },
+    {
+      "agent": "Helios_Field_Crew_Agent",
+      "action": "Summarize_Record",
+      "usageType": "Agentforce_StandardAction",
+      "metered": "true",
+      "credits": 420,
+      "events": 21
+    },
+    {
+      "agent": "Helios_Field_Crew_Agent",
+      "action": "Draft_Crew_Email",
+      "usageType": "Agentforce_StandardAction",
+      "metered": "true",
+      "credits": 340,
+      "events": 17
+    },
+    {
+      "agent": "Helios_Field_Crew_Agent",
+      "action": "Report_Panel_Damage",
+      "usageType": "Agentforce_CustomAction",
+      "metered": "true",
+      "credits": 180,
+      "events": 9
+    }
+  ]
+}

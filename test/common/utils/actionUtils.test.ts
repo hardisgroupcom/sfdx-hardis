@@ -32,6 +32,11 @@ describe('actionUtils', () => {
       expect(result).to.equal(path.join('config', 'branches', '.sfdx-hardis.integration.yml'));
     });
 
+    it('names the branch config file of a branch with a slash the way the config loader reads it', async () => {
+      const result = await getActionConfigFilePath('branch', 'release/uat');
+      expect(result).to.equal(path.join('config', 'branches', '.sfdx-hardis.release__uat.yml'));
+    });
+
     it('returns PR config path with PR id', async () => {
       const result = await getActionConfigFilePath('pr', undefined, '42');
       expect(result).to.equal(path.join('scripts', 'actions', '.sfdx-hardis.42.yml'));
@@ -81,6 +86,17 @@ describe('actionUtils', () => {
     });
   });
 
+  describe('readActions of a branch with a slash', () => {
+    it('reads the branch config file the config loader reads for a Pull Request target like release/uat', async () => {
+      const configFile = path.join(ctx.getDir(), 'config', 'branches', '.sfdx-hardis.release__uat.yml');
+      await fs.ensureDir(path.dirname(configFile));
+      await fs.writeFile(configFile, yaml.dump({ commandsPostDeploy: [{ id: 'uat-1', label: 'Uat', type: 'command', command: 'echo uat', context: 'process-deployment-only' }] }));
+
+      const actions = await readActions('branch', 'post-deploy', 'release/uat');
+      expect(actions.map((action) => action.id)).to.deep.equal(['uat-1']);
+    });
+  });
+
   describe('writeActions', () => {
     it('creates file and directories when they do not exist', async () => {
       const actions = [{ id: 'new-1', label: 'New Action', type: 'command' as const, command: 'echo test', context: 'all' as const }];
@@ -90,6 +106,24 @@ describe('actionUtils', () => {
       const doc: any = yaml.load(fs.readFileSync(configFile, 'utf-8'));
       expect(doc.commandsPreDeploy).to.have.lengthOf(1);
       expect(doc.commandsPreDeploy[0].id).to.equal('new-1');
+    });
+
+    it('does not write the phase back into the actions it was given', async () => {
+      const first = { id: 'act-1', label: 'First', type: 'command' as const, command: 'echo 1', context: 'all' as const };
+      await writeActions('project', 'post-deploy', [first]);
+
+      // What create, update, delete and reorder do: read the file, change the list, write it
+      const actions = await readActions('project', 'post-deploy');
+      expect(actions[0].when).to.equal('post-deploy');
+      actions.push({ id: 'act-2', label: 'Second', type: 'command' as const, command: 'echo 2', context: 'all' as const });
+      const configFile = await writeActions('project', 'post-deploy', actions);
+
+      const doc: any = yaml.load(fs.readFileSync(configFile, 'utf-8'));
+      expect(doc.commandsPostDeploy).to.have.lengthOf(2);
+      expect(doc.commandsPostDeploy[0]).to.not.have.property('when');
+      expect(doc.commandsPostDeploy[1]).to.not.have.property('when');
+      // The list the caller holds keeps its phase: only the file loses it
+      expect(actions[0].when).to.equal('post-deploy');
     });
 
     it('preserves other config keys in the file', async () => {
@@ -174,6 +208,22 @@ describe('actionUtils', () => {
     it('returns no errors for valid schedule-batch action', async () => {
       const errors = await validateActionParameters({ type: 'schedule-batch', parameters: { className: 'MyBatch', cronExpression: '0 0 * * *' } });
       expect(errors).to.deep.equal([]);
+    });
+
+    it('returns an error when run-batch has no className', async () => {
+      const errors = await validateActionParameters({ type: 'run-batch', parameters: {} });
+      expect(errors).to.have.lengthOf(1);
+    });
+
+    it('returns no errors for a valid run-batch action, pre-deploy or post-deploy', async () => {
+      const action = { type: 'run-batch', parameters: { className: 'MyBatch', runMode: 'wait', batchSize: 50 }, context: 'process-deployment-only' } as const;
+      expect(await validateActionParameters(action, 'pre-deploy')).to.deep.equal([]);
+      expect(await validateActionParameters(action, 'post-deploy')).to.deep.equal([]);
+    });
+
+    it('returns an error when run-batch is not in the process-deployment-only context', async () => {
+      const errors = await validateActionParameters({ type: 'run-batch', parameters: { className: 'MyBatch' }, context: 'all' });
+      expect(errors).to.have.lengthOf(1);
     });
 
     it('returns error when packageXmlItems is missing for remove-packagexml-items type', async () => {

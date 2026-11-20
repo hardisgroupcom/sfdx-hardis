@@ -1,3 +1,7 @@
+---
+title: "hardis:project:create - Login"
+description: "Create a new SFDX Project"
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:create
 
@@ -42,6 +46,12 @@ Optional flag:
 - `--minimizeprofiles`: activates the `minimizeProfiles` auto-clean type. **Only use this if the project is Permission Set-based**: it removes from profiles any attribute (object access, field access, etc.) that is already granted by a Permission Set. Omitted by default in agent mode; always activated in interactive mode.
 
 
+## Screenshots
+
+![A new sfdx-hardis project for sandbox development, with its integration branch and default cleaning](../../assets/images/commands/project/create.webp)
+
+_A new sfdx-hardis project for sandbox development, with its integration branch and default cleaning_
+
 ## Parameters
 
 | Name             |  Type   | Description                                                                                                                                                                                                                                                  | Default | Required |                  Options                  |
@@ -49,7 +59,7 @@ Optional flag:
 | agent            | boolean | Run in non-interactive mode for agents and automation                                                                                                                                                                                                        |         |          |                                           |
 | debug<br/>-d     | boolean | Activate debug mode (more logs)                                                                                                                                                                                                                              |         |          |                                           |
 | devbranch        | option  | Name of the default development branch (required with --agent)                                                                                                                                                                                               |         |          |                                           |
-| flags-dir        | option  | undefined                                                                                                                                                                                                                                                    |         |          |                                           |
+| flags-dir        | option  | Import flag values from a directory.                                                                                                                                                                                                                         |         |          |                                           |
 | json             | boolean | Format output as json.                                                                                                                                                                                                                                       |         |          |                                           |
 | minimizeprofiles | boolean | Activate the minimizeProfiles auto-clean type. Use only for Permission Set-based projects: removes from profiles any attribute (object/field access, etc.) already granted by a Permission Set. Off by default in agent mode; always on in interactive mode. |         |          |                                           |
 | orgtype          | option  | Type of development orgs: scratch, sandbox, or sandboxAndScratch (required with --agent)                                                                                                                                                                     |         |          | scratch<br/>sandbox<br/>sandboxAndScratch |

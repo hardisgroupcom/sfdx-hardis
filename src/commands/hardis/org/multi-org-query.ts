@@ -10,12 +10,21 @@ import { bulkQuery } from '../../../common/utils/apiUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../common/utils/filesUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { t } from '../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class MultiOrgQuery extends SfCommand<any> {
   public static title = 'Multiple Orgs SOQL Query';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'multi-org-query',
+      title: 'Query results',
+      description: 'One row per record returned by the SOQL query, with the org it comes from, for all the selected orgs together.',
+    },
+  ];
 
   public static description = `
 **Executes a SOQL query across multiple Salesforce organizations and consolidates the results into a single report.**
@@ -157,7 +166,7 @@ In agent mode, both \`--query\` (or \`--query-template\`) and \`--target-orgs\` 
       allRecords: this.allRecords,
       successOrgs: this.successOrgs,
       errorOrgs: this.errorOrgs,
-      csvLogFile: this.outputFile,
+      csvLogFile: outputFilesRes.csvFile ?? this.outputFile,
       xlsxLogFile: outputFilesRes.xlsxFile,
     };
   }

@@ -1,3 +1,7 @@
+---
+title: "hardis:project:clean:standarditems - Clean retrieved standard items in dx sources"
+description: "Removes unwanted standard Salesforce items from your Salesforce DX project sources."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:clean:standarditems
 
@@ -42,13 +46,19 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![Standard objects without custom fields and the standard apps removed from the Helios sources after a retrieve](../../../assets/images/commands/project/clean/standarditems.webp)
+
+_Standard objects without custom fields and the standard apps removed from the Helios sources after a retrieve_
+
 ## Parameters
 
 | Name         |  Type   | Description                                                   | Default | Required | Options |
 |:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent        | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir    | option  | undefined                                                     |         |          |         |
+| flags-dir    | option  | Import flag values from a directory.                          |         |          |         |
 | json         | boolean | Format output as json.                                        |         |          |         |
 | skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
 | websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |

@@ -1,3 +1,7 @@
+---
+title: "hardis:doctor - Doctor"
+description: "Collects your local sfdx-hardis install info and helps you open a pre-filled GitHub issue."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:doctor
 
@@ -44,13 +48,21 @@ In agent mode (or in CI):
 - No prompt is displayed and the browser is never opened.
 
 
+## Screenshots
+
+![Versions of Salesforce CLI and its plugins on the machine, with a warning on each one that has a newer release](../assets/images/commands/doctor.webp)
+
+_Versions of Salesforce CLI and its plugins on the machine, with a warning on each one that has a newer release_
+
+- **(1)** A warning sign shows the newer version to install
+
 ## Parameters
 
 | Name               |  Type   | Description                                                      | Default | Required | Options |
 |:-------------------|:-------:|:-----------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent              | boolean | Run in non-interactive mode for agents and automation            |         |          |         |
 | debug<br/>-d       | boolean | Activate debug mode (more logs)                                  |         |          |         |
-| flags-dir          | option  | undefined                                                        |         |          |         |
+| flags-dir          | option  | Import flag values from a directory.                             |         |          |         |
 | json               | boolean | Format output as json.                                           |         |          |         |
 | open<br/>-o        | boolean | Open the GitHub new issue page directly without prompting        |         |          |         |
 | skip-version-check | boolean | Do not query npm for the latest versions (faster, works offline) |         |          |         |

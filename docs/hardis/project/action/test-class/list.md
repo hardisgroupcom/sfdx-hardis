@@ -1,3 +1,7 @@
+---
+title: "hardis:project:action:test-class:list - List deployment Apex test classes"
+description: "Lists the Apex test classes configured for deployment in the project configuration."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:action:test-class:list
 
@@ -32,6 +36,12 @@ Required in agent mode:
 </details>
 
 
+## Screenshots
+
+![The Apex test classes declared for the deployments of the project, its branches and its Pull Requests](../../../../assets/images/commands/project/action/test-class/list.webp)
+
+_The Apex test classes declared for the deployments of the project, its branches and its Pull Requests_
+
 ## Parameters
 
 | Name         |  Type   | Description                                                       | Default | Required |          Options          |
@@ -39,7 +49,7 @@ Required in agent mode:
 | agent        | boolean | Run in non-interactive mode for agents and automation             |         |          |                           |
 | branch       | option  | Target branch name (for branch scope, defaults to current branch) |         |          |                           |
 | debug<br/>-d | boolean | Activate debug mode (more logs)                                   |         |          |                           |
-| flags-dir    | option  | undefined                                                         |         |          |                           |
+| flags-dir    | option  | Import flag values from a directory.                              |         |          |                           |
 | json         | boolean | Format output as json.                                            |         |          |                           |
 | pr-id        | option  | Pull request ID (for pr scope, defaults to draft)                 |         |          |                           |
 | scope        | option  | Configuration scope: project, branch, or pr                       |         |          | project<br/>branch<br/>pr |

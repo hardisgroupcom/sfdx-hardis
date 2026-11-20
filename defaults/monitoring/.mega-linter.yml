@@ -7,9 +7,10 @@ EXTENDS:
 # SALESFORCE_SFDX_SCANNER_* used to be listed here; MegaLinter renamed those linters to
 # SALESFORCE_CODE_ANALYZER_*, so the old keys matched nothing and hid that the flow engine
 # was never covered.
-DISABLE_ERRORS_LINTERS:
-  - CSS_STYLELINT
-  - COPYPASTE_JSCPD
+
+# A monitoring job reports what it finds (reports, notifications, Grafana) and does not fail because of it.
+# Set it to false to make the MegaLinter job fail on linter errors.
+DISABLE_ERRORS: true
 
 # The monitoring jobs run the latest sfdx-hardis image on purpose, so that every night uses the
 # latest checks: the image tag checks do not apply to these templates

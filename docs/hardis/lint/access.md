@@ -1,3 +1,7 @@
+---
+title: "hardis:lint:access - check permission access"
+description: "Checks if specified Salesforce metadata elements (Apex classes and custom fields) have at least one permission defined in any Permission Set or Profile."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:lint:access
 
@@ -44,6 +48,30 @@ sf hardis:lint:access --agent
 
 In agent mode, the interactive prompt to automatically add missing accesses to Permission Sets is skipped. The report is still generated and notifications are sent.
 
+## Screenshots
+
+![The command offers to add the missing accesses to permission sets](../../assets/images/commands/lint/access-1.webp)
+
+_The command offers to add the missing accesses to permission sets_
+
+![An Apex class that no permission set gives access to, found in the project sources](../../assets/images/commands/lint/access.webp)
+
+_An Apex class that no permission set gives access to, found in the project sources_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Missing access
+
+One row per metadata element (Apex class or custom field) that no permission set or profile gives access to, or that is declared several times in a permission set.
+
+Files: `lint-access-*.csv`, `xls/lint-access-*.xlsx`
+
+![Missing access report in Excel](../../assets/images/commands/lint/access-report-lint-access.webp)
+
 ## Parameters
 
 | Name                   |  Type   | Description                                                       |  Default  | Required | Options |
@@ -51,13 +79,13 @@ In agent mode, the interactive prompt to automatically add missing accesses to P
 | agent                  | boolean | Run in non-interactive mode for agents and automation             |           |          |         |
 | debug<br/>-d           | boolean | Activate debug mode (more logs)                                   |           |          |         |
 | elementsignored<br/>-e | option  | Ignore specific elements separated by commas                      |           |          |         |
-| flags-dir              | option  | undefined                                                         |           |          |         |
+| flags-dir              | option  | Import flag values from a directory.                              |           |          |         |
 | folder<br/>-f          | option  | Root folder                                                       | force-app |          |         |
 | ignorerights<br/>-i    | option  | Ignore permission sets or profiles                                |           |          |         |
 | json                   | boolean | Format output as json.                                            |           |          |         |
 | outputfile<br/>-x      | option  | Force the path and name of output report file. Must end with .csv |           |          |         |
 | skipauth               | boolean | Skip authentication check when a default username is required     |           |          |         |
-| target-org<br/>-o      | option  | undefined                                                         |           |          |         |
+| target-org<br/>-o      | option  | Username or alias of the target org.                              |           |          |         |
 | websocket              | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |           |          |         |
 
 ## Examples

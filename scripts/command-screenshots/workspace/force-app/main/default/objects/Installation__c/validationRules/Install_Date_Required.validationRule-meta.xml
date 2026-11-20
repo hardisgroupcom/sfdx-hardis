@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Install_Date_Required</fullName>
+    <active>false</active>
+    <description>A completed installation must have its install date. Turned off during the data migration.</description>
+    <errorConditionFormula>AND(ISPICKVAL(Status__c, &apos;Completed&apos;), ISBLANK(Install_Date__c))</errorConditionFormula>
+    <errorDisplayField>Install_Date__c</errorDisplayField>
+    <errorMessage>Give the install date of a completed installation.</errorMessage>
+</ValidationRule>

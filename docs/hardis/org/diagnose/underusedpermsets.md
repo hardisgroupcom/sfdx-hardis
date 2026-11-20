@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:underusedpermsets - Detect underused Permission Sets"
+description: "Detects Permission Sets and Permission Set Groups that are assigned to zero users or to a configurable low number of users."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:underusedpermsets
 
@@ -45,18 +49,38 @@ sf hardis:org:diagnose:underusedpermsets --agent --target-org myorg@example.com
 
 In agent mode, the command runs fully automatically. The threshold defaults to 5 (or `PERMSET_LIMITED_USERS_THRESHOLD` env var) when not provided.
 
+## Screenshots
+
+![Permission sets and groups of the Helios org assigned to no user, or to 5 users or fewer](../../../assets/images/commands/org/diagnose/underusedpermsets.webp)
+
+_Permission sets and groups of the Helios org assigned to no user, or to 5 users or fewer_
+
+- **(1)** One row per permission set or group, with its number of assigned users
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Underused permission sets
+
+One row per permission set or permission set group assigned to no user or to few users, with its user count and severity, as candidates to clean up.
+
+Files: `underused-permission-sets-*.csv`, `xls/underused-permission-sets-*.xlsx`
+
+![Underused permission sets report in Excel](../../../assets/images/commands/org/diagnose/underusedpermsets-report-underused-permission-sets.webp)
+
 ## Parameters
 
-| Name              |  Type   | Description                                                                                   | Default | Required | Options |
-|:------------------|:-------:|:----------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation. Uses default values and skips prompts. |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                               |         |          |         |
-| flags-dir         | option  | undefined                                                                                     |         |          |         |
-| json              | boolean | Format output as json.                                                                        |         |          |         |
-| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                             |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required                                 |         |          |         |
-| target-org<br/>-o | option  | undefined                                                                                     |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                     |         |          |         |
+| Name              |  Type   | Description                                                                                                  | Default | Required | Options |
+|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation. Uses default values and skips prompts.                |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                                         |         |          |         |
+| json              | boolean | Format output as json.                                                                                       |         |          |         |
+| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                                            |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

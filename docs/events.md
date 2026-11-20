@@ -1,3 +1,7 @@
+---
+title: "sfdx-hardis at community events"
+description: "The Salesforce community events where sfdx-hardis was presented, with the title of each talk."
+---
 ### North Africa Dreamin' 2026, Casablanca (upcoming)
 
 [Non-deterministic + deterministic Agentic Engineering: Delegate your Salesforce job to Agents but ensure their reliability with CI/CD](https://www.linkedin.com/posts/nad2026-trailblazercommunity-salesforce-share-7488021542417821696-f-Yd/)

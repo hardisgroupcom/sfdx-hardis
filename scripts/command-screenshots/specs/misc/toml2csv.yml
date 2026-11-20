@@ -1,0 +1,5 @@
+command: hardis:misc:toml2csv
+run: sf hardis:misc:toml2csv --tomlfile data/helios-legacy-export.txt --transfoconfig data/transfoConfig.json --outputdir data/csv
+mode: replay
+org: none
+caption: A legacy export split into one CSV file per section, with 5 lines in error out of 386

@@ -15,7 +15,7 @@ import { expect } from 'chai';
 import fs from '../../src/common/utils/fsUtils.js';
 import * as path from 'path';
 import {
-  getSharedNutOrgSession,
+  getSharedNutOrgSessionOrSkip,
   NutOrgContext,
   queryRecords,
   queryTooling,
@@ -38,7 +38,7 @@ describe('anonymization of monitoring commands against a real org', () => {
 
   before(async function () {
     this.timeout(1800000);
-    ctx = await getSharedNutOrgSession();
+    ctx = await getSharedNutOrgSessionOrSkip(this);
     const admins = queryRecords(
       ctx,
       "SELECT Id, Username, Name FROM User WHERE Profile.Name = 'System Administrator' AND IsActive = true ORDER BY CreatedDate ASC LIMIT 1"

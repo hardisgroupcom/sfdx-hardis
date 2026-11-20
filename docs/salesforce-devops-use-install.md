@@ -64,6 +64,7 @@ The **Dependencies** section of the SFDX Hardis side bar shows the same informat
 >   - [sfdx-hardis](https://github.com/hardisgroupcom/sfdx-hardis)
 >   - [SFDX Git Delta](https://github.com/scolladon/sfdx-git-delta)
 >   - [Salesforce Data Move Utility](https://github.com/forcedotcom/SFDX-Data-Move-Utility) (SFDMU)
+>   - [Browserforce](https://github.com/amtrack/sfdx-browserforce-plugin) (Setup settings applied in a browser by deployment actions)
 >   - [@salesforce/plugin-packaging](https://github.com/salesforcecli/plugin-packaging)
 >   - [sf-git-merge-driver](https://github.com/scolladon/sf-git-merge-driver)
 > - The [Salesforce Extension Pack](https://marketplace.visualstudio.com/items?itemName=salesforce.salesforcedx-vscode) for VS Code
@@ -127,6 +128,7 @@ sudo sf plugins install sfdx-hardis
 sudo sf plugins install @salesforce/plugin-packaging
 sudo sf plugins install sfdmu
 sudo sf plugins install sfdx-git-delta
+sudo sf plugins install sfdx-browserforce-plugin
 sudo sf plugins install sf-git-merge-driver
 ```
 
@@ -145,8 +147,8 @@ When sfdx-hardis tells you that a new version of a plugin is available, do **not
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) course does this, click by click, on an org of your own:
 
-- [Lab 1.1 - Install VS Code, Git and sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-1-install-vs-code-and-sfdx-hardis/)
+- [Lab 1.1 - Install VS Code, Git and sfdx-hardis](https://sfdx-hardis-training.cloudity.com/en/level-1-contributor-basics/1-1-install-vs-code-and-sfdx-hardis/)
 
 <!-- training-links:end -->

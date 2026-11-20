@@ -1,0 +1,85 @@
+{
+  "command": "hardis:org:retrieve:sources:analytics",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf project generate manifest --name packageXmlAll.xml --output-dir \"C:/Users/victor/AppData/Local/Temp/sfdx-hardis-3f9a1c\" --include-packages managed,unlocked --from-org admin@helios-solar.demo.uat",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf project generate manifest --name packageXmlAll.xml --output-dir \"C:/Users/victor/AppData/Local/Temp/sfdx-hardis-3f9a1c\" --include-packages managed,unlocked --from-org admin@helios-solar.demo.uat",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Retrieved full package XML from org admin@helios-solar.demo.uat: C:/Users/victor/AppData/Local/Temp/sfdx-hardis-3f9a1c/packageXmlAll.xml"
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Filtered and completed analytics metadatas in analytics package XML: C:/Users/victor/AppData/Local/Temp/sfdx-hardis-3f9a1c/packageXmlAnalytics.xml"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf project retrieve start -x \"C:/Users/victor/AppData/Local/Temp/sfdx-hardis-3f9a1c/packageXmlAnalytics.xml\" -o admin@helios-solar.demo.uat",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf project retrieve start -x \"C:/Users/victor/AppData/Local/Temp/sfdx-hardis-3f9a1c/packageXmlAnalytics.xml\" -o admin@helios-solar.demo.uat",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Retrieved all analytics source items using package XML: C:/Users/victor/AppData/Local/Temp/sfdx-hardis-3f9a1c/packageXmlAnalytics.xml"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

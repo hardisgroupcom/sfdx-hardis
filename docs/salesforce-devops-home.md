@@ -71,7 +71,7 @@ The DevOps Pipeline panel of the VS Code extension guides contributors through t
 
 **Deployment actions**
 
-Deploying a User Story is not always just about metadata. With [deployment actions](salesforce-devops-work-on-user-story-deployment-actions.md), contributors declare on their Pull Request what must happen before or after the deployment: run a command, import data with SFDMU, run an Apex script, publish an Experience Cloud site, schedule an Apex batch, remove items from package.xml, or remind a human to do something in Setup. sfdx-hardis runs them in every org the User Story reaches, once per org, and tracks what has been done in a Pull Request comment.
+Deploying a User Story is not always just about metadata. With [deployment actions](salesforce-devops-work-on-user-story-deployment-actions.md), contributors declare on their Pull Request what must happen before or after the deployment: run a command, import data with SFDMU, run an Apex script, publish an Experience Cloud site, schedule an Apex batch, remove items from package.xml, apply a Setup setting with Browserforce, or remind a human to do something in Setup. sfdx-hardis runs them in every org the User Story reaches, once per org, and tracks what has been done in a Pull Request comment.
 
 ![Deployment actions of a Pull Request](assets/images/screenshot-pr-deployment-actions-list.jpg)
 
@@ -85,7 +85,7 @@ Deploying a User Story is not always just about metadata. With [deployment actio
 **Integrations**
 
 - [Slack, Microsoft Teams and email notifications](salesforce-devops-setup-integrations-home.md) with detailed deployment results.
-- [Jira](salesforce-devops-setup-integration-jira.md), [Azure Boards](salesforce-devops-setup-integration-azure-boards.md) or [any other ticketing tool](salesforce-devops-setup-integration-generic-ticketing.md): tickets are linked in Pull Request comments and updated when they reach an org.
+- [Jira](salesforce-devops-setup-integration-jira.md), [Azure Boards](salesforce-devops-setup-integration-azure-boards.md), [Aha!](salesforce-devops-setup-integration-aha.md) or [any other ticketing tool](salesforce-devops-setup-integration-generic-ticketing.md): tickets are linked in Pull Request comments and updated when they reach an org.
 - [Deployment Agent](salesforce-deployment-agent-home.md): explains deployment errors with built-in rules and AI (Agentforce, or direct calls to OpenAI, Anthropic or Gemini).
 
 > Read the [Smart Deploy internals](salesforce-devops-smart-deployment.md) page to see how all these pieces fit together in a single deployment.

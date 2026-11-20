@@ -1,3 +1,7 @@
+---
+title: "hardis:org:user:unfreeze - Unfreeze user logins"
+description: "Unfreezes Salesforce user logins, restoring access for selected users."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:user:unfreeze
 
@@ -49,22 +53,46 @@ The command's technical implementation involves:
 </details>
 
 
+## Screenshots
+
+![Pick the profiles whose users to unfreeze](../../../assets/images/commands/org/user/unfreeze-1.webp)
+
+_Pick the profiles whose users to unfreeze_
+
+![Field technicians with the Chatter Free User profile unfrozen in the Helios test org, with the update results](../../../assets/images/commands/org/user/unfreeze.webp)
+
+_Field technicians with the Chatter Free User profile unfrozen in the Helios test org, with the update results_
+
+- **(1)** One row per user unfrozen, with username, name and profile
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Users to unfreeze
+
+One row per user whose login is about to be unfrozen, with username, name and profile.
+
+Files: `users-to-unfreeze-*.csv`, `xls/users-to-unfreeze-*.xlsx`
+
+![Users to unfreeze report in Excel](../../../assets/images/commands/org/user/unfreeze-report-users-to-unfreeze.webp)
+
 ## Parameters
 
-| Name                   |  Type   | Description                                                                                  | Default | Required | Options |
-|:-----------------------|:-------:|:---------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent                  | boolean | Run in non-interactive mode for agents and automation                                        |         |          |         |
-| debug<br/>-d           | boolean | Activate debug mode (more logs)                                                              |         |          |         |
-| excludeprofiles<br/>-e | option  | List of profiles that you want to NOT unfreeze, separated by commas                          |         |          |         |
-| flags-dir              | option  | undefined                                                                                    |         |          |         |
-| includeprofiles<br/>-p | option  | List of profiles that you want to unfreeze, separated by commas                              |         |          |         |
-| json                   | boolean | Format output as json.                                                                       |         |          |         |
-| maxuserdisplay<br/>-m  | option  | Maximum users to display in logs                                                             |   100   |          |         |
-| name<br/>-n            | option  | Filter according to Name criteria                                                            |         |          |         |
-| skipauth               | boolean | Skip authentication check when a default username is required                                |         |          |         |
-| target-org<br/>-o      | option  | undefined                                                                                    |         |          |         |
-| usernames<br/>-u       | option  | Comma-separated list of Salesforce usernames to unfreeze (takes priority over profile flags) |         |          |         |
-| websocket              | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                    |         |          |         |
+| Name                   |  Type   | Description                                                                                                  | Default | Required | Options |
+|:-----------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                  | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| debug<br/>-d           | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| excludeprofiles<br/>-e | option  | List of profiles that you want to NOT unfreeze, separated by commas                                          |         |          |         |
+| flags-dir              | option  | Import flag values from a directory.                                                                         |         |          |         |
+| includeprofiles<br/>-p | option  | List of profiles that you want to unfreeze, separated by commas                                              |         |          |         |
+| json                   | boolean | Format output as json.                                                                                       |         |          |         |
+| maxuserdisplay<br/>-m  | option  | Maximum users to display in logs                                                                             |   100   |          |         |
+| name<br/>-n            | option  | Filter according to Name criteria                                                                            |         |          |         |
+| skipauth               | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o      | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| usernames<br/>-u       | option  | Comma-separated list of Salesforce usernames to unfreeze (takes priority over profile flags)                 |         |          |         |
+| websocket              | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

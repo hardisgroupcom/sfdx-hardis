@@ -1,0 +1,67 @@
+{
+  "command": "hardis:project:lint",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Running MegaLinter (salesforce flavor) in Docker: oxsecurity/megalinter-salesforce:v10"
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "MegaLinter is linting 188 files of the project..."
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "MegaLinter summary"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "table",
+        "message": "[{\"Descriptor\":\"✅ APEX\",\"Linter\":\"pmd\",\"Mode\":\"list_of_files\",\"Files\":14,\"Fixed\":\"\",\"Errors\":0,\"Warnings\":0,\"Elapsed time\":\"6.52s\"},{\"Descriptor\":\"✅ COPYPASTE\",\"Linter\":\"jscpd\",\"Mode\":\"project\",\"Files\":\"\",\"Fixed\":\"\",\"Errors\":0,\"Warnings\":\"\",\"Elapsed time\":\"3.41s\"},{\"Descriptor\":\"✅ CSS\",\"Linter\":\"stylelint\",\"Mode\":\"list_of_files\",\"Files\":3,\"Fixed\":0,\"Errors\":0,\"Warnings\":0,\"Elapsed time\":\"1.18s\"},{\"Descriptor\":\"✅ HTML\",\"Linter\":\"djlint\",\"Mode\":\"list_of_files\",\"Files\":9,\"Fixed\":0,\"Errors\":0,\"Warnings\":0,\"Elapsed time\":\"1.74s\"},{\"Descriptor\":\"✅ JAVASCRIPT\",\"Linter\":\"eslint\",\"Mode\":\"list_of_files\",\"Files\":12,\"Fixed\":0,\"Errors\":0,\"Warnings\":0,\"Elapsed time\":\"8.26s\"},{\"Descriptor\":\"✅ JAVASCRIPT\",\"Linter\":\"prettier\",\"Mode\":\"list_of_files\",\"Files\":12,\"Fixed\":0,\"Errors\":0,\"Warnings\":0,\"Elapsed time\":\"2.05s\"},{\"Descriptor\":\"✅ JSON\",\"Linter\":\"jsonlint\",\"Mode\":\"list_of_files\",\"Files\":21,\"Fixed\":0,\"Errors\":0,\"Warnings\":0,\"Elapsed time\":\"0.83s\"},{\"Descriptor\":\"✅ MARKDOWN\",\"Linter\":\"markdownlint\",\"Mode\":\"list_of_files\",\"Files\":6,\"Fixed\":0,\"Errors\":0,\"Warnings\":0,\"Elapsed time\":\"1.92s\"},{\"Descriptor\":\"✅ REPOSITORY\",\"Linter\":\"gitleaks\",\"Mode\":\"project\",\"Files\":\"\",\"Fixed\":\"\",\"Errors\":0,\"Warnings\":\"\",\"Elapsed time\":\"1.37s\"},{\"Descriptor\":\"✅ REPOSITORY\",\"Linter\":\"secretlint\",\"Mode\":\"project\",\"Files\":\"\",\"Fixed\":\"\",\"Errors\":0,\"Warnings\":\"\",\"Elapsed time\":\"2.60s\"},{\"Descriptor\":\"✅ SALESFORCE\",\"Linter\":\"sfdx-scanner-apex\",\"Mode\":\"project\",\"Files\":\"\",\"Fixed\":\"\",\"Errors\":0,\"Warnings\":\"\",\"Elapsed time\":\"9.84s\"},{\"Descriptor\":\"✅ SALESFORCE\",\"Linter\":\"sfdx-scanner-lwc\",\"Mode\":\"project\",\"Files\":\"\",\"Fixed\":\"\",\"Errors\":0,\"Warnings\":\"\",\"Elapsed time\":\"7.11s\"},{\"Descriptor\":\"✅ SALESFORCE\",\"Linter\":\"lightning-flow-scanner\",\"Mode\":\"project\",\"Files\":\"\",\"Fixed\":\"\",\"Errors\":0,\"Warnings\":\"\",\"Elapsed time\":\"4.30s\"},{\"Descriptor\":\"✅ XML\",\"Linter\":\"xmllint\",\"Mode\":\"list_of_files\",\"Files\":118,\"Fixed\":0,\"Errors\":0,\"Warnings\":0,\"Elapsed time\":\"3.66s\"},{\"Descriptor\":\"✅ YAML\",\"Linter\":\"yamllint\",\"Mode\":\"list_of_files\",\"Files\":7,\"Fixed\":0,\"Errors\":0,\"Warnings\":0,\"Elapsed time\":\"1.09s\"}]"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Linters results: 15 linters ran, 15 passed, 0 failed. Detailed reports are in the megalinter-reports folder."
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Mega-Linter has been successful"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

@@ -1,4 +1,10 @@
 ---
+# Source of this file: the sfdx-hardis default template
+#   https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.gitlab-ci.yml
+#   raw: https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/defaults/ci/.gitlab-ci.yml
+# To upgrade it, compare it with the latest version of that template and bring in its changes,
+# keeping what is specific to this project (branch names, secrets, runner tags, image, custom jobs).
+# What changed between versions: https://github.com/hardisgroupcom/sfdx-hardis/blob/main/CHANGELOG.md
 ##################################################################
 # Test and deployment pipeline for a Salesforce CI/CD Project    #
 #         Update it only if you know what you are doing :)       #
@@ -92,6 +98,9 @@ check_quality:
 check_deploy_to_target_branch_org:
   extends: .cancel_deployment_simulation_on_job_cancel
   stage: build
+  # Deployments can be long: raise this value if a job is killed before the deployment ends.
+  # It cannot exceed the maximum job timeout of the runner, raise that one too if needed.
+  timeout: 150 minutes
   tags:
     # Change or even remove tags if standard runners
     - ubuntu
@@ -147,12 +156,17 @@ create_scratch_org:
       - $SCRATCH_ORG_POOL == "true"
       - $USE_SCRATCH_ORGS == "false"
   interruptible: true
+  # Merge Requests taking a scratch org from the pool at the same time are queued, so two of them
+  # never get the same one. Remove this line if you do not use a scratch org pool.
+  resource_group: scratch_org_pool
   script:
     - |
       if [ "${CI_COMMIT_REF_NAME#auto-fix/}" != "$CI_COMMIT_REF_NAME" ]; then
         echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch $CI_COMMIT_REF_NAME"
         exit 0
       fi
+    # With a scratch org pool stored in the git provider, define the masked CI/CD variables
+    # CI_SFDX_HARDIS_GITLAB_TOKEN and SFDX_HARDIS_POOL_ENCRYPTION_KEY
     - sf hardis:auth:login --devhub
     - sf hardis:scratch:create
   artifacts:
@@ -185,9 +199,43 @@ refresh_scratch_org_pool:
   artifacts:
     when: always
 
+# Refresh the scratch org snapshot of a major branch that sets useScratchOrgSnapshot: true in its branch config,
+# so that the scratch orgs of Merge Requests to that branch are created from it
+# More info at https://sfdx-hardis.cloudity.com/hardis/scratch/snapshot/refresh/
+refresh_scratch_org_snapshot:
+  stage: deploy
+  timeout: 150 minutes # Keep it above SCRATCH_ORG_SNAPSHOT_WAIT (60 by default) plus the deployment
+  tags:
+    # Change or even remove tags if standard runners
+    - ubuntu
+  only:
+    - pushes
+    - web
+  except:
+    variables:
+      - $CI_COMMIT_REF_NAME !~ $DEPLOY_BRANCHES
+      - $SCRATCH_ORG_POOL == "true"
+      - $USE_SCRATCH_ORGS != "true"
+  # A snapshot in progress is never cancelled: a newer push waits for it
+  interruptible: false
+  resource_group: scratch_org_snapshot_$CI_COMMIT_REF_NAME
+  script:
+    - |
+      if [ "${CI_COMMIT_REF_NAME#auto-fix/}" != "$CI_COMMIT_REF_NAME" ]; then
+        echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch $CI_COMMIT_REF_NAME"
+        exit 0
+      fi
+    - sf hardis:scratch:snapshot:refresh
+  artifacts:
+    when: always
+    paths:
+      - hardis-report
+    expire_in: 1 week
+
 # Run apex unit tests in testing scratch org
 test_apex:
   stage: test
+  timeout: 150 minutes # Raise it if the job is killed before the Apex tests end
   when: delayed # Orgs just created can be not ready yet, let's wait a while before running tests
   start_in: 2 minutes
   tags:
@@ -263,11 +311,16 @@ clean:
     - sf hardis:auth:login --scratchorg || true
     - sf org delete scratch --no-prompt || true
 
-# Simulate deployment to related org
-# Is triggered only when scheduled, or via manual launch
+# Major branch deployment check: simulates the full deployment of a major branch to its own org,
+# to know whether the org drifted from its branch. Nothing is deployed, no Merge Request is commented.
+# Is triggered only when scheduled, or via manual launch:
+# create one schedule per major branch in CI/CD > Schedules (ex: every night at 1am)
+# Define enableMajorBranchDeploymentCheck: true in config/.sfdx-hardis.yml to see the result in VS Code DevOps Pipeline
+# More info at https://sfdx-hardis.cloudity.com/salesforce-devops-setup-major-branch-check/
 check_deploy_to_current_branch_org:
   extends: .cancel_deployment_simulation_on_job_cancel
   stage: check_deploy
+  timeout: 150 minutes # Raise it if the job is killed before the deployment ends
   tags:
     # Change or even remove tags if standard runners
     - ubuntu
@@ -296,7 +349,7 @@ check_deploy_to_current_branch_org:
     #     echo "[sfdx-hardis] GitLab push/MR auth enabled for coding agents"
     #   fi
     - sf hardis:auth:login
-    - sf hardis:project:deploy:smart --check
+    - sf hardis:project:deploy:smart --check --major-branch-check
   artifacts:
     when: always
     paths:
@@ -307,6 +360,7 @@ check_deploy_to_current_branch_org:
 # Don't forget to define variable DEPLOY_BRANCHES to match your branches in .gitlab-ci-config.yml
 deploy_to_org:
   stage: deploy
+  timeout: 150 minutes # Raise it if the job is killed before the deployment ends
   tags:
     # Change or even remove tags if standard runners
     - ubuntu

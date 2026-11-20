@@ -1,0 +1,11 @@
+command: hardis:org:files:import
+run: sf hardis:org:files:import --path scripts/files/InstallationDocuments
+org: throwaway
+caption: The documents of two installations uploaded from the project folder to the matching records
+answers:
+  - q: Do you want to overwrite existing files with re-imported fil
+    choice: ^✅ Yes$
+  - q: |-
+      Files import consumes one REST API call per uploaded file\.
+       
+    choice: ^✅ Yes$

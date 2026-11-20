@@ -20,7 +20,7 @@ The feature is in **Beta** and must be labelled as such in docs and UIs, the way
 
 User documentation: `docs/salesforce-devops-promotion-branches.md`
 (<https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/>).
-End to end test runbook: the `promotion-branches-e2e` skill.
+End to end test runbook: the `promotion-branches` scenario of the `e2e` skill.
 
 ## Mental model
 
@@ -61,7 +61,7 @@ Break one of these and the feature is wrong, whatever the tests say.
 1. **With `enablePromotionBranches: false`, deployment behaviour is byte for byte what it was.** A
    `promotion/...` branch is an ordinary feature branch. The only allowed difference is one
    informational log line. This is proven by the A/B regression check in the
-   `promotion-branches-e2e` skill.
+   `promotion-branches` scenario of the `e2e` skill.
 2. **A promotion never runs actions against the wrong org.** A `promotion/uat/preprod/...` branch
    whose Pull Request targets `main` is retargeted by hand: its declaration is ignored
    (`isPromotionPullRequestForItsTarget`), scope is the Pull Request alone, with a warning.
@@ -147,6 +147,41 @@ Break one of these and the feature is wrong, whatever the tests say.
     value**: `PROMOTION_CONFLICT_CHOICES` stays `skip` / `commit-with-markers` / `abort`, because
     `--on-conflict` already applies to every conflict. A promotion window usually conflicts on the
     same files story after story, so answering ten times in a row is answering once.
+    `solve-now` is the other prompt-only answer (`solveConflictsNow`): the conflicting files are
+    listed, and opened when VS Code runs the command (`WebSocketClient.requestOpenFile`), the user
+    confirms, and the cherry-pick is only finished when `filesStillHoldingConflictMarkers` (paths
+    from the repository root; an unreadable file is not clean) finds none left in those files. Only
+    tracked files are staged (`git add -u`), and a cherry-pick the user committed or undid from VS
+    Code is told apart by HEAD. It is never remembered (each conflict needs its own resolution) and
+    never a flag value (nothing solves a conflict unattended); agent mode keeps `abort`.
+    `take-source` (flag value too) and its prompt-only `take-source-all` are the **risky** answers,
+    offered last and labelled so: `cherryPickKeepingSource` aborts the conflicted cherry-pick and
+    redoes it with `git cherry-pick -x -X theirs` ("theirs" = the story, "ours" = the promotion
+    branch). It can drop a target-side change on the same lines and bring lines of stories left
+    behind, and no job notices, so it is never a default and always leaves a trace: the files go to
+    `resolvedWithSource`, the Pull Request description gets a warning and a section, the commit
+    message names them (amended through `execCommand`: simple-git refuses a `core.hooksPath`
+    option). `-X theirs` only settles conflicts inside a file: a file deleted on one side and
+    changed on the other (`DU`, `UD`) gets the source side in `settleConflictsWithSource` (kept as
+    the story has it, deleted when the story deleted it, `git checkout --theirs` for anything else),
+    then the commit runs without hooks, like a pick git settles by itself (which runs none). The
+    "and every following one" answer promises not to ask again: it must never re-ask. Only what even
+    that cannot settle is asked again without the risky answers, and the files already settled are
+    still reported (`keptSourceFiles`).
+    Every answer is proven in `test/common/utils/promotionConflictAnswers.test.ts`, on a
+    repository built for each test (a hotfix on the same lines, a file deleted on the target, a
+    pre-commit hook refusing every commit). The interactive answers are given through
+    `setConflictQuestionAnswererForTests`, since `prompts()` refuses to run on CI. A change to the
+    conflict handling adds its case there.
+32. **Committing markers is never stopped by the project's git hooks, and nothing else skips them.**
+    `commitWithConflictMarkers` runs `cherry-pick --continue` (and its `commit` fallback) through
+    `withoutGitHooks`: `-c core.hooksPath=<private empty folder>`, created with `mkdtemp` for that
+    call and removed after it (a fixed folder in the shared temp directory would let another user
+    plant a hook). A pre-commit hook running lint-staged or Prettier fails on `<<<<<<<` and used to
+    stop the command with a branch half assembled. `cherry-pick` has no `--no-verify`, and the `-c`
+    override covers every hook manager without touching the repository config. A clean
+    cherry-pick, the `solve-now` commit and the later commit that solves the markers all run the
+    hooks as usual.
 20. **A resolution nobody can read is not a resolution.** `buildConflictResolutionPrompt` asks the
     coding agent for a commit message whose body carries one line per conflicting file, naming the
     story, what the target side had, what the story added and what was kept, and forbids
@@ -254,6 +289,31 @@ Break one of these and the feature is wrong, whatever the tests say.
     `hardis:doc:release-notes` subtracts the same stories (`dropAlreadyPromotedPullRequests`),
     while `deploy:smart` keeps them in scope on purpose (no-op redeploy, actions skipped).
 
+31. **A story cherry-picked by hand is found from the target side, and only when asked.**
+    `detectManualCherryPicks` (default `false`, inert unless `enablePromotionBranches` is on, read
+    through `isManualCherryPickDetectionEnabled`) makes `listPromotionCandidates` call
+    `detectManualCherryPicks` (`manualCherryPickUtils.ts`) after the promotion descriptions were
+    read: a promotion declaring a story always wins. Evidence comes from the `-x` trailers of
+    `<mergeBase>..origin/<target>`, then from the commits of every non-promotion Pull Request merged
+    into the target since `targetSideLowerBound` (oldest candidate commit, 30 days at most before
+    the oldest candidate), listed with `minDateOn: 'merged'`: `GitProvider.listPullRequestCommits`
+    for a squash (the provider keeps the commits), the local `<merge>^2 --not <merge>^1` for a merge
+    commit (`splitPullRequestsByMergeKind`). Last, the `-x` trailers of the target history before the
+    merge base since that bound (a back-merge moves the merge base past a pick); they only fill what
+    nothing else named. Their trailers and their own SHAs name the candidates.
+    A candidate moves (`alreadyPromotedBy.manualCherryPick`) only when its merge commit, or every
+    non-merge commit it introduced, is named. Some of them only is `partiallyCherryPicked`; a title
+    matching exactly one commit on each side is `probablyCherryPicked`. Both stay candidates. With
+    the setting off, not one extra git command or provider call is made. Each match names its
+    `carrier` (the Pull Request merged into the target, number and merge/squash commit): the
+    extension follows it through the next step's result (`resolveManualCherryPickChain`), so a
+    story lands where its carrier ended up, and a carrier is a vehicle (`carriesManualCherryPicks`),
+    unless it held source branch commits AND commits of its own (`heldSourceBranchCommits` and
+    `ownCommits`: a hotfix branched from the source branch). The extension lists the story in the
+    furthest branch holding the commit (`listMovesStillInTargetWindow`, one git call per branch),
+    keys its cache on the provider windows too (`windowsFingerprint`), and ticks a listed copy
+    through its release Pull Request (`_promotionNumberOf` in pipeline.js).
+
 ## sfdx-hardis (CLI)
 
 | File                                                                                                                                                                       | Role                                                                                                                                                                                                                                                                     |
@@ -309,17 +369,18 @@ not leak in.
 
 ## vscode-sfdx-hardis (extension)
 
-| File                                                 | Role                                                                                                                                                                                          |
-|------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `src/utils/pipeline/promotionBranchUtils.ts`         | Mirror of the CLI pure logic, plus the pipeline rules: `isVehiclePullRequest`, `userStoryPullRequests`, `visiblePullRequests`, `annotateAlreadyPromoted`, `enforceSinglePlacePerPullRequest`. |
-| `src/commands/showPipeline.ts`                       | Fetches the declared Pull Requests (in parallel), builds the windows.                                                                                                                         |
-| `src/utils/orgConfigUtils.ts`                        | `completeMajorOrgsWithPromotionBranches`: expands the windows, reads the merged promotions of each step from the provider (`listMergedPromotionsOfSteps`), annotates, enforces the invariant. |
-| `src/utils/gitProviders/*.ts`                        | `listMergedPullRequestsIntoBranch(target, updatedAfter)` on the four providers and the mock, sharing the per-branch fetch of the window listings.                                             |
-| `src/pipeline-data-provider.ts`                      | Feeds the mermaid builder.                                                                                                                                                                    |
-| `src/utils/pipeline/branchStrategyMermaidBuilder.ts` | Node counters (`data-count`, User Stories not promoted away), and the open promotion drawn on the major-to-major edge (`isPromotionOfStep`).                                                  |
-| `src/webviews/lwc-ui/modules/s/pipeline/pipeline.js` | Branch window modal: filtering, the vehicles toggle, the per-Pull-Request checkboxes and the **Create promotion** button.                                                                     |
-| `src/utils/pipeline/sfdxHardisConfigHelper.ts`       | `enablePromotionBranches` and `allowedPromotionSteps` sit in the **Danger Zone** of Pipeline Settings, scope `["global"]`.                                                                    |
-| `src/hardis-commands-provider.ts`                    | Command palette entry for `hardis:project:promotion:create`.                                                                                                                                  |
+| File                                                 | Role                                                                                                                                                                                                                                   |
+|------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `src/utils/pipeline/promotionBranchUtils.ts`         | Mirror of the CLI pure logic, plus the pipeline rules: `isVehiclePullRequest`, `userStoryPullRequests`, `visiblePullRequests`, `annotateAlreadyPromoted`, `enforceSinglePlacePerPullRequest`.                                          |
+| `src/commands/showPipeline.ts`                       | Fetches the declared Pull Requests (in parallel), builds the windows.                                                                                                                                                                  |
+| `src/utils/orgConfigUtils.ts`                        | `completeMajorOrgsWithPromotionBranches`: expands the windows, reads the merged promotions of each step from the provider (`listMergedPromotionsOfSteps`), annotates, enforces the invariant.                                          |
+| `src/utils/gitProviders/*.ts`                        | `listMergedPullRequestsIntoBranch(target, updatedAfter)` on the four providers and the mock, sharing the per-branch fetch of the window listings.                                                                                      |
+| `src/pipeline-data-provider.ts`                      | Feeds the mermaid builder.                                                                                                                                                                                                             |
+| `src/utils/pipeline/branchStrategyMermaidBuilder.ts` | Node counters (`data-count`, User Stories not promoted away), and the open promotion drawn on the major-to-major edge (`isPromotionOfStep`).                                                                                           |
+| `src/webviews/lwc-ui/modules/s/pipeline/pipeline.js` | Branch window modal: filtering, the vehicles toggle, the per-Pull-Request checkboxes and the **Create promotion** button.                                                                                                              |
+| `src/utils/pipeline/sfdxHardisConfigHelper.ts`       | `enablePromotionBranches` and `allowedPromotionSteps` sit in the **Danger Zone** of Pipeline Settings, scope `["global"]`.                                                                                                             |
+| `src/utils/pipeline/manualCherryPickUtils.ts`        | `detectManualCherryPicks`: one `promotion:list-candidates --json` per allowed step, in parallel, only when the setting is on; cached per user by step and tip SHAs. Placement in `applyManualCherryPicks` (`promotionBranchUtils.ts`). |
+| `src/hardis-commands-provider.ts`                    | Command palette entry for `hardis:project:promotion:create`.                                                                                                                                                                           |
 
 ## Filtering: what moves the Pull Requests
 
@@ -335,8 +396,8 @@ Major-to-major merges are filtered for **every** project: such a merge is plumbi
 A `promotion/` branch is only a vehicle when the feature is enabled, because otherwise it really is
 an ordinary branch, which is exactly how the deployment jobs treat it.
 
-What brings the vehicles back: the **Show merge and promotion Pull Requests** toggle (top right of
-the branch window modal), and `--include-promotions` on `hardis:doc:release-notes`.
+What brings the vehicles back: the **Merges and promotions** chip of the Pull Requests list
+(`s/pullRequestList`, next to its text filter), and `--include-promotions` on `hardis:doc:release-notes`.
 
 ## Performance
 

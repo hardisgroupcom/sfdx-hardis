@@ -3,11 +3,11 @@ import c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { getCurrentGitBranch, getGitRepoName, uxLog } from "../utils/index.js";
 import type { NotificationChannel, NotifMessage, NotifSeverity } from "./types.js";
-import { UtilsNotifs } from "./utils.js";
+import { UtilsNotifs } from "./utils/utils.js";
 import { CONSTANTS, getEnvVar } from "../../config/index.js";
 
 import { getSeverityIcon } from "../utils/notifUtils.js";
-import { convertMarkdownToPlainText } from "./markdownToPlainText.js";
+import { convertMarkdownToPlainText } from "./utils/markdownToPlainText.js";
 import { GitProvider } from "../gitProvider/index.js";
 import { httpPost, HttpRequestConfig } from "../utils/httpUtils.js";
 import fs from '../utils/fsUtils.js';

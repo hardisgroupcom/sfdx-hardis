@@ -1,3 +1,7 @@
+---
+title: "hardis:org:files:import - Import files"
+description: "This command facilitates the mass upload of files into Salesforce, allowing you to populate records with associated documents, images, or other file types. It's a crucial tool for data migration, content seeding, or synchronizing external file repositories with Salesforce."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:files:import
 
@@ -40,19 +44,27 @@ Use `--agent` to disable all prompts. Typical usage:
 - The `--path` flag is required in agent mode (no interactive workspace selection).
 
 
+## Screenshots
+
+![The documents of two installations uploaded from the project folder to the matching records](../../../assets/images/commands/org/files/import.webp)
+
+_The documents of two installations uploaded from the project folder to the matching records_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
 ## Parameters
 
-| Name              |  Type   | Description                                                   | Default | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir         | option  | undefined                                                     |         |          |         |
-| json              | boolean | Format output as json.                                        |         |          |         |
-| overwrite<br/>-f  | boolean | Override existing files (doubles the number of API calls)     |         |          |         |
-| path<br/>-p       | option  | Path to the file export project                               |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-org<br/>-o | option  | undefined                                                     |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+| Name              |  Type   | Description                                                                                                  | Default | Required | Options |
+|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                                         |         |          |         |
+| json              | boolean | Format output as json.                                                                                       |         |          |         |
+| overwrite<br/>-f  | boolean | Override existing files (doubles the number of API calls)                                                    |         |          |         |
+| path<br/>-p       | option  | Path to the file export project                                                                              |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

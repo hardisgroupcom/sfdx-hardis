@@ -6,9 +6,10 @@ description: Prompt template for PROMPT_SOLVE_DEPLOYMENT_ERROR
 # PROMPT_SOLVE_DEPLOYMENT_ERROR
 
 ## Variables
-| Name      | Description                                                   | Example                                                    |
-|:----------|:--------------------------------------------------------------|:-----------------------------------------------------------|
-| **ERROR** | The Salesforce deployment error message to analyze and solve. | `Cannot deploy component: missing field 'X' on object 'Y'` |
+| Name                        | Description                                                                                                                     | Example                                                                                                                                                                                                    |
+|:----------------------------|:--------------------------------------------------------------------------------------------------------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **ERROR**                   | The Salesforce deployment error message to analyze and solve.                                                                   | `Cannot deploy component: missing field 'X' on object 'Y'`                                                                                                                                                 |
+| **DEPLOYMENT_ACTION_HINTS** | What sfdx-hardis deployment actions can do that a metadata deployment cannot (Setup settings applied in a browser...), or None. | `A sfdx-hardis deployment action of type "browser" applies Salesforce Setup settings that the Metadata API cannot deploy. Its settings:`<br>`  - recordTypes: RecordTypes - Deletes inactive record types` |
 
 ## Prompt
 
@@ -25,6 +26,7 @@ You are a Salesforce release manager using Salesforce CLI commands to perform de
     - Provide a step-by-step solution to resolve the error.
     - If applicable, include the correct sfdx source format or XML example.
     - Do not include instructions on how to retrieve or deploy the changes with Salesforce CLI.
+    - When the error comes from a setting that one of the deployment actions below can apply, suggest that deployment action, with its command.
 
 3. {{VARIABLE_FORMATTING_REQUIREMENTS}}
 
@@ -32,6 +34,9 @@ You are a Salesforce release manager using Salesforce CLI commands to perform de
 
 - The deployment error returned by Salesforce CLI is:
 {{ERROR}}
+
+- The sfdx-hardis deployment actions that can solve what a metadata deployment cannot:
+{{DEPLOYMENT_ACTION_HINTS}}
 
 {{VARIABLE_ADDITIONAL_INSTRUCTIONS}}
 

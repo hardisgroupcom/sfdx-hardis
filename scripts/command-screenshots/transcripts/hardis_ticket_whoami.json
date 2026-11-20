@@ -1,0 +1,35 @@
+{
+  "command": "hardis:ticket:whoami",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[JiraProvider] Using JIRA_EMAIL and JIRA_TOKEN for authentication"
+      }
+    },
+    {
+      "delay": 700,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Authenticated as Victor Martin on JIRA."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

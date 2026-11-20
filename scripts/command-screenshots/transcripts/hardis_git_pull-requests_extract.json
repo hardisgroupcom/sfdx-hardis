@@ -1,0 +1,45 @@
+{
+  "command": "hardis:git:pull-requests:extract",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "This command will extract pull requests from the Git server."
+      }
+    },
+    {
+      "delay": 2200,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/pull-requests-features__HEL-42-installation-checklist.csv",
+        "title": "Pull Requests (CSV)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 700,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/xls/pull-requests-features__HEL-42-installation-checklist.xlsx",
+        "title": "Pull Requests (XLSX)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

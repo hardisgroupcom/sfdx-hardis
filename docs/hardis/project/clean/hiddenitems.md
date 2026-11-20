@@ -1,3 +1,7 @@
+---
+title: "hardis:project:clean:hiddenitems - Clean retrieved hidden items in dx sources"
+description: "Removes hidden or temporary metadata items from your Salesforce DX project sources."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:clean:hiddenitems
 
@@ -45,13 +49,19 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The hidden files of managed package items looked for in the Helios sources, to remove them before a commit](../../../assets/images/commands/project/clean/hiddenitems.webp)
+
+_The hidden files of managed package items looked for in the Helios sources, to remove them before a commit_
+
 ## Parameters
 
 | Name          |  Type   | Description                                                   |  Default  | Required | Options |
 |:--------------|:-------:|:--------------------------------------------------------------|:---------:|:--------:|:-------:|
 | agent         | boolean | Run in non-interactive mode for agents and automation         |           |          |         |
 | debug<br/>-d  | boolean | Activate debug mode (more logs)                               |           |          |         |
-| flags-dir     | option  | undefined                                                     |           |          |         |
+| flags-dir     | option  | Import flag values from a directory.                          |           |          |         |
 | folder<br/>-f | option  | Root folder                                                   | force-app |          |         |
 | json          | boolean | Format output as json.                                        |           |          |         |
 | skipauth      | boolean | Skip authentication check when a default username is required |           |          |         |

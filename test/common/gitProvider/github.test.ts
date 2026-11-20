@@ -7,7 +7,7 @@ import path from 'path';
 // resolved in the same order as in production (see gitProviderRoot.test.ts)
 import '../../../src/common/gitProvider/index.js';
 import { GithubProvider } from '../../../src/common/gitProvider/github.js';
-import { GithubApiClient, GithubApiError, getGithubActionsContext } from '../../../src/common/gitProvider/githubApiClient.js';
+import { GithubApiClient, GithubApiError, getGithubActionsContext } from '../../../src/common/gitProvider/utils/githubApiClient.js';
 import { setFetchForTests } from '../../../src/common/utils/httpUtils.js';
 
 const ENV_KEYS = [
@@ -125,7 +125,7 @@ describe('GithubProvider (native fetch client)', () => {
     const page2 = 'https://api.github.com/repos/acme/widgets/issues/7/comments?per_page=100&page=2';
     const page3 = 'https://api.github.com/repos/acme/widgets/issues/7/comments?per_page=100&page=3';
     mockFetch(
-      jsonResponse([{ id: 1, body: 'MARK one', html_url: 'u1' }, { id: 2, body: 'other' }], 200, { Link: `<${page2}>; rel="next", <${page3}>; rel="last"` }),
+      jsonResponse([{ id: 1, body: 'MARK one', html_url: 'u1', updated_at: '2026-10-04T09:00:00Z' }, { id: 2, body: 'other' }], 200, { Link: `<${page2}>; rel="next", <${page3}>; rel="last"` }),
       jsonResponse([{ id: 3, body: 'MARK three', html_url: 'u3' }], 200, { Link: `<${page3}>; rel="next", <${page3}>; rel="last"` }),
       jsonResponse([{ id: 4, body: 'MARK four', html_url: 'u4' }], 200, { Link: `<${page2}>; rel="prev"` }),
     );
@@ -137,7 +137,7 @@ describe('GithubProvider (native fetch client)', () => {
       page3,
     ]);
     expect(refs.map((r) => r.ref)).to.deep.equal([1, 3, 4]);
-    expect(refs[0]).to.deep.equal({ prNumber: 7, ref: 1, body: 'MARK one', url: 'u1' });
+    expect(refs[0]).to.deep.equal({ prNumber: 7, ref: 1, body: 'MARK one', url: 'u1', updatedAt: '2026-10-04T09:00:00Z' });
   });
 
   it('updates the existing comment when the marker is found (upsert)', async () => {
@@ -240,6 +240,51 @@ describe('GithubProvider (native fetch client)', () => {
     expect(url.searchParams.get('base')).to.equal('main');
     expect(url.searchParams.get('per_page')).to.equal('100');
     expect(url.searchParams.get('page')).to.equal('1');
+  });
+
+  it('filters on the merge date when asked: a release Pull Request opened before the period still counts', async () => {
+    const release = { number: 3, title: 'release', head: { ref: 'release/x' }, base: { ref: 'uat' }, created_at: '2026-10-01T00:00:00Z', updated_at: '2026-10-20T00:00:00Z', merged_at: '2026-10-20T00:00:00Z' };
+    const old = { number: 4, title: 'old', head: { ref: 'f4' }, base: { ref: 'uat' }, created_at: '2026-09-01T00:00:00Z', updated_at: '2026-10-21T00:00:00Z', merged_at: '2026-09-02T00:00:00Z' };
+    const minDate = new Date('2026-10-05T00:00:00Z');
+    mockFetch(jsonResponse([old, release]));
+    const byCreation = await new GithubProvider().listPullRequests({ status: 'merged', targetBranch: 'uat', minDate });
+    expect(byCreation!.map((pr) => pr.idNumber)).to.deep.equal([]);
+    mockFetch(jsonResponse([old, release]));
+    const byMerge = await new GithubProvider().listPullRequests({ status: 'merged', targetBranch: 'uat', minDate, minDateOn: 'merged' });
+    expect(byMerge!.map((pr) => pr.idNumber)).to.deep.equal([3]);
+  });
+
+  it('completes the commits of a Pull Request past the 250 of its listing through the compare API', async () => {
+    const commit = (index: number) => ({ sha: `c${index}`, commit: { message: `m${index}` }, parents: [{ sha: `p${index}` }] });
+    const listing = Array.from({ length: 250 }, (_v, index) => commit(index));
+    mockFetch(
+      jsonResponse(listing.slice(0, 100), 200, { Link: '<https://api.github.com/repos/acme/widgets/pulls/9/commits?page=2>; rel="next"' }),
+      jsonResponse(listing.slice(100, 200), 200, { Link: '<https://api.github.com/repos/acme/widgets/pulls/9/commits?page=3>; rel="next"' }),
+      jsonResponse(listing.slice(200, 250)),
+      jsonResponse({ number: 9, base: { sha: 'base1' }, head: { sha: 'head1' } }),
+      jsonResponse({ total_commits: 260, commits: Array.from({ length: 100 }, (_v, index) => commit(index)) }),
+      jsonResponse({ total_commits: 260, commits: Array.from({ length: 100 }, (_v, index) => commit(100 + index)) }),
+      jsonResponse({ total_commits: 260, commits: Array.from({ length: 60 }, (_v, index) => commit(200 + index)) }),
+    );
+    const commits = await new GithubProvider().listPullRequestCommits(9);
+    expect(commits).to.have.length(260);
+    expect(commits![259]).to.deep.equal({ sha: 'c259', message: 'm259', parentShas: ['p259'] });
+    const compare = new URL(requests[4].url);
+    expect(compare.pathname).to.equal('/repos/acme/widgets/compare/base1...head1');
+    expect(compare.searchParams.get('page')).to.equal('1');
+    expect(new URL(requests[6].url).searchParams.get('page')).to.equal('3');
+  });
+
+  it('keeps the 250 commits of the listing when the compare API cannot answer', async () => {
+    const listing = Array.from({ length: 250 }, (_v, index) => ({ sha: `c${index}`, commit: { message: 'm' }, parents: [] }));
+    mockFetch(
+      jsonResponse(listing.slice(0, 100), 200, { Link: '<https://api.github.com/repos/acme/widgets/pulls/9/commits?page=2>; rel="next"' }),
+      jsonResponse(listing.slice(100, 200), 200, { Link: '<https://api.github.com/repos/acme/widgets/pulls/9/commits?page=3>; rel="next"' }),
+      jsonResponse(listing.slice(200, 250)),
+      jsonResponse({ message: 'Not Found' }, 404),
+    );
+    const commits = await new GithubProvider().listPullRequestCommits(9);
+    expect(commits).to.have.length(250);
   });
 
   it('lists the pull requests of a go live through commits, compare and pulls endpoints', async () => {

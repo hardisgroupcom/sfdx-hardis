@@ -1,0 +1,42 @@
+{
+  "mode": "replace",
+  "title": "Metadata read skipped items",
+  "columns": [
+    "type",
+    "fullName"
+  ],
+  "rows": [
+    {
+      "type": "ApexClass",
+      "fullName": "InstallationScheduler"
+    },
+    {
+      "type": "ApexClass",
+      "fullName": "PanelBatchService"
+    },
+    {
+      "type": "ApexTrigger",
+      "fullName": "InstallationTrigger"
+    },
+    {
+      "type": "LightningComponentBundle",
+      "fullName": "installationTimeline"
+    },
+    {
+      "type": "LightningComponentBundle",
+      "fullName": "panelBatchPicker"
+    },
+    {
+      "type": "StaticResource",
+      "fullName": "HeliosLogo"
+    },
+    {
+      "type": "StaticResource",
+      "fullName": "PanelDatasheets"
+    },
+    {
+      "type": "Document",
+      "fullName": "Helios_Documents/Installation_Checklist.pdf"
+    }
+  ]
+}

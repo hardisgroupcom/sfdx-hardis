@@ -1,11 +1,18 @@
-import { ActionsProvider, ActionResult, PrePostCommand, buildActionOutput } from './actionsProvider.js';
+import { ActionsProvider, ActionResult, PrePostCommand, buildActionOutput, ActionParameterDescription } from './actionsProvider.js';
 import { execCommand, uxLog } from '../utils/index.js';
 import fs from '../utils/fsUtils.js';
 import c from 'chalk';
+import { normalizeIdentityPath } from '../utils/deploymentActionIdentityUtils.js';
 
 export class ApexAction extends ActionsProvider {
   public getLabel(): string {
     return 'ApexAction';
+  }
+
+  public getParameterDescriptions(): ActionParameterDescription[] {
+    return [
+      { name: 'apexScript', path: 'parameters.apexScript', flag: 'apex-script', type: 'string', required: true, description: 'Path of the anonymous Apex script to run, relative to the root of the repository' },
+    ];
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -22,11 +29,16 @@ export class ApexAction extends ActionsProvider {
     return null;
   }
 
+  // ./scripts/apex/x.apex and scripts\apex\x.apex run the same script
+  public getIdentityParameters(cmd: PrePostCommand): Record<string, any> | null {
+    return { apexScript: normalizeIdentityPath(cmd.parameters?.apexScript) };
+  }
+
   public async run(cmd: PrePostCommand): Promise<ActionResult> {
     const validity = await this.checkValidityIssues(cmd);
     if (validity) return validity;
     const apexScript = (cmd.parameters?.apexScript as string) || '';
-    const apexCommand = `sf apex run --file ${apexScript}` + (this.customUsernameToUse ? ` --target-org ${this.customUsernameToUse}` : '');
+    const apexCommand = `sf apex run --file "${apexScript}"` + (this.customUsernameToUse ? ` --target-org ${this.customUsernameToUse}` : '');
     const res = await execCommand(apexCommand, null, { fail: false, output: true });
     if (res.status === 0) {
       return { statusCode: 'success', output: buildActionOutput(res) };

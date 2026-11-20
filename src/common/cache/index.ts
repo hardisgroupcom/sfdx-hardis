@@ -1,9 +1,38 @@
+import c from 'chalk';
 import fs from '../utils/fsUtils.js';
 import * as os from 'os';
 import * as path from 'path';
+import { uxLog } from '../utils/index.js';
+import { t } from '../utils/i18n.js';
 
 const cacheFileName = path.join(os.homedir(), '.sfdx', '.sfdx-hardis-cache.json');
 let MEMORY_CACHE: any = null;
+
+/**
+ * The content of a cache file. A file that cannot be read as a JSON object (cut short by a process
+ * killed while writing it, edited by hand, emptied) is reset to {} rather than stopping the command:
+ * it is only a cache, everything in it can be computed again.
+ */
+export async function readCacheFile(fileName: string): Promise<Record<string, any>> {
+  if (!fs.existsSync(fileName)) {
+    return {};
+  }
+  try {
+    const content = await fs.readJson(fileName);
+    if (content && typeof content === 'object' && !Array.isArray(content)) {
+      return content;
+    }
+    throw new Error('the file does not hold a JSON object');
+  } catch (e) {
+    uxLog("warning", this, c.yellow(t('cacheFileUnreadableReset', { file: fileName, message: (e as Error).message })));
+    try {
+      await fs.writeJson(fileName, {});
+    } catch {
+      // Read-only home folder: the cache stays in memory for this command
+    }
+    return {};
+  }
+}
 
 const readCache = async (): Promise<void> => {
   if (process.env?.NO_CACHE) {
@@ -11,11 +40,7 @@ const readCache = async (): Promise<void> => {
     return;
   }
   if (MEMORY_CACHE == null) {
-    if (fs.existsSync(cacheFileName)) {
-      MEMORY_CACHE = await fs.readJson(cacheFileName);
-    } else {
-      MEMORY_CACHE = {};
-    }
+    MEMORY_CACHE = await readCacheFile(cacheFileName);
   }
 };
 

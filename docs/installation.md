@@ -1,3 +1,7 @@
+---
+title: "Install sfdx-hardis"
+description: "Install sfdx-hardis with the VS Code extension (recommended), as a Salesforce CLI plugin, or run it in CI/CD with a Docker image."
+---
 ### Which installation do I need?
 
 There are three ways to install sfdx-hardis, and you only need one of them.
@@ -111,6 +115,7 @@ For advanced use, please also install dependencies
 sf plugins install @salesforce/plugin-packaging
 sf plugins install sfdx-git-delta
 sf plugins install sfdmu
+sf plugins install sfdx-browserforce-plugin
 ```
 
 If you are using CI/CD scripts, use `echo y | sf plugins install ...` to bypass prompt.
@@ -129,7 +134,7 @@ Two image flavors are available:
 
 - **Standard images** (`sfdx-hardis`, `sfdx-hardis-ubuntu`): Salesforce CI/CD tooling without coding agent CLIs. Use these for standard deployments.
 
-- **With-agents images** (`sfdx-hardis-with-agents`, `sfdx-hardis-ubuntu-with-agents`): Same as standard + coding agent CLIs pre-installed (Claude, Codex, Gemini, GitHub Copilot). Use these for [AI-powered auto-fix](https://sfdx-hardis.cloudity.com/salesforce-ai-setup/) scenarios.
+- **With-agents images** (`sfdx-hardis-with-agents`, `sfdx-hardis-ubuntu-with-agents`): Same as standard + coding agent CLIs pre-installed (Claude, Codex, Gemini, GitHub Copilot). Use these for [AI-powered auto-fix](https://sfdx-hardis.cloudity.com/salesforce-ai-setup/) scenarios. The [direct Codex AI provider](https://sfdx-hardis.cloudity.com/salesforce-ai-setup/#with-codex-directly) also needs one of them, as it runs the Codex CLI.
 
 ---
 

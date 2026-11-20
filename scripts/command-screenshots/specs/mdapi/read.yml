@@ -1,0 +1,4 @@
+command: hardis:mdapi:read
+run: sf hardis:mdapi:read --metadata CustomObject:Installation__c
+org: showcase
+caption: The Installation__c object read with the CRUD-based Metadata API

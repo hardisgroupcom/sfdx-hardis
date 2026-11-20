@@ -1,0 +1,14 @@
+command: hardis:doc:object-field-usage
+run: sf hardis:doc:object-field-usage
+org: showcase
+caption: How many Installation__c and Panel_Batch__c records fill each custom field, with the most and least populated fields
+answers:
+  - q: Select the SObjects to analyze
+    choice: ^(Installation__c|Panel_Batch__c)$
+    shot: true
+    caption: Pick the objects whose fields are measured
+  - q: About to execute approximately .* API call\(s\)
+    choice: ^✅ Yes$
+pills:
+  - text: Least populated
+    legend: The custom field the fewest records use, a candidate for cleanup

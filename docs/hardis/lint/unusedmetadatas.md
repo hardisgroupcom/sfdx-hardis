@@ -1,3 +1,7 @@
+---
+title: "hardis:lint:unusedmetadatas - check unused labels and custom permissions"
+description: "Checks for unused custom labels and custom permissions within your Salesforce DX project."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:lint:unusedmetadatas
 
@@ -24,7 +28,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 The command's technical implementation involves:
 
 - **File Discovery:** It uses `glob` to find all relevant project files (Apex classes, triggers, JavaScript, HTML, XML, Aura components, Visualforce pages) and custom label (`CustomLabels.labels-meta.xml`) and custom permission (`.customPermission-meta.xml`) definition files.
-- **XML Parsing:** It uses `xml2js` to parse the XML content of `CustomLabels.labels-meta.xml` and custom permission files to extract the full names of labels and permissions.
+- **XML Parsing:** It parses the XML content of `CustomLabels.labels-meta.xml` and custom permission files to extract the full names of labels and permissions.
 - **Content Scanning:** For each label and custom permission, it iterates through all other project files and checks if their names or associated labels are present in the file content. It performs case-insensitive checks for labels.
 - **Usage Tracking:** It maintains a count of how many times each custom permission is referenced. Labels are checked for any inclusion.
 - **Unused Identification:** Elements with no or very few references (for custom permissions, less than 2 to account for their own definition file) are flagged as unused.
@@ -44,17 +48,37 @@ sf hardis:lint:unusedmetadatas --agent
 
 In agent mode, the command runs fully automatically with no interactive prompts.
 
+## Screenshots
+
+![Custom labels and custom permissions of the Helios project that no Apex, Flow or component uses](../../assets/images/commands/lint/unusedmetadatas.webp)
+
+_Custom labels and custom permissions of the Helios project that no Apex, Flow or component uses_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Unused metadata
+
+One row per custom label or custom permission that no other element of the project uses, so it can be deleted.
+
+Files: `lint-unusedmetadatas-*.csv`, `xls/lint-unusedmetadatas-*.xlsx`
+
+![Unused metadata report in Excel](../../assets/images/commands/lint/unusedmetadatas-report-lint-unusedmetadatas.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                   | Default | Required | Options |
 |:------------------|:-------:|:----------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent             | boolean | Run in non-interactive mode for agents and automation. Uses default values and skips prompts. |         |          |         |
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                                                               |         |          |         |
-| flags-dir         | option  | undefined                                                                                     |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                          |         |          |         |
 | json              | boolean | Format output as json.                                                                        |         |          |         |
 | outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                             |         |          |         |
 | skipauth          | boolean | Skip authentication check when a default username is required                                 |         |          |         |
-| target-org<br/>-o | option  | undefined                                                                                     |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org.                                                          |         |          |         |
 | websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                     |         |          |         |
 
 ## Examples

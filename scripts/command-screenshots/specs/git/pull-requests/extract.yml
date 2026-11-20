@@ -1,0 +1,5 @@
+command: hardis:git:pull-requests:extract
+run: sf hardis:git:pull-requests:extract --target-branch integration --status merged
+mode: replay
+org: none
+caption: "The Pull Requests merged into integration, extracted from GitHub to a CSV and an Excel file"

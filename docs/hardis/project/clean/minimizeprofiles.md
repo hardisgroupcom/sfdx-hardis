@@ -1,3 +1,7 @@
+---
+title: "hardis:project:clean:minimizeprofiles - Clean profiles of Permission Set attributes"
+description: "Removes all profile attributes that exist on Permission Sets"
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:clean:minimizeprofiles
 
@@ -48,13 +52,19 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The profiles of the Helios project stripped of the access that permission sets already give](../../../assets/images/commands/project/clean/minimizeprofiles.webp)
+
+_The profiles of the Helios project stripped of the access that permission sets already give_
+
 ## Parameters
 
 | Name          |  Type   | Description                                                   |  Default  | Required | Options |
 |:--------------|:-------:|:--------------------------------------------------------------|:---------:|:--------:|:-------:|
 | agent         | boolean | Run in non-interactive mode for agents and automation         |           |          |         |
 | debug<br/>-d  | boolean | Activate debug mode (more logs)                               |           |          |         |
-| flags-dir     | option  | undefined                                                     |           |          |         |
+| flags-dir     | option  | Import flag values from a directory.                          |           |          |         |
 | folder<br/>-f | option  | Root folder                                                   | force-app |          |         |
 | json          | boolean | Format output as json.                                        |           |          |         |
 | skipauth      | boolean | Skip authentication check when a default username is required |           |          |         |

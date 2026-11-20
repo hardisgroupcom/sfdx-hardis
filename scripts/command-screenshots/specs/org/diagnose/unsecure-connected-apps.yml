@@ -1,0 +1,11 @@
+command: hardis:org:diagnose:unsecure-connected-apps
+run: sf hardis:org:diagnose:unsecure-connected-apps
+org: showcase
+caption: OAuth tokens of Connected Apps that are not locked down, and the apps they belong to
+answers:
+  - q: unsecured Connected Apps with OAuth Tokens
+    choice: No$
+    optional: true
+  - q: select OAuth Tokens to delete
+    choice: No$
+    optional: true

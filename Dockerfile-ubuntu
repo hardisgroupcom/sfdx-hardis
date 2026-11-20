@@ -1,5 +1,10 @@
 # Docker image to run sfdx-hardis
 
+# Ubuntu has no client-only docker package (docker.io brings the engine, containerd and iptables),
+# so the static docker client is copied from the official docker CLI image.
+ARG DOCKER_CLI_IMAGE=docker:29-cli
+FROM ${DOCKER_CLI_IMAGE} AS dockercli
+
 FROM ubuntu:latest
 
 LABEL maintainer="Nicolas VUILLAMY <nicolas.vuillamy@cloudity.com>"
@@ -8,9 +13,18 @@ ENV SF_DATA_DIR=/usr/local/lib
 
 # Node.js major version installed from NodeSource (see note in the install step below)
 ARG NODE_MAJOR=24
+# Lowest Node.js version accepted, for the Node 24 line: change it with NODE_MAJOR
+ARG NODE_MIN_VERSION=24.22.1
 
 # Update package list and install required packages
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# When archive.ubuntu.com or security.ubuntu.com cannot be reached (GitHub runners sometimes fail
+# to resolve them), fall back to the kernel.org mirror. Packages stay checked with the Ubuntu
+# archive key shipped in the base image. --error-on=any makes apt-get update fail on a missing index.
+RUN { apt-get update --error-on=any -o Acquire::Retries=3 || \
+      { echo "Ubuntu archive unreachable, using the mirrors.edge.kernel.org mirror" && \
+        sed -i -E 's#http://(archive|security)\.ubuntu\.com/#http://mirrors.edge.kernel.org/#g' /etc/apt/sources.list.d/ubuntu.sources && \
+        apt-get update --error-on=any -o Acquire::Retries=3; }; } && \
+    apt-get install -y --no-install-recommends \
     git \
     curl \
     gnupg \
@@ -20,10 +34,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-pip \
     python3-venv \
-    # Required for docker
-    docker.io \
     fonts-liberation \
-    openjdk-17-jdk \
+    # Java runtime for PMD / code-analyzer, no JDK tools needed
+    openjdk-17-jre-headless \
     # Required for mermaid cli
     libglib2.0-0 \
     libnss3 \
@@ -57,8 +70,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # the PR #64004 follow-up to the CVE-2026-48931 http.Agent fix. Without that follow-up
     # (i.e. Node 24.17.0) the Salesforce CLI / jsforce hangs with an "unsettled top-level await"
     # error (see https://github.com/hardisgroupcom/sfdx-hardis/issues/1972).
+    # The build fails below NODE_MIN_VERSION (October 2026 security release, see distrust-ca-roots.sh below).
     curl -fsSL https://deb.nodesource.com/setup_${NODE_MAJOR}.x | bash - && \
     apt-get install -y nodejs && \
+    { dpkg --compare-versions "$(node -p process.versions.node)" ge "${NODE_MIN_VERSION}" || \
+        { echo "Node.js $(node --version) is older than ${NODE_MIN_VERSION}" >&2; exit 1; }; } && \
     # Chrome installation 
     wget -q -O google-chrome-stable_current_amd64.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
     apt-get install -y ./google-chrome-stable_current_amd64.deb && \
@@ -67,6 +83,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+# Docker client only, for the Zensical fallback and MERMAID_MODES=docker
+# (needs the docker socket of the CI host, no engine runs in this image)
+COPY --from=dockercli /usr/local/bin/docker /usr/local/bin/docker
+
 # Add node packages to path
 ENV PATH="/node_modules/.bin:${PATH}"
 
@@ -74,10 +94,22 @@ ENV PATH="/node_modules/.bin:${PATH}"
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
+# Node.js 24.22.1 stops trusting the emSign roots of the compromised eMudhra CA (October 2026).
+# Turn the same roots off in the system and Java trust stores, and point Python tools that use
+# certifi (requests...) at the system bundle.
+RUN --mount=type=bind,source=ref/docker/distrust-ca-roots.sh,target=/tmp/distrust-ca-roots.sh \
+    # distrust-ca-roots.sh skips the Java store when keytool is missing: fail instead
+    java -version && command -v keytool && docker --version && \
+    sh /tmp/distrust-ca-roots.sh
+ENV REQUESTS_CA_BUNDLE="/etc/ssl/certs/ca-certificates.crt"
+
 # Chromium path for puppeteer
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
 ENV CHROMIUM_PATH="/usr/bin/google-chrome"
 ENV PUPPETEER_EXECUTABLE_PATH="${CHROMIUM_PATH}"
+# Browserforce (browser deployment actions) uses the same Chrome, never a Playwright download
+ENV CHROME_BIN="${CHROMIUM_PATH}"
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD="1"
 
 ARG SFDX_CLI_VERSION=latest
 ARG SFDX_HARDIS_VERSION=latest
@@ -102,6 +134,7 @@ RUN npm install --no-cache yarn -g && \
         fi && \
     echo 'y' | sf plugins install sfdx-git-delta && \
     echo 'y' | sf plugins install sfdmu && \
+    echo 'y' | sf plugins install sfdx-browserforce-plugin && \
     sf version --verbose --json && \
     # Clean up npm cache and temporary files
     rm -rf /root/.npm/_cacache && \

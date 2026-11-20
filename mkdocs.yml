@@ -105,6 +105,7 @@ nav:
       - Overview: vscode-extension.md
       - Welcome panel: vscode-extension-welcome.md
       - DevOps Pipeline: vscode-extension-devops-pipeline.md
+      - Pipeline Settings: vscode-extension-pipeline-settings.md
       - Org Monitoring: vscode-extension-org-monitoring.md
       - Command execution: vscode-extension-command-runner.md
       - Orgs Manager: vscode-extension-orgs-manager.md
@@ -129,9 +130,25 @@ nav:
               - Profiles and Permission Sets: salesforce-devops-work-on-user-story-profiles.md
               - Development guidelines: salesforce-devops-work-on-user-story-development.md
               - Install packages: salesforce-devops-work-on-user-story-install-packages.md
-              - Deployment actions: salesforce-devops-work-on-user-story-deployment-actions.md
-              - Custom functions: salesforce-devops-work-on-user-story-custom-functions.md
+              - Deployment actions:
+                  - Overview: salesforce-devops-work-on-user-story-deployment-actions.md
+                  - Run a command: salesforce-devops-work-on-user-story-deployment-actions-command.md
+                  - Import data (SFDMU): salesforce-devops-work-on-user-story-deployment-actions-data.md
+                  - Run an Apex script: salesforce-devops-work-on-user-story-deployment-actions-apex.md
+                  - Publish an Experience Cloud site: salesforce-devops-work-on-user-story-deployment-actions-publish-community.md
+                  - Schedule an Apex batch: salesforce-devops-work-on-user-story-deployment-actions-schedule-batch.md
+                  - Run an Apex batch: salesforce-devops-work-on-user-story-deployment-actions-run-batch.md
+                  - Activate User Access Policies: salesforce-devops-work-on-user-story-deployment-actions-user-access-policy.md
+                  - Apply a Setup setting in a browser: salesforce-devops-work-on-user-story-deployment-actions-browser.md
+                  - Remove items from package.xml: salesforce-devops-work-on-user-story-deployment-actions-remove-packagexml-items.md
+                  - Manual step: salesforce-devops-work-on-user-story-deployment-actions-manual.md
+                  - Publish an Agentforce agent: salesforce-devops-work-on-user-story-deployment-actions-agent-publish.md
+                  - Create the running user of an Agentforce agent: salesforce-devops-work-on-user-story-deployment-actions-agent-running-user.md
+                  - Activate a version of an Agentforce agent: salesforce-devops-work-on-user-story-deployment-actions-agent-activate.md
+                  - Custom functions: salesforce-devops-work-on-user-story-custom-functions.md
+              - Agentforce agents: salesforce-ci-cd-agentforce-agents.md
               - Backpromote (Beta): salesforce-devops-backpromote.md
+              - Development orgs list: salesforce-devops-dev-orgs.md
           - 3. Publish your User Story: salesforce-devops-publish-user-story.md
           - 4. Create the Pull Request:
               - On GitHub: salesforce-devops-pull-request-github.md
@@ -158,6 +175,9 @@ nav:
               - Overwrite management: salesforce-devops-config-overwrite.md
               - Delta deployments: salesforce-devops-config-delta-deployment.md
               - Automated cleaning: salesforce-devops-config-cleaning.md
+              - Replacement rules (Beta):
+                  - Overview: salesforce-devops-config-replacement-rules.md
+                  - Built-in rules: salesforce-devops-config-replacement-rules-builtin.md
               - Source retrieve issues: salesforce-devops-retrieve.md
               - Repository clean up: salesforce-devops-manual-repo-clean.md
               - Environment variables: all-env-variables.md
@@ -172,7 +192,10 @@ nav:
           - 3. Initialize the SFDX project: salesforce-devops-setup-init-project.md
           - 4. Configure CI authentication: salesforce-devops-setup-auth.md
           - 5. Retrieve an existing org (optional): salesforce-devops-setup-existing-org.md
-          - 6. First Pull Request: salesforce-devops-setup-merge-request.md
+          - 6. Scratch org pool (optional): salesforce-devops-setup-scratch-org-pool.md
+          - 7. First Pull Request: salesforce-devops-setup-merge-request.md
+          - Initialize scratch orgs and sandboxes (optional, Beta): salesforce-devops-org-initialization.md
+          - Major branch deployment check (optional): salesforce-devops-setup-major-branch-check.md
           - Publish job artifacts: salesforce-devops-setup-publish-artifacts.md
           - Setup checklist: salesforce-devops-setup-checklist.md
   - Org Monitoring:
@@ -186,12 +209,13 @@ nav:
           - Apex and Flow errors: salesforce-monitoring-apex-flow-errors.md
           - Limits issues: salesforce-monitoring-org-limits.md
           - Apex flex queue: salesforce-monitoring-apex-flex-queue.md
-          - Calls to deprecated API versions: salesforce-monitoring-deprecated-api-calls.md
+          - Calls to deprecated API versions (deprecated): salesforce-monitoring-deprecated-api-calls.md
           - Unsecured Connected Apps: salesforce-monitoring-unsecured-connected-apps.md
           - MFA Configuration: salesforce-monitoring-mfa.md
+          - What will break: salesforce-monitoring-what-will-break.md
           - Licenses overview: salesforce-monitoring-licenses-overview.md
           - Org and instance upgrade info: salesforce-monitoring-org-instance-upgrade.md
-          - Release Updates: salesforce-monitoring-release-updates.md
+          - Release Updates (deprecated): salesforce-monitoring-release-updates.md
           - Security Health Check: salesforce-monitoring-health-check.md
           - Inactive users: salesforce-monitoring-inactive-users.md
           - Unused licenses: salesforce-monitoring-unused-licenses.md
@@ -294,6 +318,7 @@ nav:
           - Jira: salesforce-devops-setup-integration-jira.md
           - Azure Boards: salesforce-devops-setup-integration-azure-boards.md
           - ServiceNow: salesforce-devops-setup-integration-servicenow.md
+          - Aha!: salesforce-devops-setup-integration-aha.md
           - Generic Ticketing: salesforce-devops-setup-integration-generic-ticketing.md
       - Monitoring Backends:
           - Grafana Dashboards: salesforce-monitoring-grafana-v2.md
@@ -308,6 +333,7 @@ nav:
           - clear: hardis/cache/clear.md
       - hardis:config:
           - get: hardis/config/get.md
+          - org-init: hardis/config/org-init.md
       - hardis:datacloud:
           - agentforce-conversations: hardis/datacloud/extract/agentforce-conversations.md
           - agentforce-feedback: hardis/datacloud/extract/agentforce-feedback.md
@@ -377,6 +403,7 @@ nav:
           - files import: hardis/org/files/import.md
           - fix listviewmine: hardis/org/fix/listviewmine.md
           - generate packagexmlfull: hardis/org/generate/packagexmlfull.md
+          - init: hardis/org/init.md
           - list metadata: hardis/org/list/metadata.md
           - monitor all: hardis/org/monitor/all.md
           - monitor backup: hardis/org/monitor/backup.md
@@ -416,6 +443,7 @@ nav:
           - audit callincallout: hardis/project/audit/callincallout.md
           - audit duplicatefiles: hardis/project/audit/duplicatefiles.md
           - audit remotesites: hardis/project/audit/remotesites.md
+          - clean agents-deployment-actions: hardis/project/clean/agents-deployment-actions.md
           - clean emptyitems: hardis/project/clean/emptyitems.md
           - clean filter-xml-content: hardis/project/clean/filter-xml-content.md
           - clean flowpositions: hardis/project/clean/flowpositions.md
@@ -442,6 +470,9 @@ nav:
           - deploy sources metadata: hardis/project/deploy/sources/metadata.md
           - deploy start: hardis/project/deploy/start.md
           - deploy validate: hardis/project/deploy/validate.md
+          - dev-org list: hardis/project/dev-org/list.md
+          - dev-org register: hardis/project/dev-org/register.md
+          - dev-org remove: hardis/project/dev-org/remove.md
           - fix profiletabs: hardis/project/fix/profiletabs.md
           - fix v53flexipages: hardis/project/fix/v53flexipages.md
           - generate bypass: hardis/project/generate/bypass.md
@@ -450,6 +481,7 @@ nav:
           - lint: hardis/project/lint.md
           - metadata activate-decomposed: hardis/project/metadata/activate-decomposed.md
           - metadata findduplicates: hardis/project/metadata/findduplicates.md
+          - pipeline describe: hardis/project/pipeline/describe.md
           - promotion create: hardis/project/promotion/create.md
           - promotion list-candidates: hardis/project/promotion/list-candidates.md
           - skills import: hardis/project/skills/import.md
@@ -467,12 +499,20 @@ nav:
           - pool view: hardis/scratch/pool/view.md
           - pull: hardis/scratch/pull.md
           - push: hardis/scratch/push.md
+          - snapshot refresh: hardis/scratch/snapshot/refresh.md
       - hardis:source:
           - deploy: hardis/source/deploy.md
           - push: hardis/source/push.md
           - retrieve: hardis/source/retrieve.md
       - hardis:ticket:
           - get: hardis/ticket/get.md
+          - list: hardis/ticket/list.md
+          - meta: hardis/ticket/meta.md
+          - post-comment: hardis/ticket/post-comment.md
+          - set-label: hardis/ticket/set-label.md
+          - test-cases init: hardis/ticket/test-cases/init.md
+          - test-cases upsert: hardis/ticket/test-cases/upsert.md
+          - whoami: hardis/ticket/whoami.md
       - hardis:work:
           - new: hardis/work/new.md
           - refresh: hardis/work/refresh.md

@@ -1,3 +1,7 @@
+---
+title: "hardis:project:audit:remotesites - Audit Remote Sites"
+description: "Audits Salesforce Remote Site Settings in your project, providing a comprehensive overview of external endpoints accessed by your Salesforce org."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:audit:remotesites
 
@@ -25,7 +29,7 @@ The command's technical implementation involves:
 - **File Discovery:** Uses `glob` to find all RemoteSiteSetting metadata files within the project.
 - **Content Analysis:** Reads the content of each XML file and uses regular expressions (/<url>(.*?)<\/url>/gim, /<isActive>(.*?)<\/isActive>/gim, /<description>(.*?)<\/description>/gim) to extract relevant details.
 - **`catchMatches` Utility:** This utility function is used to apply the defined regular expressions to each file and extract all matching occurrences.
-- **URL Parsing:** Uses Node.js's `url` module to parse the extracted URLs and `psl` (Public Suffix List) to extract the domain name from the hostname.
+- **URL Parsing:** Uses Node.js's `url` module to parse the extracted URLs and extracts the registrable domain name from the hostname.
 - **Data Structuring:** Organizes the extracted information into a structured format, including the remote site's name, file name, namespace, URL, active status, description, protocol, and domain.
 - **Reporting:** Uses `generateReports` to create a CSV report and display a table in the console, summarizing the audit findings.
 </details>
@@ -42,13 +46,33 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The remote site settings of the Helios project with the URL each one opens, in a CSV report](../../../assets/images/commands/project/audit/remotesites.webp)
+
+_The remote site settings of the Helios project with the URL each one opens, in a CSV report_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Remote Sites
+
+One row per Remote Site Setting, with its protocol, domain, URL and active flag, to review the external endpoints the org can call.
+
+Files: `remote-sites-audit-*.csv`, `xls/remote-sites-audit-*.xlsx`
+
+![Remote Sites report in Excel](../../../assets/images/commands/project/audit/remotesites-report-remote-sites-audit.webp)
+
 ## Parameters
 
 | Name         |  Type   | Description                                                   | Default | Required | Options |
 |:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent        | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir    | option  | undefined                                                     |         |          |         |
+| flags-dir    | option  | Import flag values from a directory.                          |         |          |         |
 | json         | boolean | Format output as json.                                        |         |          |         |
 | skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
 | websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |

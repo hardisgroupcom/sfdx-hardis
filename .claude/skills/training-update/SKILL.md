@@ -33,6 +33,8 @@ have to be regenerated.
 | The command links of Under the hood blocks | inside each lab, between `<!-- command-links:start/end -->`                        | **Yes**, `scripts/build/lab-command-links.mjs`  |
 | The site pages nobody writes               | The backlog, one page per story, the badges index, one page per badge holder       | **Yes**, `scripts/build/site.mjs`, per locale   |
 | The audit rules                            | `scripts/verify/rules.mjs`                                                         | No                                              |
+| Which Pull Request ends which lab          | `scripts/stats/markers.mjs`, read by the course statistics                         | No, follows the branch names of the universe    |
+| The course statistics                      | `stats/course-stats.json`, `STATS.md`                                              | **Yes**, `scripts/stats/course-stats.mjs`       |
 | The seed data                              | `scripts/data/HeliosBaseline/*.csv`                                                | **Yes**, `scripts/build/data.mjs`               |
 | The screenshot fixtures                    | `../vscode-sfdx-hardis/test/fixtures/screenshot/helios/` and `training-project/`   | **Yes**, `scripts/build/mocks.mjs`              |
 | The lab links in the product documentation | `../sfdx-hardis/docs/*.md`, its command descriptions, both READMEs                 | **Yes**, `scripts/build/doc-links.mjs`          |
@@ -109,6 +111,60 @@ House style for the lab body, in order: `The situation`, `Before you start`, `St
 into a collapsed block on the site, because it is the one section nobody reads in order. Write it as
 a plain section; do not indent it by hand.
 
+### The step template
+
+Every numbered step (`### N. title`) reads the same way, so a learner can scan it, do it, and read
+the reasons only when they need them. It came from a learner (training discussion #142), and
+`scripts/lib/lab-template.mjs` in the training repository holds its words per locale and the build
+side.
+
+```markdown
+### 2. Take in the five stories, in order, and promote them the usual way
+
+Goal: all five stories in `uat`, deployed to `helios-uat`.
+Refresher: [Lab 3.2](3-2-review-a-contributor-pull-request.md), [Lab 3.5](3-5-promote-to-uat-and-write-release-notes.md)
+
+#### Do
+
+1. One action per task. The screenshot of a task sits under it, indented 3 spaces
+
+!!! warning "Careful"
+    Only what fails or is hard to undo.
+
+#### Why this order
+
+The reasons. Open, never folded.
+
+<details markdown="1"><summary>Under the hood: ...</summary> ... </details>
+
+#### You should now see
+
+- What the learner can observe when the step worked
+```
+
+- **Never rename a step heading.** `Lab N.M step K` links, the product documentation and the
+  Trailmix steps point at its anchor
+- `Goal:` is the first line of every step, a result rather than an instruction. `Refresher:` is
+  optional and lists the earlier labs the step builds on
+- `#### Do`, `#### Why` and `#### You should now see` may carry a title (`#### Do: select the
+  stories`, `#### Why seven`). The build turns them into blocks. **You should now see is required
+  and closes the step**
+- **The only box is Careful** (`!!! warning`). No note, tip, info or danger: what they said is a
+  task, a reason or a risk
+- **Bold is what a screen shows**: a button, a menu entry, a question a command asks, an answer to
+  pick. The site paints it as a chip. Emphasis and rules are not bold, and a bold run never ends
+  with a full stop. Pill references `**(2)**` stay bold
+- **Every code fence has a title**: `Type this`, `Output`, `Config`, `Edit this file`, and
+  `What the button ran` inside Under the hood only (French: `À taper`, `Résultat`, `Configuration`,
+  `À modifier dans le fichier`, `Ce que le bouton a lancé`)
+- A list to work through one by one gets a `[ ]` column, and Before you start and What you should
+  see use `- [ ]`: the site turns both into ticks saved in the learner's browser, with a Done box on
+  each step
+- French: `#### À faire`, `#### Pourquoi`, `#### Vous devriez voir`, `Objectif :`, `Rappel :`
+
+`node scripts/verify/check-lab-template.mjs` fails on a lab that leaves the template, in every
+locale, and runs in the translations workflow.
+
 Three rules the labs are written under, and they are not negotiable:
 
 1. **Clicks, not code.** Every action is a button in the extension. A panel exists for almost
@@ -132,9 +188,10 @@ is what keeps the two from disagreeing about what a button does. So:
 - **Never rename a file, an `id` or a slug in one locale.** The structure is English everywhere:
   same file names, same folders, same `id`, `level`, `lab`, `screenshots` and `depends_on`, same
   URLs. Only the prose, the `title` and the `description` are translated
-- **A translation is allowed to lag.** `source_rev` in the front matter names the commit of the
-  English file it was made from, and `node scripts/i18n/check-translations.mjs` lists the ones the
-  source has moved past. That list is what to re-read, and CI reports it without failing
+- **A translation is allowed to lag.** `source_rev` in the front matter names the content hash of
+  the English file it was made from (`git hash-object`, not a commit: a squash merge renames every
+  commit of a branch and leaves the content alone), and `node scripts/i18n/check-translations.mjs`
+  lists the ones the source has moved past. That list is what to re-read, and CI reports it without failing
 - **A translation is not allowed to lose things.** Staleness is the loud failure; a paragraph
   skipped or an "Under the hood" block never carried over is the quiet one, and nothing else shows
   it. `node scripts/i18n/check-structure.mjs` compares headings, images, code fences, `<details>`
@@ -153,26 +210,27 @@ is what keeps the two from disagreeing about what a button does. So:
 The order when a change touches a lab:
 
 ```bash
-# 1. English first, and commit it, because the stamp reads git
+# 1. English first
 $EDITOR labs/en/level-2-contributor-advanced/2-3-*.md
-git add labs/en && git commit -m "..."
 
 # 2. the same edit in each other locale
 $EDITOR labs/fr/level-2-contributor-advanced/2-3-*.md
 
-# 3. the three generators that are locale aware
+# 3. the three generators that are locale aware, then the stamp
 node scripts/build/lab-crossrefs.mjs        # "Lab 2.7, étape 3" becomes a link, per locale
 node scripts/build/lab-command-links.mjs   # each sf hardis command an Under the hood block names, linked
 node scripts/i18n/align-tables.mjs          # MD060: a translated cell moves every pipe under it
-node scripts/i18n/stamp-source-rev.mjs fr   # write source_rev from the commit of step 1
+node scripts/i18n/stamp-source-rev.mjs fr   # write source_rev from the English file as it is on disk
 
 # 4. what always runs
 node scripts/build/universe.mjs
 ```
 
-`stamp-source-rev.mjs` reads the last commit that touched the English file, so **running it before
-committing the English change stamps the version before yours** and quietly claims the translation
-is current. Commit first.
+`stamp-source-rev.mjs` hashes the English file **as it is on disk**, committed or not, so run it
+once the translation matches that text and after every generator that rewrites the English page
+(the cross references, the command links, the table alignment): a stamp taken before one of them
+names a text the file no longer has, and the translation reads as behind. Stamp only the files you
+translated: a stamp says "this translation was made from that English text".
 
 **Adding a locale** is additive, and `TRANSLATION.md` in the training repository is the procedure.
 Three things worth knowing from here:
@@ -221,6 +279,10 @@ node scripts/build/universe.mjs
 It regenerates the backlog, the link map and the manifest, and **fails when a lab mentions a story
 id, an org or a branch the universe does not define**. That check is what stops the labs and the
 screenshots telling two different stories.
+
+A story whose id or branch changes, and a lab that moves to another story, also change
+`scripts/stats/markers.mjs`: it names the Pull Request that ends each lab, and the course
+statistics stop timing a lab whose marker no longer matches, without failing anything.
 
 ## Changing an audit rule
 
@@ -360,8 +422,17 @@ node scripts/build/shots.mjs --all --kind vscode  # every VS Code image of the c
 node scripts/build/shots.mjs --lab 3.1 --dry-run  # what it would take
 ```
 
-A workbench menu (the **...** of a view, a context menu) cannot be captured: activating the window
-for the capture closes it. Webview menus, quick picks and the Command Palette can.
+**On Windows the capture shows no window; elsewhere, ask first.** The extension harness drives
+VS Code through the Chrome DevTools Protocol (`src/test/ui/cdpWindow.ts` in vscode-sfdx-hardis),
+so it never uses the real mouse, and on Windows it starts VS Code on a desktop of its own
+(`scripts/hidden-desktop`), so no window opens on the user's desktop. There it can run in the
+background while they work. On macOS and Linux a window opens at every run.
+The Salesforce and web captures of this repository have their own tools: check theirs before
+assuming the same.
+
+A workbench menu (the **...** of a view, a context menu) could not be captured with the former
+desktop driver, which activated the window and closed the menu. This has not been tried again with
+the protocol driver. Webview menus, quick picks and the Command Palette can be captured.
 
 Pass only the names you need: the full batch takes about twenty-five minutes, and with no names at
 all it also records the GIFs, which writes `recordings/` and `*-for-recording.png` into the output
@@ -517,6 +588,37 @@ four places per locale: each `labs/<locale>/level-N/index.md`, `labs/<locale>/in
 `README.md` once. A time changed in English and not in French is the easiest translation drift to
 create and the hardest to notice, because nothing compares numbers across locales.
 
+**The pages announce what learners were observed to take, and a generator writes it.**
+`scripts/build/lab-times.mjs` writes the observed time into the markdown under `labs/`, in every
+language, from `stats/course-stats.json`: the `**Time**` line of a lab, the rows and the total of
+a level page, the table of the home page. The weekly `course-stats.yml` commits the result, so a
+change of time is a diff in the lab files. The site is built from that markdown as it is. The
+rules are in `scripts/stats/lab-times.mjs`:
+
+- the median, **rounded down**, to five minutes for a lab and a quarter of an hour for a level;
+- followed by the median, how many learners they were and the fastest plausible time, between
+  two `<!-- observed -->` comments, which is how the next run finds its own sentence. The fastest
+  is the first figure of at least five minutes and a quarter of the median, because a smaller
+  one is two labs checked in a row. The slowest is never shown;
+- a lab fewer than five learners went through announces its estimate, and so does a level nobody
+  was observed in.
+
+What follows from it:
+
+- **never edit a time in a lab by hand**: the next run overwrites it, and
+  `lab-times.mjs --check` fails the site build on the difference. A new estimate goes in
+  `training-universe.json` (`time` per lab, `duration` per level), which is where the estimates
+  live, then `node scripts/build/lab-times.mjs`;
+- a lab keeps one `**Time**: ~N min` line, and a level page one `**Time**: about N h` line and
+  one `N min` cell per lab row. A page that loses one fails the generator, by name;
+- never write a duration of a level in prose ("it is four hours"): nothing updates a sentence;
+- the generator changes the English page and its translations together, and restamps the
+  translations that were current before the run, and only those, with the content hash of the
+  rewritten English page. Nothing to commit first and nothing to stamp afterwards; a translation
+  that was already behind stays behind, this run did not catch it up;
+- `doc-links.mjs` writes the `duration` of the universe into the product documentation, which
+  therefore shows estimates, not observed times.
+
 ## The contributor loop the course teaches
 
 **The Metadata Retriever comes before `hardis:work:save`, always.** That is the product's own
@@ -537,11 +639,11 @@ Control, then Save / Publish and answer *Yes, my commit(s) are ready*.
 
 **`hardis:work:new` in this course answers Scratch org, then Reuse scratch org helios-dev.** The list
 leaves out the scratch orgs `config/branches/` names, and never *Create new scratch org*: the Dev Hub
-keeps three alive and all three are taken. With a sandbox, the command only asks whether to initialize
-it when the project sets `offerSandboxInit: true` (this one does not), and that answer does not bring
-metadata down. It installs packages, assigns permission sets and runs the init scripts. The command itself
-prints that a backpromote is what brings the merged metadata. A lab that says "say yes and you will
-have the team's work" is wrong.
+keeps three alive and all three are taken. With a sandbox, the command never initializes it
+(`offerSandboxInit` is deprecated and ignored): the org initialization steps run on demand with
+`hardis:org:init` (the Org Initialization panel), and they never bring the team's metadata down either.
+The command itself prints that a backpromote is what brings the merged metadata. A lab that says
+"New User Story updates your sandbox with the team's work" is wrong.
 
 **Staging is the decision, not the picker.** `hardis:work:save` commits nothing by itself: the
 learner stages the retrieved files one at a time in the Source Control panel, with the **+** on each
@@ -599,13 +701,14 @@ a thing happened, tell them where to look in the org.
 cd ../sfdx-hardis-training
 node scripts/build/lab-crossrefs.mjs       # first: link every mention of another lab, per locale
 node scripts/i18n/align-tables.mjs         # a translated cell moves every pipe under it
-node scripts/i18n/stamp-source-rev.mjs     # after the English commit, never before
+node scripts/i18n/stamp-source-rev.mjs     # after the generators above, for the files you translated
 node scripts/build/universe.mjs           # regenerate, because lab front matter feeds the manifest
 node scripts/build/universe.mjs --check    # generated files up to date, fiction consistent
 node scripts/build/annotate.mjs            # every annotated image matches its spec
 node scripts/verify/check-pills.mjs        # the pills an image carries are the ones its step cites
 node scripts/i18n/check-translations.mjs   # which translations the English source has moved past
 node scripts/i18n/check-structure.mjs      # which translations lost an image or a block. Reports, never fails
+node scripts/verify/check-lab-template.mjs # every step on the step template, every locale. Fails
 node scripts/verify/check-links.mjs        # every link resolves
 node scripts/build/site.mjs && python -m zensical build -f course-site.yml
 node scripts/verify/check-site.mjs         # every page resolves every asset
@@ -648,4 +751,4 @@ neither fixed nor written down is the only unacceptable outcome.
 
 - [[training-impact]] decides whether any of this is needed
 - The `vscode-sfdx-hardis` skill, for the extension side of the same change
-- [[training-e2e]] walks the labs for real, against a live fork and live orgs, and is where most of these edits come from
+- [[e2e]] (`training` scenario) walks the labs for real, against a live fork and live orgs, and is where most of these edits come from

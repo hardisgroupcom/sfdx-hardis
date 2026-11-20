@@ -1,0 +1,116 @@
+---
+# Source of this file: the sfdx-hardis default template
+#   https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.github/workflows/check-major-branch-deploy.yml
+#   raw: https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/defaults/ci/.github/workflows/check-major-branch-deploy.yml
+# To upgrade it, compare it with the latest version of that template and bring in its changes,
+# keeping what is specific to this project (branch names, secrets, runner tags, image, custom jobs).
+# What changed between versions: https://github.com/hardisgroupcom/sfdx-hardis/blob/main/CHANGELOG.md
+# Major branch deployment check: every night, simulates the full deployment of each major branch to
+# its own org, to know whether an org drifted from its branch (manual changes, refresh, failed
+# deployment). Nothing is deployed, no Pull Request is commented, no deployment action runs.
+#
+# - The major branches are read from config/branches/.sfdx-hardis.*.yml of the default branch:
+#   no branch list to maintain here
+# - GitHub runs scheduled workflows from the default branch only: this file must be on it
+# - Manual updates in job step "Login & Check major branch deployment" below: add the
+#   SFDX_CLIENT_ID / KEY variables of your major branches, like in check-deploy.yml
+# - Define enableMajorBranchDeploymentCheck: true in config/.sfdx-hardis.yml to see the result of
+#   each branch in the VS Code DevOps Pipeline
+# More info at https://sfdx-hardis.cloudity.com/salesforce-devops-setup-major-branch-check/
+
+on:
+  schedule:
+    - cron: "0 1 * * *" # Every night at 1am UTC
+  workflow_dispatch:
+
+name: Check Major Branch Deployment (sfdx-hardis)
+permissions: read-all
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  list_major_branches:
+    runs-on: ubuntu-latest
+    name: List major branches
+    permissions:
+      contents: read
+    outputs:
+      branches: ${{ steps.list.outputs.branches }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      # A branch config file is named after its branch, with / replaced by __ (release/uat -> release__uat)
+      - name: List major branches from config/branches
+        id: list
+        run: |
+          branches="[]"
+          for file in config/branches/.sfdx-hardis.*.yml; do
+            [ -f "$file" ] || continue
+            name="$(basename "$file")"
+            name="${name#.sfdx-hardis.}"
+            name="${name%.yml}"
+            branch="${name//__//}"
+            branches=$(echo "$branches" | jq -c --arg b "$branch" '. + [$b]')
+          done
+          echo "Major branches: $branches"
+          echo "branches=$branches" >> "$GITHUB_OUTPUT"
+
+  check_major_branch:
+    needs: list_major_branches
+    if: ${{ needs.list_major_branches.outputs.branches != '[]' }}
+    strategy:
+      fail-fast: false # One org that cannot be deployed must not hide the result of the others
+      matrix:
+        branch: ${{ fromJSON(needs.list_major_branches.outputs.branches) }}
+    runs-on: ubuntu-latest
+    # Job timeout, in minutes: define the repository variable CI_JOB_TIMEOUT_MINUTES to change it.
+    timeout-minutes: ${{ fromJSON(vars.CI_JOB_TIMEOUT_MINUTES || '150') }}
+    # Job runs in sfdx-hardis docker image, that includes Salesforce CLI and all required plugins & dependencies.
+    # Images are also mirrored on Docker Hub: hardisgroupcom/sfdx-hardis-ubuntu:latest
+    container: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
+    # The VS Code DevOps Pipeline finds the check of a branch by this name: keep "Major Branch" and the branch in it
+    name: Check Major Branch Deployment (${{ matrix.branch }})
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ matrix.branch }}
+          fetch-depth: 0
+      - name: Login & Check major branch deployment
+        env:
+          SFDX_CLIENT_ID_INTEGRATION: ${{ secrets.SFDX_CLIENT_ID_INTEGRATION}}
+          SFDX_CLIENT_KEY_INTEGRATION: ${{ secrets.SFDX_CLIENT_KEY_INTEGRATION}}
+          SFDX_CLIENT_ID_UAT: ${{ secrets.SFDX_CLIENT_ID_UAT}}
+          SFDX_CLIENT_KEY_UAT: ${{ secrets.SFDX_CLIENT_KEY_UAT}}
+          SFDX_CLIENT_ID_PREPROD: ${{ secrets.SFDX_CLIENT_ID_PREPROD}}
+          SFDX_CLIENT_KEY_PREPROD: ${{ secrets.SFDX_CLIENT_KEY_PREPROD}}
+          SFDX_CLIENT_ID_MAIN: ${{ secrets.SFDX_CLIENT_ID_MAIN}}
+          SFDX_CLIENT_KEY_MAIN: ${{ secrets.SFDX_CLIENT_KEY_MAIN}}
+          # Secrets read by replacementRules (secret: NAME): NAME_<BRANCH> is read first, then NAME
+          # PAYMENT_API_PASSWORD_UAT: ${{ secrets.PAYMENT_API_PASSWORD_UAT }}
+          SFDX_AUTH_URL_TECHNICAL_ORG: ${{ secrets.SFDX_AUTH_URL_TECHNICAL_ORG }}
+          SFDX_DEPLOY_WAIT_MINUTES: ${{ vars.SFDX_DEPLOY_WAIT_MINUTES || '120' }}
+          SFDX_TEST_WAIT_MINUTES: ${{ vars.SFDX_TEST_WAIT_MINUTES || '120' }}
+          CI_COMMIT_REF_NAME: ${{ matrix.branch }} # The checked major branch
+          ORG_ALIAS: ${{ matrix.branch }}
+          CONFIG_BRANCH: ${{ matrix.branch }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FORCE_COLOR: "1"
+        run: |
+          echo "Check deployment of major branch \"$CI_COMMIT_REF_NAME\" to its org"
+          # The job runs in a container, where git runs as another user than the owner of the checkout
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          sf hardis:auth:login
+          sf hardis:project:deploy:smart --check --major-branch-check
+
+      # Upload sfdx-hardis reports, including the complete deployment result JSON
+      - name: Archive sfdx-hardis reports
+        if: always() # Also when the job was stopped by the timeout
+        uses: actions/upload-artifact@v4
+        with:
+          name: sfdx-hardis reports ${{ strategy.job-index }}
+          path: hardis-report

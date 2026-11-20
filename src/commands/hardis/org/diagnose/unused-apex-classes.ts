@@ -14,12 +14,21 @@ import sortArray from '../../../../common/utils/sortArray.js';
 import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class DiagnoseUnusedApexClasses extends SfCommand<any> {
   public static title = 'Detect unused Apex classes in an org';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'unused-apex-classes',
+      title: 'Unused Apex classes',
+      description: 'One row per batch, queueable or schedulable Apex class, with the date of its latest job and its creation date and author, so you can spot the ones not run for a long time.',
+    },
+  ];
 
   public static description = `List all async Apex classes (Batch,Queueable,Schedulable) that has not been called for more than 365 days.
   
@@ -134,7 +143,7 @@ In agent mode, the command runs fully automatically. The inactivity threshold de
       status: this.statusCode,
       summary: summary,
       asyncClassList: this.asyncClassList,
-      csvLogFile: this.outputFile,
+      csvLogFile: this.outputFilesRes?.csvFile ?? this.outputFile,
       xlsxLogFile: this.outputFilesRes.xlsxFile,
     };
   }

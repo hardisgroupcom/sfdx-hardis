@@ -1,5 +1,5 @@
 import { Connection } from '@salesforce/core';
-import { soqlQuery } from './apiUtils.js';
+import { isFieldOnObject, soqlQuery } from './apiUtils.js';
 import { t } from './i18n.js';
 import { markRowSensitiveValues } from './anonymizeUtils.js';
 
@@ -243,15 +243,6 @@ function buildActionItems(
   return Object.values(groups).sort((a, b) => order[a.severity] - order[b.severity]);
 }
 
-/* Describe the sObject and confirm the field exists; on describe failure assume absent so no query crashes */
-async function isFieldOnObject(conn: Connection, sobjectName: string, fieldName: string): Promise<boolean> {
-  try {
-    const describeResult = await conn.sobject(sobjectName).describe();
-    return (describeResult.fields || []).some((f: any) => f.name === fieldName);
-  } catch {
-    return false;
-  }
-}
 
 /*
  * Latest successful verification per user over the lookback window. Chunked because a single

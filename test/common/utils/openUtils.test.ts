@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { buildLauncher } from '../../../src/common/utils/openUtils.js';
+import { buildLauncher, open } from '../../../src/common/utils/openUtils.js';
 
 describe('openUtils.buildLauncher', () => {
   it('uses cmd.exe start on Windows and keeps ampersands untouched inside the quotes', () => {
@@ -25,5 +25,13 @@ describe('openUtils.buildLauncher', () => {
     expect(launcher.args[0]).to.equal('-c');
     expect(launcher.args[1]).to.contain('wslview');
     expect(launcher.args[2]).to.equal('https://example.com');
+  });
+});
+
+describe('openUtils.open during the tests', () => {
+  it('runs with NO_OPEN set by the mocha setup, so nothing opens on the desktop', async () => {
+    expect(process.env.NO_OPEN).to.equal('true');
+    // Would start the default application of .xlsx files without NO_OPEN
+    await open('report-that-must-not-open.xlsx');
   });
 });

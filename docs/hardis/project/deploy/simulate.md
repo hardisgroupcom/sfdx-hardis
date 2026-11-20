@@ -1,3 +1,7 @@
+---
+title: "hardis:project:deploy:simulate - Simulate the deployment of metadata in an org prompted to the user. Used by VS Code extension."
+description: "Simulates the deployment of Salesforce metadata to a target org, primarily used by the VS Code Extension for quick validation."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:deploy:simulate
 
@@ -47,18 +51,24 @@ In agent mode:
 - `--target-org` is required; an error is thrown if not provided.
 
 
+## Screenshots
+
+![The deployment of one Apex class simulated in the org, as the extension does from the editor](../../../assets/images/commands/project/deploy/simulate.webp)
+
+_The deployment of one Apex class simulated in the org, as the extension does from the editor_
+
 ## Parameters
 
-| Name              |  Type   | Description                                                   | Default | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir         | option  | undefined                                                     |         |          |         |
-| json              | boolean | Format output as json.                                        |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |         |          |         |
-| source-dir<br/>-f | option  | Source file or directory to simulate the deployment           |         |          |         |
-| target-org<br/>-o | option  | undefined                                                     |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+| Name              |  Type   | Description                                                                                                  | Default | Required | Options |
+|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                                         |         |          |         |
+| json              | boolean | Format output as json.                                                                                       |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| source-dir<br/>-f | option  | Source file or directory to simulate the deployment                                                          |         |   true   |         |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

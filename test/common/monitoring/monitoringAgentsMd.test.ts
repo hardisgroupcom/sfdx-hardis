@@ -14,7 +14,7 @@ import {
 } from '../../../src/common/monitoring/monitoringAgentsMd.js';
 import { isRepositoryUrl } from '../../../src/common/monitoring/monitoringDeploymentRepository.js';
 import { GitProvider } from '../../../src/common/gitProvider/index.js';
-import { getMonitoringDisable } from '../../../src/common/notifProvider/notificationConfig.js';
+import { getMonitoringDisable } from '../../../src/common/notifProvider/utils/notificationConfig.js';
 import { removeFromConfigFile, setInConfigFile } from '../../../src/config/index.js';
 
 const block = `${AGENTS_MD_START_MARKER}\nsfdx-hardis content v2\n${AGENTS_MD_END_MARKER}\n`;

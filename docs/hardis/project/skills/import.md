@@ -1,3 +1,7 @@
+---
+title: "hardis:project:skills:import - Import Skills"
+description: "Imports Claude Code skills, agents, and rules from a remote git repository into the current project."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:skills:import
 
@@ -32,6 +36,16 @@ Key functionalities:
 </details>
 
 
+## Screenshots
+
+![Type the URL of the git repository that holds the skills](../../../assets/images/commands/project/skills/import-1.webp)
+
+_Type the URL of the git repository that holds the skills_
+
+![The Helios Energy skills, agents and rules copied into the .claude folder of the project](../../../assets/images/commands/project/skills/import.webp)
+
+_The Helios Energy skills, agents and rules copied into the .claude folder of the project_
+
 ## Parameters
 
 | Name         |  Type   | Description                                                                                                      | Default | Required | Options |
@@ -39,7 +53,7 @@ Key functionalities:
 | addon        | boolean | Persist the repository URL to the skillsRepoAddOns array config property instead of the main skillsRepo property |         |          |         |
 | agent        | boolean | Run in non-interactive mode for agents and automation                                                            |         |          |         |
 | debug<br/>-d | boolean | Activate debug mode (more logs)                                                                                  |         |          |         |
-| flags-dir    | option  | undefined                                                                                                        |         |          |         |
+| flags-dir    | option  | Import flag values from a directory.                                                                             |         |          |         |
 | json         | boolean | Format output as json.                                                                                           |         |          |         |
 | repo<br/>-r  | option  | Git repository URL containing .claude/ skills, agents, and rules to import                                       |         |          |         |
 | skipauth     | boolean | Skip authentication check when a default username is required                                                    |         |          |         |

@@ -1,3 +1,7 @@
+---
+title: "hardis:project:clean:xml - Clean retrieved empty items in dx sources"
+description: "Remove XML elements using Glob patterns and XPath expressions"
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:clean:xml
 
@@ -30,13 +34,19 @@ In agent mode:
 
   
 
+## Screenshots
+
+![The activity panel removed from the Lightning pages of the Helios project, with an XPath given on the command line](../../../assets/images/commands/project/clean/xml.webp)
+
+_The activity panel removed from the Lightning pages of the Helios project, with an XPath given on the command line_
+
 ## Parameters
 
 | Name               |  Type   | Description                                                                                                         |                 Default                 | Required | Options |
 |:-------------------|:-------:|:--------------------------------------------------------------------------------------------------------------------|:---------------------------------------:|:--------:|:-------:|
 | agent              | boolean | Run in non-interactive mode for agents and automation                                                               |                                         |          |         |
 | debug<br/>-d       | boolean | Activate debug mode (more logs)                                                                                     |                                         |          |         |
-| flags-dir          | option  | undefined                                                                                                           |                                         |          |         |
+| flags-dir          | option  | Import flag values from a directory.                                                                                |                                         |          |         |
 | folder<br/>-f      | option  | Root folder                                                                                                         |                force-app                |          |         |
 | globpattern<br/>-p | option  | Glob pattern to find files to clean. Ex: /**/*.flexipage-meta.xml                                                   |                                         |          |         |
 | json               | boolean | Format output as json.                                                                                              |                                         |          |         |

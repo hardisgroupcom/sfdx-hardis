@@ -1,0 +1,4 @@
+command: hardis:project:action:reorder
+run: sf hardis:project:action:reorder --scope project --when post-deploy --action-id 8e1a4b6c-2d3f-4c95-a7b8-9f0e1d2c3b4a --position 1
+org: none
+caption: The crew notification now runs first among the post-deployment actions

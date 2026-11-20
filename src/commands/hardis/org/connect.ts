@@ -3,8 +3,8 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { execCommand, isCI, uxLog } from '../../../common/utils/index.js';
-import { promptOrg } from '../../../common/utils/orgUtils.js';
+import { isCI, uxLog } from '../../../common/utils/index.js';
+import { openOrgInBrowser, promptOrg } from '../../../common/utils/orgUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { t } from '../../../common/utils/i18n.js';
 
@@ -101,9 +101,8 @@ In agent mode:
         description: t('launchSalesforceOrgInYourDefaultWebBrowser'),
       });
       if (openRes.value === true) {
-        const openCommand = `sf org open --target-org ${org.username}`;
         uxLog("action", this, c.cyan(t('openingOrg', { orgUsername: org.username })));
-        await execCommand(openCommand, this, { fail: true, output: true, debug: this.debugMode });
+        await openOrgInBrowser(this, { username: org.username, debug: this.debugMode });
       }
     }
 

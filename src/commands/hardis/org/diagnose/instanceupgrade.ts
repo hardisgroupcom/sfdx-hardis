@@ -114,14 +114,14 @@ In agent mode, the command runs fully automatically with no interactive prompts.
     const nextUpgradeDate = dateHelper(orgInfo?.maintenanceNextUpgrade?.plannedStartTime);
     const nextMajorUpgradeDateStr = nextUpgradeDate.format("ll");
     const today = dateHelper();
-    const daysBeforeUpgrade = today.diff(nextUpgradeDate, 'days');
+    const daysBeforeUpgrade = nextUpgradeDate.diff(today, 'days');
 
     // Manage notifications
     const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
     const notifButtons = await getNotificationButtons();
     let notifSeverity: NotifSeverity = 'log';
     const notifText = `Salesforce instance **${instanceName}** of ${orgMarkdown} will be upgraded on **${nextMajorUpgradeDateStr}** (**${daysBeforeUpgrade} days**) to ${orgInfo?.maintenanceNextUpgrade?.name}`;
-    const logText = `Salesforce instance ${instanceName} of ${orgMarkdown} will be upgraded on ${nextMajorUpgradeDateStr} (${daysBeforeUpgrade} days) to ${orgInfo?.maintenanceNextUpgrade?.name}`;
+    const logText = `Salesforce instance ${instanceName} of ${flags['target-org']?.getConnection()?.instanceUrl} will be upgraded on ${nextMajorUpgradeDateStr} (${daysBeforeUpgrade} days) to ${orgInfo?.maintenanceNextUpgrade?.name}`;
 
     // Change severity according to number of days
     if (daysBeforeUpgrade <= 15) {

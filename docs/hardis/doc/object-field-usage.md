@@ -1,3 +1,7 @@
+---
+title: "hardis:doc:object-field-usage"
+description: "Analyzes how populated fields are for a specific Salesforce object."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:doc:object-field-usage
 
@@ -33,18 +37,42 @@ In agent mode:
 - The API usage confirmation prompt is skipped (proceeds automatically).
 
 
+## Screenshots
+
+![Pick the objects whose fields are measured](../../assets/images/commands/doc/object-field-usage-1.webp)
+
+_Pick the objects whose fields are measured_
+
+![How many Installation__c and Panel_Batch__c records fill each custom field, with the most and least populated fields](../../assets/images/commands/doc/object-field-usage.webp)
+
+_How many Installation__c and Panel_Batch__c records fill each custom field, with the most and least populated fields_
+
+- **(1)** The custom field the fewest records use, a candidate for cleanup
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Field usage
+
+One Excel workbook with a sheet per analyzed object (one row per field, with its record count and fill rate), a summary sheet and the fields that could not be analyzed; each sheet is also written as a CSV file.
+
+Files: `object-field-usage-*.csv`, `xls/object-field-usage-*.xlsx`
+
+![Field usage report in Excel](../../assets/images/commands/doc/object-field-usage-report-object-field-usage.webp)
+
 ## Parameters
 
 | Name                   |  Type   | Description                                                                                                                                                                                                                                                                                                                                                                                                                                 | Default | Required | Options |
 |:-----------------------|:-------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent                  | boolean | Run in non-interactive mode for agents and automation                                                                                                                                                                                                                                                                                                                                                                                       |         |          |         |
 | fields<br/>-f          | option  | Comma-separated API names of fields to analyze (requires exactly one --objects value)                                                                                                                                                                                                                                                                                                                                                       |         |          |         |
-| flags-dir              | option  | undefined                                                                                                                                                                                                                                                                                                                                                                                                                                   |         |          |         |
+| flags-dir              | option  | Import flag values from a directory.                                                                                                                                                                                                                                                                                                                                                                                                        |         |          |         |
 | include-non-filterable | boolean | Also compute the population rate of non-filterable fields (e.g. Long Text Area, Rich Text). Their values cannot be counted server-side, so the command pages through the records and counts non-empty values, which can be slow on objects with many records.                                                                                                                                                                               |         |          |         |
 | json                   | boolean | Format output as json.                                                                                                                                                                                                                                                                                                                                                                                                                      |         |          |         |
 | objects<br/>-o         | option  | Comma-separated API names of the sObjects to analyze (e.g. Account,CustomObject__c). To restrict the analysis to specific fields, use the Object:Field1,Field2 syntax with groups separated by spaces (e.g. "Contact:Name,Email Account:MyField__c"). Append (WITH_SUM) to a numeric field to add a column with the sum of its values (e.g. "Opportunity:Amount(WITH_SUM)"). If omitted, an interactive prompt will list available objects. |         |          |         |
 | skipauth               | boolean | Skip authentication check when a default username is required                                                                                                                                                                                                                                                                                                                                                                               |         |          |         |
-| target-org<br/>-o      | option  | undefined                                                                                                                                                                                                                                                                                                                                                                                                                                   |         |          |         |
+| target-org<br/>-o      | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set.                                                                                                                                                                                                                                                                                                                                |         |   true   |         |
 | websocket              | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                                                                                                                                                                                                                                                                                   |         |          |         |
 
 ## Examples

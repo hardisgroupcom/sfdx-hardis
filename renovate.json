@@ -3,6 +3,11 @@
     "extends": [
         "config:base"
     ],
+    "minimumReleaseAge": "14 days",
+    "internalChecksFilter": "strict",
+    "vulnerabilityAlerts": {
+        "minimumReleaseAge": null
+    },
     "packageRules": [
         {
             "matchPackagePatterns": [

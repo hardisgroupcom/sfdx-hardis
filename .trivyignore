@@ -260,13 +260,6 @@ CVE-2026-27145
 # Go stdlib v1.26.3 in the pebble binary of the Ubuntu base image (usr/bin/pebble): os.Root symlink-following vulnerability, fixed in Go 1.25.12 / 1.26.5 / 1.27.0-rc.2. Exploiting it needs the binary to sandbox untrusted filesystem paths with os.Root; pebble is Canonical's service manager and is never invoked by sfdx-hardis (one-shot CI/CD CLI), so the code path is unreachable. Depends on the upstream base image rebuild. Added 2026-07-11.
 CVE-2026-39822
 
-# https://avd.aquasec.com/nvd/cve-2026-50195
-# containerd 2.2.2-0ubuntu1 (from the docker.io apt package in the Ubuntu image): CRI checkpoint import image-cache poisoning on shared Kubernetes nodes (CVSS 8.8). The attack requires a multi-tenant k8s node, pod-creation rights, and CRIU checkpoint/restore enabled. sfdx-hardis runs containerd as a one-shot CI/CD CLI with no CRI plugin and no shared-node tenancy, so it is not exploitable. No fixed version published for Ubuntu 26.04 yet (fix lands in containerd 2.2.4-3). Added 2026-06-24.
-CVE-2026-50195
-CVE-2026-53488
-CVE-2026-53489
-CVE-2026-53492
-
 # https://avd.aquasec.com/nvd/cve-2026-54466
 # websocket-driver 0.7.4 (message corruption via abuse of protocol length headers, CRITICAL). sfdx-hardis own tree is already pinned to 0.7.5 in yarn.lock; the residual 0.7.4 comes from the globally npm-installed Salesforce CLI (usr/lib/node_modules/@salesforce/cli/node_modules/websocket-driver), which our yarn resolutions cannot reach, so it is not remediable from this repo; the Salesforce CLI team will pick up the upgrade. websocket-driver is used as a streaming client, not a server parsing untrusted frames, so harmless for sfdx-hardis usage. Added 2026-07-17.
 CVE-2026-54466
@@ -368,7 +361,7 @@ CVE-2026-56862
 
 # https://avd.aquasec.com/nvd/cve-2026-73566 (GHSA-r292-9mhp-454m)
 # node-tar: the mapHas helper behind filesFilter recurses once per path segment, so a crafted long-path header blows the stack and kills the process (DoS, HIGH). Fixed in 7.5.21.
-# sfdx-hardis own tree is already pinned to tar 7.5.21 in yarn.lock. The copies reported in the images are the ones npm bundles: 7.5.16 in the npm shipped with the Node 24 runtime (node:24-alpine for the Alpine image, NodeSource for the Ubuntu image) and 7.5.19 in the npm shrinkwrapped inside @salesforce/cli. npm@12.0.2, the current latest, still bundles 7.5.19, so there is no version to upgrade to from this repo and our yarn resolutions cannot reach a globally npm-installed package.
+# sfdx-hardis own tree is already pinned to tar 7.5.21 in yarn.lock. The copy reported in the images is the one npm bundles inside @salesforce/cli: 7.5.19 in its shrinkwrapped npm. The npm shipped with the Node 24 runtime (node:24-alpine3.23 for the Alpine image, NodeSource for the Ubuntu image) bundles tar 7.5.22 since Node 24.22.1, which both images now require. npm@12.0.2, the current latest, still bundles 7.5.19, so there is no version to upgrade to from this repo and our yarn resolutions cannot reach a globally npm-installed package.
 # The vulnerable path needs tar.t() or tar.x() to be called with a non-empty member-selection list; npm extracts whole package tarballs with no file list, so filesFilter never runs. Remove once npm ships a bundled tar >= 7.5.21. Added 2026-08-22.
 CVE-2026-73566
 
@@ -424,3 +417,73 @@ CVE-2026-19534
 # sfdx-hardis own tree is patched: yarn.lock resolves undici to 8.10.2. The 7.29.0 and 8.9.0 copies left in both images belong to the npm-shrinkwrapped @salesforce/cli and its @jsforce/jsforce-node.
 # Only applies to code that hands a function-valued connect or tls option to BalancedPool. Client, Pool and Agent are not affected, default hostname and chain validation stays in place, and neither sfdx-hardis nor @jsforce/jsforce-node instantiates BalancedPool. Remove once @salesforce/cli ships undici 7.29.1 / 8.10.2. Added 2026-10-02.
 CVE-2026-84961
+
+# https://avd.aquasec.com/nvd/cve-2026-93748
+# http-cache-semantics: information disclosure via the max-stale directive (HIGH), advisory GHSA-ch52-4w7c-c8xp. sfdx-hardis own tree is no longer reported: yarn.lock resolves http-cache-semantics to 4.3.0, so the osv-scanner.toml ignore was removed on 2026-10-09. This entry stays for the 4.2.0 copies that the images may still hold.
+# The flaw lets a client read cached responses of other users from a SHARED cache. Here it is reached through @salesforce/source-deploy-retrieve > got > cacheable-request, a private client-side cache of a single-user CLI process: no response of another user is ever stored in it. Remove once a fixed version ships. Added 2026-10-03.
+CVE-2026-93748
+
+# https://avd.aquasec.com/nvd/cve-2026-93687
+# braces: stack exhaustion when it expands an attacker-supplied deeply nested pattern (HIGH), GHSA-vfj7-8cjw-p6xm, withdrawn by GitHub on 2026-10-23 so its osv-scanner.toml ignore was removed. No fixed release exists (3.0.3, the latest, is affected).
+# In the images, braces 3.0.3 sits in the global node_modules and in the npm-shrinkwrapped @salesforce/cli, as a dependency of micromatch-based file globbing. It only expands glob patterns written in the project or in the tools themselves, never a pattern received from the network. Remove once a fixed version ships. Added 2026-10-03.
+CVE-2026-93687
+
+# https://avd.aquasec.com/nvd/cve-2026-97058 (GHSA-hp3w-g68c-fv3c)
+# sprintf-js 1.0.3: an unbounded precision specifier in the format string exhausts memory (DoS, MEDIUM). No fixed release exists.
+# It only comes in through argparse 1.x, required by js-yaml 3 (gray-matter in the installed plugin and images, @istanbuljs/load-nyc-config in dev tooling). argparse only formats its own fixed help and error strings, and js-yaml 3 loads argparse in its command line binary only, never in the library code we call. Remove once a fixed version ships. Added 2026-10-06.
+CVE-2026-97058
+
+# https://avd.aquasec.com/nvd/cve-2026-97031 + cve-2026-78667 + cve-2026-78669
+# Go stdlib v1.26.7 compiled into the pebble binary of the Ubuntu base image (usr/bin/pebble), fixed in Go 1.26.9 / 1.27.2. Three findings from the same batch:
+#   CVE-2026-97031 crypto/tls DoS: a client sending several ECH outer extension references exhausts the memory of a TLS server
+#   CVE-2026-78667 net/http DoS: a Range header with many small ranges burns CPU in FileServer, ServeContent and ServeFile
+#   CVE-2026-78669 net/http DoS: an HTTP/2 peer opening many streams then sending many small SETTINGS frames burns CPU, in a client or a server
+# Same situation as the pebble entries above: the Go runtime is statically linked into a binary Canonical ships in ubuntu:latest, so nothing in this repo can upgrade it. It goes away when the base image is rebuilt with a patched Go. All three need the binary to hold a network connection; pebble is Canonical's service manager, never invoked by sfdx-hardis (one-shot CI/CD CLI), so no TLS server, no HTTP file server and no HTTP/2 connection ever exist. Added 2026-10-09.
+CVE-2026-97031
+CVE-2026-78667
+CVE-2026-78669
+
+# https://avd.aquasec.com/nvd/cve-2026-111943
+# Go stdlib v1.27.1 compiled into the pebble binary of the Ubuntu base image (usr/bin/pebble), fixed in Go 1.26.10 / 1.27.3. crypto/x509 man-in-the-middle through untrusted intermediate certificates, when the system trust store was not updated.
+# Same situation as the pebble entries above: the Go runtime is statically linked into a binary Canonical ships in ubuntu:latest, so nothing in this repo can upgrade it. It goes away when the base image is rebuilt with a patched Go. Exploiting it needs the binary to verify a TLS certificate chain; pebble is Canonical's service manager, never invoked by sfdx-hardis (one-shot CI/CD CLI), so it never opens a TLS connection. Added 2026-10-22.
+CVE-2026-111943
+
+# https://avd.aquasec.com/nvd/cve-2026-109869 (GHSA-xjj6-f33q-929c)
+# undici: fetch() crashes the Node process when a malicious server answers with more than five content codings and closes the connection before the body (DoS, HIGH). Fixed in 6.29.1, 7.30.1 and 8.12.2.
+# sfdx-hardis own tree is patched: yarn.lock resolves undici to 8.12.2. The copies left in both images (6.28.0, 7.30.0, 8.11.2) sit in the npm bundled with the Node runtime and inside the npm-shrinkwrapped @salesforce/cli (its own undici, its bundled npm and @jsforce/jsforce-node).
+# It needs a hostile HTTP server: these copies only talk to Salesforce and to the npm registry, and the worst case is a crashed one-shot CI job. Remove once @salesforce/cli and npm ship the fixed versions. Added 2026-10-26.
+CVE-2026-109869
+
+# https://avd.aquasec.com/nvd/cve-2023-54404 (GHSA-mrhx-c7xc-m3w5)
+# zod: validating a huge array, set or map against a schema without a size bound collects one issue per failing element until the process runs out of memory (DoS, HIGH). OSV lists every version up to 4.6.7 as affected: 4.6.6 only checks explicit size bounds first.
+# zod 4.4.3 is pinned by sfdx-git-delta (latest 6.45.1), installed as an sf plugin in both images. sfdx-git-delta validates its own command configuration with it, never input received from the network. Remove once sfdx-git-delta ships a fixed zod. Added 2026-10-26.
+CVE-2023-54404
+
+# https://avd.aquasec.com/nvd/cve-2026-109383 + cve-2026-109829 + cve-2026-87018
+# undici, three findings from the same October 2026 batch, fixed in 6.29.1, 7.30.1 and 8.12.2:
+#   CVE-2026-109383 the Agent drops a caller-supplied tls.checkServerIdentity callback (HIGH)
+#   CVE-2026-109829 cache poisoning when an originless Agent composes the redirect and cache interceptors with a shared store (HIGH, 7.x and 8.x only)
+#   CVE-2026-87018 process crash when a TLS 1.2 server renegotiates with a certificate for another host (DoS, HIGH)
+# sfdx-hardis own tree is patched: yarn.lock resolves undici to 8.12.2. The copies left in both images (6.28.0 or 6.29.0, 7.30.0, 8.11.2) sit in the npm bundled with the Node runtime and inside the npm-shrinkwrapped @salesforce/cli (its own undici, its bundled npm and @jsforce/jsforce-node). The latest npm (11.x and 12.2.1) still bundles undici 6.29.0, and @salesforce/cli latest still pins the affected versions, so there is nothing to upgrade to yet.
+# None of these copies passes a checkServerIdentity callback or uses the cache interceptor (checked in @salesforce/cli 2.155.8 and npm 11), so Node's default hostname and chain checks still apply and no response cache exists. The renegotiation crash needs a hostile TLS server with a CA-trusted certificate and only ends a one-shot CI job. Remove once @salesforce/cli and npm ship the fixed versions. Added 2026-10-28.
+CVE-2026-109383
+CVE-2026-109829
+CVE-2026-87018
+
+# https://avd.aquasec.com/nvd/cve-2026-93753 (GHSA-gcqx-w48m-w2h4)
+# deepmerge 4.3.1: mergeObject() does not filter __proto__ keys, so a crafted source object can poison the prototype of the merged result (LOW). No fixed release exists: 4.3.1 is the latest version.
+# It only comes in through bitbucket 2.12.0 (latest), which uses it to merge its endpoint defaults with the request options that sfdx-hardis builds itself, restricted to plain objects. API responses never go through it. Remove once deepmerge ships a fix. Added 2026-10-28.
+CVE-2026-93753
+
+# https://avd.aquasec.com/nvd/cve-2026-118764 (GHSA-g3hv-75wg-m249)
+# minimatch < 11.0.1: crafted pattern with optimizationLevel >= 2 burns CPU and memory (DoS only). The patterns sfdx-hardis matches come from its own code and the project's own config, never from an attacker. Fixed only in 11.x, two majors past what its dependencies declare. Remove once they move to minimatch 11. Added 2026-10-31.
+CVE-2026-118764
+
+# https://avd.aquasec.com/nvd/cve-2026-118773 (GHSA-3g3m-2fjr-6pw4)
+# glob 9.0.0 to 14.0.1: an aborted async walk keeps reading directories (DoS only). sfdx-hardis never passes a signal to glob. The fix is glob 14, whose matching changes need their own upgrade. Added 2026-10-31.
+CVE-2026-118773
+
+# https://avd.aquasec.com/nvd/cve-2026-97054 (GO-2026-6859)
+# Go stdlib v1.27.3 compiled into the pebble binary of the Ubuntu base image (usr/bin/pebble), fixed in Go 1.26.11 / 1.27.4. net/http DoS: when MaxBytesReader's limit is exceeded, the "Connection: close" header is set without synchronization and can crash an HTTP/1 server whose handler reads the body while writing headers.
+# Same situation as the pebble entries above: the Go runtime is statically linked into a binary Canonical ships in ubuntu:latest (last pushed 2026-11-12, pebble still built with Go 1.27.3), so nothing in this repo can upgrade it. It goes away when the base image is rebuilt with a patched Go. It needs the binary to run an HTTP server; pebble is Canonical's service manager, never invoked by sfdx-hardis (one-shot CI/CD CLI), so no HTTP server ever exists. Added 2026-11-19.
+CVE-2026-97054

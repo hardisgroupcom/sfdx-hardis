@@ -1,3 +1,7 @@
+---
+title: "hardis:project:deploy:validate"
+description: "sfdx-hardis wrapper for sf project deploy validate that displays tips to solve deployment errors."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:deploy:validate
 
@@ -6,6 +10,8 @@
 sfdx-hardis wrapper for **sf project deploy validate** that displays tips to solve deployment errors.
 
 Note: Use **--json** argument to have better results
+
+The validation always runs Apex tests and never saves anything in the org. Salesforce intends it for production orgs: on a sandbox, which runs no test by default, use [hardis:project:deploy:start](https://sfdx-hardis.cloudity.com/hardis/project/deploy/start/) with `--dry-run --test-level RunLocalTests`.
 
 [![Assisted solving of Salesforce deployments errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](https://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
 
@@ -25,6 +31,8 @@ Post-deployment actions are never run when the metadata deployment failed: they 
 
 After every action runs, its result (✅ success, ❌ failed, 👋 manual) is recorded in a dedicated **"Deployment Actions"** PR comment - ordered by org (integration → uat → preprod → prod) - regardless of `runOnlyOnceByOrg`.
 
+When several Pull Requests of the same deployment carry an identical action (same type, phase, user and parameters), it runs once and the other Pull Requests record it as done: see [Identical actions run once](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#identical-actions-run-once).
+
 If the commands are not the same depending on the target org, you can define them into **config/branches/.sfdx-hardis-BRANCHNAME.yml** instead of root **config/.sfdx-hardis.yml**
 
 You can also keep a single definition and restrict it with `includeTargetBranches` or `excludeTargetBranches` (use `dev-sandboxes` for developer sandboxes).
@@ -33,26 +41,32 @@ Example:
 
 ```yaml
 commandsPreDeploy:
-  - id: knowledgeUnassign
+  - id: 32e7e3d7-eeeb-4162-ae9e-a4013e8439e1
     label: Remove KnowledgeUser right to the user who has it
     command: sf data update record --sobject User --where "UserPermissionsKnowledgeUser='true'" --values "UserPermissionsKnowledgeUser='false'" --json
-  - id: knowledgeAssign
+  - id: bf114a50-8f40-4ac2-bf2b-910139292f76
     label: Assign Knowledge user to the deployment user
     command: sf data update record --sobject User --where "Username='deploy.github@myclient.com'" --values "UserPermissionsKnowledgeUser='true'" --json
 
 commandsPostDeploy:
-  - id: knowledgeUnassign
+  - id: ddd0d387-0b84-4ce5-8b0a-a9a370d2ece3
     label: Remove KnowledgeUser right to the user who has it
     command: sf data update record --sobject User --where "UserPermissionsKnowledgeUser='true'" --values "UserPermissionsKnowledgeUser='false'" --json
-  - id: knowledgeAssign
+  - id: 25891b5b-6053-4f91-9416-037e3e3f6e46
     label: Assign Knowledge user to desired username
     command: sf data update record --sobject User --where "Username='admin-yser@myclient.com'" --values "UserPermissionsKnowledgeUser='true'" --json
-  - id: someActionToRunJustOneTime
+  - id: a807b752-71dd-4345-a115-413ccd3dbbcc
     label: And to run only if deployment is success
     command: sf sfdmu:run ...
     context: process-deployment-only
     runOnlyOnceByOrg: true
 ```
+
+### Plugin events
+
+Before anything reads the local sources, the installed sf plugins that listen to `sfdx-hardis:validation-start` are called, so they can prepare the sources (for example recompose decomposed metadata).
+
+As soon as Salesforce returns the result of the validation, the installed sf plugins that listen to `sfdx-hardis:validation-done` receive it, with the path of the Apex code coverage file, before the code coverage check. [More info](https://sfdx-hardis.cloudity.com/sfdx-hardis-plugins/#react-to-sfdx-hardis-events)
 
 ### Agent Mode
 
@@ -66,35 +80,42 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The Helios sources validated without being deployed, with the deployment actions and Pull Request comments of sfdx-hardis around it](../../../assets/images/commands/project/deploy/validate.webp)
+
+_The Helios sources validated without being deployed, with the deployment actions and Pull Request comments of sfdx-hardis around it_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
 ## Parameters
 
-| Name                     |  Type   | Description                                           | Default | Required | Options |
-|:-------------------------|:-------:|:------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent                    | boolean | Run in non-interactive mode for agents and automation |         |          |         |
-| api-version<br/>-a       | option  | api-version                                           |         |          |         |
-| async                    | boolean | async                                                 |         |          |         |
-| coverage-formatters      | option  | coverage-formatters                                   |         |          |         |
-| debug                    | boolean | debug                                                 |         |          |         |
-| dry-run                  | boolean | dry-run                                               |         |          |         |
-| flags-dir                | option  | undefined                                             |         |          |         |
-| ignore-conflicts<br/>-c  | boolean | ignore-conflicts                                      |         |          |         |
-| ignore-errors<br/>-r     | boolean | ignore-errors                                         |         |          |         |
-| ignore-warnings<br/>-g   | boolean | ignore-warnings                                       |         |          |         |
-| json                     | boolean | Format output as json.                                |         |          |         |
-| junit                    | boolean | junit                                                 |         |          |         |
-| manifest<br/>-x          | option  | manifest                                              |         |          |         |
-| metadata<br/>-m          | option  | metadata                                              |         |          |         |
-| metadata-dir             | option  | metadata-dir                                          |         |          |         |
-| post-destructive-changes | option  | post-destructive-changes                              |         |          |         |
-| pre-destructive-changes  | option  | pre-destructive-changes                               |         |          |         |
-| purge-on-delete          | boolean | purge-on-delete                                       |         |          |         |
-| results-dir              | option  | results-dir                                           |         |          |         |
-| single-package           | boolean | single-package                                        |         |          |         |
-| source-dir<br/>-d        | option  | source-dir                                            |         |          |         |
-| target-org<br/>-o        | option  | undefined                                             |         |          |         |
-| test-level               | option  | test-level                                            |         |          |         |
-| tests                    | option  | tests                                                 |         |          |         |
-| wait<br/>-w              | option  | wait                                                  |   33    |          |         |
+| Name                     |  Type   | Description                                                                                                  | Default | Required | Options |
+|:-------------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                    | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| api-version<br/>-a       | option  | api-version                                                                                                  |         |          |         |
+| async                    | boolean | async                                                                                                        |         |          |         |
+| coverage-formatters      | option  | coverage-formatters                                                                                          |         |          |         |
+| debug                    | boolean | debug                                                                                                        |         |          |         |
+| flags-dir                | option  | Import flag values from a directory.                                                                         |         |          |         |
+| ignore-warnings<br/>-g   | boolean | ignore-warnings                                                                                              |         |          |         |
+| json                     | boolean | Format output as json.                                                                                       |         |          |         |
+| junit                    | boolean | junit                                                                                                        |         |          |         |
+| manifest<br/>-x          | option  | manifest                                                                                                     |         |          |         |
+| metadata<br/>-m          | option  | metadata                                                                                                     |         |          |         |
+| metadata-dir             | option  | metadata-dir                                                                                                 |         |          |         |
+| post-destructive-changes | option  | post-destructive-changes                                                                                     |         |          |         |
+| pre-destructive-changes  | option  | pre-destructive-changes                                                                                      |         |          |         |
+| purge-on-delete          | boolean | purge-on-delete                                                                                              |         |          |         |
+| results-dir              | option  | results-dir                                                                                                  |         |          |         |
+| single-package           | boolean | single-package                                                                                               |         |          |         |
+| skipauth                 | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| source-dir<br/>-d        | option  | source-dir                                                                                                   |         |          |         |
+| target-org<br/>-o        | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| test-level               | option  | test-level                                                                                                   |         |          |         |
+| tests                    | option  | tests                                                                                                        |         |          |         |
+| wait<br/>-w              | option  | wait                                                                                                         |   33    |          |         |
+| websocket                | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

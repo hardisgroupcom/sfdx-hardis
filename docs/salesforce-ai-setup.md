@@ -209,6 +209,8 @@ Store only model and provider preferences in the config file; keep `OPENAI_API_K
 
 To use Codex directly, set `USE_CODEX_DIRECT=true`.
 
+sfdx-hardis runs the Codex CLI, which is not bundled with it: install it with `npm install -g @openai/codex`. The [with-agents Docker images](installation.md#run-in-cicd-with-a-docker-image) already include it. When the Codex CLI is not found, sfdx-hardis logs a warning and uses the next configured AI provider.
+
 Authentication is resolved in this order:
 
 1. `CODEX_API_KEY` environment variable (recommended for CI/CD).
@@ -218,11 +220,12 @@ Authentication is resolved in this order:
 | Variable               | Description                                                                                         | Default         |
 |------------------------|-----------------------------------------------------------------------------------------------------|-----------------|
 | USE_CODEX_DIRECT       | Set to true to activate direct Codex integration                                                    | `false`         |
-| CODEX_API_KEY          | Codex API key used by `@openai/codex-sdk` (optional if auth cache file exists)                      |                 |
+| CODEX_API_KEY          | Codex API key passed to the Codex CLI (optional if auth cache file exists)                          |                 |
 | CODEX_MODEL            | Codex model used to perform prompts                                                                 | `gpt-5.1-codex` |
 | CODEX_REASONING_EFFORT | Reasoning effort used for Codex calls (`low`, `medium`, `high`, `xhigh`)                            | `high`          |
 | CODEX_BASE_URL         | Base URL for Codex API (for corporate gateways/proxies; falls back to `OPENAI_BASE_URL`)            |                 |
 | CODEX_DEFAULT_HEADERS  | JSON object of default HTTP headers for gateway/proxy auth (falls back to `OPENAI_DEFAULT_HEADERS`) |                 |
+| CODEX_CLI_PATH         | Location of the Codex CLI when it is not in the PATH                                                |                 |
 
 If `CODEX_REASONING_EFFORT` is set to an unsupported value, sfdx-hardis falls back to `high`.
 

@@ -1,0 +1,218 @@
+{
+  "command": "hardis:doc:mkdocs-to-cf",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Cloudflare client info found."
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Managing Zensical local installation..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "pip install zensical mdx_truly_sane_lists",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "pip install zensical mdx_truly_sane_lists",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Generating HTML pages with Zensical..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "zensical build",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "zensical build",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Checking Cloudflare Pages project."
+      }
+    },
+    {
+      "delay": 700,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Project not found. The specified project name does not match any of your existing projects."
+      }
+    },
+    {
+      "delay": 800,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Cloudflare Pages project created: sfdoc-helios-energy"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "{\n  \"id\": \"6f2c0b1e-8d4a-4c3b-9a57-1e0d2b7c9a44\",\n  \"name\": \"sfdoc-helios-energy\",\n  \"subdomain\": \"sfdoc-helios-energy.pages.dev\",\n  \"domains\": [\n    \"sfdoc-helios-energy.pages.dev\"\n  ],\n  \"production_branch\": \"main\",\n  \"created_on\": \"2026-11-17T09:21:07.512Z\"\n}"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Checking Cloudflare Access policy."
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Cloudflare policy created: access-policy-helios-energy."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "{\n  \"id\": \"b83e5d2a-61f0-4f4e-8c19-5a7d0e3f2c10\",\n  \"name\": \"access-policy-helios-energy\",\n  \"decision\": \"allow\",\n  \"include\": [\n    {\n      \"email_domain\": {\n        \"domain\": \"@helios-solar.demo\"\n      }\n    }\n  ],\n  \"require\": [\n    {\n      \"login_method\": {\n        \"id\": \"c19a7e44-2b0d-4d8e-a3f1-7e5b9d6c0a82\"\n      }\n    }\n  ]\n}"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Checking Cloudflare access application."
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Cloudflare access application created: sfdoc-helios-energy.pages.dev."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "{\n  \"id\": \"e4a1d7c3-0b52-4f69-b8e2-9c3a6d1f5b07\",\n  \"name\": \"sfdoc-helios-energy.pages.dev\",\n  \"type\": \"self_hosted\",\n  \"domain\": \"sfdoc-helios-energy.pages.dev\",\n  \"destinations\": [\n    {\n      \"type\": \"public\",\n      \"uri\": \"sfdoc-helios-energy.pages.dev\"\n    },\n    {\n      \"type\": \"public\",\n      \"uri\": \"*.sfdoc-helios-energy.pages.dev\"\n    }\n  ]\n}"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Checking Cloudflare access application policy."
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Access Application sfdoc-helios-energy.pages.dev updated with the policy access-policy-helios-energy."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "{\n  \"id\": \"e4a1d7c3-0b52-4f69-b8e2-9c3a6d1f5b07\",\n  \"name\": \"sfdoc-helios-energy.pages.dev\",\n  \"type\": \"self_hosted\",\n  \"domain\": \"sfdoc-helios-energy.pages.dev\",\n  \"destinations\": [\n    {\n      \"type\": \"public\",\n      \"uri\": \"sfdoc-helios-energy.pages.dev\"\n    },\n    {\n      \"type\": \"public\",\n      \"uri\": \"*.sfdoc-helios-energy.pages.dev\"\n    }\n  ],\n  \"policies\": [\n    {\n      \"id\": \"b83e5d2a-61f0-4f4e-8c19-5a7d0e3f2c10\",\n      \"name\": \"access-policy-helios-energy\"\n    }\n  ]\n}"
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Uploading HTML pages to Cloudflare Pages."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "wrangler pages deploy ./site --project-name=\"sfdoc-helios-energy\" --branch=main",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "wrangler pages deploy ./site --project-name=\"sfdoc-helios-energy\" --branch=main",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

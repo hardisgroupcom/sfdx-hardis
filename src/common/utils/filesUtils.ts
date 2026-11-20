@@ -28,6 +28,7 @@ import { FileDownloader } from './fileDownloader.js';
 import { ApiLimitsManager } from './limitUtils.js';
 import { parseSoqlAndReapplyLimit } from './workaroundUtils.js';
 import { t } from './i18n.js';
+import { reportFileRequestedPath, writeReportFile } from './reportFileWriteUtils.js';
 
 export const filesFolderRoot = path.join('.', 'scripts', 'files');
 
@@ -1447,6 +1448,15 @@ export async function countLinesInFile(file: string) {
   });
 }
 
+/** True when both paths name the same file once resolved, ignoring case on Windows. */
+export function isSamePath(first: string, second: string): boolean {
+  const normalize = (value: string) => {
+    const resolved = path.resolve(value);
+    return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
+  };
+  return normalize(first) === normalize(second);
+}
+
 /**
  * @description This function generates a report path for a given file name prefix.
  * It retrieves the report directory and the current branch name.
@@ -1502,6 +1512,10 @@ export interface ExcelColumnStyle {
 
 export interface ExcelExportOptions {
   fileTitle?: string;
+  // The main report of the command: UIs show it before its other reports
+  mainReport?: boolean;
+  // A secondary report of the command: written and listed, but never opened (only the main report opens)
+  noOpen?: boolean;
   csvFileTitle?: string;
   xlsFileTitle?: string;
   noExcel?: boolean;
@@ -1588,23 +1602,24 @@ export async function generateCsvFile(
     }
     data = anonymizeRows(data, anonymizationLevel);
     const csvContent = Papa.unparse(data);
-    await fs.writeFile(outputPath, csvContent, 'utf8');
+    // A CSV left open in Excel is locked: the report is then written under another name
+    const csvFile = await writeReportFile(outputPath, (filePath) => fs.writeFile(filePath, csvContent, 'utf8'), this);
     if (!WebSocketClient.isAliveWithLwcUI()) {
-      uxLog("action", this, c.cyan(c.italic(t('pleaseSeeDetailedCsvLogIn', { outputPath: c.bold(outputPath) }))));
+      uxLog("action", this, c.cyan(c.italic(t('pleaseSeeDetailedCsvLogIn', { outputPath: c.bold(csvFile) }))));
     }
-    result.csvFile = outputPath;
-    if (!isAgentMode() && !WebSocketClient.isAliveWithLwcUI() && !options?.skipNotifyToWebSocket) {
-      WebSocketClient.requestOpenFile(outputPath);
+    result.csvFile = csvFile;
+    if (!isAgentMode() && !WebSocketClient.isAliveWithLwcUI() && !options?.skipNotifyToWebSocket && !options?.noOpen) {
+      WebSocketClient.requestOpenFile(csvFile);
     }
     const csvFileTitle = options?.fileTitle ? `${options.fileTitle} (CSV)` : options?.csvFileTitle ?? "Report (CSV)";
     if (!options?.skipNotifyToWebSocket) {
-      WebSocketClient.sendReportFileMessage(outputPath, csvFileTitle, "report");
+      WebSocketClient.sendReportFileMessage(csvFile, csvFileTitle, "report", undefined, { main: options?.mainReport });
     }
     if (data.length > 0 && !options?.noExcel) {
-      await createXlsxFromCsv(outputPath, options, result);
+      await createXlsxFromCsv(csvFile, options, result);
     } else if (data.length === 0) {
       // noExcel is a deliberate caller choice: only log when the skip reason really is emptiness.
-      uxLog("other", this, c.grey(t('noXlsFileGeneratedAsIsEmpty', { outputPath })));
+      uxLog("other", this, c.grey(t('noXlsFileGeneratedAsIsEmpty', { outputPath: csvFile })));
     }
   } catch (e) {
     uxLog("warning", this, c.yellow(t('errorWhileGeneratingCsvLogFile') + (e as Error).message + '\n' + (e as Error).stack));
@@ -1616,18 +1631,19 @@ export async function createXlsxFromCsv(outputPath: string, options: ExcelExport
   try {
     const xlsDirName = path.join(path.dirname(outputPath), 'xls');
     const xslFileName = path.basename(outputPath).replace('.csv', '.xlsx');
-    const xslxFile = path.join(xlsDirName, xslFileName);
     await fs.ensureDir(xlsDirName);
-    // Delete existing file if any
-    await fs.remove(xslxFile);
-    await csvToXls(outputPath, xslxFile, options);
+    const targetXlsxFile = path.join(xlsDirName, xslFileName);
+    await removePreviousReport(targetXlsxFile);
+    const workbook = await buildXlsFromCsv(outputPath, options);
+    // Another name when the usual file is open in Excel
+    const xslxFile = await writeReportFile(targetXlsxFile, (filePath) => workbook.xlsx.writeFile(filePath), this);
     if (!WebSocketClient.isAliveWithLwcUI()) {
       uxLog("action", this, c.cyan(c.italic(t('pleaseSeeDetailedXlsxLogIn', { xslxFile: c.bold(xslxFile) }))));
     }
     const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
-    WebSocketClient.sendReportFileMessage(xslxFile, xlsFileTitle, "report");
+    WebSocketClient.sendReportFileMessage(xslxFile, xlsFileTitle, "report", undefined, { main: options?.mainReport });
     result.xlsxFile = xslxFile;
-    if (!isAgentMode() && !isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI()) {
+    if (!isAgentMode() && !isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI() && !options?.noOpen) {
       try {
         uxLog("other", this, c.italic(c.grey(t('openingXlsxFileDefineNoopenTrueTo', { xslxFile: c.bold(xslxFile) }))));
         await open(xslxFile, { wait: false });
@@ -1644,29 +1660,41 @@ export async function createXlsxFromCsv(outputPath: string, options: ExcelExport
   }
 }
 
-async function csvToXls(csvFile: string, xslxFile: string, options: ExcelExportOptions) {
+async function buildXlsFromCsv(csvFile: string, options: ExcelExportOptions): Promise<ExcelJS.Workbook> {
   const workbook = new ExcelJS.Workbook();
   const worksheet = await workbook.csv.readFile(csvFile);
   applyWorksheetFormatting(worksheet, options);
-  await workbook.xlsx.writeFile(xslxFile);
+  return workbook;
 }
 
-export async function createXlsxFromCsvFiles(csvFilesPath: string[], outputPath: string, options: ExcelExportOptions = {}) {
+// A report that can not be regenerated must not leave the previous run's file at the usual name.
+// A file open in Excel can not be deleted: it is kept, and the new report gets another name.
+async function removePreviousReport(filePath: string): Promise<void> {
+  try {
+    await fs.remove(filePath);
+  } catch {
+    // Locked: writeReportFile writes the new report under another name
+  }
+}
+
+// Returns the path of the XLSX file written (another name when the usual one is open in Excel),
+// or undefined when it could not be generated (the cause is logged as a warning).
+export async function createXlsxFromCsvFiles(csvFilesPath: string[], outputPath: string, options: ExcelExportOptions = {}): Promise<string | undefined> {
   try {
     const xlsDirName = path.join(path.dirname(outputPath), 'xls');
     const xslFileName = path.basename(outputPath).replace('.csv', '.xlsx');
-    const xslxFile = path.join(xlsDirName, xslFileName);
     await fs.ensureDir(xlsDirName);
-    // Delete existing file if any
-    await fs.remove(xslxFile);
-    await csvFilesToXls(csvFilesPath, xslxFile, options);
+    const targetXlsxFile = path.join(xlsDirName, xslFileName);
+    await removePreviousReport(targetXlsxFile);
+    const workbook = await buildXlsFromCsvFiles(csvFilesPath, options);
+    // Another name when the usual file is open in Excel
+    const xslxFile = await writeReportFile(targetXlsxFile, (filePath) => workbook.xlsx.writeFile(filePath), this);
     if (!WebSocketClient.isAliveWithLwcUI()) {
       uxLog("action", this, c.cyan(c.italic(t('pleaseSeeDetailedXlsxLogIn', { xslxFile: c.bold(xslxFile) }))));
     }
     const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
-    WebSocketClient.sendReportFileMessage(xslxFile, xlsFileTitle, "report");
-    // result.xlsxFile = xslxFile;
-    if (!isAgentMode() && !isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI()) {
+    WebSocketClient.sendReportFileMessage(xslxFile, xlsFileTitle, "report", undefined, { main: options?.mainReport });
+    if (!isAgentMode() && !isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI() && !options?.noOpen) {
       try {
         uxLog("other", this, c.italic(c.grey(t('openingXlsxFileDefineNoopenTrueTo', { xslxFile: c.bold(xslxFile) }))));
         await open(xslxFile, { wait: false });
@@ -1674,16 +1702,18 @@ export async function createXlsxFromCsvFiles(csvFilesPath: string[], outputPath:
         uxLog("warning", this, c.yellow(t('errorWhileOpeningXlsxFile') + (e as Error).message + '\n' + (e as Error).stack));
       }
     }
+    return xslxFile;
   } catch (e2) {
     uxLog(
       "warning",
       this,
       c.yellow('Error while generating XLSX log file:\n' + (e2 as Error).message + '\n' + (e2 as Error).stack)
     );
+    return undefined;
   }
 }
 
-async function csvFilesToXls(csvFiles: string[], xslxFile: string, options: ExcelExportOptions) {
+async function buildXlsFromCsvFiles(csvFiles: string[], options: ExcelExportOptions): Promise<ExcelJS.Workbook> {
   const workbook = new ExcelJS.Workbook();
   let worksheet: ExcelJS.Worksheet;
   const usedWorksheetNames = new Set<string>();
@@ -1762,20 +1792,21 @@ async function csvFilesToXls(csvFiles: string[], xslxFile: string, options: Exce
 
   for (const csvFile of csvFiles) {
     if (!csvFile) {
-      console.warn(`[csvFilesToXls] Skipping null/undefined csvFile:`, csvFile);
+      console.warn(`[buildXlsFromCsvFiles] Skipping null/undefined csvFile:`, csvFile);
       continue;
     }
     if (!fs.existsSync(csvFile)) {
-      console.warn(`[csvFilesToXls] Skipping missing csvFile:`, csvFile);
+      console.warn(`[buildXlsFromCsvFiles] Skipping missing csvFile:`, csvFile);
       continue;
     }
     const stat = await fs.stat(csvFile);
     if (!stat || stat.size === 0) {
-      console.warn(`[csvFilesToXls] Skipping empty csvFile:`, csvFile);
+      console.warn(`[buildXlsFromCsvFiles] Skipping empty csvFile:`, csvFile);
       continue;
     }
     worksheet = await workbook.csv.readFile(csvFile, buildReadOptions());
-    const desiredWorksheetName = options.worksheetNames?.[csvFile] ?? path.basename(csvFile).replace('.csv', '');
+    // A CSV written as "Users-2.csv" because "Users.csv" was open in Excel still gives a "Users" sheet
+    const desiredWorksheetName = options.worksheetNames?.[csvFile] ?? path.basename(reportFileRequestedPath(csvFile)).replace('.csv', '');
     const worksheetName = makeUniqueWorksheetName(desiredWorksheetName);
     worksheet.name = worksheetName;
     usedWorksheetNames.add(worksheetName);
@@ -1790,19 +1821,20 @@ async function csvFilesToXls(csvFiles: string[], xslxFile: string, options: Exce
         }
       });
     }
-    applyWorksheetFormatting(worksheet, options);
-    // Scan only the first row and convert string formulas
+    // Scan only the first row and convert string formulas, before the formatting decides whether
+    // the sheet can be an Excel table
     const firstRow = worksheet.getRow(1);
     firstRow.eachCell((cell) => {
       if (typeof cell.value === 'string' && cell.value.startsWith('=')) {
         cell.value = { formula: cell.value.substring(1) };
       }
     });
+    applyWorksheetFormatting(worksheet, options);
   }
   if (options.postProcessWorkbook) {
     await options.postProcessWorkbook(workbook, { worksheetNameByCsvFile });
   }
-  await workbook.xlsx.writeFile(xslxFile);
+  return workbook;
 }
 
 // Extra width (in characters) reserved on auto-fit columns so the filter dropdown button does not
@@ -1861,8 +1893,17 @@ export function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: 
 
   const shouldAutoFit = worksheet.rowCount < 10000;
 
+  // The header cells of an Excel table must be plain text: with a formula in its header, Excel
+  // offers to repair the workbook and opens it without the sheet
+  let headerHasFormula = false;
+  headerRow.eachCell((cell) => {
+    if (cell.value && typeof cell.value === 'object' && 'formula' in (cell.value as any)) {
+      headerHasFormula = true;
+    }
+  });
+
   // Add an Excel table (Insert > Table equivalent) for small-to-medium datasets
-  if (shouldAutoFit && worksheet.rowCount > 1 && worksheet.columnCount > 0) {
+  if (shouldAutoFit && !headerHasFormula && worksheet.rowCount > 1 && worksheet.columnCount > 0) {
     const lastCol = worksheet.columnCount;
     const lastRow = worksheet.rowCount;
 

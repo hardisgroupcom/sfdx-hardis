@@ -1,0 +1,6 @@
+command: hardis:project:deploy:validate
+run: sf hardis:project:deploy:validate --source-dir force-app --test-level RunLocalTests
+org: throwaway
+# A draft of deployment actions not assigned to a Pull Request stops any deployment
+before: git rm -q scripts/actions/.sfdx-hardis.draft.yml && git commit -qm "HEL-42 Drop the draft deployment actions"
+caption: The Helios sources validated without being deployed, with the deployment actions and Pull Request comments of sfdx-hardis around it

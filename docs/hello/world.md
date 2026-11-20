@@ -1,3 +1,7 @@
+---
+title: "hello:world"
+description: "Say hello."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hello:world
 
@@ -30,7 +34,7 @@ The command's technical implementation involves:
 
 | Name        |  Type   | Description                             | Default | Required | Options |
 |:------------|:-------:|:----------------------------------------|:-------:|:--------:|:-------:|
-| flags-dir   | option  | undefined                               |         |          |         |
+| flags-dir   | option  | Import flag values from a directory.    |         |          |         |
 | json        | boolean | Format output as json.                  |         |          |         |
 | name<br/>-n | option  | This person can be anyone in the world! |  World  |          |         |
 

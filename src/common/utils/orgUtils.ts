@@ -3,22 +3,22 @@ import { prompts } from './prompts.js';
 import c from 'chalk';
 import fs from './fsUtils.js';
 import * as path from 'path';
-import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, isCI, uxLog } from './index.js';
+import { createTempDir, execCommand, execSfdxJson, isAgentMode, isCI, uxLog } from './index.js';
 import { getOrgAccessToken } from './credentialUtils.js';
 import { WebSocketClient } from '../websocketClient.js';
-import { getConfig, setConfig } from '../../config/index.js';
+import { getConfig, getEnvVar, setConfig } from '../../config/index.js';
 import { isValidEmail } from './stringUtils.js';
 import sortArray from './sortArray.js';
-import { AuthInfo, Connection, SfError } from '@salesforce/core';
-import { importData } from './dataUtils.js';
+import { AuthInfo, Connection, SfdcUrl, SfError, StateAggregator } from '@salesforce/core';
 import { soqlQuery, soqlQueryTooling } from './apiUtils.js';
+import { open } from './openUtils.js';
 import { isSfdxProject } from './projectUtils.js';
 import { deployMetadatas, smartDeploy, forceSourcePush } from './deployUtils.js';
 import { PACKAGE_ROOT_DIR } from '../../settings.js';
 import { clearCache } from '../cache/index.js';
 import { SfCommand } from '@salesforce/sf-plugins-core';
 import { t } from './i18n.js';
-import { runAuthHook } from './authUtils.js';
+import { decideOrgAlias, getAliasOfUsername, nameConnectedOrg, promptOrgAlias, runAuthHook } from './authUtils.js';
 
 export async function listProfiles(conn: any) {
   if (conn in [null, undefined]) {
@@ -72,17 +72,20 @@ export async function promptProfiles(
   let selectedProfiles: any[] = [];
   // Profiles returned by active connection
   if (profiles.length > 0) {
+    const choices = profiles.map((profile: any) => {
+      return {
+        title: profile.Name,
+        value: options.returnField === 'record' ? profile : options.returnField === 'Id' ? profile.Id : profile.Name,
+      };
+    });
+    const initial = getInitialProfileSelection(choices, options.initialSelection, options.multiselect === true);
     const profilesSelection = await prompts({
       type: options.multiselect ? 'multiselect' : 'select',
       message: options.message || t('pleaseSelectProfile'),
       description: t('descChooseProfiles'),
       name: 'value',
-      choices: profiles.map((profile: any) => {
-        return {
-          title: profile.Name,
-          value: options.returnField === 'record' ? profile : options.returnField === 'Id' ? profile.Id : profile.Name,
-        };
-      }),
+      choices: choices,
+      initial: initial,
     });
     // Verify that all profiles are not selected if allowSelectAll === false
     if (options.allowSelectAll === false && profilesSelection.value.length === profiles.length) {
@@ -148,6 +151,22 @@ export async function promptProfiles(
   }
 
   return selectedProfiles;
+}
+
+// The choices of promptProfiles to pre-select, from profile names. Profile labels follow the
+// language of the org user, and their case differs between languages (Administrateur système,
+// not Administrateur Système): names are matched case-insensitively
+export function getInitialProfileSelection(
+  choices: Array<{ title: string; value: any }>,
+  initialSelection: string[] = [],
+  multiselect = false
+): any {
+  const initialNames = (initialSelection || []).map((name) => name.toLowerCase());
+  const values = choices.filter((choice) => initialNames.includes(String(choice.title).toLowerCase())).map((choice) => choice.value);
+  if (values.length === 0) {
+    return undefined;
+  }
+  return multiselect ? values : values[0];
 }
 
 export async function promptOrg(
@@ -250,15 +269,15 @@ export async function promptOrg(
   // Token is expired: login again to refresh it
   if (org?.connectedStatus === 'RefreshTokenAuthError' || org?.connectedStatus?.includes('expired')) {
     uxLog("action", this, c.yellow('⚠️ ' + t('authenticationHasExpiredPleaseLogIn')));
-    const loginCommand = 'sf org login web' + ` --instance-url ${org.instanceUrl}`;
-    const loginResult = await execSfdxJson(loginCommand, this, { fail: true, output: false });
-    org = loginResult.result;
-    if (!org?.username) {
-      throw new SfError(t('authenticationDidNotConnectAnyOrg'));
-    }
+    org = await reconnectExpiredOrg(org, { nameOrg: options.nameOrg === true });
   }
 
   uxLog("action", commandThis, c.cyan(t('selectedOrg', { org: c.green(org.username), org1: c.green(org.instanceUrl) })));
+
+  // Offer to name an org that has no alias yet
+  if (options.nameOrg === true && !org.alias) {
+    org.alias = await nameConnectedOrg(org.username, org.instanceUrl);
+  }
 
   if (options.setDefault === true) {
     // Set default username
@@ -375,14 +394,11 @@ export async function makeSureOrgIsConnected(targetOrg: string | any) {
   // Authentication is necessary
   if (connectedStatus?.includes("expired") || connectedStatus === "RefreshTokenAuthError") {
     uxLog("action", this, c.yellow(t('yourAuthTokenHasExpiredYouNeed')));
+    // Read the alias before the auth file is deleted
+    const alias = orgResult?.alias || (await getAliasOfUsername(targetOrg));
     await deleteRottenAuthFile(targetOrg);
     // Authenticate again
-    const loginCommand = 'sf org login web' + ` --instance-url ${instanceUrl}`;
-    const loginRes = await execSfdxJson(loginCommand, this, { fail: true, output: false });
-    if (!loginRes?.result?.username) {
-      throw new SfError(t('authenticationDidNotConnectAnyOrg'));
-    }
-    return loginRes.result;
+    return await reconnectExpiredOrg({ username: targetOrg, instanceUrl, alias });
   }
   // A scratch org reports no connectedStatus at all: sf org display gives its
   // lifecycle in "status" instead. Read after the checks above, never before,
@@ -556,11 +572,30 @@ export async function managePackageConfig(installedPackages, packagesToInstallCo
   }
 }
 
-export async function installPackages(installedPackages: any[], orgAlias: string) {
-  const packages = installedPackages || [];
-  elapseStart('Install all packages');
-  await MetadataUtils.installPackagesOnOrg(packages, orgAlias, this, 'scratch');
-  elapseEnd('Install all packages');
+// A Dev Hub authenticated through an External Client App fails scratch signup with C-1016 unless the CLI's built-in app
+// is used. Nothing is added when the user chose an app, or set SFDX_CLIENT_SECRET, which the CLI would send with it.
+export function getScratchSignupEnv(env: NodeJS.ProcessEnv = process.env): Record<string, string> {
+  if (env.SF_SCRATCH_SIGNUP_CONNECTED_APP || env.SFDX_CLIENT_SECRET) {
+    return {};
+  }
+  return {
+    SF_SCRATCH_SIGNUP_CONNECTED_APP: 'PlatformCLI',
+    SF_SCRATCH_SIGNUP_CALLBACK_URL: env.SF_SCRATCH_SIGNUP_CALLBACK_URL || 'http://localhost:1717/OauthRedirect',
+  };
+}
+
+// The definition file of a scratch org created from a snapshot, without the keys the CLI rejects with a snapshot
+// (SNAPSHOT_UNSUPPORTED_OPTIONS in @salesforce/core) and the two more the Salesforce snapshot docs exclude
+// (release, hasSampleData). The input is left untouched: initOrgMetadatas reads its features.
+export function buildSnapshotScratchDef(projectScratchDef: any, snapshot: string): { scratchDef: any; droppedKeys: string[] } {
+  const scratchDef = { ...projectScratchDef, snapshot };
+  const droppedKeys = ['features', 'orgPreferences', 'edition', 'sourceOrg', 'settingsPath', 'releaseVersion', 'release', 'hasSampleData'].filter(
+    (key) => key in scratchDef
+  );
+  for (const key of droppedKeys) {
+    delete scratchDef[key];
+  }
+  return { scratchDef, droppedKeys };
 }
 
 export async function initOrgMetadatas(
@@ -572,15 +607,10 @@ export async function initOrgMetadatas(
   options: any = {}
 ) {
   // Push or deploy according to config (default: push)
-  if ((isCI && process.env.CI_SCRATCH_MODE === 'deploy') || process.env.DEBUG_DEPLOY === 'true') {
+  const packageXmlFile = getScratchDeployManifest(configInfo);
+  if (packageXmlFile) {
     // if CI, use sf project deploy start to make sure package.xml is consistent
     uxLog("action", this, c.cyan(t('deployingProjectSourcesToOrg', { orgAlias: c.green(orgAlias) })));
-    // A configured manifest wins, manifest/ and config/ are fallbacks. Keep the existsSync ternary
-    // parenthesized, otherwise it swallows the whole || chain and the configured path is discarded.
-    const packageXmlFile =
-      process.env.PACKAGE_XML_TO_DEPLOY ||
-      configInfo.packageXmlToDeploy ||
-      (fs.existsSync('./manifest/package.xml') ? './manifest/package.xml' : './config/package.xml');
     await smartDeploy(packageXmlFile, false, 'NoTestRun', debugMode, this, {
       targetUsername: orgUsername,
       conn: null,
@@ -635,82 +665,46 @@ export async function initOrgMetadatas(
   }
 }
 
-// Assign permission sets to user
-export async function initPermissionSetAssignments(permSets: Array<any>, orgUsername: string) {
+// The manifest deployed to a scratch org in deploy mode, or null when its sources are pushed (the default)
+export function getScratchDeployManifest(configInfo: any): string | null {
+  if (!((isCI && process.env.CI_SCRATCH_MODE === 'deploy') || process.env.DEBUG_DEPLOY === 'true')) {
+    return null;
+  }
+  // A configured manifest wins, manifest/ and config/ are fallbacks. Keep the existsSync ternary
+  // parenthesized, otherwise it swallows the whole || chain and the configured path is discarded.
+  return (
+    process.env.PACKAGE_XML_TO_DEPLOY ||
+    configInfo.packageXmlToDeploy ||
+    (fs.existsSync('./manifest/package.xml') ? './manifest/package.xml' : './config/package.xml')
+  );
+}
+
+// Assign permission sets to user. Returns the failures ("name: message"), an existing assignment is not one.
+export async function initPermissionSetAssignments(permSets: Array<any>, orgUsername: string): Promise<string[]> {
   uxLog("action", this, c.cyan(t('assigningPermissionSets')));
+  const failures: string[] = [];
   for (const permSet of permSets) {
-    uxLog("action", this, c.cyan(t('assigningToOrgUser', { permSet: c.bold(permSet.name || permSet), orgUsername })));
-    const assignCommand = `sf org assign permset --name ${permSet.name || permSet} --target-org ${orgUsername}`;
+    const permSetName = permSet?.name || permSet;
+    uxLog("action", this, c.cyan(t('assigningToOrgUser', { permSet: c.bold(permSetName), orgUsername })));
+    const assignCommand = `sf org assign permset --name "${permSetName}" --target-org ${orgUsername}`;
     const assignResult = await execSfdxJson(assignCommand, this, {
       fail: false,
       output: false,
     });
-    if (
-      assignResult?.result?.failures?.length > 0 &&
-      !assignResult?.result?.failures[0].message.includes('Duplicate')
-    ) {
-      uxLog(
-        "error",
-        this,
-        c.red(t('errorAssigningPermSetToUser', { permSet: c.bold(permSet.name || permSet), message: assignResult?.result?.failures[0].message }))
-      );
+    const failureMessage: string = assignResult?.result?.failures?.[0]?.message || '';
+    const errorMessage = failureMessage
+      ? failureMessage.includes('Duplicate')
+        ? ''
+        : failureMessage
+      : assignResult?.status !== 0
+        ? assignResult?.errorMessage || assignResult?.message || 'unknown error'
+        : '';
+    if (errorMessage) {
+      uxLog("error", this, c.red(t('errorAssigningPermSetToUser', { permSet: c.bold(permSetName), message: errorMessage })));
+      failures.push(`${permSetName}: ${errorMessage}`);
     }
   }
-}
-
-// Run initialization apex scripts
-export async function initApexScripts(orgInitApexScripts: Array<any>, orgAlias: string) {
-  uxLog("action", this, c.cyan(t('runningApexInitializationScripts')));
-  // Build list of apex scripts and check their existence
-  const initApexScripts = orgInitApexScripts.map((scriptName: string) => {
-    if (!fs.existsSync(scriptName)) {
-      throw new SfError(c.red(`[sfdx-hardis][ERROR] Unable to find script ${scriptName}`));
-    }
-    return scriptName;
-  });
-  // Process apex scripts
-  for (const apexScript of initApexScripts) {
-    const apexScriptCommand = `sf apex run --file "${apexScript}" --target-org ${orgAlias}`;
-    await execCommand(apexScriptCommand, this, {
-      fail: true,
-      output: true,
-    });
-  }
-}
-
-// Loads data in the org
-export async function initOrgData(initDataFolder: string, orgUsername: string) {
-  // Init folder (accounts, etc...)
-  if (fs.existsSync(initDataFolder)) {
-    uxLog("action", this, c.cyan(t('loadingSandboxOrgInitializationData')));
-    await importData(initDataFolder, this, {
-      targetUsername: orgUsername,
-    });
-  } else {
-    uxLog(
-      "action",
-      this,
-      c.cyan(t('noInitializationData', { initDataFolder }))
-    );
-  }
-  // Import data packages
-  const config = await getConfig('user');
-  const dataPackages = config.dataPackages || [];
-  for (const dataPackage of dataPackages) {
-    if (dataPackage.importInSandboxOrgs === true) {
-      await importData(dataPackage.dataPath, this, {
-        targetUsername: orgUsername,
-      });
-    } else {
-      uxLog(
-        "log",
-        this,
-        c.grey(
-          `Skipped import of ${dataPackage.dataPath} as importInSandboxOrgs is not defined to true in .sfdx-hardis.yml`
-        )
-      );
-    }
-  }
+  return failures;
 }
 
 export async function getOrgAliasUsername(alias: string) {
@@ -728,7 +722,8 @@ export async function getOrgAliasUsername(alias: string) {
 // Returns true if the org is a sandbox and not a scratch org
 export async function isProductionOrg(targetUsername: string, options: any) {
   // Use jsforce connection is applicable
-  if (options?.conn?.username && options.conn.username === targetUsername) {
+  const connUsername = options?.conn?.username || options?.conn?.getUsername?.();
+  if (connUsername && connUsername === targetUsername) {
     const orgRes = await soqlQuery('SELECT IsSandbox FROM Organization LIMIT 1', options.conn);
     return orgRes.records[0].IsSandbox === false;
   }
@@ -770,7 +765,7 @@ export async function setConnectionVariables(conn, handleTechnical = false) {
   if (conn) {
     globalThis.jsForceConn = conn;
   }
-  if (handleTechnical && tryTechnical && !(process.env?.SKIP_TECHNICAL_ORG === "true")) {
+  if (handleTechnical && tryTechnical && !(process.env?.SKIP_TECHNICAL_ORG === "true") && (await isTechnicalOrgAliasDefined())) {
     try {
       const techOrgDisplayCommand = 'sf org display --target-org TECHNICAL_ORG --json';
       const orgInfoResult = await execSfdxJson(techOrgDisplayCommand, this, {
@@ -846,4 +841,98 @@ export async function listOrgSObjectsFilteredWithQualifiedNames(connection: Conn
   return sObjectResults.records.filter((record) =>
     !record.QualifiedApiName.endsWith("__Share") && !record.QualifiedApiName.endsWith("__ChangeEvent")
   );
+}
+
+/**
+ * Open an org in the user's browser, the way `sf org open` does, except where no browser can be
+ * opened: in CI, and in container mode (Agentforce Vibes, a dev container, Codespaces), where the
+ * Salesforce CLI only prints the login link and returns. A command that hid that output left the
+ * user with nothing, so there the link is logged and sent to the VS Code panel as a button. The link
+ * holds a one-time code: it must be clicked right away, and it is kept out of the log file.
+ *
+ * The link is always asked with --url-only and the browser launched from here, never by
+ * `sf org open` itself: run as a child process, that command exits right after it spawned its
+ * browser launcher, and on Windows the launcher dies with it (every child of a Node process is
+ * killed when the process exits, unless detached) before it had time to open anything. The
+ * launcher used here is waited for.
+ * @param commandThis The running command
+ * @param options username: the org to open (the default org when omitted), fail: throw when
+ * `sf org open` fails (default true)
+ */
+export async function openOrgInBrowser(
+  commandThis: any,
+  options: { username?: string; debug?: boolean; fail?: boolean } = {}
+): Promise<void> {
+  const target = options.username ? ` --target-org ${options.username}` : '';
+  const openRes = await execSfdxJson(`sf org open --url-only${target}`, commandThis, {
+    fail: options.fail !== false,
+    output: false,
+    debug: options.debug === true,
+  });
+  const url: string | null = openRes?.result?.url || null;
+  if (!url) {
+    return;
+  }
+  // NO_OPEN=true makes open() do nothing: show the link, or asking to open the org would do nothing
+  if (isCI || isContainerMode() || process.env.NO_OPEN === 'true') {
+    // <copy> shows the link with a copy button in the VS Code UI. The line stays out of the log file.
+    const displayedUrl = WebSocketClient.isAliveWithLwcUI() ? `<copy>${url}</copy>` : url;
+    uxLog("action", commandThis, c.cyan(t('openOrgWithLink', { url: c.green(displayedUrl) })), { sensitive: true });
+    WebSocketClient.sendReportFileMessage(url, t('openOrgButton'), 'actionUrl');
+    return;
+  }
+  await waitForLightningDomain(url, commandThis);
+  // The launcher hands the link to the browser and exits within a second. Not waiting longer than
+  // a few seconds: a launcher that stays alive (some Linux desktops) must not block the command.
+  await Promise.race([open(url, { wait: true }), new Promise((resolve) => setTimeout(resolve, 5000))]);
+}
+
+// Container mode: `sf org open` prints the link instead of opening a browser. The Salesforce CLI
+// reads SF_CONTAINER_MODE (SFDX_CONTAINER_MODE before) and accepts `true` or `1`, nothing else.
+export function isContainerMode(): boolean {
+  const value = (getEnvVar('SF_CONTAINER_MODE') || getEnvVar('SFDX_CONTAINER_MODE') || '').toLowerCase();
+  return value === 'true' || value === '1';
+}
+
+// Logs in again to an org whose token expired, keeping its alias, or naming it in the same call
+async function reconnectExpiredOrg(
+  org: { username?: string; instanceUrl: string; alias?: string | null },
+  options: { nameOrg?: boolean } = {}
+) {
+  const aliasDecision = decideOrgAlias({
+    existingAlias: org.alias || (await getAliasOfUsername(org.username)),
+    instanceUrl: org.instanceUrl,
+    interactive: options.nameOrg === true && !isCI && !isAgentMode(),
+  });
+  const alias = aliasDecision.ask === 'before' ? await promptOrgAlias(org.instanceUrl) : aliasDecision.alias;
+  if (aliasDecision.ask === 'before') {
+    // The VS Code UI hides everything after a prompt until the next action log
+    uxLog("action", this, c.cyan(t('authenticatingUsingWebLogin')));
+  }
+  const loginCommand = 'sf org login web' + ` --instance-url ${org.instanceUrl}` + (alias ? ` --alias ${alias}` : '');
+  const loginResult = await execSfdxJson(loginCommand, this, { fail: true, output: false });
+  if (!loginResult?.result?.username) {
+    throw new SfError(t('authenticationDidNotConnectAnyOrg'));
+  }
+  return { ...loginResult.result, alias: alias || loginResult.result.alias || null };
+}
+
+// `sf org open` waits for the My Domain of a new org to resolve before opening it (up to
+// SF_DOMAIN_RETRY seconds, 240 by default): so does this, and the org is opened anyway on timeout
+async function waitForLightningDomain(url: string, commandThis: any): Promise<void> {
+  try {
+    await new SfdcUrl(url).checkLightningDomain();
+  } catch (error: any) {
+    uxLog("warning", commandThis, c.yellow(t('openOrgDomainNotResolved', { message: error?.message || String(error) })));
+  }
+}
+
+// Without a TECHNICAL_ORG alias, sf org display would fail and show as a failed sub-command
+async function isTechnicalOrgAliasDefined(): Promise<boolean> {
+  try {
+    const stateAggregator = await StateAggregator.getInstance();
+    return !!stateAggregator.aliases.getUsername('TECHNICAL_ORG');
+  } catch {
+    return true;
+  }
 }

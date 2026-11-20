@@ -8,6 +8,7 @@ import { updatePullRequestResult } from "./deployTips.js";
 import { shortenLogLines } from "./deployUtils.js";
 import { buildDeployResultSummaryLines, isFullDeployJsonLogRequested } from "./deployResultSummary.js";
 import { t } from './i18n.js';
+import { buildTipDeploymentAction, formatDeploymentActionHint, getSolveDeploymentErrorPromptVariables } from "./deployTipActions.js";
 
 
 export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, includeInLog = true, options: any): Promise<any> {
@@ -93,7 +94,17 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
         message: t('pleaseFixUnknownErrors'),
       },
     }))
-    detailedErrorLines.push(...["", "⛔ " + c.red(c.bold("Unknown issue: " + resultJson.result.errorMessage)), ""]);
+    detailedErrorLines.push(...["", "⛔ " + c.red(c.bold(t('unknownDeploymentIssue', { message: resultJson.result.errorMessage }))), ""]);
+  }
+
+  // Fallback: the command died before Salesforce returned a result (lost connection, CLI error...):
+  // the JSON only has a top-level message and cause
+  if (errorsAndTips.length === 0 && failedTests.length === 0 && !resultJson?.result && (resultJson?.message || resultJson?.cause)) {
+    const topLevelError = buildTopLevelErrorAndTip(resultJson);
+    errorsAndTips.push(topLevelError);
+    detailedErrorLines.push(...(topLevelError.tip.label === "NetworkError"
+      ? ["", "⛔ " + c.red(c.bold(topLevelError.error.message)), c.yellow(topLevelError.tip.message), ""]
+      : ["", "⛔ " + c.red(c.bold(t('unknownDeploymentIssue', { message: topLevelError.error.message }))), ""]));
   }
 
   // Fallback : declare an error if we have not been able to identify errors
@@ -117,7 +128,8 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
           detailedErrorLines.push(...[
             c.yellow(c.italic("✏️ Error " + c.bold(errorTip.tip.label)) + ":"),
             c.yellow(errorTip.tip.messageConsole),
-            c.yellow(`Documentation: ${errorTip.tip.docUrl}`)
+            c.yellow(`Documentation: ${errorTip.tip.docUrl}`),
+            ...(errorTip.tip.deploymentAction ? formatDeploymentActionHint(errorTip.tip.deploymentAction, "console") : []),
           ])
         }
         if (errorTip.tipFromAi) {
@@ -165,17 +177,65 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
   return { tips, errorsAndTips, failedTests, errLog: newLog };
 }
 
-async function matchesTip(tipDefinition: any, error: any) {
-  matchStringBasedTip(tipDefinition, error);
-  matchRegExpBasedTip(tipDefinition, error);
+// Text of a network failure: the connection to Salesforce was lost or could not be opened
+const NETWORK_FAILURE_REGEX = /fetch failed|ConnectTimeoutError|UND_ERR_CONNECT_TIMEOUT|ECONNRESET|ECONNABORTED|ECONNREFUSED|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|socket hang up/i;
+
+export function isNetworkFailureText(text: string): boolean {
+  return NETWORK_FAILURE_REGEX.test(text || "");
 }
 
-function matchStringBasedTip(tipDefinition: any, error: any) {
+// Error and tip for a command output that only has a top-level message and cause, no result
+export function buildTopLevelErrorAndTip(resultJson: any): any {
+  const message = String(resultJson?.message || "").trim();
+  const cause = typeof resultJson?.cause === "string" ? resultJson.cause : JSON.stringify(resultJson?.cause ?? "");
+  if (isNetworkFailureText(`${message}\n${cause}`)) {
+    return buildNetworkErrorAndTip(extractShortNetworkCause(message, cause));
+  }
+  return {
+    error: { message: message || cause.split(/\r?\n/)[0] },
+    tip: {
+      label: resultJson?.name || "UNKNOWN",
+      message: t('pleaseFixUnknownErrors'),
+    },
+  };
+}
+
+export function buildNetworkErrorAndTip(shortCause: string): any {
+  return {
+    error: { message: t('connectionToSalesforceLost', { cause: shortCause }) },
+    tip: {
+      label: "NetworkError",
+      message: t('connectionToSalesforceLostRunAgain'),
+    },
+  };
+}
+
+// One line naming the network failure, never a stack: the innermost "[cause]: XxxError: text" of
+// undici, else the top-level message, else the first line of the cause
+export function extractShortNetworkCause(message: string, cause: string): string {
+  const innerCauses = [...(cause || "").matchAll(/\[cause\]:\s*\w*Error:\s*([^\r\n]+)/g)];
+  const inner = innerCauses.length > 0 ? innerCauses[innerCauses.length - 1][1].trim() : "";
+  const code = /code:\s*'([A-Z_]+)'/.exec(cause || "")?.[1] || "";
+  const firstCauseLine = (cause || "").split(/\r?\n/)[0].replace(/^\w*Error:\s*/, "").trim();
+  let short = inner || message || firstCauseLine || "fetch failed";
+  if (code && !short.includes(code)) {
+    short += ` [${code}]`;
+  }
+  return short.length > 300 ? short.slice(0, 297) + "..." : short;
+}
+
+async function matchesTip(tipDefinition: any, error: any) {
+  await matchStringBasedTip(tipDefinition, error);
+  await matchRegExpBasedTip(tipDefinition, error);
+}
+
+async function matchStringBasedTip(tipDefinition: any, error: any) {
   if (tipDefinition.expressionString &&
     tipDefinition.expressionString.filter((expressionString: any) => error.messageInitial.includes(expressionString)).length > 0) {
     error.message = stripAnsi(error.messageInitial);
     const errorBase = Object.assign({}, error);
     delete errorBase.tips;
+    const deploymentAction = await buildTipDeploymentAction(tipDefinition, []);
     error.tips.push({
       error: errorBase,
       tip: {
@@ -183,12 +243,13 @@ function matchStringBasedTip(tipDefinition: any, error: any) {
         docUrl: tipDefinition.docUrl,
         message: tipDefinition.tip,
         messageConsole: tipDefinition.tip,
+        ...(deploymentAction ? { deploymentAction } : {}),
       },
     });
   }
 }
 
-function matchRegExpBasedTip(tipDefinition: any, error: any) {
+async function matchRegExpBasedTip(tipDefinition: any, error: any) {
   if (
     tipDefinition.expressionRegex &&
     tipDefinition.expressionRegex.filter((expressionRegex: any) => {
@@ -208,13 +269,15 @@ function matchRegExpBasedTip(tipDefinition: any, error: any) {
       error.message = stripAnsi(format(error.messageInitial, replacementsMarkdown)).replace(/\*\*.\*\*/gm, ".")
       const errorBase = Object.assign({}, error);
       delete errorBase.tips;
+      const deploymentAction = await buildTipDeploymentAction(tipDefinition, [...m]);
       error.tips.push({
         error: errorBase,
         tip: {
           label: tipDefinition.label,
           docUrl: tipDefinition.docUrl,
           message: stripAnsi(format(tipDefinition.tip, replacementsMarkdown).replace(/\*\*.\*\*/gm, ".")),
-          messageConsole: tipDefinition.tip.split(/\r?\n/).map((str: string) => format(str, replacements)).join("\n")
+          messageConsole: tipDefinition.tip.split(/\r?\n/).map((str: string) => format(str, replacements)).join("\n"),
+          ...(deploymentAction ? { deploymentAction } : {}),
         },
       });
     }
@@ -248,7 +311,7 @@ async function findAiTip(error: any, alreadyProcessedErrors: string[]): Promise<
       uxLog("warning", this, c.yellow(`[AI] Maximum number of AI calls for deployment tips reached. Increase with env var MAX_DEPLOYMENT_TIPS_AI_CALLS`));
       return null;
     }
-    const prompt = buildPrompt(error);
+    const prompt = await AiProvider.buildPrompt("PROMPT_SOLVE_DEPLOYMENT_ERROR", await getSolveDeploymentErrorPromptVariables(JSON.stringify(error, null, 2)));
     try {
       const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_SOLVE_DEPLOYMENT_ERROR");
       return aiResponse;
@@ -259,13 +322,3 @@ async function findAiTip(error: any, alreadyProcessedErrors: string[]): Promise<
   return null;
 }
 
-function buildPrompt(error: any) {
-  const prompt =
-    `You are a Salesforce release manager using Salesforce CLI commands to perform deployments \n` +
-    `How to solve the following Salesforce deployment error ?\n` +
-    "- Please answer using sfdx source format, not metadata format. \n" +
-    "- Please provide XML example if applicable. \n" +
-    "- Please skip the part of the response about how to retrieve or deploy the changes with Salesforce CLI.\n" +
-    `The error is: \n${JSON.stringify(error, null, 2)}`;
-  return prompt;
-}

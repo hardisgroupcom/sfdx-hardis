@@ -1,0 +1,13 @@
+command: hardis:org:init
+run: sf hardis:org:init
+org: throwaway
+caption: The initialization steps of the Helios project run on a scratch org, with the outcome and duration of each step
+timeoutMs: 900000
+answers:
+  - q: Which initialization steps do you want to run\?
+    choice: ^(Install packages|Deploy project sources)$
+    shot: true
+    caption: Pick the steps to run, the same ones a new scratch org gets
+pills:
+  - text: Org initialization steps
+    legend: One row per step, with its status

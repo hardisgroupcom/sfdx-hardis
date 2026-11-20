@@ -1,0 +1,29 @@
+command: hardis:project:action:create
+run: sf hardis:project:action:create
+org: none
+caption: A post-deployment action that assigns the crew permission set is added to the project configuration
+answers:
+  - q: Select the configuration scope
+    choice: ^Project$
+    shot: true
+    caption: Declare the action for every deployment, one branch, or one Pull Request
+  - q: Select when the action runs
+    choice: ^Post-deploy$
+  - q: Select the action type
+    choice: ^command$
+    shot: true
+    caption: Pick the type of action
+  - q: Enter a label for this action
+    value: Assign the crew permission set
+  - q: Enter the command to execute
+    value: sf org assign permset --name Helios_Delivery_Crew
+  - q: Select the execution context
+    choice: ^process-deployment-only$
+  - q: Allow this action to fail without blocking the deployment
+    choice: ^❌ No$
+  - q: Restrict this action to specific target branches
+    choice: ^Run on all target branches
+  - q: Run this action only once per target org
+    choice: ^✅ Yes$
+  - q: Custom Salesforce username to run this action
+    value: ""

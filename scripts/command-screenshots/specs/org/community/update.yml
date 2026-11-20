@@ -1,0 +1,10 @@
+command: hardis:org:community:update
+run: sf hardis:org:community:update --name 'Helios Customer Portal,Helios Installer Hub' --status DownForMaintenance
+mode: replay
+org: none
+caption: Two Experience Cloud communities are put in maintenance mode
+answers:
+  - q: "update the Network status"
+    choice: "Yes"
+    shot: true
+    caption: Confirm the status change of the communities

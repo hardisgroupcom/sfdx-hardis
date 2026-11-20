@@ -7,7 +7,7 @@ import { PromptTemplate } from "./promptTemplates.js";
 import { LangChainProviderFactory } from "./langChainProviders/langChainProviderFactory.js";
 import { ModelConfig, ProviderType } from "./langChainProviders/langChainBaseProvider.js";
 import { getConfig, getEnvVar } from "../../config/index.js";
-import { parseDefaultHeaders, HEADER_PARSE_I18N_KEYS } from "./providerConfigUtils.js";
+import { parseDefaultHeaders, HEADER_PARSE_I18N_KEYS } from "./utils/providerConfigUtils.js";
 import { t } from '../utils/i18n.js';
 
 export class LangChainProvider extends AiProviderRoot {

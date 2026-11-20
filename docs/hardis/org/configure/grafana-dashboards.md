@@ -1,3 +1,7 @@
+---
+title: "hardis:org:configure:grafana-dashboards - Install Grafana dashboards"
+description: "Installs the Org Monitoring by sfdx-hardis Grafana dashboards v2 on any Grafana instance (Grafana Cloud, OSS or Enterprise) through the Grafana HTTP API."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:configure:grafana-dashboards
 
@@ -40,10 +44,20 @@ In agent mode:
 - Dashboard JSONs live in `docs/grafana/dashboards-v2` of the sfdx-hardis repository and are fetched at runtime: the file list comes from the GitHub contents API (with a hardcoded fallback list when unreachable), the files from `raw.githubusercontent.com`.
 - Dashboards are imported via `POST /api/dashboards/db` with `overwrite: true` into the folder created via `POST /api/folders` (uid `sfdx-hardis-v2`).
 - Datasource detection (only with `--with-alerts`) uses `GET /api/datasources` with the same exclusion list as the hidden `ds_prom`/`ds_loki` dashboard variables (`alert-state-history`, `usage-insights`, `ml-metrics` in the datasource name; the dashboards apply it to the name, the command also applies it to the uid).
-- The alert pack YAML (`docs/grafana/alerts-v2/sfdx-hardis-alerts.yaml`) is fetched from the same ref, its `${DS_PROMETHEUS}`/`${DS_LOKI}` placeholders are replaced by the detected datasource uids, and each rule group is pushed via `PUT /api/v1/provisioning/folder/sfdx-hardis-v2/rule-groups/<group>` with the `X-Disable-Provenance` header, so the rules stay editable (and unpausable) from the Grafana UI.
+- The alert pack YAML (`docs/grafana/alerts-v2/sfdx-hardis-alerts.yaml`) is fetched from the same ref, its `DS_PROMETHEUS` and `DS_LOKI` placeholders are replaced by the detected datasource uids, and each rule group is pushed via `PUT /api/v1/provisioning/folder/sfdx-hardis-v2/rule-groups/<group>` with the `X-Disable-Provenance` header, so the rules stay editable (and unpausable) from the Grafana UI.
 - Helpers live in `src/common/grafana/grafanaDashboardsInstaller.ts`.
 </details>
 
+
+## Screenshots
+
+![Give the URL of the Grafana instance](../../../assets/images/commands/org/configure/grafana-dashboards-1.webp)
+
+_Give the URL of the Grafana instance_
+
+![The 13 Org Monitoring dashboards and the 8 paused alert rules are installed in a Grafana instance](../../../assets/images/commands/org/configure/grafana-dashboards.webp)
+
+_The 13 Org Monitoring dashboards and the 8 paused alert rules are installed in a Grafana instance_
 
 ## Parameters
 
@@ -51,7 +65,7 @@ In agent mode:
 |:--------------|:-------:|:----------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent         | boolean | Run in non-interactive mode for agents and automation                                                           |         |          |         |
 | debug<br/>-d  | boolean | Activate debug mode (more logs)                                                                                 |         |          |         |
-| flags-dir     | option  | undefined                                                                                                       |         |          |         |
+| flags-dir     | option  | Import flag values from a directory.                                                                            |         |          |         |
 | grafana-token | option  | Grafana service account token with Editor role (defaults to GRAFANA_API_TOKEN environment variable)             |         |          |         |
 | grafana-url   | option  | Grafana instance URL (defaults to GRAFANA_API_URL environment variable, then to grafanaUrl in .sfdx-hardis.yml) |         |          |         |
 | json          | boolean | Format output as json.                                                                                          |         |          |         |

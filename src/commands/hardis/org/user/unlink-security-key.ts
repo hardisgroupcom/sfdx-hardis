@@ -19,12 +19,26 @@ import {
 } from '../../../../common/utils/orgUserUnlinkUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
 import { getTriggeringUser } from '../../../../common/utils/triggeringUserUtils.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class OrgUserUnlinkSecurityKey extends SfCommand<any> {
   public static title = 'Unlink user security keys / MFA methods';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'unlink-security-key-targets',
+      title: 'Targeted users',
+      description: 'One row per user targeted by the unlink, with its id, whether it is active and its status before the run.',
+    },
+    {
+      file: 'users-security-key-unlink',
+      title: 'Unlink results',
+      description: 'One row per user, with the MFA methods unlinked, the ones that were not linked, the final status and who triggered the run.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

@@ -1,3 +1,7 @@
+---
+title: "hardis:doc:extract:permsetgroups - Generate project documentation"
+description: "Extracts and documents Salesforce Permission Set Groups and their assigned Permission Sets."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:doc:extract:permsetgroups
 
@@ -25,7 +29,7 @@ The command performs the following technical steps:
 - **Data Structuring:** The extracted data is then structured into a list of objects, making it easy to process.
 - **CSV Generation:** It constructs a CSV file with two columns: 'Permission set group' and 'Permission sets'. The 'Permission sets' column lists all assigned permission sets for each group, enclosed in quotes and separated by commas. The CSV file is saved to a temporary directory or a user-specified path.
 - **Markdown Generation:** It generates a Markdown file (`docs/permission-set-groups.md`) that includes a title, a table of contents, and detailed sections for each Permission Set Group. Each section lists the group's name, label, description, and a bulleted list of its assigned Permission Sets.
-- **File System Operations:** It uses `fs-extra` to ensure output directories exist and to write the generated CSV and Markdown files.
+- **File System Operations:** It uses Node.js `fs` to ensure output directories exist and to write the generated CSV and Markdown files.
 - **VS Code Integration:** It uses `WebSocketClient.requestOpenFile` to automatically open the generated CSV and Markdown files in VS Code, enhancing the user experience.
 
 ### Agent Mode
@@ -40,13 +44,19 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The permission set groups of the Helios project and the permission sets they contain, as a CSV file and a Markdown page](../../../assets/images/commands/doc/extract/permsetgroups.webp)
+
+_The permission set groups of the Helios project and the permission sets they contain, as a CSV file and a Markdown page_
+
 ## Parameters
 
 | Name              |  Type   | Description                                                       | Default | Required | Options |
 |:------------------|:-------:|:------------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent             | boolean | Run in non-interactive mode for agents and automation             |         |          |         |
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                                   |         |          |         |
-| flags-dir         | option  | undefined                                                         |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                              |         |          |         |
 | json              | boolean | Format output as json.                                            |         |          |         |
 | outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv |         |          |         |
 | skipauth          | boolean | Skip authentication check when a default username is required     |         |          |         |

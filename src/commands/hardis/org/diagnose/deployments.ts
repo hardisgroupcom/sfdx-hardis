@@ -4,6 +4,7 @@ import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 import { isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { soqlQueryTooling } from '../../../../common/utils/apiUtils.js';
@@ -19,6 +20,14 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class DiagnoseDeployments extends SfCommand<any> {
   public static title = 'Analyze metadata deployments and validations';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'deployments',
+      title: 'Deployments and validations',
+      description: 'One row per deployment or validation, with its status, author, dates, pending time and duration in minutes.',
+    },
+  ];
 
   public static description = `Analyzes metadata deployments and validations by querying DeployRequest records via the Tooling API.
 
@@ -283,6 +292,6 @@ In agent mode:
       },
     });
 
-    return { ...deploymentSummaryBase, outputFile: this.outputFile } as AnyJson;
+    return { ...deploymentSummaryBase, outputFile: this.outputFilesRes?.csvFile ?? this.outputFile } as AnyJson;
   }
 }

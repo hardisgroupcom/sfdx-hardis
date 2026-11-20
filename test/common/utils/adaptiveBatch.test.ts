@@ -44,6 +44,7 @@ describe('adaptive batches of provider calls', () => {
     expect(PROVIDER_BATCH_PROFILES.jiraCloud).to.deep.equal([20, 10, 5, 1]);
     expect(PROVIDER_BATCH_PROFILES.jiraServer).to.deep.equal([40, 20, 10, 5, 1]);
     expect(PROVIDER_BATCH_PROFILES.serviceNow).to.deep.equal([8, 4, 2, 1]);
+    expect(PROVIDER_BATCH_PROFILES.aha).to.deep.equal([10, 5, 2, 1]);
     expect(gitProviderBatchSizes('sfdx-hardis GitHub connector')).to.equal(PROVIDER_BATCH_PROFILES.github);
     expect(gitProviderBatchSizes({ getLabel: () => 'sfdx-hardis Azure DevOps connector' })).to.equal(PROVIDER_BATCH_PROFILES.azure);
     expect(gitProviderBatchSizes(null)).to.equal(PROVIDER_BATCH_PROFILES.default);

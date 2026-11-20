@@ -79,7 +79,7 @@ You need credentials to log in to the source-tracked sandbox you will work in. I
 - Click **New User Story** (or ![Start a new User Story](assets/images/btn-start-new-task.jpg) in the side bar).
 - Answer the questions, then select **Sandbox org with source tracking** when asked for the type of org.
 - Select your sandbox in the list. If it is not proposed, select the option to connect to another sandbox and log in with your credentials.
-- If your project sets `offerSandboxInit: true`, the command asks whether to initialize the sandbox: it installs packages, assigns permission sets, runs initialization scripts and loads initialization data. Answer yes only when your release manager told you to. It does not deploy metadata: use a [backpromote](salesforce-devops-backpromote.md) for that.
+- The command does not change the sandbox. Bring into it what the team merged with a [backpromote](salesforce-devops-backpromote.md), and run the [org initialization steps](salesforce-devops-org-initialization.md) (permission sets, scripts, data) with **Run now** in the Org Initialization panel when your release manager asks you to.
 - At the end of the command:
   - If you want to reset the source tracking of the sandbox (meaning **you do not care about the previous updates made in this sandbox**), click ![Reset source tracking](assets/images/btn-reset-tracking.jpg).
   - Click ![Open org in browser](assets/images/btn-open-org.jpg) and start working in your sandbox.
@@ -109,8 +109,8 @@ Next step: [work in your org](salesforce-devops-work-on-user-story.md).
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) course does this, click by click, on an org of your own:
 
-- [Lab 1.3 - Start a User Story on its own Git branch](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-3-start-a-user-story-on-a-git-branch/)
+- [Lab 1.3 - Start a User Story on its own Git branch](https://sfdx-hardis-training.cloudity.com/en/level-1-contributor-basics/1-3-start-a-user-story-on-a-git-branch/)
 
 <!-- training-links:end -->

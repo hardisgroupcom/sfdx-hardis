@@ -1,3 +1,7 @@
+---
+title: "hardis:source:retrieve"
+description: "A wrapper command for Salesforce CLI's sf project retrieve start (formerly sfdx force:source:retrieve), with enhanced interactive features."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:source:retrieve
 
@@ -15,6 +19,7 @@ Key features:
 - **Assisted Metadata Selection:** If no `sourcepath`, `manifest`, `metadata`, or `packagenames` flags are specified, an interactive menu will prompt you to select the metadata types you wish to retrieve.
 - **Assisted Org Selection:** If no target org is specified, an interactive menu will guide you to choose an org for the retrieval operation.
 - **Backward Compatibility:** While this command wraps the newer `sf project retrieve start`, it maintains compatibility with the older `sfdx force:source:retrieve` flags.
+- **Plugin events:** once the retrieve is over, the installed sf plugins that listen to `sfdx-hardis:retrieve-done` receive its status and what was asked (manifest, metadata, source paths, packages). [More info](https://sfdx-hardis.cloudity.com/sfdx-hardis-plugins/#react-to-sfdx-hardis-events)
 
 **Important Note:** The underlying Salesforce CLI command `sfdx force:source:retrieve` is being deprecated by Salesforce in November 2024. It is recommended to migrate to `sf project retrieve start` for future compatibility. See [Salesforce CLI Migration Guide](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_mig_deploy_retrieve.htm) for more information.
 
@@ -27,6 +32,7 @@ This command acts as an intelligent wrapper around the Salesforce CLI's source r
 - **Interactive Prompts:** It leverages `MetadataUtils.promptMetadataTypes()` and `promptOrgUsernameDefault()` to provide interactive menus for metadata and org selection when the user does not provide them as flags.
 - **Argument Transformation:** It dynamically constructs the command-line arguments for the underlying Salesforce CLI command based on user selections and provided flags.
 - **Error Handling:** It includes basic error handling, such as prompting the user to re-select an org if an issue occurs during org selection.
+- **Plugin events:** after the wrapped command returns, `emitRetrieveEvent()` fires the `sfdx-hardis:retrieve-done` oclif custom event. The status follows `process.exitCode`, set by `wrapSfdxCoreCommand`. Nothing is loaded when no plugin listens to it.
 - **Deprecation Warning:** It explicitly logs warnings about the deprecation of `sfdx force:source:retrieve` to inform users about upcoming changes.
 </details>
 
@@ -42,26 +48,32 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The metadata of manifest/package.xml retrieved from the org into the project](../../assets/images/commands/source/retrieve.webp)
+
+_The metadata of manifest/package.xml retrieved from the org into the project_
+
 ## Parameters
 
-| Name                  |  Type   | Description                                                         | Default | Required | Options |
-|:----------------------|:-------:|:--------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent                 | boolean | Run in non-interactive mode for agents and automation               |         |          |         |
-| apiversion<br/>-a     | option  | Override the api version used for api requests made by this command |         |          |         |
-| debug<br/>-d          | boolean | debugMode                                                           |         |          |         |
-| flags-dir             | option  | undefined                                                           |         |          |         |
-| forceoverwrite<br/>-f | boolean | forceoverwrite                                                      |         |          |         |
-| json                  | boolean | Format output as json.                                              |         |          |         |
-| manifest<br/>-x       | option  | manifest                                                            |         |          |         |
-| metadata<br/>-m       | option  | metadata                                                            |         |          |         |
-| packagenames<br/>-n   | option  | packagenames                                                        |         |          |         |
-| skipauth              | boolean | Skip authentication check when a default username is required       |         |          |         |
-| sourcepath<br/>-p     | option  | sourcePath                                                          |         |          |         |
-| target-org<br/>-o     | option  | undefined                                                           |         |          |         |
-| tracksource<br/>-t    | boolean | tracksource                                                         |         |          |         |
-| verbose               | boolean | verbose                                                             |         |          |         |
-| wait<br/>-w           | option  | wait                                                                |         |          |         |
-| websocket             | option  | websocket                                                           |         |          |         |
+| Name                  |  Type   | Description                                                                                                  | Default | Required | Options |
+|:----------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                 | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| apiversion<br/>-a     | option  | Override the api version used for api requests made by this command                                          |         |          |         |
+| debug<br/>-d          | boolean | debugMode                                                                                                    |         |          |         |
+| flags-dir             | option  | Import flag values from a directory.                                                                         |         |          |         |
+| forceoverwrite<br/>-f | boolean | forceoverwrite                                                                                               |         |          |         |
+| json                  | boolean | Format output as json.                                                                                       |         |          |         |
+| manifest<br/>-x       | option  | manifest                                                                                                     |         |          |         |
+| metadata<br/>-m       | option  | metadata                                                                                                     |         |          |         |
+| packagenames<br/>-n   | option  | packagenames                                                                                                 |         |          |         |
+| skipauth              | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| sourcepath<br/>-p     | option  | sourcePath                                                                                                   |         |          |         |
+| target-org<br/>-o     | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| tracksource<br/>-t    | boolean | tracksource                                                                                                  |         |          |         |
+| verbose               | boolean | verbose                                                                                                      |         |          |         |
+| wait<br/>-w           | option  | wait                                                                                                         |         |          |         |
+| websocket             | option  | websocket                                                                                                    |         |          |         |
 
 ## Examples
 

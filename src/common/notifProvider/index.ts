@@ -1,8 +1,9 @@
+import { redactSecretsDeep } from '../utils/secretMaskingUtils.js';
 import { isCI, uxLog } from "../utils/index.js";
 import c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { SlackProvider } from "./slackProvider.js";
-import { UtilsNotifs as utilsNotifs } from "./utils.js";
+import { UtilsNotifs as utilsNotifs } from "./utils/utils.js";
 import { TeamsProvider } from "./teamsProvider.js";
 import { GoogleChatProvider } from "./googleChatProvider.js";
 import { CONSTANTS, getConfig } from "../../config/index.js";
@@ -10,12 +11,12 @@ import { EmailProvider } from "./emailProvider.js";
 import { ApiProvider } from "./apiProvider.js";
 import type { NotifMessage } from "./types.js";
 import { t } from '../utils/i18n.js';
-import { writeMonitoringNotifFile } from './monitoringNotifWriter.js';
+import { writeMonitoringNotifFile } from './utils/monitoringNotifWriter.js';
 import {
   getChannelThreshold,
   getEffectiveNotificationConfig,
   severityMeetsThreshold,
-} from "./notificationConfig.js";
+} from "./utils/notificationConfig.js";
 import {
   AnonymizationChannel,
   AnonymizationLevel,
@@ -54,7 +55,9 @@ export abstract class NotifProvider {
 
   // Post notifications to all configured channels
   // This method is sync to allow the command to continue and not negatively impact performances
-  static async postNotifications(notifMessage: NotifMessage) {
+  static async postNotifications(notifMessageInput: NotifMessage) {
+    // A secret read by sfdx-hardis (replacement rules) is never sent
+    const notifMessage = redactSecretsDeep(notifMessageInput);
     const config = await getConfig("user");
     const notificationsDisable =
       config.notificationsDisable ?? (process.env?.NOTIFICATIONS_DISABLE ? process.env.NOTIFICATIONS_DISABLE.split(",") : []);

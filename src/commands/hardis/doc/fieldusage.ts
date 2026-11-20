@@ -7,6 +7,7 @@ import sortArray from '../../../common/utils/sortArray.js';
 import { generateReports, uxLog, uxLogTable } from '../../../common/utils/index.js';
 import { soqlQuery, soqlQueryTooling } from '../../../common/utils/apiUtils.js';
 import { t } from '../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../common/docBuilder/commandScreenshots.js';
 
 const REF_METADATA_COMPONENT_BATCH_SIZE = Number(process.env.METADATA_COMPONENT_BATCH_SIZE ?? 20);
 
@@ -18,6 +19,12 @@ export default class HardisDocFieldusage extends SfCommand<any> {
       description: 'Run in non-interactive mode for agents and automation',
     }),
     'target-org': requiredOrgFlagWithDeprecations,
+    websocket: Flags.string({
+      description: 'Websocket host:port for VsCode SFDX Hardis UI integration',
+    }),
+    skipauth: Flags.boolean({
+      description: 'Skip authentication check when a default username is required',
+    }),
     'sObjects': Flags.string({
       char: 's',
       description: 'Comma-separated list of sObjects to filter',
@@ -60,6 +67,14 @@ sf hardis:doc:fieldusage --agent
 
 In agent mode, all interactive prompts are skipped and default values are used.
 `;
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'fields-usage',
+      title: 'Fields usage',
+      description: 'One row per metadata component that uses a custom field, with the object, field name, field type, and the type and name of the dependency, to see where a field is used before changing or deleting it.',
+    },
+  ];
 
   public static examples = [
     '$ sf hardis:doc:fieldusage',

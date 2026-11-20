@@ -1,0 +1,5 @@
+command: hardis:project:deploy:notify
+run: sf hardis:project:deploy:notify --deploy-status valid --target-org helios-uat
+mode: replay
+org: none
+caption: "The notifications of a successful deployment to helios-uat - Pull Request comment, Jira tickets commented and labelled, Slack message"

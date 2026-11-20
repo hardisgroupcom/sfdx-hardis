@@ -1,0 +1,14 @@
+command: hardis:project:clean:profiles-extract
+run: sf hardis:project:clean:profiles-extract
+org: showcase
+caption: An Excel workbook to define the access of 3 personas to Installation__c and Panel_Batch__c, built from the org
+answers:
+  - q: Please select SObjects to add in the output Excel file
+    choice: "^(Installation__c|Panel_Batch__c) - "
+    shot: true
+    caption: Pick the objects to document
+    pills:
+      - text: Installation__c - Installation - Custom
+        legend: A custom object of the Helios project
+  - q: Please enter the number of personas to create
+    value: 3

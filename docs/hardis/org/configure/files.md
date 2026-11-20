@@ -1,3 +1,7 @@
+---
+title: "hardis:org:configure:files - Configure File export project"
+description: "Configures a project for exporting file attachments from a Salesforce org."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:configure:files
 
@@ -34,19 +38,31 @@ The command's technical implementation involves:
 
 - **Template Selection:** It uses `selectTemplate` to present predefined file export templates or a blank option to the user.
 - **Interactive Prompts:** The `promptFilesExportConfiguration` utility is used to gather detailed export settings from the user, such as the SOQL query, file types, and naming conventions.
-- **File System Operations:** Employs `fs-extra` to create the project directory (`files/your-project-name/`) and write the `export.json` configuration file.
+- **File System Operations:** Employs Node.js `fs` to create the project directory (`files/your-project-name/`) and write the `export.json` configuration file.
 - **PascalCase Conversion:** Uses `pascalcase` to format the files export path consistently.
 - **JSON Serialization:** Serializes the collected export configuration into a JSON string and writes it to `export.json`.
 - **WebSocket Communication:** Uses `WebSocketClient.requestOpenFile` to open the generated `export.json` file in VS Code, facilitating immediate configuration.
 </details>
 
 
+## Screenshots
+
+![Type the query of the records whose files are exported](../../../assets/images/commands/org/configure/files-1.webp)
+
+_Type the query of the records whose files are exported_
+
+![A files export configuration for the documents attached to the Helios installations, saved in scripts/files](../../../assets/images/commands/org/configure/files.webp)
+
+_A files export configuration for the documents attached to the Helios installations, saved in scripts/files_
+
+- **(1)** The export.json written for this configuration
+
 ## Parameters
 
 | Name         |  Type   | Description                                                   | Default | Required | Options |
 |:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
 | debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir    | option  | undefined                                                     |         |          |         |
+| flags-dir    | option  | Import flag values from a directory.                          |         |          |         |
 | json         | boolean | Format output as json.                                        |         |          |         |
 | skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
 | websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |

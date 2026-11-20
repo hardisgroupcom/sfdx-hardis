@@ -73,11 +73,59 @@ External integrations use a root class + concrete implementations:
 
 - **gitProvider**: GitHub, GitLab, Azure DevOps, Bitbucket
 - **notifProvider**: Slack, MS Teams, Email, API webhook. Slack and Teams share the logical `messaging` channel; each provider declares its channel via `getChannel()`. Routing is filtered per notification type and per channel via severity thresholds. See the `monitoring-notifications` skill.
-- **ticketProvider**: Jira, Azure Boards, generic
+- **ticketProvider**: Jira, Azure Boards, ServiceNow, Aha!, generic
 - **aiProvider**: LangChain-based (Anthropic, Google GenAI, Ollama, OpenAI) + Codex + Agentforce
-- **actionsProvider**: Post-deploy actions (Apex, data, manual, community publish, schedule batch)
+- **actionsProvider**: Deployment actions and org initialization steps (command, Apex, data, manual, community publish, schedule batch, run batch, package.xml items removal, user access policies...)
 - **keyValueProviders**: Salesforce org, local test
 - **docBuilder**: Documentation generation
+
+### Rule for every provider family: generic code is agnostic
+
+This applies to all of them (git, notification, ticketing, AI, actions, key-value providers...), for new code and for every review:
+
+- **Code specific to one implementation exists only in its provider class** (`gitProvider/gitlab.ts`, `notifProvider/slackProvider.ts`, `ticketProvider/jiraProvider.ts`...). Commands, the family's `index.ts`, its root class and shared `utils/` never name an implementation: no `providerKey === 'gitlab'`, no `instanceof SlackProvider`, no `if (isJira)`, no import of an implementation-only helper.
+- **Commands and generic code speak a common format** defined once in the generic code: neutral criteria, neutral options, neutral results. Each provider converts it to and from its native form (a JQL or WIQL query, a GitLab or GitHub API filter, Slack blocks or Teams cards, ADF or wiki markup...) inside its class. A command never accepts, builds, wraps or validates a native syntax.
+- **One implementation's rule is a base-class hook** the provider overrides (validation, capability, formatting). Generic code calls the hook and never tests which implementation it got. An operation an implementation cannot do throws a named "not supported" error from the base-class default.
+- **Flags, option types, i18n keys and descriptions stay neutral.** A flag only one implementation understands is either mapped or refused by every provider through a hook, or not added. The per-implementation mapping goes in the `Technical explanations` section of the command doc.
+- **Test of the design:** adding a new implementation means adding its class to the family's list and overriding base methods, with no edit to a command or to shared code. If it needs one, fix the abstraction first.
+
+The sections below detail this rule for deployment action types and ticketing systems.
+
+### Deployment action types: everything specific lives in the provider class
+
+Everything specific to one action type goes in its `ActionsProvider` subclass (`src/common/actionsProvider/<type>Action.ts`), and nowhere else: its flags, its prompts, its parameter normalization, its validation, the phases it may run in, its `runOnlyOnceByOrg` default. Generic code never names a type nor imports a type-specific helper: `hardis/project/action/base.ts`, `create.ts`, `update.ts`, `actionUtils.ts` and the Pull Request comment code only call the provider through the base-class hooks.
+
+| Hook (base default)                                    | Used by                                                                                                                                                                                                  |
+|--------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `getFlagNames()` (`[]`)                                | `assertNoFlagsOfOtherTypes`: create and update refuse a flag that only another type accepts                                                                                                              |
+| `getAllowedWhen()` (`null` = both phases)              | create refuses the other phase, `validateActionParameters` checks it, `listAvailableActionTypes(when)` hides the type, the provider's `checkParameters` refuses a hand-written action in the wrong phase |
+| `collectParameters(flags, headless, current)` (`null`) | create and the interactive update: flags when headless, prompts seeded with the current values otherwise                                                                                                 |
+| `applyFlags(parameters, flags)` (unchanged)            | update in agent mode                                                                                                                                                                                     |
+| `getDefinitionErrors(action, when)` (`null`)           | `validateActionParameters`, when an action is saved                                                                                                                                                      |
+| `checkParameters`, `getIdentityParameters`, `run`      | the execution loop                                                                                                                                                                                       |
+
+Generic code reaches the provider with `getBuiltInActionProvider(type)` (`actionUtils.ts`, `null` for a custom function). A hook returning `null` means "not handled by the provider": the older types (command, apex, data, publish-community, manual, schedule-batch, remove-packagexml-items) still have branches in the generic code. Do not add new branches there: move a type to its class when you touch it and the user agrees.
+
+Exceptions that stay outside the class:
+
+- The oclif flag declarations of `action:create` and `action:update`: oclif reads them statically.
+- The registries of `actionTypes.ts`, read by synchronous code (forecast, Pull Request comment, developer org runs, backpromote) where no provider class can be loaded: `DEPLOYMENT_ONLY_ACTION_TYPES` (read through `getEffectiveActionContext`) and `RUN_AT_EVERY_DEPLOYMENT_BY_DEFAULT_ACTION_TYPES` (read through `resolveRunOnlyOnceByOrg(def)`, which every reader of `runOnlyOnceByOrg` must use instead of `def.runOnlyOnceByOrg !== false`, so a hand-written action without the key gets the default of its type).
+
+Each type has its own documentation page, `docs/salesforce-devops-work-on-user-story-deployment-actions-<type>.md`, where `<type>` is its YAML `type`. A new type adds that page, a row in the **Action types** table of the overview (`docs/salesforce-devops-work-on-user-story-deployment-actions.md`) and an entry in the Deployment actions folder of the `mkdocs.yml` nav.
+
+Load prompt helpers (`actionPromptUtils.js`) with a dynamic import inside `collectParameters`, so running an action never loads them. A provider class must not be imported statically by `deploymentActionsStateUtils.ts` or by anything `actionsProvider.ts` imports: that creates an import cycle (`Cannot access 'ActionsProvider' before initialization`).
+
+### Ticketing systems: commands are agnostic, everything specific lives in the provider class
+
+The `hardis:ticket:*` commands, `src/common/ticketProvider/index.ts`, `ticketProviderRoot.ts` and `src/common/ticketProvider/utils/` never contain anything specific to one ticketing system. Code specific to JIRA, Azure Boards, ServiceNow, Aha! or a future connector exists **only** in its provider class (`jiraProvider.ts`, `azureBoardsProvider.ts`...).
+
+- **No native query language in a command.** A command never accepts, builds, wraps or validates JQL, WIQL or any provider syntax. It takes a common, provider-neutral criteria format (for example `{ projects, statuses, types, assignee, labels, text, createdAfter, updatedAfter, orderBy }`), defined once in the generic code, and passes it to the provider. Each provider converts it to its own language (JQL, WIQL, a ServiceNow encoded query...) inside its class. The same command line then works on every connector.
+- **No provider branch in generic code.** No `providerKey === 'jira'`, no `instanceof AzureBoardsProvider`, no regex of one system (`customfield_NNNNN`) in a command or in a shared util. A rule that applies to one connector is a method of that connector: validation goes in a base-class hook the provider overrides (for example `validateQualifyOptions(options)`), called by the command before any write.
+- **No provider-specific helper in `utils/`.** Query builders (`scopeJql`, `scopeWiql`), mention builders (ADF, wiki, Azure HTML), tag splitting, HTML spacing for one system's renderer: all private to the provider class that uses them. Only neutral helpers live in `utils/` (marker detection, project scope check, strict markdown, retry, error names).
+- **Flags and option types stay neutral.** A flag that only one connector understands (`--visibility role:<role>`) is either expressed in a neutral form every provider can map or refuse, or not added. Descriptions say "label", "status", "story points field", not "JIRA custom field" or "Azure tag"; the per-provider mapping is documented in the `Technical explanations` section.
+- **Unsupported is a named error from the base class.** A connector that cannot do an operation inherits the `TicketProviderRoot` default that throws `TicketProviderNotSupported`; the command does not test which connector it got.
+
+A new ticketing system must work with every `hardis:ticket:*` command by adding its class to `allTicketProviders` and overriding the base methods, with no change to any command. If supporting it needs an edit to a command or to `utils/`, the abstraction is wrong: fix the abstraction. See also how connectors are selected without naming them (`activeTicketProviders`, `onlyWhenDeclared`).
 
 ## Monitoring Pipeline (`src/common/monitoring/`, `src/common/notifProvider/`)
 

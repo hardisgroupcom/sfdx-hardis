@@ -1,3 +1,7 @@
+---
+title: "hardis:mdapi:upsert - Upsert metadata using the CRUD-based Metadata API"
+description: "Deploys local source files to an org using the CRUD-based Metadata API (upsertMetadata), pushing each component whole."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:mdapi:upsert
 
@@ -41,22 +45,68 @@ sf hardis:mdapi:upsert --source-dir force-app/main/default/profiles --agent
 In agent mode (and in CI), the overwrite confirmation prompt is skipped and the deployment proceeds. The caller owns the risk of the whole-component overwrite.
 
 
+## Screenshots
+
+![Confirm before the components replace their versions in the org](../../assets/images/commands/mdapi/upsert-1.webp)
+
+_Confirm before the components replace their versions in the org_
+
+![The two Helios permission sets overwritten whole in the org with CRUD upserts, with the list of components sent](../../assets/images/commands/mdapi/upsert.webp)
+
+_The two Helios permission sets overwritten whole in the org with CRUD upserts, with the list of components sent_
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Components to overwrite
+
+One row per metadata component that will be overwritten as a whole in the org, listed before the confirmation prompt.
+
+Files: `mdapi-upsert-components-*.csv`, `xls/mdapi-upsert-components-*.xlsx`
+
+![Components to overwrite report in Excel](../../assets/images/commands/mdapi/upsert-report-mdapi-upsert-components.webp)
+
+### Upsert successes
+
+One row per metadata component created or updated in the org.
+
+Files: `mdapi-upsert-successes-*.csv`, `xls/mdapi-upsert-successes-*.xlsx`
+
+![Upsert successes report in Excel](../../assets/images/commands/mdapi/upsert-report-mdapi-upsert-successes.webp)
+
+### Upsert failures
+
+One row per metadata component that could not be upserted, with the error returned by the Metadata API.
+
+Files: `mdapi-upsert-failures-*.csv`, `xls/mdapi-upsert-failures-*.xlsx`
+
+![Upsert failures report in Excel](../../assets/images/commands/mdapi/upsert-report-mdapi-upsert-failures.webp)
+
+### Upsert skipped items
+
+One row per metadata component skipped because its type is not supported by the CRUD-based Metadata API.
+
+Files: `mdapi-upsert-skipped-*.csv`, `xls/mdapi-upsert-skipped-*.xlsx`
+
+![Upsert skipped items report in Excel](../../assets/images/commands/mdapi/upsert-report-mdapi-upsert-skipped.webp)
+
 ## Parameters
 
-| Name              |  Type   | Description                                                                            | Default | Required | Options |
-|:------------------|:-------:|:---------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation                                  |         |          |         |
-| chunk-size        | option  | Components upserted per API call (max 10, or 200 for CustomMetadata/CustomApplication) |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                        |         |          |         |
-| flags-dir         | option  | undefined                                                                              |         |          |         |
-| ignore-errors     | boolean | Report component failures but exit with code 0                                         |         |          |         |
-| json              | boolean | Format output as json.                                                                 |         |          |         |
-| manifest<br/>-x   | option  | Path to a package.xml listing the metadata to deploy                                   |         |          |         |
-| metadata<br/>-m   | option  | Metadata to deploy, as Type or Type:Name (e.g. Profile, "Profile:Admin"). Repeatable.  |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required                          |         |          |         |
-| source-dir        | option  | Local source path to deploy (default: the project package directories)                 |         |          |         |
-| target-org<br/>-o | option  | undefined                                                                              |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                              |         |          |         |
+| Name              |  Type   | Description                                                                                                  | Default | Required | Options |
+|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| chunk-size        | option  | Components upserted per API call (max 10, or 200 for CustomMetadata/CustomApplication)                       |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                                         |         |          |         |
+| ignore-errors     | boolean | Report component failures but exit with code 0                                                               |         |          |         |
+| json              | boolean | Format output as json.                                                                                       |         |          |         |
+| manifest<br/>-x   | option  | Path to a package.xml listing the metadata to deploy                                                         |         |          |         |
+| metadata<br/>-m   | option  | Metadata to deploy, as Type or Type:Name (e.g. Profile, "Profile:Admin"). Repeatable.                        |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| source-dir        | option  | Local source path to deploy (default: the project package directories)                                       |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

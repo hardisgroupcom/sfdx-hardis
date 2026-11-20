@@ -1,3 +1,7 @@
+---
+title: "hardis:org:test:agents - Run agent tests"
+description: "Run Agentforce agent tests (AiEvaluationDefinition metadata) in a Salesforce org."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:test:agents
 
@@ -38,19 +42,43 @@ sf hardis:org:test:agents --agent
 In agent mode the command runs fully automatically. There are no interactive prompts; the wait time defaults to `SFDX_TEST_WAIT_MINUTES` (60 minutes) and all agent tests found in the org are run unless `--tests` is provided.
 
 
+## Screenshots
+
+![Pick the agent tests to run](../../../assets/images/commands/org/test/agents-1.webp)
+
+_Pick the agent tests to run_
+
+![Seven test cases of the Helios_Installation_Assistant agent pass, with the report buttons](../../../assets/images/commands/org/test/agents.webp)
+
+_Seven test cases of the Helios_Installation_Assistant agent pass, with the report buttons_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Agent tests results
+
+One row per assertion of the agent tests run, with its result, to find the failing test cases.
+
+Files: `agent-tests-*.csv`, `xls/agent-tests-*.xlsx`
+
+![Agent tests results report in Excel](../../../assets/images/commands/org/test/agents-report-agent-tests.webp)
+
 ## Parameters
 
-| Name              |  Type   | Description                                                                                             | Default | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation                                                   |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                         |         |          |         |
-| flags-dir         | option  | undefined                                                                                               |         |          |         |
-| json              | boolean | Format output as json.                                                                                  |         |          |         |
-| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                                       |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required                                           |         |          |         |
-| target-org<br/>-o | option  | undefined                                                                                               |         |          |         |
-| tests<br/>-t      | option  | Comma-separated list of agent test API names to run. Runs all tests found in the org when not provided. |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                               |         |          |         |
+| Name              |  Type   | Description                                                                                                  | Default | Required | Options |
+|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                                         |         |          |         |
+| json              | boolean | Format output as json.                                                                                       |         |          |         |
+| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                                            |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| tests<br/>-t      | option  | Comma-separated list of agent test API names to run. Runs all tests found in the org when not provided.      |         |          |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

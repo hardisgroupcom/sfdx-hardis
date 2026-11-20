@@ -1,3 +1,7 @@
+---
+title: "hardis:package:version:create - Create a new version of a package"
+description: "Creates a new version of a Salesforce package (2GP or Unlocked) in your Dev Hub."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:package:version:create
 
@@ -43,21 +47,31 @@ Use `--agent` to disable all interactive prompts. Required flags in agent mode:
 All interactive package selection and installation key prompts are skipped.
 
 
+## Screenshots
+
+![Pick the package to create a new version of](../../../assets/images/commands/package/version/create-1.webp)
+
+_Pick the package to create a new version of_
+
+![A new version of the Helios Core unlocked package is created, with code coverage computed](../../../assets/images/commands/package/version/create.webp)
+
+_A new version of the Helios Core unlocked package is created, with code coverage computed_
+
 ## Parameters
 
-| Name                  |  Type   | Description                                                               | Default | Required | Options |
-|:----------------------|:-------:|:--------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent                 | boolean | Run in non-interactive mode for agents and automation                     |         |          |         |
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                                           |         |          |         |
-| deleteafter           | boolean | Delete package version after creating it                                  |         |          |         |
-| flags-dir             | option  | undefined                                                                 |         |          |         |
-| install<br/>-i        | boolean | Install package version on default org after generation                   |         |          |         |
-| installkey<br/>-k     | option  | Package installation key                                                  |         |          |         |
-| json                  | boolean | Format output as json.                                                    |         |          |         |
-| package<br/>-p        | option  | Package identifier that you want to use to generate a new package version |         |          |         |
-| skipauth              | boolean | Skip authentication check when a default username is required             |         |          |         |
-| target-dev-hub<br/>-v | option  | undefined                                                                 |         |          |         |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                 |         |          |         |
+| Name                  |  Type   | Description                                                                                                       | Default | Required | Options |
+|:----------------------|:-------:|:------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                 | boolean | Run in non-interactive mode for agents and automation                                                             |         |          |         |
+| debug<br/>-d          | boolean | Activate debug mode (more logs)                                                                                   |         |          |         |
+| deleteafter           | boolean | Delete package version after creating it                                                                          |         |          |         |
+| flags-dir             | option  | Import flag values from a directory.                                                                              |         |          |         |
+| install<br/>-i        | boolean | Install package version on default org after generation                                                           |         |          |         |
+| installkey<br/>-k     | option  | Package installation key                                                                                          |         |          |         |
+| json                  | boolean | Format output as json.                                                                                            |         |          |         |
+| package<br/>-p        | option  | Package identifier that you want to use to generate a new package version                                         |         |          |         |
+| skipauth              | boolean | Skip authentication check when a default username is required                                                     |         |          |         |
+| target-dev-hub<br/>-v | option  | Username or alias of the Dev Hub org. Not required if the `target-dev-hub` configuration variable is already set. |         |   true   |         |
+| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                         |         |          |         |
 
 ## Examples
 

@@ -1,0 +1,9 @@
+command: hardis:org:monitor:errors
+run: sf hardis:org:monitor:errors
+org: showcase
+caption: "Apex and Flow errors of the last 7 days in the Helios org, summed up by type and operation"
+answers:
+  - q: "How many days of Apex/Flow errors"
+    value: "7"
+    shot: true
+    caption: "Pick how many days of errors to collect"

@@ -9,7 +9,7 @@
 [![Version](https://img.shields.io/npm/v/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
 [![Downloads/week](https://img.shields.io/npm/dw/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
 [![Downloads/total](https://img.shields.io/npm/dt/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
-[![Docker Pulls](https://img.shields.io/badge/Docker%20Pulls-223.4k-blue)](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis/tags)
+[![Docker Pulls](https://img.shields.io/badge/Docker%20Pulls-265.0k-blue)](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis/tags)
 [![GitHub stars](https://img.shields.io/github/stars/hardisgroupcom/sfdx-hardis)](https://GitHub.com/hardisgroupcom/sfdx-hardis/stargazers/)
 [![GitHub contributors](https://img.shields.io/github/contributors/hardisgroupcom/sfdx-hardis.svg)](https://gitHub.com/hardisgroupcom/sfdx-hardis/graphs/contributors/)
 [![MegaLinter](https://github.com/hardisgroupcom/sfdx-hardis/actions/workflows/mega-linter.yml/badge.svg?branch=main)](https://github.com/hardisgroupcom/sfdx-hardis/actions/workflows/mega-linter.yml?query=branch%3Amain)
@@ -43,7 +43,7 @@ It is free and open-source, and lets you:
 
 - [**Learn Salesforce DevOps hands-on** with a free course and shareable badges](https://sfdx-hardis.cloudity.com/salesforce-devops-training/)
 
-![Salesforce DevOps with sfdx-hardis, the free course](https://hardisgroupcom.github.io/sfdx-hardis-training/_assets/social/course.png)
+![Salesforce DevOps with sfdx-hardis, the free course](https://sfdx-hardis-training.cloudity.com/_assets/social/course.png)
 
 <!-- training-teaser:end -->
 
@@ -184,6 +184,7 @@ For advanced use, please also install dependencies
 sf plugins install @salesforce/plugin-packaging
 sf plugins install sfdx-git-delta
 sf plugins install sfdmu
+sf plugins install sfdx-browserforce-plugin
 ```
 
 If you are using CI/CD scripts, use `echo y | sf plugins install ...` to bypass prompt.
@@ -202,7 +203,7 @@ Two image flavors are available:
 
 - **Standard images** (`sfdx-hardis`, `sfdx-hardis-ubuntu`): Salesforce CI/CD tooling without coding agent CLIs. Use these for standard deployments.
 
-- **With-agents images** (`sfdx-hardis-with-agents`, `sfdx-hardis-ubuntu-with-agents`): Same as standard + coding agent CLIs pre-installed (Claude, Codex, Gemini, GitHub Copilot). Use these for [AI-powered auto-fix](https://sfdx-hardis.cloudity.com/salesforce-ai-setup/) scenarios.
+- **With-agents images** (`sfdx-hardis-with-agents`, `sfdx-hardis-ubuntu-with-agents`): Same as standard + coding agent CLIs pre-installed (Claude, Codex, Gemini, GitHub Copilot). Use these for [AI-powered auto-fix](https://sfdx-hardis.cloudity.com/salesforce-ai-setup/) scenarios. The [direct Codex AI provider](https://sfdx-hardis.cloudity.com/salesforce-ai-setup/#with-codex-directly) also needs one of them, as it runs the Codex CLI.
 
 ---
 
@@ -270,11 +271,11 @@ sf hardis:<COMMAND> <OPTIONS>
 
 ## Learn by doing
 
-[Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) is a free hands-on course that builds a complete CI/CD pipeline on free orgs, one click at a time.
+[Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) is a free hands-on course that builds a complete CI/CD pipeline on free orgs, one click at a time.
 
-- [Level 1 - Contributor basics](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/): 7 labs, from your first User Story to a merged Pull Request
-- [Level 2 - Contributor advanced](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/): 9 labs, deployment errors, deployment actions, code quality, conflicts
-- [Level 3 - Release Manager](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/): 11 labs, the pipeline up to production, releases, hotfixes, monitoring
+- [Level 1 - Contributor basics](https://sfdx-hardis-training.cloudity.com/en/level-1-contributor-basics/): 7 labs, from your first User Story to a merged Pull Request
+- [Level 2 - Contributor advanced](https://sfdx-hardis-training.cloudity.com/en/level-2-contributor-advanced/): 9 labs, deployment errors, deployment actions, code quality, conflicts
+- [Level 3 - Release Manager](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/): 11 labs, the pipeline up to production, releases, hotfixes, monitoring
 
 <!-- training-links:end -->
 
@@ -435,11 +436,6 @@ Here are some articles about [sfdx-hardis](https://sfdx-hardis.cloudity.com/)
 [![How to detect bad words in Salesforce records using SFDX Data Loader and sfdx-hardis](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-badwords.jpg)](https://nicolas.vuillamy.fr/how-to-detect-bad-words-in-salesforce-records-using-sfdx-data-loader-and-sfdx-hardis-171db40a9bac)
 [![Reactivate all the sandbox users with .invalid emails in 3 clicks](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-invalid-email.jpg)](https://nicolas.vuillamy.fr/reactivate-all-the-sandbox-users-with-invalid-emails-in-3-clicks-2265af4e3a3d)
 [![Invalid scope:Mine, not allowed ? Deploy your ListViews anyway !](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-invalid-scope-mine.jpg)](https://nicolas.vuillamy.fr/invalid-scope-mine-not-allowed-deploy-your-listviews-anyway-443aceca8ac7)
-
-- French
-  - [Versions d'API Salesforce décommissionnées: Que faire ?](https://leblog.hardis-group.com/portfolio/versions-dapi-salesforce-decommissionnees-que-faire/)
-  - [Exporter en masse les fichiers d’une org Salesforce](https://leblog.hardis-group.com/portfolio/exporter-en-masse-les-fichiers-dune-org-salesforce/)
-  - [Suspendre l’accès aux utilisateurs lors d’une mise en production Salesforce](https://leblog.hardis-group.com/portfolio/suspendre-lacces-aux-utilisateurs-lors-dune-mise-en-production-salesforce/)
 
 ### Recorded Conferences
 
@@ -609,6 +605,7 @@ cd -
 
 - [SFDX Git Delta](https://github.com/scolladon/sfdx-git-delta)
 - [Salesforce Data Move Utility](https://github.com/forcedotcom/SFDX-Data-Move-Utility)
+- [Browserforce](https://github.com/amtrack/sfdx-browserforce-plugin)
 
 ## Contributors
 
@@ -633,6 +630,8 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 - [Taha Basri](https://www.linkedin.com/in/tahabasri/), for his work about generating documentation of LWC
 - [Anush Poudel](https://www.linkedin.com/in/anushpoudel/), for integrating sfdx-hardis with multiple LLMs using langchainJs
 - [Sebastien Colladon](https://www.linkedin.com/in/sebastien-colladon/), for providing sfdx-git-delta which is highly used within sfdx-hardis
+- [Haim Knokh](https://github.com/hknokh), for providing SFDMU (Salesforce Data Move Utility) which runs the data imports and exports of sfdx-hardis
+- [Matthias Rolke](https://github.com/amtrack), for providing Browserforce (sfdx-browserforce-plugin) which applies the Setup settings of browser deployment actions
 - [Stepan Stepanov](https://www.linkedin.com/in/stepan-stepanov-79a48734/), for implementing the deployment mode _delta with dependencies_
 - [Shamina Mossodeean](https://www.linkedin.com/in/shaminam/), for automating SF decomposed metadata
 - [Michael Havrilla](https://www.linkedin.com/in/%F0%9F%92%BB-michael-havrilla-69063036/), for the integration with Vector.dev allowing to provide monitoring logs to external systems like DataDog
@@ -670,6 +669,10 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 - [Mehdi](https://github.com/Mehdi-Cloudity), for the [bypass generation command](https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/) and its application to Flows, Validation Rules and Triggers
 - [Mathieu Rodrigues](https://github.com/MathieuRodriguesCloudity), for the SFDMU configuration for CPQ projects
 - [Hasnioui-Ysf](https://github.com/Hasnioui-Ysf), for the work on Permission Sets management
+- [Olivier Mulot](https://www.linkedin.com/in/olivier-m-aa6111124/), for the qualification and testing of the [sfdx-hardis DevOps trainings](https://sfdx-hardis-training.cloudity.com/)
+- [fkramer690](https://github.com/fkramer690), for the step template of the [sfdx-hardis training](https://sfdx-hardis-training.cloudity.com/) labs
+- [Dave Renald Saavedra](https://github.com/drsaavedra), for creating Pull Request scratch orgs from a snapshot of the target branch
+- [availomani](https://github.com/availomani), for the retrieve, deployment and activation of Agentforce agents
 
 > Translations have been performed by GitHub Copilot with Claude Sonnet 4.6, then reviewed and arranged by real humans !
 

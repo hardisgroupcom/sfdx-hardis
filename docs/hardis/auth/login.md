@@ -1,3 +1,7 @@
+---
+title: "hardis:auth:login - Login"
+description: "Authenticates to a Salesforce org, primarily designed for CI/CD workflows."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:auth:login
 
@@ -84,6 +88,20 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![Pick the type of org to log in to](../../assets/images/commands/auth/login-1.webp)
+
+_Pick the type of org to log in to_
+
+![Give the org a short alias](../../assets/images/commands/auth/login-2.webp)
+
+_Give the org a short alias_
+
+![Log in to the Helios UAT sandbox from the browser, then give it the alias helios-uat](../../assets/images/commands/auth/login.webp)
+
+_Log in to the Helios UAT sandbox from the browser, then give it the alias helios-uat_
+
 ## Parameters
 
 | Name                |  Type   | Description                                                                                                                                                                                                                                                            | Default | Required | Options |
@@ -92,7 +110,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 | debug<br/>-d        | boolean | Activate debug mode (more logs)                                                                                                                                                                                                                                        |         |          |         |
 | devhub<br/>-h       | boolean | Also connect associated DevHub                                                                                                                                                                                                                                         |         |          |         |
 | encrypted-cert-file | option  | Path to a file containing the encrypted certificate. Useful when the certificate is kept out of the repository (e.g. in a password manager, via hardis:project:configure:auth --external-storage). The decryption key is still read from the SFDX_CLIENT_KEY variable. |         |          |         |
-| flags-dir           | option  | undefined                                                                                                                                                                                                                                                              |         |          |         |
+| flags-dir           | option  | Import flag values from a directory.                                                                                                                                                                                                                                   |         |          |         |
 | instanceurl<br/>-r  | option  | URL of org instance                                                                                                                                                                                                                                                    |         |          |         |
 | json                | boolean | Format output as json.                                                                                                                                                                                                                                                 |         |          |         |
 | name<br/>-n         | option  | Name of the auth config (config/branches/.sfdx-hardis.<name>.yml) created by hardis:project:configure:auth, used as org alias and config selector                                                                                                                      |         |          |         |

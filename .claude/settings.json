@@ -1,0 +1,21 @@
+{
+  "extraKnownMarketplaces": {
+    "megalinter": {
+      "source": {
+        "source": "github",
+        "repo": "oxsecurity/megalinter"
+      }
+    },
+    "grafana-skills": {
+      "source": {
+        "source": "github",
+        "repo": "grafana/skills"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "megalinter@megalinter": true,
+    "grafana-core@grafana-skills": true,
+    "grafana-lgtm@grafana-skills": true
+  }
+}

@@ -45,10 +45,11 @@ describe('MetadataUtils.resolveMetadataFromFile', () => {
   const resolve = (file: string) => MetadataUtils.resolveMetadataFromFile(path.join(root, file));
 
   it('resolves an Apex class from its code file and its meta file', () => {
-    expect(resolve('force-app/main/default/classes/MyClass.cls')).to.deep.equal({ type: 'ApexClass', name: 'MyClass' });
+    expect(resolve('force-app/main/default/classes/MyClass.cls')).to.deep.equal({ type: 'ApexClass', name: 'MyClass', parent: null });
     expect(resolve('force-app/main/default/classes/MyClass.cls-meta.xml')).to.deep.equal({
       type: 'ApexClass',
       name: 'MyClass',
+      parent: null,
     });
   });
 
@@ -56,13 +57,15 @@ describe('MetadataUtils.resolveMetadataFromFile', () => {
     expect(resolve('force-app/main/default/lwc/myLwc/myLwc.js')).to.deep.equal({
       type: 'LightningComponentBundle',
       name: 'myLwc',
+      parent: null,
     });
   });
 
-  it('resolves a field file to Object.Field__c', () => {
+  it('resolves a field file to Object.Field__c, with its object as parent', () => {
     expect(resolve('force-app/main/default/objects/Account/fields/Status__c.field-meta.xml')).to.deep.equal({
       type: 'CustomField',
       name: 'Account.Status__c',
+      parent: { type: 'CustomObject', name: 'Account' },
     });
   });
 
@@ -70,8 +73,9 @@ describe('MetadataUtils.resolveMetadataFromFile', () => {
     expect(resolve('force-app/main/default/objects/Account/Account.object-meta.xml')).to.deep.equal({
       type: 'CustomObject',
       name: 'Account',
+      parent: null,
     });
-    expect(resolve('force-app/main/default/flows/MyFlow.flow-meta.xml')).to.deep.equal({ type: 'Flow', name: 'MyFlow' });
+    expect(resolve('force-app/main/default/flows/MyFlow.flow-meta.xml')).to.deep.equal({ type: 'Flow', name: 'MyFlow', parent: null });
   });
 
   it('returns null for a file that is not metadata', () => {

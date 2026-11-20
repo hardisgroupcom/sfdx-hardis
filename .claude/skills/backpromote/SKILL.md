@@ -92,4 +92,4 @@ the pending merges; the history in the comments is never touched.
 | Plan JSON version 3, run state, terminal prompts                                       | `src/common/utils/backpromotePlanUtils.ts`                                                                                      |
 | Pull Request listing and action execution shared with promotion branches               | `src/common/utils/backpromoteUtils.ts`                                                                                          |
 | VS Code panel                                                                          | `../vscode-sfdx-hardis/src/commands/showBackpromote.ts`, `src/utils/backpromote/`, `src/webviews/lwc-ui/modules/s/backpromote/` |
-| End to end runbook                                                                     | `.claude/skills/promotion-branches-e2e/reference/runbook.md`, section 6bis                                                      |
+| End to end runbook                                                                     | `.claude/skills/e2e/scenarios/promotion-branches/reference/runbook.md`, section 6bis                                            |

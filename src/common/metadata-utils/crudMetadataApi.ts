@@ -12,6 +12,7 @@ import fs from '../utils/fsUtils.js';
 import * as path from 'path';
 import { createTempDir, uxLog } from '../utils/index.js';
 import { t } from '../utils/i18n.js';
+import { isThrottlingError, mapInAdaptiveBatchesSettled, retryOnThrottling } from '../utils/adaptiveBatch.js';
 
 // Namespace stamped on every metadata-format root element.
 const METADATA_XMLNS = 'http://soap.sforce.com/2006/04/metadata';
@@ -30,6 +31,8 @@ export type CrudComponentResult = {
   created?: boolean;
   filePath?: string;
   error?: string;
+  // Entries dropped by --active-only (permissions that grant nothing), only set when > 0.
+  inactiveEntriesRemoved?: number;
 };
 
 export type CrudMetadataOutcome = {
@@ -140,6 +143,108 @@ export function partitionCrudCompatibility<T extends { type: { name: string }; f
   return { supported, skipped };
 }
 
+// readMetadata calls sent side by side. Measured on 35 Profiles (API 68): 65 seconds one call of 10 at
+// a time, 22 seconds with 5 calls of 10 side by side, 11 seconds with 8 calls of 5, and no error.
+// Kept at 5: an org allows 25 requests longer than 20 seconds at the same time, 5 on a Developer
+// Edition or a trial, and a call of 10 large Profiles can last that long.
+export const DEFAULT_READ_CONCURRENCY = 5;
+const READ_CONCURRENCY_LADDER = [4, 2, 1];
+// Pause before reading again the calls the org refused, longer each time: an instance that is
+// unavailable for half a minute must not fail a backup that retrieved for an hour
+const READ_RETRY_PAUSES_MS = [2000, 5000, 15000, 30000];
+
+// Number of calls sent side by side, largest first: when the org pushes back, the calls it refused
+// are read again at the next size, which is kept for the rest of the run.
+export function parallelReadCallSizes(concurrency?: number | null): number[] {
+  const requested = Number.isFinite(concurrency) ? Math.floor(concurrency as number) : DEFAULT_READ_CONCURRENCY;
+  const max = Math.max(1, requested);
+  return [max, ...READ_CONCURRENCY_LADDER.filter((size) => size < max)];
+}
+
+const TRANSIENT_METADATA_API_ERROR = /ConcurrentRequests|ConcurrentPerOrgLongTxn|SERVER_UNAVAILABLE|ERROR_HTTP_5\d\d/i;
+
+// True for an error that a pause and fewer parallel calls can fix: too many concurrent requests, a
+// server that is unavailable, a dropped connection. The daily API limit (TotalRequests) and an error
+// about the component itself are final.
+export function isTransientMetadataApiError(error: unknown): boolean {
+  if (!error) {
+    return false;
+  }
+  if (isThrottlingError(error)) {
+    return true;
+  }
+  const details = [(error as any)?.name, (error as any)?.errorCode, (error as any)?.code, (error as any)?.message]
+    .filter(Boolean)
+    .join(' ');
+  return TRANSIENT_METADATA_API_ERROR.test(details);
+}
+
+// Types whose entries are permissions: --active-only drops the ones that grant nothing.
+export const ACTIVE_ONLY_TYPES = ['Profile', 'PermissionSet', 'MutingPermissionSet'];
+
+const MAX_TAB_DEFINITIONS = 50000;
+
+// Where a Profile (tabVisibilities) and a Permission Set (tabSettings) keep their tab settings
+const TAB_SETTING_KEYS = ['tabVisibilities', 'tabSettings'];
+
+// Names of the tabs that exist in the org (standard-Account, MyObject__c...), or null when the org
+// can not tell: the tab settings are then all kept. Every page is read, and a dropped connection is
+// tried again: a list that is short or missing one day changes the tab settings of every Profile.
+export async function listValidTabNames(conn: Connection): Promise<Set<string> | null> {
+  try {
+    const queryResult = await retryOnThrottling(async () =>
+      await conn.query<{ Name: string }>('SELECT Name FROM TabDefinition', { autoFetch: true, maxFetch: MAX_TAB_DEFINITIONS })
+    );
+    const names = (queryResult.records || []).map((record) => record.Name).filter(Boolean);
+    return names.length > 0 ? new Set(names) : null;
+  } catch {
+    return null;
+  }
+}
+
+// Drop the entries of a permission metadata read result whose boolean fields are all false
+// (field access with no read and no edit, class access disabled, app not visible and not default...).
+// Entries without any boolean field are always kept: tab visibilities (Hidden included), layout
+// assignments, login IP ranges and login hours carry a meaning even without a "true" in them.
+// readMetadata may return booleans or "true"/"false" strings, both are handled.
+// validTabNames, when given, also drops the tab settings of tabs that do not exist: readMetadata returns
+// one for every standard object, tab or not, and the deployment refuses those
+// ("You can't edit tab settings for X, as it's not a valid tab").
+export function removeInactiveEntries(
+  typeName: string,
+  result: Record<string, any>,
+  validTabNames: Set<string> | null = null
+): { result: Record<string, any>; removedCount: number } {
+  if (!ACTIVE_ONLY_TYPES.includes(typeName)) {
+    return { result, removedCount: 0 };
+  }
+  let removedCount = 0;
+  const filtered: Record<string, any> = {};
+  for (const [key, value] of Object.entries(result)) {
+    if (validTabNames !== null && TAB_SETTING_KEYS.includes(key)) {
+      const tabEntries = toArray(value);
+      const keptTabs = tabEntries.filter((entry: any) => validTabNames.has(entry?.tab));
+      removedCount += tabEntries.length - keptTabs.length;
+      if (keptTabs.length > 0) {
+        filtered[key] = keptTabs;
+      }
+      continue;
+    }
+    const isEntryList = Array.isArray(value) || isPlainObject(value);
+    if (!isEntryList) {
+      filtered[key] = value;
+      continue;
+    }
+    const entries = toArray(value);
+    const kept = entries.filter((entry) => !isInactiveEntry(entry));
+    removedCount += entries.length - kept.length;
+    if (kept.length > 0) {
+      filtered[key] = Array.isArray(value) ? kept : kept[0];
+    }
+  }
+  return { result: filtered, removedCount };
+}
+
 // Partition the component set and turn the incompatible components into `skipped` outcome results,
 // while initializing the empty `successes`/`failures` accumulators shared by read and upsert.
 function initCrudOutcome(
@@ -182,6 +287,21 @@ function cleanReadResult(result: Record<string, any>): Record<string, any> {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { fullName, ...rest } = result;
   return rest;
+}
+
+// An entry is inactive when it has at least one boolean field and every boolean field is false.
+function isInactiveEntry(entry: any): boolean {
+  if (!isPlainObject(entry)) {
+    return false;
+  }
+  const booleanValues = Object.values(entry).filter(
+    (v) => v === true || v === false || v === 'true' || v === 'false'
+  );
+  return booleanValues.length > 0 && booleanValues.every((v) => v === false || v === 'false');
+}
+
+function isPlainObject(value: unknown): value is Record<string, any> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
 function toArray<T>(value: T | T[] | null | undefined): T[] {
@@ -246,6 +366,17 @@ export interface CrudReadOptions {
   chunkSizeOverride?: number | null;
   commandThis: any;
   debug?: boolean;
+  // Drop the permission entries that grant nothing (see removeInactiveEntries)
+  activeOnly?: boolean;
+  // readMetadata calls sent side by side (default DEFAULT_READ_CONCURRENCY, 1 reads one call at a time)
+  concurrency?: number;
+  // Pause function, replaceable in tests
+  sleep?: (ms: number) => Promise<void>;
+}
+
+interface ReadCall {
+  typeName: string;
+  fullNames: string[];
 }
 
 interface MetadataFileSpec {
@@ -254,8 +385,10 @@ interface MetadataFileSpec {
 }
 
 export async function crudReadMetadatas(options: CrudReadOptions): Promise<CrudMetadataOutcome> {
-  const { conn, componentSet, outputDir, chunkSizeOverride, commandThis, debug } = options;
+  const { conn, componentSet, outputDir, chunkSizeOverride, commandThis, debug, activeOnly } = options;
   const registry = new RegistryAccess();
+  // Read once, and only when a type that carries tab settings is read with activeOnly
+  let validTabNames: Set<string> | null | undefined;
 
   // Set aside types the CRUD Metadata API cannot read (Apex, LWC, StaticResource, ...).
   const { supported, successes, failures, skippedResults } = initCrudOutcome(componentSet, registry);
@@ -265,38 +398,81 @@ export async function crudReadMetadatas(options: CrudReadOptions): Promise<CrudM
   const fileSpecs = new Map<string, MetadataFileSpec>();
   const tmpMdRoot = await createTempDir();
 
+  const readCalls: ReadCall[] = [];
   for (const [typeName, comps] of Object.entries(byType)) {
     const size = resolveEffectiveChunkSize(typeName, chunkSizeOverride);
     for (const batch of chunkArray(comps, size)) {
-      const fullNames = batch.map((cmp) => cmp.fullName);
-      let results: any[];
-      try {
-        if (debug) {
-          uxLog('other', commandThis, c.grey(`readMetadata ${typeName}: ${fullNames.join(', ')}`));
-        }
-        results = toArray(await conn.metadata.read(typeName as any, fullNames));
-      } catch (e) {
-        for (const cmp of batch) {
-          failures.push({ type: typeName, fullName: cmp.fullName, status: 'error', error: (e as Error).message });
-        }
+      readCalls.push({ typeName, fullNames: batch.map((cmp) => cmp.fullName) });
+    }
+  }
+
+  // The calls leave several at a time: a Profile takes about 2 seconds to read, whatever the number
+  // of Profiles in the call, and the org serves the calls side by side.
+  const readErrors = new Map<number, unknown>();
+  let pushBacks = 0;
+  const readResults = await mapInAdaptiveBatchesSettled(
+    readCalls,
+    async (readCall) => {
+      if (debug) {
+        uxLog('other', commandThis, c.grey(`readMetadata ${readCall.typeName}: ${readCall.fullNames.join(', ')}`));
+      }
+      return toArray(await conn.metadata.read(readCall.typeName as any, readCall.fullNames));
+    },
+    {
+      sizes: parallelReadCallSizes(options.concurrency),
+      shouldBackoff: isTransientMetadataApiError,
+      // The Metadata API sends no Retry-After
+      retryAfter: () => READ_RETRY_PAUSES_MS[Math.min(pushBacks++, READ_RETRY_PAUSES_MS.length - 1)],
+      sleep: options.sleep,
+      onBackoff: (nextSize) => {
+        uxLog('log', commandThis, c.grey(t('crudReadFewerParallelCalls', { count: String(nextSize) })));
+      },
+      onError: (error, _readCall, index) => {
+        readErrors.set(index, error);
+      },
+    }
+  );
+
+  for (let index = 0; index < readCalls.length; index++) {
+    const { typeName, fullNames } = readCalls[index];
+    const results = readResults[index];
+    if (results === undefined) {
+      const error = readErrors.get(index);
+      const errorMessage = (error as Error)?.message || String(error ?? t('crudComponentNotFoundInOrg'));
+      for (const fullName of fullNames) {
+        failures.push({ type: typeName, fullName, status: 'error', error: errorMessage });
+      }
+      continue;
+    }
+    // Map results back to the requested members by fullName (order is not guaranteed).
+    const resultsByName = new Map<string, any>();
+    for (const res of results) {
+      if (res?.fullName) {
+        resultsByName.set(res.fullName, res);
+      }
+    }
+    for (const fullName of fullNames) {
+      const res = resultsByName.get(fullName) ?? (results.length === 1 && fullNames.length === 1 ? results[0] : null);
+      if (!res?.fullName) {
+        failures.push({ type: typeName, fullName, status: 'error', error: t('crudComponentNotFoundInOrg') });
         continue;
       }
-      // Map results back to the requested members by fullName (order is not guaranteed).
-      const resultsByName = new Map<string, any>();
-      for (const res of results) {
-        if (res?.fullName) {
-          resultsByName.set(res.fullName, res);
+      if (activeOnly && validTabNames === undefined && ACTIVE_ONLY_TYPES.includes(typeName)) {
+        validTabNames = await listValidTabNames(conn);
+        if (validTabNames === null) {
+          uxLog('warning', commandThis, c.yellow(t('crudActiveOnlyTabsNotChecked')));
         }
       }
-      for (const cmp of batch) {
-        const res = resultsByName.get(cmp.fullName) ?? (results.length === 1 && batch.length === 1 ? results[0] : null);
-        if (!res?.fullName) {
-          failures.push({ type: typeName, fullName: cmp.fullName, status: 'error', error: t('crudComponentNotFoundInOrg') });
-          continue;
-        }
-        accumulateMetadataFile(fileSpecs, registry, typeName, cmp.fullName, res);
-        successes.push({ type: typeName, fullName: cmp.fullName, status: 'success' });
-      }
+      const { result: readResult, removedCount } = activeOnly
+        ? removeInactiveEntries(typeName, res, validTabNames ?? null)
+        : { result: res, removedCount: 0 };
+      accumulateMetadataFile(fileSpecs, registry, typeName, fullName, readResult);
+      successes.push({
+        type: typeName,
+        fullName,
+        status: 'success',
+        ...(removedCount > 0 ? { inactiveEntriesRemoved: removedCount } : {}),
+      });
     }
   }
 

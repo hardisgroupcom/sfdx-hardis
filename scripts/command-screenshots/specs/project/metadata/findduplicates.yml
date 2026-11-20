@@ -1,0 +1,4 @@
+command: hardis:project:metadata:findduplicates
+run: sf hardis:project:metadata:findduplicates --files "force-app/main/default/**/*.xml"
+org: none
+caption: The metadata files of the Helios project checked for values listed twice, such as a field placed twice in a layout

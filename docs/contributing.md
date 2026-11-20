@@ -1,3 +1,7 @@
+---
+title: "Contribute to sfdx-hardis"
+description: "How to contribute to the sfdx-hardis Salesforce CLI plugin and to its VS Code extension vscode-sfdx-hardis."
+---
 Everyone is welcome to contribute to sfdx-hardis (even juniors: we will help you).
 
 ### Salesforce CLI Plugin: sfdx-hardis

@@ -1,0 +1,9 @@
+command: hardis:org:diagnose:audittrail
+run: sf hardis:org:diagnose:audittrail
+org: showcase
+caption: Setup changes of the last 30 days, checked against the actions the team expects
+answers:
+  - q: number of days in the past
+    choice: ^30$
+    shot: true
+    caption: Pick how far back to look for suspicious setup activities

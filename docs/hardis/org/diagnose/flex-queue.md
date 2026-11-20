@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:flex-queue - Monitor Apex flex queue (AsyncApexJob Holding)"
+description: "Counts AsyncApexJob records with Status = 'Holding' (Apex flex queue), including ApexClass.Name, JobType, and CreatedDate for each job. The org can hold at most 100 such jobs; when the queue is full, new queueable/batch work can fail or stall."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:flex-queue
 
@@ -21,17 +25,38 @@ sf hardis:org:diagnose:flex-queue --agent --target-org myorg@example.com
 
 In agent mode, the command runs fully automatically. The `--threshold` defaults to 90 (or `APEX_FLEX_QUEUE_THRESHOLD` env var) when not provided.
 
+## Screenshots
+
+![Apex jobs holding in the flex queue of the Helios org, counted against the alert threshold of 90 out of 100](../../../assets/images/commands/org/diagnose/flex-queue.webp)
+
+_Apex jobs holding in the flex queue of the Helios org, counted against the alert threshold of 90 out of 100_
+
+- **(1)** The alert fires at 90 jobs, Salesforce refuses new ones at 100
+- **(2)** One row per job waiting in the queue
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Flex queue jobs
+
+One row per Apex job in Holding status, with its Apex class, job type and creation date.
+
+Files: `flex-queue-holding-*.csv`, `xls/flex-queue-holding-*.xlsx`
+
+![Flex queue jobs report in Excel](../../../assets/images/commands/org/diagnose/flex-queue-report-flex-queue-holding.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                    | Default | Required | Options |
 |:------------------|:-------:|:---------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent             | boolean | Run in non-interactive mode for agents and automation. Uses default values and skips prompts.                  |         |          |         |
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                                |         |          |         |
-| flags-dir         | option  | undefined                                                                                                      |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                                           |         |          |         |
 | json              | boolean | Format output as json.                                                                                         |         |          |         |
 | outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                                              |         |          |         |
 | skipauth          | boolean | Skip authentication check when a default username is required                                                  |         |          |         |
-| target-org<br/>-o | option  | undefined                                                                                                      |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set.   |         |   true   |         |
 | threshold<br/>-t  | option  | Alert when Holding job count >= this value (1–100). Overrides APEX_FLEX_QUEUE_THRESHOLD env var (default: 90). |         |          |         |
 | websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                      |         |          |         |
 

@@ -1,5 +1,8 @@
+---
+title: "hardis:project:deploy:smart - Smart Deploy sfdx sources to org"
+description: "Smart deploy of SFDX sources to target org, with many useful options."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
-
 # hardis:project:deploy:smart
 
 ## Description
@@ -8,7 +11,17 @@ Smart deploy of SFDX sources to target org, with many useful options.
 
 In case of errors, [tips to fix them](https://sfdx-hardis.cloudity.com/deployTips/) will be included within the error messages.
 
-> See the [whole sfdx-hardis smart deployment workflow explained in detail](https://sfdx-hardis.cloudity.com/salesforce-devops-smart-deployment.md)
+> See the [whole sfdx-hardis smart deployment workflow explained in detail](https://sfdx-hardis.cloudity.com/salesforce-devops-smart-deployment/)
+
+### Target org
+
+The deployment goes to one org, chosen in this order:
+
+1. The `--target-org` typed on the command line (`--target-org`, `-o` or the deprecated `--targetusername` / `-u`).
+2. The `targetUsername` of the branch config (`config/branches/.sfdx-hardis.BRANCHNAME.yml`).
+3. The default org of the Salesforce CLI.
+
+Outside CI and agent mode, you are then asked to confirm the org. The deployment actions and the other `sf` commands started by the deployment target the same org, through the `SF_TARGET_ORG` environment variable of the process: the default org of the project is not changed.
 
 ### Quick Deploy
 
@@ -50,6 +63,9 @@ Activate Smart Deployment tests with:
 Defaut list for **NOT_IMPACTING_METADATA_TYPES** (can be overridden with comma-separated list on env var NOT_IMPACTING_METADATA_TYPES)
 
 - ActionLinkGroupTemplate
+- AiAgentDefinition
+- AiAgentDefinitionVersion
+- AiAuthoringBundle
 - AnalyticSnapshot
 - AppMenu
 - Audience
@@ -95,7 +111,7 @@ Defaut list for **NOT_IMPACTING_METADATA_TYPES** (can be overridden with comma-s
 - Translations
 - WebLink
 
-Note: if you want to disable Smart test classes for a PR, add **nosmart** in the text of the latest commit.
+Note: if you want to disable Smart test classes for a PR, add **nosmart** in the text of the latest commit (any case: `NOSMART`, `no_smart`, `no-smart` and `no smart` also work).
 
 ### Custom Apex Test Classes (optional)
 
@@ -117,12 +133,57 @@ deploymentApexTestClasses:
 
 If necessary,you can define the following files:
 
-- `manifest/package-no-overwrite.xml`: Every element defined in this file will be deployed only if it is not existing yet in the target org (can be useful with ListView for example, if the client wants to update them directly in production org).
+- `manifest/package-no-overwrite.xml`: Every element defined in this file will be deployed only if it is not existing yet in the target org (can be useful with ListView for example, if the client wants to update them directly in production org). The target org content is listed only when an item of the deployment package matches one of its members.
   - Supports `<members>*</members>` (all members of a type), exact names, and glob-style patterns such as `<members>*__dlm</members>` or `<members>Prod_*</members>`.
   - Can be overridden for a branch using .sfdx-hardis.yml property **packageNoOverwritePath** or environment variable PACKAGE_NO_OVERWRITE_PATH (for example, define: `packageNoOverwritePath: manifest/package-no-overwrite-main.xml` in config file `config/.sfdx-hardis.main.yml`)
 - `manifest/packageXmlOnChange.xml`: Every element defined in this file will not be deployed if it already has a similar definition in target org (can be useful for SharingRules for example)
 
+When components of the deployment package are protected by `package-no-overwrite.xml`, the Pull Request comment has a folded **Protected by package-no-overwrite.xml** section counting the components already in the target org that are not overwritten, and the ones created this once, with a table per metadata type.
+
 See [Overwrite management documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-config-overwrite/)
+
+### Replacement rules (Beta)
+
+Right before the deployment, `replacementRules` change the files of the deployment package for the target org, then the files are put back:
+
+- Set an XML element to the value of the target org (endpoint of a Named Credential, sender of an email alert...), remove an XML element, or find and replace a text in any file.
+- A value is the same for every org, one per target branch with a `default`, or read from a CI/CD variable (`secret`, masked in every log and comment).
+- Rules come from `config/.sfdx-hardis.yml`, the branch file of the target, and the "sfdx-hardis Replacement Rules" issue of the git provider (no commit needed, read only when opened by a user with write access, never a secret).
+- Built-in rules remove the XML elements the deployment API version does not accept (for example Flow `ends` below API 68.0): the lowest of the org version, `sourceApiVersion` and the package.xml version. They also remove the user permissions of Profiles and Permission Sets the target org does not have, read from the org.
+- The Pull Request comment lists the rules applied and their warnings. `skipReplacementRules: true` (project or branch config) or `SFDX_HARDIS_SKIP_REPLACEMENT_RULES=true` skips them, built-in rules included.
+
+The target branch is `--target-branch` when given, else the target of the Pull Request in a check job, else the deployed branch. Quick Deploy reuses the validated package, which got the same changes.
+
+See [Replacement rules documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-config-replacement-rules/) and [hardis:project:replacement:list](https://sfdx-hardis.cloudity.com/hardis/project/replacement/list/)
+
+### Pull Request comments
+
+The validation and deployment Pull Request comments all read the same way:
+
+- A **verdict** naming the target org: *Ready to merge into integration*, *Cannot merge into integration: 2 deployment errors*, *Deployed to integration, but an action failed after the deployment*... A green validation also says how to merge: **Squash and merge** for a User Story branch, a **merge commit** (never squash) for a major, promotion or retrofit branch.
+- A short table of **checks**: Metadata (what changed, and for a deployment how: Full or Delta deployment, Full or Delta Quick Deploy), Apex tests (coverage, failures, or why none ran), Deployment actions (counts per status), and in a validation whether Quick Deploy can reuse it.
+- What **needs you**: deployment errors with their tips, failed actions with the end of their output, and the manual actions to perform, as checkboxes.
+- The **details**, folded: every deployment action of the job, the components per metadata type, the protected components, the Apex test classes, the tickets and the carried Pull Requests.
+
+![Validation Pull Request comment: verdict, checks and the manual action to do before the deployment](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-pr-comment-validation.png)
+
+When a post-deployment action fails, the deployment comment says the metadata is in the org, and shows the end of the output of the failed action:
+
+![Deployment Pull Request comment: deployed, but a post-deployment action failed](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-pr-comment-deployment-failed-action.png)
+
+Each changed Flow gets a comment of its own, with the changed properties first, then its diagram:
+
+![Visual git diff comment of a Flow](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-pr-comment-flow-diff.png)
+
+Each comment stays under 50,000 characters (30,000 on Bitbucket). Above that, long outputs and lists are shortened, then the biggest folded sections are left out, and the comment says so. A Flow whose only change is its status (activated or deactivated) gets no visual diff comment.
+
+### Deployment components report
+
+The Metadata line of the checks counts the components the deployment creates, updates, deletes or fails to deploy, and a folded table splits them per metadata type.
+
+![Validation Pull Request comment with the components per metadata type and the protected metadata](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-deployment-components-pr-comment.png)
+
+The full list is written to `hardis-report/deployment-components.csv` and `hardis-report/xls/deployment-components.xlsx`, kept as job artifacts: one row per component with its type, name, status (Failed, Created, Updated, Deleted, Not overwritten, Unchanged) and the package-no-overwrite file protecting it. When a deploy result does not list its components (some Quick Deploy results), the counts per type and the report are left out rather than shown incomplete.
 
 ### Packages installation
 
@@ -176,6 +237,8 @@ With `enablePromotionBranches: true`, a merge from a [promotion branch (Beta)](h
 
 After every action runs, its result (✅ success, ❌ failed, 👋 manual) is recorded in a dedicated **"Deployment Actions"** PR comment - ordered by org (integration → uat → preprod → prod) - regardless of `runOnlyOnceByOrg`.
 
+When several Pull Requests of the same deployment carry an identical action (same type, phase, user and parameters), it runs once and the other Pull Requests record it as done: see [Identical actions run once](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#identical-actions-run-once).
+
 If the commands are not the same depending on the target org, you can define them into **config/branches/.sfdx-hardis-BRANCHNAME.yml** instead of root **config/.sfdx-hardis.yml**
 
 You can also keep a single definition and restrict it with `includeTargetBranches` or `excludeTargetBranches` (use `dev-sandboxes` for developer sandboxes).
@@ -184,21 +247,21 @@ Example:
 
 ```yaml
 commandsPreDeploy:
-  - id: knowledgeUnassign
+  - id: 32e7e3d7-eeeb-4162-ae9e-a4013e8439e1
     label: Remove KnowledgeUser right to the user who has it
     command: sf data update record --sobject User --where "UserPermissionsKnowledgeUser='true'" --values "UserPermissionsKnowledgeUser='false'" --json
-  - id: knowledgeAssign
+  - id: bf114a50-8f40-4ac2-bf2b-910139292f76
     label: Assign Knowledge user to the deployment user
     command: sf data update record --sobject User --where "Username='deploy.github@myclient.com'" --values "UserPermissionsKnowledgeUser='true'" --json
 
 commandsPostDeploy:
-  - id: knowledgeUnassign
+  - id: ddd0d387-0b84-4ce5-8b0a-a9a370d2ece3
     label: Remove KnowledgeUser right to the user who has it
     command: sf data update record --sobject User --where "UserPermissionsKnowledgeUser='true'" --values "UserPermissionsKnowledgeUser='false'" --json
-  - id: knowledgeAssign
+  - id: 25891b5b-6053-4f91-9416-037e3e3f6e46
     label: Assign Knowledge user to desired username
     command: sf data update record --sobject User --where "Username='admin-yser@myclient.com'" --values "UserPermissionsKnowledgeUser='true'" --json
-  - id: someActionToRunJustOneTime
+  - id: a807b752-71dd-4345-a115-413ccd3dbbcc
     label: And to run only if deployment is success
     command: sf sfdmu:run ...
     context: process-deployment-only
@@ -219,11 +282,13 @@ A `--check` simulation changes nothing in the org. A read-only preflight reports
 
 On a real deployment, each Flow goes through:
 
-1. Existence check. A Flow that is already gone is reported as `FLOW_DELETE_NOOP`, not an error (same for a Flow with no deletable version, for example one from a managed package).
+1. Existence check. A Flow that is already gone is reported as `FLOW_DELETE_NOOP`, not an error (same for a Flow with no deletable version, for example one from a managed package). It is left out of the Pull Request comment, and still listed in the console table and the CSV report.
 2. Deactivation through the Tooling API (`FlowDefinition.activeVersionNumber = 0`), which stops new Flow Interviews from starting.
-3. Flow Interview gate. If interviews remain and `FLOW_DELETE_INTERVIEWS` is not set, the deployment fails with `FLOW_DELETE_BLOCKED`. The Flow stays deactivated, so retrying the pipeline once those interviews resolve completes the deletion.
+3. Flow Interview gate. If interviews remain and `FLOW_DELETE_INTERVIEWS` is not set, the Flow is reported as `FLOW_DELETE_BLOCKED`. The Flow stays deactivated, so retrying the pipeline once those interviews resolve completes the deletion.
 4. Flow Interview deletion, only when `FLOW_DELETE_INTERVIEWS` authorizes it.
 5. Version deletion through the Tooling API, oldest version first, then a check that no version is left.
+
+A Flow that another Flow still references (a subflow element, a Process Builder action) can not be deleted while that Flow exists. When the referencing Flow is deleted in the same run, the blocked Flows are tried again after the others, as long as each pass deletes something.
 
 When deleting Flow Interviews is authorized, step 5 retries: an interview that was still running when the Flow got deactivated can pause mid-sequence and block a version. Both bounds can be tuned, as an env variable or as a `.sfdx-hardis.yml` property (the env variable wins). A value that is not an integer, or is below the minimum, is ignored with a warning and the default applies.
 
@@ -232,7 +297,9 @@ When deleting Flow Interviews is authorized, step 5 retries: an interview that w
 | FLOW_DELETE_MAX_ATTEMPTS   | flowDeleteMaxAttempts       |    3    |    1    | Number of version deletion attempts per Flow. `1` disables the retry. Only used when `FLOW_DELETE_INTERVIEWS` authorizes deleting interviews: without that authorization a block is final. |
 | FLOW_DELETE_RETRY_DELAY_MS | flowDeleteRetryDelayMs      |  10000  |    0    | Delay in milliseconds between two attempts, to give a paused interview time to be deleted.                                                                                                 |
 
-Any failure that is not an interview block (insufficient access, network error mid-run...) is reported as `FLOW_DELETE_ERROR` and also fails the deployment. After a network error the org can be further along than the report shows: every step is re-runnable, so retry and trust the new report.
+Any failure that is not an interview block (a referencing Flow that stays in the org, insufficient access, network error mid-run...) is reported as `FLOW_DELETE_ERROR`. After a network error the org can be further along than the report shows: every step is re-runnable, so retry and trust the new report.
+
+A Flow that can not be deleted only stops the job **before** the deployment (`preDestructiveChanges.xml`). **After** the deployment, the metadata is already in the org, so a Flow left behind, whatever the reason, does not fail the job: it stays deactivated when its deactivation succeeded, the Pull Request comment shows a ⚠️ Flow deletion section, and the deployment notification is sent as a warning that lists it. Running the same deployment again retries it, but a later delta deployment does not include it anymore: solve what blocks it, then run the job again or delete the Flow manually.
 
 Notes:
 
@@ -243,11 +310,13 @@ Notes:
 
 ### Pull Requests Custom Behaviors
 
-If some words are found **in the Pull Request description**, special behaviors will be applied
+If some words are found **in the Pull Request description**, special behaviors will be applied.
+
+Keywords match in any case. NO_DELTA also accepts its words joined by `-`, a space or nothing (`no_delta`, `No-Delta`, `no delta` and `nodelta` all work). PURGE_FLOW_VERSIONS and DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT start destructive steps, so they keep their underscores (`purge_flow_versions` works, `purge flow versions` does not). A keyword inside a path or a branch name does not count, nor one inside an HTML comment (`<!-- -->`) or a fenced code block: a Pull Request template can list them without applying them, and the job log warns when a keyword is found only there.
 
 | Word                                 | Behavior                                                                                                                                                                                                                                                                             |
 |:-------------------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| NO_DELTA                             | Even if delta deployments are activated, a deployment in mode **full** will be performed for this Pull Request                                                                                                                                                                       |
+| NO_DELTA                             | Even if delta deployments are activated, a deployment in mode **full** will be performed for this Pull Request. Also works in the latest commit message.                                                                                                                             |
 | PURGE_FLOW_VERSIONS                  | After deployment, inactive and obsolete Flow Versions will be deleted (equivalent to command sf hardis:org:purge:flow)<br/>**Caution: This will also purge active Flow Interviews !**                                                                                                |
 | DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT | If a file manifest/destructiveChanges.xml is found, it will be executed in a separate step, after the deployment of the main package                                                                                                                                                 |
 | FLOW_DELETE_INTERVIEWS               | Authorizes deleting the Flow Interviews that block the deletion of a Flow listed in destructive changes. The directive must be on its own line (or in a checked Markdown checkbox).<br/>**Caution: deleting Flow Interviews is irreversible and destroys in-flight process state !** |
@@ -273,7 +342,7 @@ Note: it is also possible to define these behaviors as ENV variables:
 
 ### Deployment plan (deprecated)
 
-> **This feature is deactivated by default (enable with `enableDeprecatedDeploymentPlan` in project configuration). Use preCommands and postCommands instead.**
+> **This feature is deactivated by default (enable with `enableDeprecatedDeploymentPlan` in project configuration). Use preCommands and postCommands instead.** 
 
 If you need to deploy in multiple steps, you can define a property `deploymentPlan` in `.sfdx-hardis.yml`.
 
@@ -331,6 +400,31 @@ If you need notifications to be sent using the current Pull Request and not the 
 
 If you want to disable the calculation and display of Flow Visual Git Diff in Pull Request comments, define variable **SFDX_DISABLE_FLOW_DIFF=true**
 
+### Major branch deployment check
+
+`--major-branch-check` checks that a major branch can still be deployed to its own org, for a job scheduled every night on each major branch: an org can drift from its branch (manual changes, refresh, failed deployment), and the next Pull Request is then the one that pays for it.
+
+```sh
+sf hardis:project:deploy:smart --check --major-branch-check
+```
+
+- `--check` is implied: nothing is deployed.
+- The current branch must be a major branch (a `config/branches/.sfdx-hardis.BRANCHNAME.yml` file exists), and the org is the one of its branch config.
+- The deployment is always simulated in full: no delta, even with `useDeltaDeployment` or `enableDeltaDeploymentBetweenMajorBranches`.
+- No Pull Request is read: the last merged one is not commented, and its deployment actions are not run. Pre and post deployment actions are skipped, since they already ran when the branch was deployed.
+
+The default CI/CD templates hold this job, ready to be scheduled. With `enableMajorBranchDeploymentCheck: true` in `config/.sfdx-hardis.yml`, the DevOps Pipeline of the VS Code extension colors each major branch with the result of its last check. [More info](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-major-branch-check/)
+
+### Development orgs list
+
+After a deployment that follows a merge, the Pull Requests merged into the branch are listed again for the [development orgs](https://sfdx-hardis.cloudity.com/salesforce-devops-dev-orgs/) that target it, so their owners know when to run a backpromote. When no development org was ever registered, this costs one call to the git provider and nothing else. An error there never fails the deployment.
+
+### Plugin events
+
+Before the package.xml, the delta and the replacement rules read the local sources, the installed sf plugins that listen to `sfdx-hardis:validation-start` (validation) or `sfdx-hardis:deployment-start` (deployment) are called, so they can prepare the sources (for example recompose decomposed metadata).
+
+As soon as Salesforce returns the result of each deployment, the installed sf plugins that listen to `sfdx-hardis:validation-done` or `sfdx-hardis:deployment-done` receive it, with the path of the Apex code coverage file, before the code coverage check. [More info](https://sfdx-hardis.cloudity.com/sfdx-hardis-plugins/#react-to-sfdx-hardis-events)
+
 ### Agent Mode
 
 Supports non-interactive execution with `--agent`:
@@ -346,28 +440,58 @@ In agent mode:
 - The interactive org selection prompt is skipped.
 - Deployment is forced into **simulation/check mode** - `--check` is implicit, but should be passed explicitly to make the intent clear. No changes are applied to the org.
 - Use `--source-branch` to specify the source git branch (overrides local git branch detection via `FORCE_SOURCE_BRANCH`).
-- Use `--target-branch` to specify the target git branch. This sets `FORCE_TARGET_BRANCH` for delta/PR scope and also sets `CONFIG_BRANCH` so the target branch config file (`config/branches/.sfdx-hardis-BRANCHNAME.yml`) is loaded - providing the correct `targetUsername` for that org automatically.
+- Use `--target-branch` to specify the target git branch. This sets `FORCE_TARGET_BRANCH` for delta/PR scope and also sets `CONFIG_BRANCH` so the target branch config file (`config/branches/.sfdx-hardis-BRANCHNAME.yml`) is loaded - providing the correct `targetUsername` for that org automatically, unless `--target-org` is typed on the command line.
 - If a deployment action requires a `customUsername` and authentication for that user fails, the action is **skipped** (not failed) so the simulation can continue.
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) course runs this command, click by click, on an org of your own, in these labs:
+
+- [Lab 1.6 - Open a Pull Request, pass the deployment check, merge](https://sfdx-hardis-training.cloudity.com/en/level-1-contributor-basics/1-6-pull-request-deployment-check-and-merge/)
+- [Lab 2.2 - Fix a deployment error caused by a missing dependency](https://sfdx-hardis-training.cloudity.com/en/level-2-contributor-advanced/2-2-fix-a-missing-dependency-deployment-error/)
+- [Lab 2.3 - Fix broken records with an Apex deployment action](https://sfdx-hardis-training.cloudity.com/en/level-2-contributor-advanced/2-3-fix-broken-records-with-an-apex-deployment-action/)
+- [Lab 2.5 - Pass the code quality gate and Apex test coverage](https://sfdx-hardis-training.cloudity.com/en/level-2-contributor-advanced/2-5-pass-code-quality-and-apex-test-coverage/)
+- [Lab 3.2 - Review and merge a contributor Pull Request](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-2-review-a-contributor-pull-request/)
+- [Lab 3.3 - Read the deployment log, and what .forceignore hides from it](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-3-deploy-to-integration-and-read-the-log/)
+- [Lab 3.4 - Three Pull Requests in one release: review the merge order](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-4-merge-colliding-pull-requests/)
+- [Lab 3.5 - Promote to UAT and write the release notes](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-5-promote-to-uat-and-write-release-notes/)
+- [Lab 3.6 - Release to production and read your DORA metrics](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-6-release-to-production-and-read-dora-metrics/)
+- [Lab 3.7 - Production is broken: hotfix and retrofit](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-7-hotfix-and-retrofit/)
+- [Lab 3.10 - Promote a subset with promotion branches (Beta)](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-10-promote-a-subset-with-promotion-branches/)
+- [Lab 3.11 - Capstone: run a weekly release cycle](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-11-capstone-run-a-weekly-release-cycle/)
+
+<!-- training-links:end -->
+
+
+## Screenshots
+
+![The Helios sources deployed to a scratch org with their deployment actions, Apex tests and the report of deployed components](../../../assets/images/commands/project/deploy/smart.webp)
+
+_The Helios sources deployed to a scratch org with their deployment actions, Apex tests and the report of deployed components_
+
+- **(1)** The components deployed, in an Excel report
 
 ## Parameters
 
-| Name              |  Type   | Description                                                             | Default | Required | Options |
-|:------------------|:-------:|:------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation                   |         |          |         |
-| check<br/>-c      | boolean | Only checks the deployment, there is no impact on target org            |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                         |         |          |         |
-| delta             | boolean | Applies sfdx-git-delta to package.xml before other deployment processes |         |          |         |
-| flags-dir         | option  | undefined                                                               |         |          |         |
-| json              | boolean | Format output as json.                                                  |         |          |         |
-| packagexml<br/>-p | option  | Path to package.xml containing what you want to deploy in target org    |         |          |         |
-| runtests<br/>-r                                                                                                                                                  | option  | If testlevel=RunSpecifiedTests, please provide a list of classes.                                                                   |
-| If testlevel=RunRepositoryTests, can contain a regular expression to keep only class names matching it. If not set, will run all test classes found in the repo. |         |                                                                                                                                     |         |
-| skipauth                                                                                                                                                         | boolean | Skip authentication check when a default username is required                                                                       |         |          |                                                                                                                                                           |
-| source-branch                                                                                                                                                    | option  | Source git branch name (agent mode: overrides local git branch detection via FORCE_SOURCE_BRANCH)                                   |         |          |                                                                                                                                                           |
-| target-branch                                                                                                                                                    | option  | Target git branch name (agent mode: sets CONFIG_BRANCH so the target branch config is loaded, providing the correct targetUsername) |         |          |                                                                                                                                                           |
-| target-org<br/>-o                                                                                                                                                | option  | undefined                                                                                                                           |         |          |                                                                                                                                                           |
-| testlevel<br/>-l                                                                                                                                                 | option  | Level of tests to validate deployment. RunRepositoryTests auto-detect and run all repository test classes                           |         |          | NoTestRun<br/>RunSpecifiedTests<br/>RunRepositoryTests<br/>RunRepositoryTestsExceptSeeAllData<br/>RunLocalTests<br/>RunRelevantTests<br/>RunAllTestsInOrg |
-| websocket                                                                                                                                                        | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                           |         |          |                                                                                                                                                           |
+| Name               |  Type   | Description                                                                                                                                                                                                                            | Default | Required |                                                                          Options                                                                          |
+|:-------------------|:-------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------:|
+| agent              | boolean | Run in non-interactive mode for agents and automation                                                                                                                                                                                  |         |          |                                                                                                                                                           |
+| check<br/>-c       | boolean | Only checks the deployment, there is no impact on target org                                                                                                                                                                           |         |          |                                                                                                                                                           |
+| debug<br/>-d       | boolean | Activate debug mode (more logs)                                                                                                                                                                                                        |         |          |                                                                                                                                                           |
+| delta              | boolean | Applies sfdx-git-delta to package.xml before other deployment processes                                                                                                                                                                |         |          |                                                                                                                                                           |
+| flags-dir          | option  | Import flag values from a directory.                                                                                                                                                                                                   |         |          |                                                                                                                                                           |
+| json               | boolean | Format output as json.                                                                                                                                                                                                                 |         |          |                                                                                                                                                           |
+| major-branch-check | boolean | Checks that the current major branch can be deployed to its own org: full simulation (implies --check), without reading any Pull Request nor running deployment actions. Meant for a scheduled job                                     |         |          |                                                                                                                                                           |
+| packagexml<br/>-p  | option  | Path to package.xml containing what you want to deploy in target org                                                                                                                                                                   |         |          |                                                                                                                                                           |
+| runtests<br/>-r    | option  | If testlevel=RunSpecifiedTests, please provide a list of classes.<br/>If testlevel=RunRepositoryTests, can contain a regular expression to keep only class names matching it. If not set, will run all test classes found in the repo. |         |          |                                                                                                                                                           |
+| skipauth           | boolean | Skip authentication check when a default username is required                                                                                                                                                                          |         |          |                                                                                                                                                           |
+| source-branch      | option  | Source git branch name (agent mode: overrides local git branch detection via FORCE_SOURCE_BRANCH)                                                                                                                                      |         |          |                                                                                                                                                           |
+| target-branch      | option  | Target git branch name (agent mode: sets CONFIG_BRANCH so the target branch config is loaded, providing the correct targetUsername, unless --target-org is typed on the command line)                                                  |         |          |                                                                                                                                                           |
+| target-org<br/>-o  | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set.                                                                                                                           |         |   true   |                                                                                                                                                           |
+| testlevel<br/>-l   | option  | Level of tests to validate deployment. RunRepositoryTests auto-detect and run all repository test classes                                                                                                                              |         |          | NoTestRun<br/>RunSpecifiedTests<br/>RunRepositoryTests<br/>RunRepositoryTestsExceptSeeAllData<br/>RunLocalTests<br/>RunRelevantTests<br/>RunAllTestsInOrg |
+| websocket          | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                                                                              |         |          |                                                                                                                                                           |
 
 ## Examples
 
@@ -389,6 +513,10 @@ $ sf hardis:project:deploy:smart --check --testlevel RunRepositoryTests --runtes
 
 ```shell
 $ sf hardis:project:deploy:smart --check --testlevel RunRepositoryTestsExceptSeeAllData
+```
+
+```shell
+$ sf hardis:project:deploy:smart --check --major-branch-check
 ```
 
 ```shell
@@ -418,3 +546,5 @@ $ sf hardis:project:deploy:smart --agent --check
 ```shell
 $ sf hardis:project:deploy:smart --agent --check --source-branch feature/my-feature --target-branch integration --target-org deploy@myclient.com.integration
 ```
+
+

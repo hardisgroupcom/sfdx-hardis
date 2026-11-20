@@ -4,6 +4,8 @@ import {
   buildDeployResultSummaryLines,
   countDeployComponentChanges,
   isComponentChangeDetailComplete,
+  listDeployComponentChanges,
+  listDeployComponentFailures,
   summarizeDeployErrorMessage,
 } from '../../../src/common/utils/deployResultSummary.js';
 
@@ -354,7 +356,9 @@ describe('buildDeployedComponentsMarkdown()', () => {
   });
 
   it('uses the conditional wording on a validation, which changed nothing yet', () => {
-    expect(buildDeployedComponentsMarkdown(metrics(), true)).to.contain('130 would change');
+    expect(buildDeployedComponentsMarkdown(metrics(), true)).to.equal(
+      '**Simulated deployment:** 3027 components validated against the org, 130 would change (45 created, 83 updated, 2 deleted, 2897 unchanged)'
+    );
   });
 
   it('returns nothing when no deploy result carried per-component detail', () => {
@@ -431,5 +435,65 @@ describe('isComponentChangeDetailComplete()', () => {
       })
     ).to.equal(false);
     expect(isComponentChangeDetailComplete(null)).to.equal(false);
+  });
+});
+
+describe('listDeployComponentChanges()', () => {
+  it('lists each component once, with the most specific status', () => {
+    const changes = listDeployComponentChanges({
+      details: {
+        componentSuccesses: [
+          { componentType: '', fullName: 'package.xml', changed: true },
+          { componentType: 'ApexClass', fullName: 'Foo', created: true, changed: true },
+          { componentType: 'Flow', fullName: 'MyFlow', changed: false },
+          { componentType: 'Flow', fullName: 'MyFlow', changed: true },
+          { componentType: 'CustomField', fullName: 'Account.Old__c', deleted: true, changed: true },
+          { componentType: 'Layout', fullName: 'Account-Account Layout', fileName: 'layouts/Account-Account Layout.layout-meta.xml' },
+        ],
+      },
+    });
+    expect(changes.map((change) => `${change.type}:${change.name}:${change.status}`)).to.deep.equal([
+      'ApexClass:Foo:Created',
+      'Flow:MyFlow:Updated',
+      'CustomField:Account.Old__c:Deleted',
+      'Layout:Account-Account Layout:Unchanged',
+    ]);
+    expect(changes[3].filePath).to.equal('layouts/Account-Account Layout.layout-meta.xml');
+  });
+
+  it('gives the same totals as countDeployComponentChanges()', () => {
+    const resultJson = {
+      files: [
+        { type: 'ApexClass', fullName: 'A', state: 'Created', filePath: 'classes/A.cls' },
+        { type: 'ApexClass', fullName: 'B', state: 'Changed', filePath: 'classes/B.cls' },
+        { type: 'ApexClass', fullName: 'C', state: 'Unchanged', filePath: 'classes/C.cls' },
+        { type: 'ApexClass', fullName: 'D', state: 'Failed', filePath: 'classes/D.cls' },
+      ],
+    };
+    expect(listDeployComponentChanges(resultJson).length).to.equal(countDeployComponentChanges(resultJson).total);
+  });
+
+  it('returns nothing when the result has no per-component detail', () => {
+    expect(listDeployComponentChanges({ details: { componentSuccesses: [] } })).to.deep.equal([]);
+    expect(listDeployComponentChanges(null)).to.deep.equal([]);
+  });
+});
+
+describe('listDeployComponentFailures()', () => {
+  it('reads componentFailures, also when it is a single object', () => {
+    expect(listDeployComponentFailures({ details: { componentFailures: { componentType: 'Flow', fullName: 'MyFlow', fileName: 'flows/MyFlow.flow-meta.xml' } } })).to.deep.equal([
+      { type: 'Flow', name: 'MyFlow', filePath: 'flows/MyFlow.flow-meta.xml' },
+    ]);
+  });
+
+  it('falls back to the files rows in state Failed', () => {
+    expect(
+      listDeployComponentFailures({
+        files: [
+          { type: 'ApexClass', fullName: 'A', state: 'Created', filePath: 'classes/A.cls' },
+          { type: 'CustomField', fullName: '', state: 'Failed', filePath: 'objects/Account/fields/Rate__c.field-meta.xml' },
+        ],
+      })
+    ).to.deep.equal([{ type: 'CustomField', name: '', filePath: 'objects/Account/fields/Rate__c.field-meta.xml' }]);
   });
 });

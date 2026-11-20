@@ -1,0 +1,86 @@
+{
+  "mode": "replace",
+  "title": "Test cases upsert",
+  "rows": [
+    {
+      "provider": "Xray Cloud",
+      "caseId": "HEL-42-F01",
+      "action": "created",
+      "trackerId": "HEL-101",
+      "url": "https://helios.atlassian.net/browse/HEL-101",
+      "error": ""
+    },
+    {
+      "provider": "Xray Cloud",
+      "caseId": "HEL-42-F02",
+      "action": "created",
+      "trackerId": "HEL-102",
+      "url": "https://helios.atlassian.net/browse/HEL-102",
+      "error": ""
+    },
+    {
+      "provider": "Xray Cloud",
+      "caseId": "HEL-42-F03",
+      "action": "created",
+      "trackerId": "HEL-103",
+      "url": "https://helios.atlassian.net/browse/HEL-103",
+      "error": ""
+    },
+    {
+      "provider": "Xray Cloud",
+      "caseId": "HEL-42-F04",
+      "action": "created",
+      "trackerId": "HEL-104",
+      "url": "https://helios.atlassian.net/browse/HEL-104",
+      "error": ""
+    },
+    {
+      "provider": "Xray Cloud",
+      "caseId": "HEL-42-F05",
+      "action": "created",
+      "trackerId": "HEL-105",
+      "url": "https://helios.atlassian.net/browse/HEL-105",
+      "error": ""
+    },
+    {
+      "provider": "Xray Cloud",
+      "caseId": "HEL-42-F06",
+      "action": "created",
+      "trackerId": "HEL-106",
+      "url": "https://helios.atlassian.net/browse/HEL-106",
+      "error": ""
+    },
+    {
+      "provider": "Xray Cloud",
+      "caseId": "HEL-42-F07",
+      "action": "created",
+      "trackerId": "HEL-107",
+      "url": "https://helios.atlassian.net/browse/HEL-107",
+      "error": ""
+    },
+    {
+      "provider": "Xray Cloud",
+      "caseId": "HEL-42-F08",
+      "action": "updated",
+      "trackerId": "HEL-108",
+      "url": "https://helios.atlassian.net/browse/HEL-108",
+      "error": ""
+    },
+    {
+      "provider": "Xray Cloud",
+      "caseId": "HEL-42-F09",
+      "action": "updated",
+      "trackerId": "HEL-109",
+      "url": "https://helios.atlassian.net/browse/HEL-109",
+      "error": ""
+    },
+    {
+      "provider": "Xray Cloud",
+      "caseId": "HEL-42-F10",
+      "action": "updated",
+      "trackerId": "HEL-110",
+      "url": "https://helios.atlassian.net/browse/HEL-110",
+      "error": ""
+    }
+  ]
+}

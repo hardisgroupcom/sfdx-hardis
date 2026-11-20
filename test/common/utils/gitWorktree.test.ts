@@ -9,6 +9,8 @@ import {
   getBranchWorktreePath,
   assertBranchNotInOtherWorktree,
   createWorkBranchFromTarget,
+  workBranchExists,
+  firstFreeWorkBranchName,
 } from '../../../src/common/utils/index.js';
 import { getGitDeltaScope } from '../../../src/common/utils/gitUtils.js';
 
@@ -379,6 +381,70 @@ describe('createWorkBranchFromTarget()', () => {
     }
     expect(err, 'expected createWorkBranchFromTarget to throw').to.be.instanceOf(Error);
     expect(err!.message).to.match(/ghost-branch/);
+  });
+});
+
+describe('workBranchExists()', () => {
+  it('finds a local branch and a branch that exists only on origin', async () => {
+    const base = await makeSandbox('exists');
+    const { workDir, g } = await setupWithOrigin(base);
+    await g.checkout(['-b', 'feature/local-only', 'main']);
+    await g.checkout(['-b', 'feature/remote-only', 'main']);
+    await g.raw(['push', 'origin', 'feature/remote-only']);
+    await g.checkout('main');
+    await g.raw(['branch', '-D', 'feature/remote-only']);
+    process.chdir(workDir);
+
+    expect(await workBranchExists('feature/local-only')).to.equal(true);
+    expect(await workBranchExists('feature/remote-only')).to.equal(true);
+    expect(await workBranchExists('feature/free')).to.equal(false);
+  });
+
+  it('falls back to the branches of the last fetch when origin can not be reached', async () => {
+    const base = await makeSandbox('unreachable');
+    const { workDir, g } = await setupWithOrigin(base);
+    await g.checkout(['-b', 'feature/fetched', 'main']);
+    await g.raw(['push', 'origin', 'feature/fetched']);
+    await g.checkout('main');
+    await g.raw(['branch', '-D', 'feature/fetched']);
+    await g.raw(['remote', 'set-url', 'origin', path.join(base, 'no-such-origin.git')]);
+    process.chdir(workDir);
+
+    expect(await workBranchExists('feature/fetched')).to.equal(true);
+    expect(await workBranchExists('feature/never-fetched')).to.equal(false);
+  });
+
+  it('treats a branch deleted on origin as free, and drops its stale remote-tracking ref', async () => {
+    const base = await makeSandbox('stale');
+    const { workDir, g } = await setupWithOrigin(base);
+    await g.checkout(['-b', 'feature/gone', 'main']);
+    await g.raw(['push', 'origin', 'feature/gone']);
+    await g.checkout('main');
+    await g.raw(['branch', '-D', 'feature/gone']);
+    await g.raw(['push', 'origin', '--delete', 'feature/gone']);
+    // Recreate the stale remote-tracking ref a clone keeps until it fetches with --prune
+    await g.raw(['update-ref', 'refs/remotes/origin/feature/gone', 'main']);
+    process.chdir(workDir);
+
+    expect(await workBranchExists('feature/gone')).to.equal(false);
+    const remoteBranches = await simpleGit(workDir).branch(['-r']);
+    expect(remoteBranches.all).to.not.include('origin/feature/gone');
+  });
+});
+
+describe('firstFreeWorkBranchName()', () => {
+  it('keeps a free name, and adds -2, -3... to a name already used here or on origin', async () => {
+    const base = await makeSandbox('suffix');
+    const { workDir, g } = await setupWithOrigin(base);
+    await g.checkout(['-b', 'feature/taken', 'main']);
+    await g.raw(['push', 'origin', 'feature/taken']);
+    await g.checkout(['-b', 'feature/taken-2', 'main']);
+    await g.checkout('main');
+    await g.raw(['branch', '-D', 'feature/taken']); // on origin only
+    process.chdir(workDir);
+
+    expect(await firstFreeWorkBranchName('feature/free')).to.equal('feature/free');
+    expect(await firstFreeWorkBranchName('feature/taken')).to.equal('feature/taken-3');
   });
 });
 

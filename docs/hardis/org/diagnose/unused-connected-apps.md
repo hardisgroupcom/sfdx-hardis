@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:unused-connected-apps - Unused Connected Apps in an org"
+description: "Identifies and reports on potentially unused Connected Apps in a Salesforce org, suggesting candidates for deletion or deactivation."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:unused-connected-apps
 
@@ -14,7 +18,7 @@ Key functionalities:
 
 - **Connected App Data Collection:** Gathers information about all Connected Apps in the org, including creation and last modified dates, and associated users.
 - **Usage Analysis:** Analyzes `LoginHistory` and `OAuthToken` records to determine the last usage date of each Connected App.
-- **Inactivity Detection:** Flags Connected Apps as potentially unused if they have no recent login history or OAuth token usage.
+- **Inactivity Detection:** Flags Connected Apps as potentially unused if they have no recent login history or OAuth token usage. An OAuth token is recent when it was used in the last 180 days: change it with `--days` or the `UNUSED_CONNECTED_APPS_DAYS` environment variable (ex: 30, 90 or 365).
 - **Accessibility Check:** Examines Connected App metadata to identify if they are accessible (e.g., if they require admin approval and have no profiles or permission sets assigned).
 - **Ignored Apps:** Automatically ignores a predefined list of common Salesforce Connected Apps (e.g., `Salesforce CLI`, `Salesforce Mobile Dashboards`). You can extend this list by defining the `ALLOWED_INACTIVE_CONNECTED_APPS` environment variable.
 - **CSV Report Generation:** Generates a CSV file containing details of all analyzed Connected Apps, including their usage status, last usage date, and reasons for being flagged as potentially unused.
@@ -57,7 +61,7 @@ The command's technical implementation involves:
 - **Date Calculation:** Uses `moment` to calculate the time since the last OAuth token usage.
 - **Report Generation:** It uses `generateCsvFile` to create the CSV report of unused Connected Apps.
 - **Notification Integration:** It integrates with the `NotifProvider` to send notifications, including attachments of the generated CSV report and metrics for monitoring dashboards.
-- **File System Operations:** Uses `fs-extra` for creating and removing temporary directories and files.
+- **File System Operations:** Uses Node.js `fs` for creating and removing temporary directories and files.
 - **Environment Variable Reading:** Reads the `ALLOWED_INACTIVE_CONNECTED_APPS` environment variable to customize the list of ignored Connected Apps.
 </details>
 
@@ -72,18 +76,40 @@ sf hardis:org:diagnose:unused-connected-apps --agent --target-org myorg@example.
 
 In agent mode, the command runs fully automatically with no interactive prompts.
 
+## Screenshots
+
+![Connected Apps of the Helios org with no login and no OAuth token, flagged as candidates for removal](../../../assets/images/commands/org/diagnose/unused-connected-apps.webp)
+
+_Connected Apps of the Helios org with no login and no OAuth token, flagged as candidates for removal_
+
+- **(1)** Why the app is considered unused
+- **(2)** Every Connected App, with its last OAuth usage and a severity reason
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Connected apps
+
+One row per Connected App of the org, with its last modification, its last OAuth usage and a severity reason, so you can decide which apps to remove.
+
+Files: `connected-apps-*.csv`, `xls/connected-apps-*.xlsx`
+
+![Connected apps report in Excel](../../../assets/images/commands/org/diagnose/unused-connected-apps-report-connected-apps.webp)
+
 ## Parameters
 
-| Name              |  Type   | Description                                                                                   | Default | Required | Options |
-|:------------------|:-------:|:----------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation. Uses default values and skips prompts. |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                               |         |          |         |
-| flags-dir         | option  | undefined                                                                                     |         |          |         |
-| json              | boolean | Format output as json.                                                                        |         |          |         |
-| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                             |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required                                 |         |          |         |
-| target-org<br/>-o | option  | undefined                                                                                     |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                     |         |          |         |
+| Name              |  Type   | Description                                                                                                                                                           | Default | Required | Options |
+|:------------------|:-------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation. Uses default values and skips prompts.                                                                         |         |          |         |
+| days              | option  | A Connected App whose last OAuth token use is older than this number of days is reported as unused (default: UNUSED_CONNECTED_APPS_DAYS environment variable, or 180) |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                                                                                       |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                                                                                                  |         |          |         |
+| json              | boolean | Format output as json.                                                                                                                                                |         |          |         |
+| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                                                                                                     |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                                                                         |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set.                                                          |         |   true   |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                             |         |          |         |
 
 ## Examples
 
@@ -93,6 +119,10 @@ $ sf hardis:org:diagnose:unused-connected-apps
 
 ```shell
 $ sf hardis:org:diagnose:unused-connected-apps --agent
+```
+
+```shell
+$ sf hardis:org:diagnose:unused-connected-apps --days 90
 ```
 
 

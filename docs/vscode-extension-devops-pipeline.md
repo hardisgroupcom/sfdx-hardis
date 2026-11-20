@@ -23,11 +23,13 @@ For the concepts behind it (major branches, merges, delta deployments), read [Sa
 
 - **(1)** is a feature branch, with the number of its Pull Request. When too many target the same branch, they are grouped in a **+N more** box.
 - **(2)** is a major branch. The badge on its corner counts the Pull Requests open against it. Click it to see its Pull Requests, tickets and deployment actions.
-- **(3)** is the org a major branch deploys to. The dotted line carries the result of the last deployment: a check mark when it passed.
-- **(4)** shows or hides the feature branches. They are shown by default.
-- **(5)** opens the pipeline settings menu, **(6)** the package files menu, **(7)** reloads branches, Pull Requests and deployments, and **(8)** opens this guide.
+- **(3)** is the org a major branch deploys to. The dotted line carries the result of the last deployment triggered by a merge: a check mark when it passed. Pipelines started by a schedule or through the API do not change it.
+- **(4)** switches what the diagram shows next to the major branches: nothing more (**Major branches**), the **Feature branches** (where the panel always opens), or the **Dev orgs**, the developer sandboxes and scratch orgs that target them and what each one misses (see [Development orgs list](salesforce-devops-dev-orgs.md)).
+- **(5)** opens the pipeline settings menu, **(6)** the package files menu, **(7)** the [Pull Requests explorer](#find-and-open-any-pull-request), and **(8)** reloads branches, Pull Requests and deployments. The last button of the row opens this guide.
 - **(9)** is the legend of the lines and statuses.
 - **(10)** switches between the contribution cards and the list of open Pull Requests.
+
+With the [major branch deployment check](salesforce-devops-setup-major-branch-check.md) enabled (`enableMajorBranchDeploymentCheck: true`), each major branch is also colored with the result of its last nightly check against its org: green when the org can receive its branch, red when it has drifted, blinking while a check runs, dimmed when the check is stale. Click the branch to see the check and open its job.
 
 ## Start and publish a User Story
 
@@ -49,8 +51,8 @@ The cards follow the order of the work:
 Some changes need a step that metadata alone cannot do: load reference data, run an Apex script, assign a permission set. Open your Pull Request with the **My Pull Request** card, then its **Deployment Actions** tab.
 
 1. Click **(1)** to add an action, pick its type and when it runs (before or after the deployment).
-2. The table **(2)** lists the actions of the Pull Request. Click a label to edit it, or the bin to delete it.
-3. **(3)** opens the Pull Request on your git provider.
+2. The list **(2)** shows the actions of the Pull Request, numbered in the order they run. Click a label to see or edit it, **Run in my org** to try the action in your developer org before the merge (**Rerun** after a failed try), or open the menu at the end of its row to delete it. See [Try your actions in your own org](salesforce-devops-work-on-user-story-deployment-actions.md#try-your-actions-in-your-own-org).
+3. The **Open on** button of the header opens the Pull Request on your git provider.
 
 The actions run automatically when the Pull Request is deployed. See [Deployment actions](salesforce-devops-work-on-user-story-deployment-actions.md) for every action type.
 
@@ -61,8 +63,47 @@ The actions run automatically when the Pull Request is deployed. See [Deployment
 Click a major branch in the diagram. The window lists the Pull Requests merged into it:
 
 - **(1)** switches between its Pull Requests, the tickets they mention and their deployment actions.
-- **(2)** lists the deployment actions of those Pull Requests, with their author and their Pull Request.
+- **(2)** lists the deployment actions of those Pull Requests, grouped by Pull Request with its author, numbered in the order they run. Once the deployment ran, each action shows its status in the org of the branch, and a failed one can be retried from there: see [Recover a failed action](salesforce-devops-work-on-user-story-deployment-actions.md#recover-a-failed-action).
 - **(3)** previews or generates the promotion notes of the next merge to the upper branch.
+
+The Pull Requests tab is a list you can filter: type a number, a title, an author, a branch or a ticket. A story a promotion brought into the branch says **Carried by** and the number of that promotion, which opens it; typing that number lists everything it brought. **Merges and promotions** adds the Pull Requests that only move other ones.
+
+Click the number or the title of a Pull Request to open it without leaving the window: a line above the title brings you back, with the stories you had ticked still ticked.
+
+## Find and open any Pull Request
+
+![Pull Requests explorer](assets/images/annotated/vscode-guide/pipeline-pr-explorer.png)
+
+The search button of the toolbar opens the **Pull Requests explorer**. Type a number, a title, a branch, an author or a ticket in **(1)**: the Pull Requests the pipeline already shows are listed at once, then the ones found on your git provider, open or merged.
+
+A Pull Request opens the same way from everywhere: the explorer, the **My Pull Request** card, the **Open Pull Requests** tab, a feature branch or a Pull Request number of the diagram, and a Pull Request named in a ticket, a deployment action or another panel. Ctrl+click (Cmd+click on macOS) on a Pull Request number of the diagram still opens it on your git provider.
+
+![Window of a Pull Request, on its Validation tab](assets/images/annotated/vscode-guide/pipeline-pr-view-validation.png)
+
+The window of a Pull Request shows:
+
+- **(1)** its state, its author, its branches, and the button that opens it on your git provider.
+- **(2)** its way through the pipeline: the validation, then each major branch up to production, with the promotion that carried it when there is one, or the open one it is waiting for. A step moves while its job is running. A branch reads **Not in the pipeline windows** when the Pull Request was merged too long ago for the pipeline to tell. A promotion, or a merge between two major branches, stops at the branch it is merged into: the stories it carries go further, it does not.
+- **(3)** its tabs, and **(4)** the content of the one selected, here the validation comment.
+- **(5)** its search button, described below.
+- **General**: the description of the Pull Request.
+- **Pull Requests**, on a promotion or on a merge between two major branches: the Pull Requests it carries, each one opening in the same window.
+- **Tickets**, with their status and who they are assigned to.
+- **Deployment Actions** and **Tests**, as in your own Pull Request.
+- **Validation**, **Code Quality** (MegaLinter) and **Deployment**: the comment each of them posted on this Pull Request, as you would read it on your git provider, with its outcome and the links to the job and to the comment. A job that is still running or queued is listed first, with the time it has been going on and the link to the job, and its tab carries a spinner. A finished job says how long it took. **Files** lists the report files the job [published as artifacts](salesforce-devops-setup-publish-artifacts.md), downloaded in `hardis-report/job-artifacts` of your project: click one to open it. Above 10 files, they are browsed by folder. Bitbucket has no **Files** button, use the job page there. They show the comments of this Pull Request only, not those of a promotion that carried it further.
+
+![Search in the window of a Pull Request](assets/images/annotated/vscode-guide/pipeline-pr-view-search.png)
+
+The search button of the header, or Ctrl+F (Cmd+F on macOS), opens a search bar **(1)** above the tabs. Type a word: it is searched in the description and the comments of the jobs, whatever their case and accents.
+
+- **(2)** Each tab shows how many matches it holds.
+- **(3)** The matches are highlighted, the current one in orange, and the collapsed sections holding one open.
+
+Enter (Shift+Enter) goes to the next (previous) match, from one tab to the next, and the counter of the bar says where you are. The filter button keeps only the runs whose comment matches. Escape, or the cross at the end of the bar, clears the search and closes the bar.
+
+**Open on GitHub** (or your git provider) in the header is the way out to the Pull Request page. When the Pull Request was opened from a list or from another Pull Request, **Previous** and **Close** bring that window back; **Close** closes the window otherwise.
+
+The deployment actions and the test classes are read from the files of the branch you have checked out, and written there. When you change them on a Pull Request that is not the one of your branch, a warning names that branch: what you change travels with your own Pull Request. **Run in my org** is only offered on your own Pull Request.
 
 ## Configure the pipeline
 
@@ -70,9 +111,12 @@ Click a major branch in the diagram. The window lists the Pull Requests merged i
 
 The gear menu gathers the settings of the project:
 
-- **(1)** opens **Pipeline Settings**, the editor of `.sfdx-hardis.yml`: branches, deployment options, tickets, notifications. See [Configuration](sfdx-hardis-config-file.md).
-- **(2)** connects a major branch to its org, so the CI/CD pipeline can deploy there.
-- **(3)** generates a DORA metrics report of the deployments (frequency, lead time, failure rate).
+- **(1)** **Configure Pipeline Settings** opens the editor of `.sfdx-hardis.yml`: branches, deployment options, tickets, notifications. [Pipeline Settings](vscode-extension-pipeline-settings.md) lists every setting, tab by tab.
+- **(2)** **Add or Reconnect a Major Org** connects a major branch to its org, so the CI/CD pipeline can deploy there, or renews the authentication of an org already connected.
+- **(3)** **Configure Org Initialization (Beta)** opens the [steps that set up every new scratch org or sandbox](salesforce-devops-org-initialization.md), and the scratch org definition.
+- **(4)** **Configure Replacement Rules (Beta)** opens the [Replacement Rules panel](salesforce-devops-config-replacement-rules.md), where the values, secrets and XML removals applied to the metadata before each deployment are edited.
+- **(5)** **Generate DORA Metrics** opens the [DORA metrics](hardis/doc/salesforce-devops-dora-report.md) of the pipeline: deployment frequency, lead time, failure rate and recovery time of each major org, read from the deployment jobs and the Pull Requests of the git provider.
+- **(6)** **Register a development org** registers a sandbox or a scratch org in the [development orgs list](salesforce-devops-dev-orgs.md), or changes its target branch, owner and users.
 
 ## Edit the package files
 
@@ -90,7 +134,7 @@ See [Configure overwrite management](salesforce-devops-config-overwrite.md) for 
 
 | What | Where |
 |---|---|
-| Hide feature branches | The **Show feature branches** toggle, or the `vsCodeSfdxHardis.pipelineDisplayFeatureBranches` setting (default `true`) |
+| Show the major branches only, or the development orgs instead of the feature branches | The **Major branches / Feature branches / Dev orgs** switch in the top left corner of the diagram |
 | Group feature branches after N | `vsCodeSfdxHardis.pipelineFeatureBranchGroupThreshold` (default `3`) |
 | Branches, orgs, deployment options | **Pipeline Settings**, stored in `.sfdx-hardis.yml` |
 | Promotion branches | `enablePromotionBranches`, see [Promotion branches](salesforce-devops-promotion-branches.md) |

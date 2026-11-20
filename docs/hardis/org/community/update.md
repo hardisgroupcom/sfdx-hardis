@@ -1,3 +1,7 @@
+---
+title: "hardis:org:community:update"
+description: "Update a community status."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:community:update
 
@@ -42,17 +46,29 @@ Use `--agent` to disable all prompts. Typical usage:
 - The `--name` and `--status` flags are required (same as normal mode).
 
 
+## Screenshots
+
+![Confirm the status change of the communities](../../../assets/images/commands/org/community/update-1.webp)
+
+_Confirm the status change of the communities_
+
+![Two Experience Cloud communities are put in maintenance mode](../../../assets/images/commands/org/community/update.webp)
+
+_Two Experience Cloud communities are put in maintenance mode_
+
 ## Parameters
 
-| Name              |  Type   | Description                                                                  | Default | Required | Options |
-|:------------------|:-------:|:-----------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation                        |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                              |         |          |         |
-| flags-dir         | option  | undefined                                                                    |         |          |         |
-| json              | boolean | Format output as json.                                                       |         |          |         |
-| name<br/>-n       | option  | List of Networks Names that you want to update, separated by comma           |         |          |         |
-| status<br/>-s     | option  | New status for the community, available values are: Live, DownForMaintenance |         |          |         |
-| target-org<br/>-o | option  | undefined                                                                    |         |          |         |
+| Name              |  Type   | Description                                                                                                  | Default | Required | Options |
+|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                                         |         |          |         |
+| json              | boolean | Format output as json.                                                                                       |         |          |         |
+| name<br/>-n       | option  | List of Networks Names that you want to update, separated by comma                                           |         |   true   |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| status<br/>-s     | option  | New status for the community, available values are: Live, DownForMaintenance                                 |         |   true   |         |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

@@ -1,0 +1,2 @@
+command: hardis:project:deploy:cancel
+skip: "It runs in the cancellation hook of a CI job only, never from VS Code."

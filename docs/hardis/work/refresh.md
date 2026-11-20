@@ -1,3 +1,7 @@
+---
+title: "hardis:work:refresh - Refresh User Story branch"
+description: "This command is deprecated. Use sf hardis:work:backpromote instead."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:work:refresh
 
@@ -55,19 +59,36 @@ Use `--agent` to disable all interactive prompts. The command will:
 
 Required flags: none beyond `--agent` (uses project defaults).
 
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) course runs this command, click by click, on an org of your own, in these labs:
+
+- [Lab 2.1 - Backpromote: catch your dev org up with the team](https://sfdx-hardis-training.cloudity.com/en/level-2-contributor-advanced/2-1-backpromote-your-teammates-work/)
+- [Lab 2.7 - Resolve a Git merge conflict with a teammate](https://sfdx-hardis-training.cloudity.com/en/level-2-contributor-advanced/2-7-resolve-a-git-merge-conflict/)
+
+<!-- training-links:end -->
+
+
+## Screenshots
+
+![The refresh command is deprecated and points to sf hardis:work:backpromote](../../assets/images/commands/work/refresh.webp)
+
+_The refresh command is deprecated and points to sf hardis:work:backpromote_
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   | Default | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir         | option  | undefined                                                     |         |          |         |
-| json              | boolean | Format output as json.                                        |         |          |         |
-| nopull<br/>-n     | boolean | No scratch pull before save (careful if you use that!)        |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-org<br/>-o | option  | undefined                                                     |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+| Name              |  Type   | Description                                                                                                  | Default | Required | Options |
+|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                                         |         |          |         |
+| json              | boolean | Format output as json.                                                                                       |         |          |         |
+| nopull<br/>-n     | boolean | No scratch pull before save (careful if you use that!)                                                       |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

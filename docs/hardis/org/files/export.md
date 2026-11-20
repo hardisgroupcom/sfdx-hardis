@@ -1,3 +1,7 @@
+---
+title: "hardis:org:files:export - Export files"
+description: "Exports file attachments (ContentVersion, Attachment) from a Salesforce org based on a predefined configuration."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:files:export
 
@@ -58,22 +62,34 @@ Use `--agent` to disable all prompts. Typical usage:
 - Resume/restart prompt is skipped; resume behavior follows the `--resume` flag (default: restart).
 
 
+## Screenshots
+
+![The number of records and API calls the export will use, before it starts](../../../assets/images/commands/org/files/export-1.webp)
+
+_The number of records and API calls the export will use, before it starts_
+
+![The site surveys and wiring plans of the completed installations, downloaded into one folder per installation](../../../assets/images/commands/org/files/export.webp)
+
+_The site surveys and wiring plans of the completed installations, downloaded into one folder per installation_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
 ## Parameters
 
-| Name                    |  Type   | Description                                                       | Default | Required | Options |
-|:------------------------|:-------:|:------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent                   | boolean | Run in non-interactive mode for agents and automation             |         |          |         |
-| chunksize<br/>-c        | option  | Number of records to add in a chunk before it is processed        |  1000   |          |         |
-| debug<br/>-d            | boolean | Activate debug mode (more logs)                                   |         |          |         |
-| flags-dir               | option  | undefined                                                         |         |          |         |
-| json                    | boolean | Format output as json.                                            |         |          |         |
-| path<br/>-p             | option  | Path to the file export project                                   |         |          |         |
-| polltimeout<br/>-t      | option  | Timeout in MS for Bulk API calls                                  | 300000  |          |         |
-| resume<br/>-r           | boolean | Resume previous export by checking existing files (default in CI) |         |          |         |
-| skipauth                | boolean | Skip authentication check when a default username is required     |         |          |         |
-| startchunknumber<br/>-s | option  | Chunk number to start from                                        |         |          |         |
-| target-org<br/>-o       | option  | undefined                                                         |         |          |         |
-| websocket               | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |         |          |         |
+| Name                    |  Type   | Description                                                                                                  | Default | Required | Options |
+|:------------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                   | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| chunksize<br/>-c        | option  | Number of records to add in a chunk before it is processed                                                   |  1000   |          |         |
+| debug<br/>-d            | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir               | option  | Import flag values from a directory.                                                                         |         |          |         |
+| json                    | boolean | Format output as json.                                                                                       |         |          |         |
+| path<br/>-p             | option  | Path to the file export project                                                                              |         |          |         |
+| polltimeout<br/>-t      | option  | Timeout in MS for Bulk API calls                                                                             | 300000  |          |         |
+| resume<br/>-r           | boolean | Resume previous export by checking existing files (default in CI)                                            |         |          |         |
+| skipauth                | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| startchunknumber<br/>-s | option  | Chunk number to start from                                                                                   |         |          |         |
+| target-org<br/>-o       | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket               | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

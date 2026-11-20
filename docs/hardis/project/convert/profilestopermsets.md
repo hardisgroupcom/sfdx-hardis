@@ -1,3 +1,7 @@
+---
+title: "hardis:project:convert:profilestopermsets - Convert Profiles into Permission Sets"
+description: "Converts existing Salesforce Profiles into Permission Sets, facilitating a more granular and recommended security model."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:convert:profilestopermsets
 
@@ -39,6 +43,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![Three Helios profiles converted into the permission sets PS_Helios_Crew, PS_Helios_Dispatcher and PS_Helios_Field_Manager](../../../assets/images/commands/project/convert/profilestopermsets.webp)
+
+_Three Helios profiles converted into the permission sets PS_Helios_Crew, PS_Helios_Dispatcher and PS_Helios_Field_Manager_
+
 ## Parameters
 
 | Name          |  Type   | Description                                                   | Default | Required | Options |
@@ -46,7 +56,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 | agent         | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | debug<br/>-d  | boolean | Activate debug mode (more logs)                               |         |          |         |
 | except<br/>-e | option  | List of filters                                               |         |          |         |
-| flags-dir     | option  | undefined                                                     |         |          |         |
+| flags-dir     | option  | Import flag values from a directory.                          |         |          |         |
 | json          | boolean | Format output as json.                                        |         |          |         |
 | skipauth      | boolean | Skip authentication check when a default username is required |         |          |         |
 | websocket     | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |

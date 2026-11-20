@@ -1,3 +1,7 @@
+---
+title: "hardis:project:fix:v53flexipages - Fix flexipages for v53"
+description: "Fixes Salesforce FlexiPages for compatibility with API Version 53.0 (Winter '22 release) by adding missing identifiers to component instances."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:fix:v53flexipages
 
@@ -42,13 +46,19 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The component instances of the Lightning pages of the Helios project checked for the identifier that API 53 requires](../../../assets/images/commands/project/fix/v53flexipages.webp)
+
+_The component instances of the Lightning pages of the Helios project checked for the identifier that API 53 requires_
+
 ## Parameters
 
 | Name         |  Type   | Description                                                   |      Default       | Required | Options |
 |:-------------|:-------:|:--------------------------------------------------------------|:------------------:|:--------:|:-------:|
 | agent        | boolean | Run in non-interactive mode for agents and automation         |                    |          |         |
 | debug<br/>-d | boolean | Activate debug mode (more logs)                               |                    |          |         |
-| flags-dir    | option  | undefined                                                     |                    |          |         |
+| flags-dir    | option  | Import flag values from a directory.                          |                    |          |         |
 | json         | boolean | Format output as json.                                        |                    |          |         |
 | path<br/>-p  | option  | Root folder                                                   | C:\git\sfdx-hardis |          |         |
 | skipauth     | boolean | Skip authentication check when a default username is required |                    |          |         |

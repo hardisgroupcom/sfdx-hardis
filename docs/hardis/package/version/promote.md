@@ -1,3 +1,7 @@
+---
+title: "hardis:package:version:promote - Promote new versions of package(s)"
+description: "Promotes a Salesforce package version from beta to released status in your Dev Hub."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:package:version:promote
 
@@ -39,19 +43,29 @@ Use `--agent` to disable all interactive prompts. In agent mode:
 All interactive package selection prompts are skipped.
 
 
+## Screenshots
+
+![Pick the package version to promote](../../../assets/images/commands/package/version/promote-1.webp)
+
+_Pick the package version to promote_
+
+![Version 1.4.0-1 of Helios Core is promoted and can now be installed in production orgs](../../../assets/images/commands/package/version/promote.webp)
+
+_Version 1.4.0-1 of Helios Core is promoted and can now be installed in production orgs_
+
 ## Parameters
 
-| Name                  |  Type   | Description                                                             | Default | Required | Options |
-|:----------------------|:-------:|:------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent                 | boolean | Run in non-interactive mode for agents and automation                   |         |          |         |
-| auto<br/>-f           | boolean | Auto-detect which versions of which packages need to be promoted        |         |          |         |
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                                         |         |          |         |
-| flags-dir             | option  | undefined                                                               |         |          |         |
-| json                  | boolean | Format output as json.                                                  |         |          |         |
-| package<br/>-p        | option  | Package alias to promote (required in agent mode if --auto is not used) |         |          |         |
-| skipauth              | boolean | Skip authentication check when a default username is required           |         |          |         |
-| target-dev-hub<br/>-v | option  | undefined                                                               |         |          |         |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration               |         |          |         |
+| Name                  |  Type   | Description                                                                                                       | Default | Required | Options |
+|:----------------------|:-------:|:------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                 | boolean | Run in non-interactive mode for agents and automation                                                             |         |          |         |
+| auto<br/>-f           | boolean | Auto-detect which versions of which packages need to be promoted                                                  |         |          |         |
+| debug<br/>-d          | boolean | Activate debug mode (more logs)                                                                                   |         |          |         |
+| flags-dir             | option  | Import flag values from a directory.                                                                              |         |          |         |
+| json                  | boolean | Format output as json.                                                                                            |         |          |         |
+| package<br/>-p        | option  | Package alias to promote (required in agent mode if --auto is not used)                                           |         |          |         |
+| skipauth              | boolean | Skip authentication check when a default username is required                                                     |         |          |         |
+| target-dev-hub<br/>-v | option  | Username or alias of the Dev Hub org. Not required if the `target-dev-hub` configuration variable is already set. |         |   true   |         |
+| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                         |         |          |         |
 
 ## Examples
 

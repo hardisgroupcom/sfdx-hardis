@@ -26,6 +26,8 @@ description: Learn how to initialize a Salesforce DX project for CI/CD with sfdx
 
 - If you use GitLab CI and sandboxes only (no scratch orgs), open **gitlab-ci-config.yml** at the root of the repository and set the variable **USE_SCRATCH_ORGS** to `"false"`
 
+- With GitHub, Azure, Bitbucket or Jenkins, the scratch org jobs (create a scratch org or take one from the scratch org pool, run the Apex tests on it, delete it) are off by default: set the variable **USE_SCRATCH_ORGS** to `"true"` to run them. To keep scratch orgs ready in a pool, see [Set up a scratch org pool](salesforce-devops-setup-scratch-org-pool.md).
+
 - Depending on your Git provider, keep the related workflow files and delete the others
 
   - GitLab
@@ -34,6 +36,8 @@ description: Learn how to initialize a Salesforce DX project for CI/CD with sfdx
   - Azure
     - `azure-pipelines-checks.yml`
     - `azure-pipelines-deployment.yml`
+    - `azure-pipelines-scratch-pool.yml` (only if you use a scratch org pool)
+    - `azure-pipelines-major-branch-check.yml` (only if you use the [major branch deployment check](salesforce-devops-setup-major-branch-check.md))
   - GitHub
     - Folder `.github/workflows`
   - Bitbucket
@@ -42,6 +46,17 @@ description: Learn how to initialize a Salesforce DX project for CI/CD with sfdx
 - During the CI/CD setup, find the variable **SFDX_DISABLE_FLOW_DIFF** in the pipeline of your Git provider and set its value to **true**, to avoid generating too many Pull Request comments during the setup. At the end of the setup, set the variable back to false.
 
 > Some workflow files contain additional configuration instructions: read the comments at the beginning of the files.
+
+### Upgrade the CI/CD files
+
+The CI/CD files are copied once, when the project is created: a new version of sfdx-hardis does not update them. Each one starts with the URL of the sfdx-hardis template it comes from, for example:
+
+```yaml
+# Source of this file: the sfdx-hardis default template
+#   https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.gitlab-ci.yml
+```
+
+To upgrade a file, by hand or with a coding agent, compare it with the latest version of its template and bring in the changes, keeping what is specific to your project: branch names, secrets, runner tags, image, custom jobs. `.gitlab-ci-config.yml` holds the values of your project: only add its new keys. The [changelog](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/CHANGELOG.md) says what changed between versions.
 
 ## Cancelled pipelines
 
@@ -59,6 +74,6 @@ Real deployments, after a merge, are not cancelled by the next merge: they run o
 
 On GitLab, a new commit only cancels the previous pipeline while none of its non-interruptible jobs has started. To cancel its interruptible jobs in any case, uncomment the `workflow: auto_cancel: on_new_commit: interruptible` block at the beginning of `.gitlab-ci.yml` (GitLab 16.10 or later).
 
-If your project was created with an older version of sfdx-hardis, copy these parts from the [latest workflow files](https://github.com/hardisgroupcom/sfdx-hardis/tree/main/defaults/ci) into yours.
+If your project was created with an older version of sfdx-hardis, bring these parts into your workflow files: see [Upgrade the CI/CD files](#upgrade-the-cicd-files).
 
 You can now go to step [4. Configure CI authentication](salesforce-devops-setup-auth.md).

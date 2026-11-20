@@ -1,3 +1,7 @@
+---
+title: "hardis:doc:mkdocs-to-cf - MkDocs to Cloudflare"
+description: "Generates MkDocs HTML pages and uploads them to Cloudflare as a static site, secured with Cloudflare Access."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:doc:mkdocs-to-cf
 
@@ -15,7 +19,7 @@ Key operations performed:
 - **Cloudflare Pages Project Creation/Update:** Creates a new Cloudflare Pages project if one doesn't exist for your documentation, or updates an existing one.
 - **Cloudflare Access Policy Assignment:** Assigns a policy to restrict access to the deployed application, ensuring only authorized users can view your documentation.
 - **Cloudflare Access Application Setup:** Configures a Cloudflare Access application for the deployed site, integrating it with your Zero Trust policies.
-- **HTML Page Upload:** Deploys the generated HTML pages to Cloudflare Pages.
+- **HTML Page Upload:** Deploys the generated HTML pages to Cloudflare Pages. The AI and diagram caches are left out of the site, and a search index too big for Cloudflare is trimmed so the upload still goes through.
 - **Browser Opening (Non-CI):** Opens the newly deployed website in your default browser if the command is not run in a CI/CD environment.
 
 **Prerequisite:** The documentation must have been previously generated using `sf hardis:doc:project2markdown --with-history`.
@@ -42,12 +46,13 @@ More information can be found in the [Documentation section](https://sfdx-hardis
 The command orchestrates interactions with MkDocs, Cloudflare APIs, and Git:
 
 - **Zensical Integration:** It calls `generateMkDocsHTML()` to run the Zensical build, which converts Markdown files into static HTML. It checks for the presence of `mkdocs.yml` to ensure it's a valid documentation project.
-- **Cloudflare API Interaction:** It uses the `cloudflare` npm package to interact with the Cloudflare API. This involves:
-  - **Authentication:** Initializes the Cloudflare client using `CLOUDFLARE_EMAIL`, `CLOUDFLARE_API_TOKEN`, and `CLOUDFLARE_ACCOUNT_ID` environment variables.
-  - **Pages Project Management:** Calls `client.pages.projects.get()` to check for an existing project and `client.pages.projects.create()` to create a new one if needed.
-  - **Access Policy Management:** Lists existing access policies (`client.zeroTrust.access.policies.list()`) and creates a new one (`client.zeroTrust.access.policies.create()`) if the required policy doesn't exist. It configures the policy with email domain restrictions and a default login method.
-  - **Access Application Management:** Lists existing access applications (`client.zeroTrust.access.applications.list()`) and creates a new one (`client.zeroTrust.access.applications.create()`) for the deployed site. It then updates the application to associate it with the created access policy.
+- **Cloudflare API Interaction:** It calls the Cloudflare REST API directly (no SDK dependency). This involves:
+  - **Authentication:** Sends `CLOUDFLARE_EMAIL`, `CLOUDFLARE_API_TOKEN`, and `CLOUDFLARE_ACCOUNT_ID` (from environment variables) with each API call.
+  - **Pages Project Management:** Reads the Pages project to check for an existing one and creates a new one if needed.
+  - **Access Policy Management:** Lists existing access policies and creates a new one if the required policy doesn't exist. It configures the policy with email domain restrictions and a default login method.
+  - **Access Application Management:** Lists existing access applications and creates a new one for the deployed site. It then updates the application to associate it with the created access policy.
 - **Git Integration:** Retrieves the current Git branch name using `getCurrentGitBranch()` to construct the Cloudflare project name and branch for deployment.
+- **Site size limits:** Before the upload, removes the AI and Mermaid caches (`cache-ai-results`, `cache-mermaid`) from the site and from its search index: they only serve to regenerate the documentation. Cloudflare Pages refuses files over 25 MiB, so when `search.json` is still too big, the text of its largest entries is emptied (their titles stay searchable). A file still over the limit stops the command with its name and size.
 - **Wrangler CLI:** Uses the `wrangler` CLI (Cloudflare's developer tool) to deploy the generated HTML pages to Cloudflare Pages via `wrangler pages deploy`.
 - **Environment Variable Management:** Reads various environment variables to configure Cloudflare settings and project names.
 - **Error Handling:** Includes checks for missing `mkdocs.yml` and Cloudflare environment variables, throwing `SfError` when necessary.
@@ -65,13 +70,19 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The project documentation is built with Zensical, uploaded to Cloudflare Pages and protected by a Cloudflare Access policy](../../assets/images/commands/doc/mkdocs-to-cf.webp)
+
+_The project documentation is built with Zensical, uploaded to Cloudflare Pages and protected by a Cloudflare Access policy_
+
 ## Parameters
 
 | Name         |  Type   | Description                                                   | Default | Required | Options |
 |:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent        | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir    | option  | undefined                                                     |         |          |         |
+| flags-dir    | option  | Import flag values from a directory.                          |         |          |         |
 | json         | boolean | Format output as json.                                        |         |          |         |
 | skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
 | websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |

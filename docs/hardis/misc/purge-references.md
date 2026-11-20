@@ -1,3 +1,7 @@
+---
+title: "hardis:misc:purge-references - Purge References"
+description: "Purges references to specified strings within your Salesforce metadata files before deployment."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:misc:purge-references
 
@@ -49,18 +53,28 @@ In agent mode:
 - The source retrieval confirmation prompt is skipped (sources are assumed up-to-date).
 
 
+## Screenshots
+
+![Give the field, class or object to remove from the sources](../../assets/images/commands/misc/purge-references-1.webp)
+
+_Give the field, class or object to remove from the sources_
+
+![Every reference to the Crew_Size__c field is removed from the project sources before deleting it](../../assets/images/commands/misc/purge-references.webp)
+
+_Every reference to the Crew_Size__c field is removed from the project sources before deleting it_
+
 ## Parameters
 
-| Name              |  Type   | Description                                                   | Default | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir         | option  | undefined                                                     |         |          |         |
-| json              | boolean | Format output as json.                                        |         |          |         |
-| references<br/>-r | option  | Comma-separated list of references to find in metadatas       |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-org<br/>-o | option  | undefined                                                     |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+| Name              |  Type   | Description                                                                                                  | Default | Required | Options |
+|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                                         |         |          |         |
+| json              | boolean | Format output as json.                                                                                       |         |          |         |
+| references<br/>-r | option  | Comma-separated list of references to find in metadatas                                                      |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

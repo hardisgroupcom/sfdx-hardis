@@ -18,3 +18,15 @@ Contacts to multiple accounts be activated in the target org.
 - Scratch org setting:
 "features": ["ContactsToMultipleAccounts"]
 ```
+
+## Deployment action
+
+A deployment action can solve this error. Create it on the Pull Request of the current branch:
+
+```shell
+sf hardis:project:action:create --agent --scope pr --pr-id current --when pre-deploy --type browser --label "Enable Contacts to Multiple Accounts" --browser-setting relateContactToMultipleAccounts --browser-config '{"enabled":true}'
+```
+
+A deployment check only simulates a browser action. If this check still fails on this error once the action is created, apply the setting once in the target org with the Run in another org button of the VS Code Deployment Actions tab, or with sf hardis:project:action:run --select-org, then run the check again.
+
+Documentation: https://amtrack.github.io/sfdx-browserforce-plugin/settings/relateContactToMultipleAccounts/

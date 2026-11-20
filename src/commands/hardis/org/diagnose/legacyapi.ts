@@ -3,43 +3,26 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import fs from '../../../../common/utils/fsUtils.js';
-import * as path from 'path';
-import sortArray from '../../../../common/utils/sortArray.js';
-import { createTempDir, uxLog } from '../../../../common/utils/index.js';
-import * as dns from 'dns';
-import Papa from 'papaparse';
-import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
-import { soqlQuery } from '../../../../common/utils/apiUtils.js';
+import { uxLog } from '../../../../common/utils/index.js';
+import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils/notifUtils.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
-import { generateCsvFile, generateReportPath, createXlsxFromCsv } from '../../../../common/utils/filesUtils.js';
 import { CONSTANTS } from '../../../../config/index.js';
-import { FileDownloader } from '../../../../common/utils/fileDownloader.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
-import { anonymizeRows, getChannelAnonymizationLevel } from '../../../../common/utils/anonymizeUtils.js';
-const dnsPromises = dns.promises;
+import { LEGACY_API_ARTICLE_URL, LegacyApiCallsCollector } from '../../../../common/utils/legacyApiUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-type LegacyApiDescriptor = {
-  apiFamily: string[];
-  minApiVersion: number;
-  maxApiVersion: number;
-  severity: 'ERROR' | 'WARNING' | 'INFO';
-  deprecationRelease: string;
-  errors: any[];
-  totalErrors: number;
-  ipCounts: Record<string, { count: number; reasons: string[] }>;
-  apiResources?: string[];
-};
-
 export default class LegacyApi extends SfCommand<any> {
   public static title = 'Check for legacy API use';
 
-  public static description = `Checks if an org uses retired or someday retired API version\n
+  public static description = `## DEPRECATED
+
+This command is deprecated: use [hardis:org:diagnose:what-will-break](${CONSTANTS.DOC_URL_ROOT}/hardis/org/diagnose/what-will-break/), which checks the legacy API calls together with everything else that will break after a dated Salesforce change.
+
+Checks if an org uses retired or someday retired API version\n
 
 See article below
 
@@ -104,222 +87,81 @@ In agent mode, the command runs fully automatically with no interactive prompts.
   public static requiresProject = false;
 
   protected debugMode = false;
-  protected apexSCannerCodeUrl =
-    'https://raw.githubusercontent.com/pozil/legacy-api-scanner/main/legacy-api-scanner.apex';
-
-  protected articleTextLegacyApi = `See article to solve issue before it's too late:
-- EN: https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238
-- FR: https://leblog.hardis-group.com/portfolio/versions-dapi-salesforce-decommissionnees-que-faire/`;
-
-  protected legacyApiDescriptors: LegacyApiDescriptor[] = [
-    {
-      apiFamily: ['SOAP', 'REST', 'BULK_API'],
-      minApiVersion: 1.0,
-      maxApiVersion: 6.0,
-      severity: 'ERROR',
-      deprecationRelease: 'Summer 21 - retirement of 1 to 6',
-      errors: [] as any[],
-      totalErrors: 0,
-      ipCounts: {},
-    },
-    {
-      apiFamily: ['SOAP', 'REST', 'BULK_API'],
-      minApiVersion: 7.0,
-      maxApiVersion: 20.0,
-      severity: 'ERROR',
-      deprecationRelease: 'Summer 22 - retirement of 7 to 20',
-      errors: [] as any[],
-      totalErrors: 0,
-      ipCounts: {},
-    },
-    {
-      apiFamily: ['SOAP', 'REST', 'BULK_API'],
-      minApiVersion: 21.0,
-      maxApiVersion: 30.0,
-      severity: 'ERROR',
-      deprecationRelease: 'Summer 25 - retirement of 21 to 30',
-      errors: [] as any[],
-      totalErrors: 0,
-      ipCounts: {},
-    },
-    {
-      apiFamily: ['SOAP'],
-      minApiVersion: 0.0,
-      maxApiVersion: Number.POSITIVE_INFINITY,
-      severity: 'WARNING',
-      deprecationRelease: 'Summer 27 - retirement of SOAP login',
-      errors: [] as any[],
-      totalErrors: 0,
-      ipCounts: {},
-      apiResources: ['login'],
-    },
-    {
-      apiFamily: ['SOAP', 'REST', 'BULK_API'],
-      minApiVersion: 31.0,
-      maxApiVersion: 40.0,
-      severity: 'WARNING',
-      deprecationRelease: 'Summer 28 - retirement of 31 to 40 (deprecated Summer 27)',
-      errors: [] as any[],
-      totalErrors: 0,
-      ipCounts: {},
-    },
-  ];
-
-  protected allErrors: any[] = [];
-  protected ipResultsSorted: any[] = [];
-  protected outputFile;
-  protected outputFilesRes: any = {};
+  protected articleTextLegacyApi = `See article to solve issue before it's too late: ${LEGACY_API_ARTICLE_URL}`;
   /* jscpd:ignore-end */
-  private tempDir: string;
-  private csvHeaderWritten = false;
-  private csvColumns: string[] | null = null;
-  private csvPreviousChunkEndedWithNewline = true;
-  private totalCsvRows = 0;
-  private readonly notificationSampleLimit = 1000;
-  private notificationSampleTruncated = false;
 
   public async run(): Promise<AnyJson> {
+    uxLog("warning", this, c.yellow(t('whatWillBreakDeprecatedCommand', { command: 'sf hardis:org:diagnose:what-will-break' })));
     const { flags } = await this.parse(LegacyApi);
     this.debugMode = flags.debug || false;
     return await this.runJsForce(flags);
   }
 
-  // Refactoring of Philippe Ozil's apex script with JsForce queries
   private async runJsForce(flags) {
-    const eventType = flags.eventtype || 'ApiTotalUsage';
-    const limit = flags.limit || 999;
     const conn = flags['target-org'].getConnection();
-    this.outputFile = await generateReportPath('legacy-api-calls', flags.outputfile || null);
-    await fs.remove(this.outputFile).catch(() => undefined);
-    this.resetCsvState();
 
-    const limitConstraint = limit ? ` LIMIT ${limit}` : '';
-    this.tempDir = await createTempDir();
-
-    // Get EventLogFile records with EventType = 'ApiTotalUsage'
-    uxLog("action", this, c.cyan(t('queryingOrgForEventlogfileEntriesOfType', { eventType })));
-    const logCountQuery = `SELECT COUNT() FROM EventLogFile WHERE EventType = '${eventType}'`;
-    const logCountRes = await soqlQuery(logCountQuery, conn);
-    if (logCountRes.totalSize === 0) {
-      uxLog("success", this, c.green(t('foundNoEventlogfileEntryOfType', { eventType })));
-      uxLog("success", this, c.green(t('thisIndicatesThatNoLegacyApisWere')));
-    } else {
-      uxLog("log", this, c.grey(t('found') + c.bold(logCountRes.totalSize) + ` ${eventType} EventLogFile entries.`));
-    }
-
-    if (logCountRes.totalSize > limit) {
-      uxLog(
-        "warning",
-        this,
-        c.yellow(t('tooManyResultsIncreaseLimit'))
-      );
-    }
-
-    // Fetch EventLogFiles with ApiTotalUsage entries
-    const logCollectQuery =
-      `SELECT LogFile FROM EventLogFile WHERE EventType = '${eventType}' ORDER BY LogDate DESC` + limitConstraint;
-    const eventLogRes: any = await soqlQuery(logCollectQuery, conn);
-
-    // Collect legacy api calls from logs
-    WebSocketClient.sendProgressStartMessage(t('downloadingAndAnalyzingLogFiles'), eventLogRes.records.length);
-    let counter = 0;
-    for (const eventLogFile of eventLogRes.records) {
-      await this.collectDeprecatedApiCalls(eventLogFile.LogFile, conn);
-      counter++;
-      WebSocketClient.sendProgressStepMessage(counter, eventLogRes.records.length);
-    }
-    WebSocketClient.sendProgressEndMessage();
-    await this.flushDescriptorErrors();
-
-    // Display summary
-    uxLog("action", this, c.cyan(t('resultsOfLegacyApiCallsAnalysis')));
-    const logLines: string[] = [];
-    for (const descriptor of this.legacyApiDescriptors) {
-      const errorCount = descriptor.totalErrors;
-      const colorMethod =
-        descriptor.severity === 'ERROR' && errorCount > 0
-          ? c.red
-          : descriptor.severity === 'WARNING' && errorCount > 0
-            ? c.yellow
-            : c.green;
-      const line = colorMethod(`- ${descriptor.deprecationRelease} : ${c.bold(errorCount)}`);
-      logLines.push(line);
-    }
-    uxLog("log", this, logLines.join('\n'));
-
-    // Build command result
+    // Collect legacy api calls from EventLogFile records
     let msg = t('noDeprecatedApiCallFound');
     let statusCode = 0;
-    const hasBlockingErrors = this.legacyApiDescriptors.some(
-      (descriptor) => descriptor.severity === 'ERROR' && descriptor.totalErrors > 0
-    );
-    const hasWarningsOnly = this.legacyApiDescriptors.some(
-      (descriptor) => descriptor.severity === 'WARNING' && descriptor.totalErrors > 0
-    );
-    if (hasBlockingErrors) {
-      msg = t('foundLegacyApiCallsInLogs');
-      statusCode = 1;
-      uxLog("error", this, c.red(c.bold(msg)));
-    } else if (hasWarningsOnly) {
-      msg = t('foundDeprecatedApiCallsFuture');
-      statusCode = 0;
-      uxLog("warning", this, c.yellow(c.bold(msg)));
-    } else {
-      uxLog("success", this, c.green(msg));
-    }
-
-    // Generate main CSV file
-    await this.finalizeCsvOutput();
-
-    // Generate one summary file by severity
-    const outputFileIps: any[] = [];
-    for (const descriptor of this.legacyApiDescriptors) {
-      if (descriptor.totalErrors > 0) {
-        const outputFileIp = await this.generateSummaryLog(descriptor.ipCounts, descriptor.severity);
-        if (outputFileIp) {
-          outputFileIps.push(outputFileIp);
+    const collector = new LegacyApiCallsCollector({
+      conn: conn,
+      eventType: flags.eventtype || 'ApiTotalUsage',
+      limit: flags.limit || 999,
+      outputFile: flags.outputfile || null,
+      debugMode: this.debugMode,
+      commandThis: this,
+      mainReport: true,
+      // Build command result before the report files are written, to keep the same output order
+      onAnalysisComplete: (descriptors) => {
+        const hasBlockingErrors = descriptors.some(
+          (descriptorResult) => descriptorResult.descriptor.severity === 'ERROR' && descriptorResult.totalErrors > 0
+        );
+        const hasWarningsOnly = descriptors.some(
+          (descriptorResult) => descriptorResult.descriptor.severity === 'WARNING' && descriptorResult.totalErrors > 0
+        );
+        if (hasBlockingErrors) {
+          msg = t('foundLegacyApiCallsInLogs');
+          statusCode = 1;
+          uxLog("error", this, c.red(c.bold(msg)));
+        } else if (hasWarningsOnly) {
+          msg = t('foundDeprecatedApiCallsFuture');
+          statusCode = 0;
+          uxLog("warning", this, c.yellow(c.bold(msg)));
+        } else {
+          uxLog("success", this, c.green(msg));
         }
-        // Trigger command to open CSV file in VS Code extension
-        if (outputFileIp) {
-          WebSocketClient.requestOpenFile(outputFileIp);
-        }
-      }
-    }
-
-    // Debug or manage CSV file generation error
-    if (this.debugMode || this.outputFile == null) {
-      for (const descriptor of this.legacyApiDescriptors) {
-        uxLog("log", this, c.grey(`- ${descriptor.deprecationRelease} : ${JSON.stringify(descriptor.totalErrors)}`));
-      }
-    }
+      },
+    });
+    const result = await collector.collect();
 
     let notifDetailText = '';
-    for (const descriptor of this.legacyApiDescriptors) {
-      if (descriptor.totalErrors > 0) {
-        notifDetailText += `- **${descriptor.severity}**: API version calls found in logs: **${descriptor.totalErrors}** (${descriptor.deprecationRelease})\n`;
+    for (const descriptorResult of result.descriptors) {
+      if (descriptorResult.totalErrors > 0) {
+        notifDetailText += `- **${descriptorResult.descriptor.severity}**: API version calls found in logs: **${descriptorResult.totalErrors}** (${descriptorResult.descriptor.deprecationRelease})\n`;
       }
     }
 
     notifDetailText += "\n" + this.articleTextLegacyApi;
     if (WebSocketClient.isAliveWithLwcUI()) {
-      WebSocketClient.sendReportFileMessage("https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238", t('articleEn'), 'docUrl');
-      WebSocketClient.sendReportFileMessage("https://leblog.hardis-group.com/portfolio/versions-dapi-salesforce-decommissionnees-que-faire/", t('articleFr'), 'docUrl');
+      WebSocketClient.sendReportFileMessage(LEGACY_API_ARTICLE_URL, t('articleEn'), 'docUrl');
     }
-    if (this.notificationSampleTruncated) {
+    if (result.notificationSampleTruncated) {
       notifDetailText += `
-  Only the first ${this.notificationSampleLimit} log entries are attached to this notification.`;
+  Only the first ${result.notificationSampleLimit} log entries are attached to this notification.`;
     }
 
     // Build notifications
     const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
     const notifButtons = await getNotificationButtons();
-    const totalErrorsFound = this.getTotalErrors();
+    const totalErrorsFound = result.totalErrors;
     let notifSeverity: NotifSeverity = 'log';
     let notifText = `No deprecated Salesforce API versions are used in ${orgMarkdown}`;
     if (totalErrorsFound > 0) {
       notifSeverity = 'error';
       notifText = `**${totalErrorsFound}** deprecated Salesforce API versions are used in ${orgMarkdown}`;
     }
+    // Last api clients XLSX file generated, as before the extraction of the collector
+    const lastApiClientsXlsxFile = [...result.apiClientsFiles].reverse().find((apiClientsFile) => apiClientsFile.xlsxFile)?.xlsxFile;
     // Post notifications
     await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
     await NotifProvider.postNotifications({
@@ -328,11 +170,11 @@ In agent mode, the command runs fully automatically with no interactive prompts.
       attachments: [{ text: notifDetailText }],
       buttons: notifButtons,
       severity: notifSeverity,
-      attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile, this.outputFilesRes.xlsxFile2] : [],
-      logElements: this.allErrors,
+      attachedFiles: result.xlsxFile ? [result.xlsxFile, lastApiClientsXlsxFile as string] : [],
+      logElements: result.notificationSample,
       data: {
         metric: totalErrorsFound,
-        legacyApiSummary: this.ipResultsSorted,
+        legacyApiSummary: result.ipResults,
       },
       metrics: {
         LegacyApiCalls: totalErrorsFound,
@@ -348,307 +190,9 @@ In agent mode, the command runs fully automatically with no interactive prompts.
     return {
       status: statusCode,
       message: msg,
-      csvLogFile: this.outputFile,
-      outputFileIps: outputFileIps,
-      legacyApiResults: this.legacyApiDescriptors,
+      csvLogFile: result.outputFile,
+      outputFileIps: result.outputFileIps,
+      legacyApiResults: result.descriptorStates,
     };
-  }
-
-  private resetCsvState() {
-    this.csvHeaderWritten = false;
-    this.csvColumns = null;
-    this.csvPreviousChunkEndedWithNewline = true;
-    this.totalCsvRows = 0;
-    this.allErrors = [];
-    this.ipResultsSorted = [];
-    this.notificationSampleTruncated = false;
-    this.outputFilesRes = {};
-    for (const descriptor of this.legacyApiDescriptors) {
-      descriptor.errors = [];
-      descriptor.totalErrors = 0;
-      descriptor.ipCounts = {};
-    }
-  }
-
-  private getTotalErrors(): number {
-    return this.legacyApiDescriptors.reduce((sum, descriptor) => sum + descriptor.totalErrors, 0);
-  }
-
-  private captureNotificationSample(entries: any[]) {
-    if (!entries || entries.length === 0) {
-      return;
-    }
-    for (const entry of entries) {
-      if (this.allErrors.length < this.notificationSampleLimit) {
-        this.allErrors.push(entry);
-      } else {
-        this.notificationSampleTruncated = true;
-        break;
-      }
-    }
-  }
-
-  private updateIpCounts(descriptor: LegacyApiDescriptor, errors: any[]) {
-    if (!errors || errors.length === 0) {
-      return;
-    }
-    for (const eventLogRecord of errors) {
-      if (!eventLogRecord || !eventLogRecord.CLIENT_IP) {
-        continue;
-      }
-      const ip = eventLogRecord.CLIENT_IP;
-      if (!descriptor.ipCounts[ip]) {
-        descriptor.ipCounts[ip] = { count: 0, reasons: [] };
-      }
-      descriptor.ipCounts[ip].count += 1;
-      const reason = this.buildFlagReason(descriptor, eventLogRecord);
-      if (!descriptor.ipCounts[ip].reasons.includes(reason)) {
-        descriptor.ipCounts[ip].reasons.push(reason);
-      }
-    }
-  }
-
-  private buildFlagReason(descriptor: LegacyApiDescriptor, eventLogRecord: any): string {
-    const apiFamily = (eventLogRecord.API_FAMILY || '').toUpperCase() || 'API';
-    const apiResource = (eventLogRecord.API_RESOURCE || '').toLowerCase();
-    const apiVersionRaw = eventLogRecord.API_VERSION;
-    if (descriptor.apiResources && descriptor.apiResources.length > 0 && apiResource) {
-      return `${apiFamily} ${apiResource}`;
-    }
-    if (apiVersionRaw !== undefined && apiVersionRaw !== null && apiVersionRaw !== '') {
-      return `${apiFamily} API v${apiVersionRaw}`;
-    }
-    return `${apiFamily} API`;
-  }
-
-  private ensureCsvColumns(rows: any[]) {
-    if (this.csvColumns && this.csvColumns.length > 0) {
-      return;
-    }
-    const columnSet = new Set<string>();
-    for (const row of rows) {
-      if (!row) {
-        continue;
-      }
-      Object.keys(row).forEach((key) => columnSet.add(key));
-    }
-    this.csvColumns = Array.from(columnSet);
-  }
-
-  private async appendRowsToCsv(rows: any[]) {
-    if (!rows || rows.length === 0) {
-      return;
-    }
-    if (!this.outputFile) {
-      throw new Error('Output file path is not initialized');
-    }
-    // This streamed writer bypasses generateCsvFile, so it must apply the same anonymization:
-    // the CSV / XLSX carries USER_ID and CLIENT_IP values and ends up as CI artifact and email attachment
-    rows = anonymizeRows(rows, await getChannelAnonymizationLevel('files'));
-    this.ensureCsvColumns(rows);
-    if (!this.csvColumns || this.csvColumns.length === 0) {
-      return;
-    }
-    const csvString = Papa.unparse(rows, {
-      header: !this.csvHeaderWritten,
-      columns: this.csvColumns,
-    });
-    if (!this.csvHeaderWritten) {
-      await fs.writeFile(this.outputFile, csvString, 'utf8');
-      this.csvHeaderWritten = true;
-    } else if (csvString.length > 0) {
-      const prefix = this.csvPreviousChunkEndedWithNewline ? '' : '\n';
-      await fs.appendFile(this.outputFile, prefix + csvString, 'utf8');
-    }
-    this.csvPreviousChunkEndedWithNewline = csvString.endsWith('\n');
-    this.totalCsvRows += rows.length;
-  }
-
-  private async flushDescriptorErrors() {
-    for (const descriptor of this.legacyApiDescriptors) {
-      if (!descriptor.errors || descriptor.errors.length === 0) {
-        continue;
-      }
-      const descriptorErrors = descriptor.errors;
-      descriptor.totalErrors += descriptorErrors.length;
-      this.captureNotificationSample(descriptorErrors);
-      this.updateIpCounts(descriptor, descriptorErrors);
-      await this.appendRowsToCsv(descriptorErrors);
-      descriptor.errors = [];
-    }
-  }
-
-  private async finalizeCsvOutput() {
-    if (!this.outputFile) {
-      return;
-    }
-    if (!(await fs.pathExists(this.outputFile))) {
-      await fs.ensureDir(path.dirname(this.outputFile));
-      await fs.writeFile(this.outputFile, '', 'utf8');
-    }
-    uxLog("action", this, c.cyan(c.italic(t('pleaseSeeDetailedCsvLogIn2', { outputFile: c.bold(this.outputFile) }))));
-    this.outputFilesRes.csvFile = this.outputFile;
-    if (!WebSocketClient.isAliveWithLwcUI()) {
-      WebSocketClient.requestOpenFile(this.outputFile);
-    }
-    WebSocketClient.sendReportFileMessage(this.outputFile, t('legacyApiCallsCsv'), 'report');
-    if (this.totalCsvRows > 0) {
-      const result: any = {};
-      await createXlsxFromCsv(this.outputFile, { fileTitle: 'Legacy API Calls' }, result);
-      if (result.xlsxFile) {
-        this.outputFilesRes.xlsxFile = result.xlsxFile;
-      }
-    } else {
-      uxLog("other", this, c.grey(t('noXlsFileGeneratedAsIsEmpty2', { outputFile: this.outputFile })));
-    }
-  }
-
-  // GET csv log file and check for legacy API calls within
-  private async collectDeprecatedApiCalls(logFileUrl: string, conn: any) {
-    // Load icons
-    const severityIconError = getSeverityIcon('error');
-    const severityIconWarning = getSeverityIcon('warning');
-    const severityIconInfo = getSeverityIcon('info');
-
-    // Download file as stream, and process chuck by chuck
-    uxLog("log", this, c.grey(t('downloading', { logFileUrl })));
-    const fetchUrl = `${conn.instanceUrl}${logFileUrl}`;
-    const outputFile = path.join(this.tempDir, Math.random().toString(36).substring(7) + ".csv");
-    const downloadResult = await new FileDownloader(fetchUrl, { conn: conn, outputFile: outputFile }).download();
-    if (downloadResult.success) {
-      uxLog("log", this, c.grey(t('parsingDownloadedCsvFromAndCheckFor', { outputFile })));
-      const outputFileStream = fs.createReadStream(outputFile, { encoding: 'utf8' });
-      await new Promise((resolve, reject) => {
-        Papa.parse(outputFileStream, {
-          header: true,
-          worker: true,
-          chunk: (results) => {
-            // Look in check the entries that match a deprecation description
-            for (const logEntry of results.data as any[]) {
-              const apiVersion = this.parseApiVersion(logEntry.API_VERSION);
-              const apiFamily = (logEntry.API_FAMILY || '').toUpperCase();
-              const apiResource = (logEntry.API_RESOURCE || '').toLowerCase();
-              for (const legacyApiDescriptor of this.legacyApiDescriptors) {
-                if (
-                  !this.matchesApiFamily(legacyApiDescriptor, apiFamily) ||
-                  !this.matchesApiVersion(legacyApiDescriptor, apiVersion) ||
-                  !this.matchesApiResource(legacyApiDescriptor, apiResource)
-                ) {
-                  continue;
-                }
-                logEntry.SFDX_HARDIS_DEPRECATION_RELEASE = legacyApiDescriptor.deprecationRelease;
-                logEntry.SFDX_HARDIS_SEVERITY = legacyApiDescriptor.severity;
-                if (legacyApiDescriptor.severity === 'ERROR') {
-                  logEntry.severity = 'error';
-                  logEntry.severityIcon = severityIconError;
-                } else if (legacyApiDescriptor.severity === 'WARNING') {
-                  logEntry.severity = 'warning';
-                  logEntry.severityIcon = severityIconWarning;
-                } else {
-                  // severity === 'INFO'
-                  logEntry.severity = 'info';
-                  logEntry.severityIcon = severityIconInfo;
-                }
-                legacyApiDescriptor.errors.push(logEntry);
-                break;
-              }
-            }
-          },
-          complete: function () {
-            resolve(true);
-          },
-          error: function (error) {
-            reject(error);
-          },
-        });
-      });
-      await this.flushDescriptorErrors();
-      await fs.remove(outputFile).catch(() => undefined);
-    }
-    else {
-      uxLog("warning", this, c.yellow(t('warningUnableToProcessLogsOf', { logFileUrl })));
-    }
-  }
-
-  private async generateSummaryLog(
-    ipCounts: Record<string, { count: number; reasons: string[] }>,
-    severity: string
-  ) {
-    if (!ipCounts || Object.keys(ipCounts).length === 0) {
-      return null;
-    }
-    // Try to get hostname for ips
-    const ipResults: any[] = [];
-    for (const ip of Object.keys(ipCounts)) {
-      const { count, reasons } = ipCounts[ip];
-      let hostname: string | string[] = 'unknown';
-      try {
-        hostname = await dnsPromises.reverse(ip);
-      } catch (e) {
-        hostname = 'unknown';
-        uxLog("other", this, c.grey(t('unableToResolveHostnameForIp', { ip, val: e })));
-      }
-      const formattedHostname = Array.isArray(hostname) ? hostname.join(', ') : hostname;
-      const formattedReasons = [...reasons].sort().join(', ');
-      const ipResult = {
-        CLIENT_IP: ip,
-        CLIENT_HOSTNAME: formattedHostname,
-        SFDX_HARDIS_COUNT: count,
-        SFDX_HARDIS_REASON: formattedReasons,
-      };
-      ipResults.push(ipResult);
-    }
-    const sortedIpResults = sortArray(ipResults, {
-      by: ['SFDX_HARDIS_COUNT'],
-      order: ['desc'],
-    });
-    this.ipResultsSorted = [
-      ...this.ipResultsSorted,
-      ...sortedIpResults.map((entry) => ({ ...entry, severity })),
-    ];
-    // Write output CSV with client api info
-    const outputFileIps = this.outputFile.endsWith('.csv')
-      ? this.outputFile.replace('.csv', '.api-clients-' + severity + '.csv')
-      : this.outputFile + 'api-clients-' + severity + '.csv';
-    const outputFileIpsRes = await generateCsvFile(sortedIpResults, outputFileIps, {
-      fileTitle: `Legacy API Clients - ${severity}`,
-    });
-    if (outputFileIpsRes.xlsxFile) {
-      this.outputFilesRes.xlsxFile2 = outputFileIpsRes.xlsxFile;
-    }
-    uxLog("log", this, c.italic(c.cyan(t('pleaseSeeInfoAboutApiCallersIn', { severity, outputFileIps: c.bold(outputFileIps) }))));
-    return outputFileIps;
-  }
-
-  private parseApiVersion(rawValue: string | number | undefined): number {
-    if (rawValue === undefined || rawValue === null || rawValue === '') {
-      return Number.POSITIVE_INFINITY;
-    }
-    if (typeof rawValue === 'number') {
-      return Number.isFinite(rawValue) ? rawValue : Number.POSITIVE_INFINITY;
-    }
-    const parsed = parseFloat(rawValue);
-    return Number.isFinite(parsed) ? parsed : Number.POSITIVE_INFINITY;
-  }
-
-  private matchesApiFamily(descriptor: LegacyApiDescriptor, apiFamily: string): boolean {
-    if (!apiFamily) {
-      return false;
-    }
-    return descriptor.apiFamily.some((family) => family.toUpperCase() === apiFamily);
-  }
-
-  private matchesApiVersion(descriptor: LegacyApiDescriptor, apiVersion: number): boolean {
-    return apiVersion >= descriptor.minApiVersion && apiVersion <= descriptor.maxApiVersion;
-  }
-
-  private matchesApiResource(descriptor: LegacyApiDescriptor, apiResource: string): boolean {
-    if (!descriptor.apiResources || descriptor.apiResources.length === 0) {
-      return true;
-    }
-    if (!apiResource) {
-      return false;
-    }
-    return descriptor.apiResources.some((resource) => resource.toLowerCase() === apiResource);
   }
 }

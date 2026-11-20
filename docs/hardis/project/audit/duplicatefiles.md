@@ -1,3 +1,7 @@
+---
+title: "hardis:project:audit:duplicatefiles - Find duplicate sfdx files"
+description: "Identifies and reports on duplicate file names within your Salesforce DX project folder."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:audit:duplicatefiles
 
@@ -40,13 +44,19 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The files of the Helios project that share their name with another one, such as the two package.xml manifests](../../../assets/images/commands/project/audit/duplicatefiles.webp)
+
+_The files of the Helios project that share their name with another one, such as the two package.xml manifests_
+
 ## Parameters
 
 | Name         |  Type   | Description                                                   |      Default       | Required | Options |
 |:-------------|:-------:|:--------------------------------------------------------------|:------------------:|:--------:|:-------:|
 | agent        | boolean | Run in non-interactive mode for agents and automation         |                    |          |         |
 | debug<br/>-d | boolean | Activate debug mode (more logs)                               |                    |          |         |
-| flags-dir    | option  | undefined                                                     |                    |          |         |
+| flags-dir    | option  | Import flag values from a directory.                          |                    |          |         |
 | json         | boolean | Format output as json.                                        |                    |          |         |
 | path<br/>-p  | option  | Root path to check                                            | C:\git\sfdx-hardis |          |         |
 | skipauth     | boolean | Skip authentication check when a default username is required |                    |          |         |

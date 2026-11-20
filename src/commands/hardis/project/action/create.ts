@@ -12,18 +12,24 @@ import {
   ACTION_CONTEXTS,
   ActionScope,
   ActionWhen,
+  assertNoFlagsOfOtherTypes,
   buildAction,
+  getActionSaveDetails,
+  getBuiltInActionProvider,
+  isRunOnlyOnceByOrgFlagPassed,
   listAvailableActionTypes,
   logActionSummary,
   parseBranchListFlag,
   readActions,
   resolvePrId,
+  throwActionValidationErrors,
   validateActionParameters,
   writeActions,
 } from '../../../../common/utils/actionUtils.js';
 import { getCustomFunctionById, isBuiltInActionType } from '../../../../common/utils/customFunctionUtils.js';
 import { castFunctionInputValues, parseFunctionInputFlags } from '../../../../common/utils/customFunctionFlagUtils.js';
 import { PrePostCommand } from '../../../../common/actionsProvider/actionsProvider.js';
+import { DEPLOYMENT_ONLY_ACTION_TYPES, resolveRunOnlyOnceByOrg } from '../../../../common/actionsProvider/actionTypes.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -36,7 +42,7 @@ export default class ActionCreate extends ActionCommandBase {
 
 **Creates a new deployment action in the project configuration.**
 
-Deployment actions are pre- or post-deployment steps that run automatically during CI/CD pipelines. This command lets you define new actions of various types (shell command, data import, Apex script, community publish, manual instructions, batch scheduling, or package.xml items removal) and store them at project, branch, or pull request scope.
+Deployment actions are pre- or post-deployment steps that run automatically during CI/CD pipelines. This command lets you define new actions of various types (shell command, data import, Apex script, community publish, manual instructions, batch scheduling, immediate batch run, package.xml items removal, User Access Policies activation, or a Setup setting applied in a browser) and store them at project, branch, or pull request scope.
 
 New actions are appended to the end of the action list. Use \`hardis:project:action:reorder\` to change position.
 
@@ -53,7 +59,7 @@ Branch names are matched exactly, ignoring case. The virtual name \`dev-sandboxe
 
 \`\`\`yaml
 commandsPostDeploy:
-  - id: publishCommunity
+  - id: 6e9749de-d7e7-4e44-8742-f8cae3e2142e
     label: Publish the customer community
     type: publish-community
     parameters:
@@ -63,6 +69,76 @@ commandsPostDeploy:
 \`\`\`
 
 When an action does not apply to the branch being deployed, it is reported as skipped in the Pull Request comment, with the reason.
+
+### Run a batch
+
+A \`run-batch\` action runs a \`Database.Batchable\` Apex class once, before or after the metadata deployment. A pre-deploy batch needs its class to be in the target org already.
+
+- \`runMode: wait\` (default) follows the job until it ends. The action fails when the job fails, is aborted, has batches in error, or is not over after \`waitTimeoutMinutes\` (60 by default).
+- \`successEvenIfBatchErrors: true\` keeps the action successful when the job completes with batches in error.
+- \`runMode: no-wait\` launches the batch and goes on with the deployment.
+- No batch is launched when a job of the class is still running, or completed less than 3 hours ago with a result the action accepts: that job stands for this run.
+
+A run-batch action only runs in the \`process-deployment-only\` context, never during a deployment check.
+
+### Activate User Access Policies
+
+A deployment always leaves the User Access Policies it contains in Design status, even an active one. A \`user-access-policy\` action, run after the deployment, sets them back to Active.
+
+- \`policies\`: developer names of the policies.
+- \`activate: true\` (default) activates them with the Salesforce API. A policy already active is left as is.
+- \`applyToAll: true\` also runs **Apply To All** for each policy, at each run, and waits up to 2 minutes for Salesforce to record an access change. A policy that matches no user records none: that is a warning, not a failure.
+
+Both are done by [Browserforce](https://github.com/amtrack/sfdx-browserforce-plugin) (\`userAccessPolicies\` setting) in a headless browser: Salesforce has no API for Apply To All. The plugin is installed when missing.
+
+A user-access-policy action is \`post-deploy\` only, and only runs in the \`process-deployment-only\` context. It runs at every deployment by default (\`runOnlyOnceByOrg: false\`), because each new deployment of a policy turns it off again.
+
+### Publish an Agentforce agent
+
+An \`agent-publish\` action, run after the deployment, publishes the authoring bundle of an agent (\`aiAuthoringBundles/<Agent>/\`) in the target org with \`sf agent publish authoring-bundle\`, then activates the version this created. The org numbers the version. The replacement rules of the target org are applied to the bundle while it is published.
+
+- \`agentName\`: API name of the agent.
+
+An agent-publish action is \`post-deploy\` only, and only runs in the \`process-deployment-only\` context. It runs once by org by default (\`runOnlyOnceByOrg: true\`): each publication creates a new version, even when the bundle did not change.
+
+### Create the running user of an Agentforce agent
+
+An \`agent-running-user\` action, run before the deployment, creates the running user of a service agent with \`sf org create agent-user\` when the target org has none. The built-in replacement rule \`builtin-agent-running-user\` then writes that user in the deployed files.
+
+- \`agentName\`: API name of the agent.
+
+A user already there (the one of git, or one created before for the agent) is kept. No user is created when a rule of the project writes the running user, or when the replacement rules are skipped for the target. An agent-running-user action is \`pre-deploy\` only, and its context defaults to \`all\`, so the deployment check validates the agent with its real user. A deployment check never creates the user in production: the deployment does. It runs at every deployment by default (\`runOnlyOnceByOrg: false\`).
+
+### Activate a version of an Agentforce agent
+
+An \`agent-activate\` action, run after the deployment, activates the latest version of an agent in the target org with \`sf agent activate\`. Each org numbers its own versions, so the action takes no version number.
+
+- \`agentName\`: API name of the agent.
+
+A version already active is left as is. An agent-activate action is \`post-deploy\` only, and only runs in the \`process-deployment-only\` context. It runs at every deployment by default (\`runOnlyOnceByOrg: false\`), so a new version brought by a later deployment gets activated too.
+
+### Apply a Setup setting in a browser
+
+Some Setup settings cannot be deployed with the Metadata API. A \`browser\` action applies one setting of [Browserforce](https://github.com/amtrack/sfdx-browserforce-plugin) (sfdx-browserforce-plugin, installed when missing) by driving the Setup pages in a headless browser.
+
+- \`setting\`: the key of the Browserforce setting (\`densitySettings\`, \`companyInformation\`...)
+- \`config\`: its value. Browserforce only changes what differs from the org.
+- A value can be read from a CI/CD variable, written as a placeholder (its syntax is in the [deployment actions documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions-browser/)): \`VARIABLE_<BRANCH>\` first (for example \`VARIABLE_UAT\` when deploying to \`uat\`), then \`VARIABLE\`. Use it for secrets and for values that differ per org. The values are masked in every output.
+- During a deployment check (default context \`all\`), nothing is changed: Browserforce reads the org and the Pull Request comment shows what would change.
+
+\`\`\`yaml
+commandsPostDeploy:
+  - id: 2f0c4d1e-7a3b-4c5d-9e8f-0a1b2c3d4e5f
+    label: Compact density for all users
+    type: browser
+    context: all
+    parameters:
+      setting: densitySettings
+      config:
+        density: Compact
+\`\`\`
+
+A manual action declared \`pre-deploy\` is always stored with the \`all\` context: it has to be done before the merge, so the deployment check lists it too.
 
 ### Agent Mode
 
@@ -75,9 +151,11 @@ sf hardis:project:action:create --agent --scope branch --when pre-deploy --type 
 Required in agent mode:
 
 - \`--scope\`, \`--when\`, \`--type\`, \`--label\`
-- Type-specific flags: \`--command\` for command, \`--apex-script\` for apex, \`--sfdmu-project\` for data, \`--community-name\` for publish-community, \`--instructions\` for manual, \`--class-name\` and \`--cron-expression\` for schedule-batch, \`--packagexml-items\` for remove-packagexml-items
+- Type-specific flags: list them, with what each type expects, with \`sf hardis:project:action:types --json\`. \`--command\` for command, \`--apex-script\` for apex, \`--sfdmu-project\` for data, \`--community-name\` for publish-community, \`--instructions\` for manual, \`--class-name\` and \`--cron-expression\` for schedule-batch, \`--class-name\` for run-batch (\`--run-mode\` defaults to \`wait\`), \`--packagexml-items\` for remove-packagexml-items, \`--policies\` for user-access-policy (\`--activate\` defaults to \`true\`, \`--apply-to-all\` to \`false\`), \`--browser-setting\` and \`--browser-config\` for browser (JSON, or the path of a .json file; its format: \`sf hardis:project:action:types --type browser --browser-setting <key> --json\`), \`--agent-name\` for agent-publish, agent-running-user and agent-activate
 
-In agent mode, \`--context\` defaults to \`process-deployment-only\`. \`--run-only-once-by-org\` defaults to \`true\` (use \`--no-run-only-once-by-org\` to disable); other optional boolean flags default to \`false\`.
+When the definition is invalid, the \`--json\` error carries what helps fixing it in \`data\` (for a browser action: the fields of the setting and an example). The \`--json\` result of a saved action may carry \`typeDetails\`: for a browser action, the CI/CD variables to declare for each major branch.
+
+In agent mode, \`--context\` defaults to \`process-deployment-only\`, or to the default of the type (\`all\` for remove-packagexml-items, browser and agent-running-user). \`--run-only-once-by-org\` defaults to \`true\` (use \`--no-run-only-once-by-org\` to disable); other optional boolean flags default to \`false\`.
 
 Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separated, mutually exclusive) to restrict the action to some target branches. Without either flag, the action runs on all of them.
 
@@ -96,6 +174,12 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
     '$ sf hardis:project:action:create --agent --scope branch --when pre-deploy --type command --label "Disable triggers" --command "sf apex run --file scripts/disable-triggers.apex"',
     '$ sf hardis:project:action:create --agent --scope pr --pr-id 123 --when post-deploy --type data --label "Import test data" --sfdmu-project TestData',
     '$ sf hardis:project:action:create --agent --scope pr --pr-id 123 --when pre-deploy --type remove-packagexml-items --label "Skip legacy classes" --packagexml-items "ApexClass:MyClass1,MyClass3;Layout:MyLayout1,MyLayout2"',
+    '$ sf hardis:project:action:create --agent --scope pr --pr-id 123 --when post-deploy --type run-batch --label "Recalculate crew capacity" --class-name CrewCapacityBatch --run-mode wait --wait-timeout 30',
+    '$ sf hardis:project:action:create --agent --scope project --when post-deploy --type user-access-policy --label "Activate sales access policies" --policies "Sales_Rep_Access,Sales_Manager_Access" --apply-to-all',
+    '$ sf hardis:project:action:create --agent --scope pr --pr-id 123 --when post-deploy --type agent-publish --label "Publish the service agent" --agent-name My_Service_Agent',
+    '$ sf hardis:project:action:create --agent --scope pr --pr-id 123 --when pre-deploy --context all --type agent-running-user --label "Create the running user of the service agent" --agent-name My_Service_Agent',
+    '$ sf hardis:project:action:create --agent --scope project --when post-deploy --type agent-activate --label "Activate the service agent" --agent-name My_Service_Agent',
+    '$ sf hardis:project:action:create --agent --scope project --when post-deploy --type browser --label "Compact density" --browser-setting densitySettings --browser-config \'{"density":"Compact"}\'',
     '$ sf hardis:project:action:create --agent --scope project --when post-deploy --type apex --label "Reset demo data" --apex-script scripts/apex/reset-demo.apex --exclude-target-branches "main,preprod"',
   ];
 
@@ -109,7 +193,7 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
       description: 'When to run the action: pre-deploy or post-deploy',
     }),
     type: Flags.string({
-      description: 'Type of action: a built-in type (command, data, apex, publish-community, manual, schedule-batch, remove-packagexml-items) or the id of a project custom function',
+      description: 'Type of action: a built-in type (command, data, apex, publish-community, manual, schedule-batch, run-batch, remove-packagexml-items, user-access-policy, browser, agent-publish, agent-activate, agent-running-user) or the id of a project custom function',
     }),
     label: Flags.string({
       description: 'Human-readable label for the action',
@@ -136,7 +220,7 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
       description: 'Manual instructions text (for manual type)',
     }),
     'class-name': Flags.string({
-      description: 'Apex batch class name (for schedule-batch type)',
+      description: 'Apex batch class name (for schedule-batch and run-batch types). Write a global class of a managed package with its namespace: ns.ClassName',
     }),
     'cron-expression': Flags.string({
       description: 'Cron expression (for schedule-batch type)',
@@ -144,8 +228,41 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
     'job-name': Flags.string({
       description: 'Job name for schedule-batch (optional, defaults to <className>_Schedule)',
     }),
+    'run-mode': Flags.string({
+      options: ['wait', 'no-wait'],
+      description: 'For run-batch type: wait for the batch to succeed, or launch it without waiting for its result (default: wait)',
+    }),
+    'batch-size': Flags.integer({
+      description: 'Batch size for run-batch type (optional, 1 to 2000, defaults to 200)',
+    }),
+    'wait-timeout': Flags.integer({
+      description: 'Minutes to wait for the batch of a run-batch action in wait mode (optional, defaults to 60)',
+    }),
+    'success-even-if-batch-errors': Flags.boolean({
+      description: 'For run-batch type in wait mode: keep the action successful when the batch completes with errors',
+    }),
     'packagexml-items': Flags.string({
       description: 'Semicolon-separated list of package.xml items to remove before deployment, each in format TypeName:Member1,Member2 (for remove-packagexml-items type). Example: "ApexClass:MyClass1,MyClass3;Layout:MyLayout1,MyLayout2"',
+    }),
+    policies: Flags.string({
+      description: 'Comma-separated developer names of User Access Policies (for user-access-policy type)',
+    }),
+    activate: Flags.boolean({
+      allowNo: true,
+      description: 'For user-access-policy type: activate the policies after the deployment (default: true)',
+    }),
+    'apply-to-all': Flags.boolean({
+      allowNo: true,
+      description: 'For user-access-policy type: also run Apply To All for each policy, with Browserforce (default: false)',
+    }),
+    'browser-setting': Flags.string({
+      description: 'For browser type: key of the Browserforce setting to apply. List them with sf hardis:project:action:types --type browser',
+    }),
+    'browser-config': Flags.string({
+      description: 'For browser type: value of the setting, as JSON or the path of a .json file. A secret or a value that differs per org can be read from a CI/CD variable: see the deployment actions documentation for the placeholder',
+    }),
+    'agent-name': Flags.string({
+      description: 'API name of the Agentforce agent (for agent-publish, agent-activate and agent-running-user types)',
     }),
     'function-input': Flags.string({
       multiple: true,
@@ -208,6 +325,14 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
       ? this.requireFlag(flags.type, 'type') as PrePostCommand['type']
       : flags.type || await this.promptType(when);
 
+    await assertNoFlagsOfOtherTypes(type, flags);
+    // What is specific to a built-in type is in its provider class
+    const provider = await getBuiltInActionProvider(type);
+    const allowedWhen = provider?.getAllowedWhen();
+    if (allowedWhen && !allowedWhen.includes(when)) {
+      throw new SfError(t('actionTypeWrongPhase', { type, when: allowedWhen.join(', ') }));
+    }
+
     // Collect label
     const label: string = agentMode || isCI
       ? this.requireFlag(flags.label, 'label')
@@ -217,7 +342,10 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
     const parameters: Record<string, any> = {};
     let command = '';
 
-    if (type === 'command') {
+    const providerParameters = await provider?.collectParameters(flags, agentMode || isCI, {});
+    if (providerParameters) {
+      Object.assign(parameters, providerParameters);
+    } else if (type === 'command') {
       command = agentMode || isCI
         ? this.requireFlag(flags.command, 'command')
         : flags.command || await this.promptText(t('enterCommand'), '');
@@ -253,9 +381,6 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
         }
       }
     } else if (type === 'remove-packagexml-items') {
-      if (when !== 'pre-deploy') {
-        throw new SfError(t('actionValidationPackageXmlItemsPreDeployOnly'));
-      }
       const itemsRaw: string = agentMode || isCI
         ? this.requireFlag(flags['packagexml-items'], 'packagexml-items')
         : flags['packagexml-items'] || await this.promptText(t('enterPackageXmlItems'), '');
@@ -284,15 +409,25 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
     // A custom function may ship defaults for the action fields, which flags and prompts override
     const functionDefaults = isBuiltInActionType(type) ? undefined : (await getCustomFunctionById(type))?.defaults;
 
-    // Collect context
-    // remove-packagexml-items must also run during deployment checks, so it defaults to all contexts
+    // Collect context: a type may run during deployment checks by default
     const defaultContext = functionDefaults?.context
-      || (type === 'remove-packagexml-items' ? 'all' : 'process-deployment-only');
-    const context = (flags.context || (!agentMode && !isCI ? await this.promptContext(defaultContext as PrePostCommand['context']) : defaultContext)) as PrePostCommand['context'];
+      || provider?.getDefaultContext()
+      || 'process-deployment-only';
+    // run-batch only runs in one context: there is nothing to ask. Neither for a manual step to do
+    // before the deployment: the validation job lists it whatever its context, so it is stored as
+    // what it does, and a --context passed for it is not kept.
+    const manualBeforeDeployment = type === 'manual' && when === 'pre-deploy';
+    const context = (manualBeforeDeployment
+      ? 'all'
+      : flags.context || (!agentMode && !isCI && !DEPLOYMENT_ONLY_ACTION_TYPES.includes(type) ? await this.promptContext(defaultContext as PrePostCommand['context']) : defaultContext)) as PrePostCommand['context'];
 
     // Collect optional flags (only prompt in interactive mode)
     let allowFailure = flags['allow-failure'] === true ? true : functionDefaults?.allowFailure === true;
     let runOnlyOnceByOrg = flags['run-only-once-by-org'];
+    // A type may run at every deployment by default
+    if (!resolveRunOnlyOnceByOrg({ type }) && !isRunOnlyOnceByOrgFlagPassed(this.argv)) {
+      runOnlyOnceByOrg = false;
+    }
     if (functionDefaults?.runOnlyOnceByOrg !== undefined && flags['run-only-once-by-org'] === true) {
       // true is also the flag default, so it cannot be told apart from "not passed": let the
       // function default win, and --no-run-only-once-by-org still forces false.
@@ -350,7 +485,7 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
     // Validate parameters
     const validationErrors = await validateActionParameters(action, when);
     if (validationErrors.length > 0) {
-      throw new SfError(t('actionValidationErrors', { errors: validationErrors.join('\n') }));
+      await throwActionValidationErrors(action, validationErrors);
     }
 
     // Resolve PR ID if scope is pr
@@ -365,10 +500,11 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
     uxLog("success", this, c.green(t('actionCreatedSuccessfully', { label: action.label, id: action.id })));
     logActionSummary(this, action);
     uxLog("log", this, c.grey(t('actionSavedToFile', { file: configFile })));
+    const typeDetails = await getActionSaveDetails(action);
 
     WebSocketClient.sendRefreshPipelineMessage();
 
-    return { outputString: 'Action created', action: action as any, configFile };
+    return { outputString: 'Action created', action: action as any, configFile, typeDetails };
   }
 
   private async promptScope(): Promise<ActionScope> {

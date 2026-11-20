@@ -3,6 +3,7 @@ import * as os from 'os';
 import * as path from 'path';
 import fs from '../../../src/common/utils/fsUtils.js';
 import { clearOrgApiCache } from '../../../src/common/cache/orgApiCache.js';
+import { restoreProcessEnv } from './envTestHelper.js';
 import {
   buildCustomFieldLookupSoql,
   buildLookupSoql,
@@ -143,7 +144,7 @@ describe('metadataDepsUtils', () => {
       });
 
       afterEach(async () => {
-        process.env = { ...previousEnv };
+        restoreProcessEnv(previousEnv);
         await fs.remove(root);
       });
 

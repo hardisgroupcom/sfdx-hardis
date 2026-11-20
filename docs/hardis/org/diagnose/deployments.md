@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:deployments - Analyze metadata deployments and validations"
+description: "Analyzes metadata deployments and validations by querying DeployRequest records via the Tooling API."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:deployments
 
@@ -35,18 +39,42 @@ In agent mode:
 - `--period` defaults to `daily` (last 24 hours) when not provided.
 - All interactive prompts are skipped.
 
+## Screenshots
+
+![Type how many days back to analyze](../../../assets/images/commands/org/diagnose/deployments-1.webp)
+
+_Type how many days back to analyze_
+
+![Deployments and validations of the last 30 days, with their duration and status](../../../assets/images/commands/org/diagnose/deployments.webp)
+
+_Deployments and validations of the last 30 days, with their duration and status_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Deployments and validations
+
+One row per deployment or validation, with its status, author, dates, pending time and duration in minutes.
+
+Files: `deployments-*.csv`, `xls/deployments-*.xlsx`
+
+![Deployments and validations report in Excel](../../../assets/images/commands/org/diagnose/deployments-report-deployments.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                                                                                 | Default | Required |         Options          |
 |:------------------|:-------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:------------------------:|
 | agent             | boolean | Run in non-interactive mode for agents and automation                                                                                                                       |         |          |                          |
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                                                                                             |         |          |                          |
-| flags-dir         | option  | undefined                                                                                                                                                                   |         |          |                          |
+| flags-dir         | option  | Import flag values from a directory.                                                                                                                                        |         |          |                          |
 | json              | boolean | Format output as json.                                                                                                                                                      |         |          |                          |
 | outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                                                                                                           |         |          |                          |
 | period<br/>-p     | option  | Time period to analyze: daily (last 24h), weekly (last 7 days), or all (no date filter). If not set, defaults to daily in CI or prompts for a number of days interactively. |         |          | daily<br/>weekly<br/>all |
 | skipauth          | boolean | Skip authentication check when a default username is required                                                                                                               |         |          |                          |
-| target-org<br/>-o | option  | undefined                                                                                                                                                                   |         |          |                          |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set.                                                                |         |   true   |                          |
 | websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                   |         |          |                          |
 
 ## Examples

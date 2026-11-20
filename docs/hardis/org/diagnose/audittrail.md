@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:audittrail - Diagnose content of Setup Audit Trail"
+description: "Export Audit trail into a CSV file with selected criteria, and highlight suspect actions"
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:audittrail
 
@@ -105,6 +109,8 @@ You can define additional users to exclude in .sfdx-hardis.yml **monitoringExclu
 
 You can also add more sections / actions considered as not suspect using property **monitoringAllowedSectionsActions**
 
+If a user is expected to perform some specific actions (for example an integration user whose portal user provisioning automatically creates account roles), you can allow those actions for that user only using property **monitoringAllowedUsersActions**: unlike **monitoringExcludeUsernames**, any other action performed by the same user is still flagged.
+
 Example:
 
 ```yaml
@@ -116,6 +122,10 @@ monitoringExcludeUsernames:
 monitoringAllowedSectionsActions:
   "Some section": [] // Will ignore all actions from such section
   "Some other section": ["actionType1","actionType2","actionType3"] // Will ignore only those 3 actions from section "Some other section". Other actions in the same section will be considered as suspect.
+
+monitoringAllowedUsersActions:
+  "provisioning-user@cloudity.com": ["createdrole"] // Will ignore only createdrole from provisioning-user@cloudity.com. Any other action from this user will still be considered as suspect.
+  "another-integration@cloudity.com": [] // Will ignore all actions from this user (same as monitoringExcludeUsernames, but the records remain visible in the report as not suspect)
 ```
 
 ## Excel output example
@@ -139,20 +149,44 @@ sf hardis:org:diagnose:audittrail --agent --target-org myorg@example.com
 
 In agent mode, the audit trail report is generated without interactive prompts, using the default number of days.
 
+## Screenshots
+
+![Pick how far back to look for suspicious setup activities](../../../assets/images/commands/org/diagnose/audittrail-1.webp)
+
+_Pick how far back to look for suspicious setup activities_
+
+![Setup changes of the last 30 days, checked against the actions the team expects](../../../assets/images/commands/org/diagnose/audittrail.webp)
+
+_Setup changes of the last 30 days, checked against the actions the team expects_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Setup audit trail
+
+One row per Setup Audit Trail action of the period, with its date, user, section and action, and the suspect ones flagged.
+
+Files: `audit-trail-*.csv`, `xls/audit-trail-*.xlsx`
+
+![Setup audit trail report in Excel](../../../assets/images/commands/org/diagnose/audittrail-report-audit-trail.webp)
+
 ## Parameters
 
-| Name                |  Type   | Description                                                       | Default | Required | Options |
-|:--------------------|:-------:|:------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent               | boolean | Run in non-interactive mode for agents and automation             |         |          |         |
-| debug<br/>-d        | boolean | Activate debug mode (more logs)                                   |         |          |         |
-| excludeusers<br/>-e | option  | Comma-separated list of usernames to exclude                      |         |          |         |
-| flags-dir           | option  | undefined                                                         |         |          |         |
-| json                | boolean | Format output as json.                                            |         |          |         |
-| lastndays<br/>-t    | option  | Number of days to extract from today (included)                   |         |          |         |
-| outputfile<br/>-f   | option  | Force the path and name of output report file. Must end with .csv |         |          |         |
-| skipauth            | boolean | Skip authentication check when a default username is required     |         |          |         |
-| target-org<br/>-o   | option  | undefined                                                         |         |          |         |
-| websocket           | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |         |          |         |
+| Name                |  Type   | Description                                                                                                  | Default | Required | Options |
+|:--------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent               | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| debug<br/>-d        | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| excludeusers<br/>-e | option  | Comma-separated list of usernames to exclude                                                                 |         |          |         |
+| flags-dir           | option  | Import flag values from a directory.                                                                         |         |          |         |
+| json                | boolean | Format output as json.                                                                                       |         |          |         |
+| lastndays<br/>-t    | option  | Number of days to extract from today (included)                                                              |         |          |         |
+| outputfile<br/>-f   | option  | Force the path and name of output report file. Must end with .csv                                            |         |          |         |
+| skipauth            | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o   | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket           | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

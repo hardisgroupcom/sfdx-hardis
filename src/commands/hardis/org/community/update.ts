@@ -77,6 +77,12 @@ Use \`--agent\` to disable all prompts. Typical usage:
       default: false,
       description: messages.getMessage('debugMode'),
     }),
+    websocket: Flags.string({
+      description: messages.getMessage('websocket'),
+    }),
+    skipauth: Flags.boolean({
+      description: 'Skip authentication check when a default username is required',
+    }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
 

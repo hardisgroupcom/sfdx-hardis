@@ -124,6 +124,8 @@ Every night (or on your own schedule), a CI job extracts all metadata from the o
 
 Additional jobs then run on top of the backup: Apex tests, code quality, legacy API checks, plus any custom command you define. Results are stored as job artifacts and forwarded to your notification channels.
 
+A job that ran to its end is green, even when it found issues: failing Apex tests, a limit close to its maximum or MegaLinter errors are read in the notifications, the reports and Grafana, not in the color of the pipeline. A red job means the job itself could not run (expired authentication, crash), and that is worth a look the same day. Configure at least one notification channel, or the findings stay in the job artifacts.
+
 ![Example workflow on GitHub Actions](assets/images/screenshot-monitoring-jobs.jpg)
 
 ---
@@ -158,11 +160,11 @@ See [Monitoring configuration](salesforce-monitoring-config-home.md#monitoring-c
 | [Detect suspect setup actions in major org](salesforce-monitoring-suspect-audit-trail.md)                                   | Daily     |
 | [Apex tests](salesforce-monitoring-apex-tests.md)                                                                           | Daily     |
 | [Quality Checks with MegaLinter](salesforce-monitoring-quality-checks.md)                                                   | Daily     |
-| [Detect calls to deprecated API versions](salesforce-monitoring-deprecated-api-calls.md)                                    | Daily     |
 | [Detect limits issues](salesforce-monitoring-org-limits.md)                                                                 | Daily     |
 | [Detect Apex flex queue backlog](salesforce-monitoring-apex-flex-queue.md)                                                  | Daily     |
 | [Detect Apex and Flow errors](salesforce-monitoring-apex-flow-errors.md)                                                    | Daily     |
 | [Detect unsecured Connected Apps in an org](salesforce-monitoring-unsecured-connected-apps.md)                              | Daily     |
+| [Detect what will break after dated Salesforce changes](salesforce-monitoring-what-will-break.md)                           | Daily     |
 | [Analyze metadata deployments and validations](salesforce-monitoring-deployments.md)                                        | Daily     |
 | [Detect usage-based entitlements consumed too fast](salesforce-monitoring-usage-entitlements.md)                            | Daily     |
 | [Collect the consumption utilization alerts Salesforce raises](salesforce-monitoring-consumption-alerts.md)                 | Daily     |
@@ -178,7 +180,6 @@ See [Monitoring configuration](salesforce-monitoring-config-home.md#monitoring-c
 | [Detect active users with recent logins (CRM, 1 week)](salesforce-monitoring-inactive-users.md)                             | Weekly    |
 | [Detect active users with recent logins (Experience, 1 month)](salesforce-monitoring-inactive-users.md)                     | Weekly    |
 | [Get org info + SF instance info + next major upgrade date](salesforce-monitoring-org-instance-upgrade.md)                  | Weekly    |
-| [Gather warnings about incoming and overdue Release Updates](salesforce-monitoring-release-updates.md)                      | Weekly    |
 | [Run Salesforce Security Health Check](salesforce-monitoring-health-check.md)                                               | Weekly    |
 | [Detect custom labels and custom permissions that are not in use](salesforce-monitoring-unused-metadata.md)                 | Weekly    |
 | [Detect unused Apex classes in an org](salesforce-monitoring-unused-apex-classes.md)                                        | Weekly    |
@@ -211,8 +212,8 @@ _Prefer reading? Here are the slides:_
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) course does this, click by click, on an org of your own:
 
-- [Lab 3.8 - Monitor your production org](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-8-monitor-your-production-org/)
+- [Lab 3.8 - Monitor your production org](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-8-monitor-your-production-org/)
 
 <!-- training-links:end -->

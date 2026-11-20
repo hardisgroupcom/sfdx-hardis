@@ -1,3 +1,7 @@
+---
+title: "hardis:packagexml:append"
+description: "Appends the content of one or more Salesforce package.xml files into a single target package.xml file."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:packagexml:append
 
@@ -40,16 +44,22 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![Two package.xml files merged into one](../../assets/images/commands/packagexml/append.webp)
+
+_Two package.xml files merged into one_
+
 ## Parameters
 
 | Name               |  Type   | Description                                           | Default | Required | Options |
 |:-------------------|:-------:|:------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent              | boolean | Run in non-interactive mode for agents and automation |         |          |         |
 | debug              | boolean | debug                                                 |         |          |         |
-| flags-dir          | option  | undefined                                             |         |          |         |
+| flags-dir          | option  | Import flag values from a directory.                  |         |          |         |
 | json               | boolean | Format output as json.                                |         |          |         |
-| outputfile<br/>-f  | option  | package.xml output file                               |         |          |         |
-| packagexmls<br/>-p | option  | package.xml files path (separated by commas)          |         |          |         |
+| outputfile<br/>-f  | option  | package.xml output file                               |         |   true   |         |
+| packagexmls<br/>-p | option  | package.xml files path (separated by commas)          |         |   true   |         |
 | websocket          | option  | websocket                                             |         |          |         |
 
 ## Examples

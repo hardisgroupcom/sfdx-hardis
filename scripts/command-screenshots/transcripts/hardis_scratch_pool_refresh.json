@@ -1,0 +1,157 @@
+{
+  "command": "hardis:scratch:pool:refresh",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 600,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Pool config: {\"maxScratchOrgsNumber\":5,\"storageService\":\"gitProvider\"}"
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Scratch org https://helios-solar-2940-dev-ed.scratch.my.salesforce.com will be deleted as it has only 8 remaining days (expiration on 2026-11-25)"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Scratch org https://helios-solar-3377-dev-ed.scratch.my.salesforce.com will be kept as it still has 25 remaining days (expiration on 2026-12-12)"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Scratch org https://helios-solar-3378-dev-ed.scratch.my.salesforce.com will be kept as it still has 25 remaining days (expiration on 2026-12-12)"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Scratch org https://helios-solar-4015-dev-ed.scratch.my.salesforce.com will be kept as it still has 27 remaining days (expiration on 2026-12-14)"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf org login sfdx-url --sfdx-url-file /tmp/sfdx-hardis-4b1f/sfdxScratchAuth.txt",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1000,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf org login sfdx-url --sfdx-url-file /tmp/sfdx-hardis-4b1f/sfdxScratchAuth.txt",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf org delete scratch --no-prompt --target-org devops@hardis-scratch-PO-t5runner-uat_20261026_0300.com",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf org delete scratch --no-prompt --target-org devops@hardis-scratch-PO-t5runner-uat_20261026_0300.com",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Scratch org devops@hardis-scratch-PO-t5runner-uat_20261026_0300.com at https://helios-solar-2940-dev-ed.scratch.my.salesforce.com has been deleted because only 8 days were remaining."
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Creating 2 scratch orgs..."
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[pool] hardis:scratch:create (0) started"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[pool] hardis:scratch:create (1) started"
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "[pool] hardis:scratch:create (1) exited with code 0"
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "[pool] hardis:scratch:create (0) exited with code 0"
+      }
+    },
+    {
+      "delay": 700,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "[pool] Created 2 scratch orgs (0 creation(s) failed)"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

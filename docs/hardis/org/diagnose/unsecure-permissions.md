@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:unsecure-permissions - Audit dangerous permissions"
+description: "Audits dangerous permissions granted through Profiles, Permission Sets and Permission Set Groups, and resolves which active users hold them."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:unsecure-permissions
 
@@ -38,18 +42,39 @@ sf hardis:org:diagnose:unsecure-permissions --agent --target-org myorg@example.c
 
 The command has no interactive prompts, so agent mode behaves like a normal run. Use `--source` to control what is analyzed and `--outputfile` to set the report path.
 
+## Screenshots
+
+![Dangerous permissions such as Modify All Data granted by profiles and permission sets, with the active users holding them](../../../assets/images/commands/org/diagnose/unsecure-permissions.webp)
+
+_Dangerous permissions such as Modify All Data granted by profiles and permission sets, with the active users holding them_
+
+- **(1)** Grants found and the number of active users they reach
+- **(2)** A sheet each for profiles, permission sets, groups and users, with a criticality tier
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Dangerous permissions
+
+One workbook with a sheet each for the profiles, permission sets, permission set groups and users that hold dangerous permissions, with a criticality tier per row.
+
+Files: `unsecure-permissions-*.csv`, `xls/unsecure-permissions-*.xlsx`
+
+![Dangerous permissions report in Excel](../../../assets/images/commands/org/diagnose/unsecure-permissions-report-unsecure-permissions.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                           | Default | Required |        Options         |
 |:------------------|:-------:|:--------------------------------------------------------------------------------------|:-------:|:--------:|:----------------------:|
 | agent             | boolean | Run in non-interactive mode for agents and automation                                 |         |          |                        |
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                                                       |         |          |                        |
-| flags-dir         | option  | undefined                                                                             |         |          |                        |
+| flags-dir         | option  | Import flag values from a directory.                                                  |         |          |                        |
 | json              | boolean | Format output as json.                                                                |         |          |                        |
 | outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                     |         |          |                        |
 | skipauth          | boolean | Skip authentication check when a default username is required                         |         |          |                        |
 | source<br/>-s     | option  | Where to read permission definitions from: org (SOQL), local (metadata files) or both |   org   |          | org<br/>local<br/>both |
-| target-org<br/>-o | option  | undefined                                                                             |         |          |                        |
+| target-org<br/>-o | option  | Username or alias of the target org.                                                  |         |          |                        |
 | websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                             |         |          |                        |
 
 ## Examples

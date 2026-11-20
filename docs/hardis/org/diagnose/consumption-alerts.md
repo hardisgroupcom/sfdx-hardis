@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:consumption-alerts - Check consumption utilization alerts"
+description: "Reports the consumption and license utilization alerts that Salesforce itself raised on the org."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:consumption-alerts
 
@@ -13,7 +17,8 @@ Salesforce raises utilization alerts when consumption of a billed product approa
 Key functionalities:
 
 - **Active Alert Retrieval:** Lists every alert currently in an active state, most recent first.
-- **Severity Assignment:** Any active alert raises a warning. An alert whose trigger value reached the full allowance raises an error.
+- **Grouping by Consumption Card:** Salesforce raises one alert per threshold crossed and leaves the earlier ones active, so a card past 75% appears as three records (25%, 50%, 75%). Alerts are grouped by card and reported at the highest threshold reached, so the count reflects cards in trouble rather than thresholds crossed.
+- **Severity Assignment:** Any card in alert raises a warning, a card past 75% raises an error, and a card at its full allowance raises a critical.
 - **CSV Report Generation:** Produces a report with the alert type, scope, trigger value, trigger type and timestamp.
 - **Notifications:** Sends notifications to configured channels (Grafana, Slack, MS Teams) summarizing the active alerts.
 
@@ -46,18 +51,36 @@ sf hardis:org:diagnose:consumption-alerts --agent --target-org myorg@example.com
 
 In agent mode, the command runs fully automatically with no interactive prompts.
 
+## Screenshots
+
+![Three consumption cards in alert on the Helios production org, the Platform Services card at 100% of its allowance](../../../assets/images/commands/org/diagnose/consumption-alerts.webp)
+
+_Three consumption cards in alert on the Helios production org, the Platform Services card at 100% of its allowance_
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Utilization alerts
+
+One row per consumption utilization alert raised on the org, with its scope, status, threshold and timestamp, one row per crossed threshold.
+
+Files: `consumption-alerts-*.csv`, `xls/consumption-alerts-*.xlsx`
+
+![Utilization alerts report in Excel](../../../assets/images/commands/org/diagnose/consumption-alerts-report-consumption-alerts.webp)
+
 ## Parameters
 
-| Name              |  Type   | Description                                                                                   | Default | Required | Options |
-|:------------------|:-------:|:----------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation. Uses default values and skips prompts. |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                               |         |          |         |
-| flags-dir         | option  | undefined                                                                                     |         |          |         |
-| json              | boolean | Format output as json.                                                                        |         |          |         |
-| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                             |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required                                 |         |          |         |
-| target-org<br/>-o | option  | undefined                                                                                     |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                     |         |          |         |
+| Name              |  Type   | Description                                                                                                  | Default | Required | Options |
+|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation. Uses default values and skips prompts.                |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                                         |         |          |         |
+| json              | boolean | Format output as json.                                                                                       |         |          |         |
+| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                                            |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

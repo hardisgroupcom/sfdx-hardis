@@ -25,12 +25,21 @@ import {
   stringValue,
 } from "../../../../common/utils/agentforceQueryUtils.js";
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class DataCloudExtractAgentforceConversations extends SfCommand<any> {
   public static title = 'Extract Agentforce Conversations Data from Data Cloud';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'datacloud-agentforce-conversations',
+      title: 'Agentforce conversations',
+      description: 'One row per Agentforce conversation of the period, with its date, full transcript, user feedback and a link to the conversation.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior
@@ -196,7 +205,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
     return {
       result: JSON.parse(JSON.stringify(result)),
-      csvLogFile: this.outputFile,
+      csvLogFile: this.outputFilesRes?.csvFile ?? this.outputFile,
       xlsxLogFile: this.outputFilesRes?.xlsxFile,
       conversationCount: exportRecords.length
     };

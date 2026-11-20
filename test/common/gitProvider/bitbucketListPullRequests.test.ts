@@ -103,6 +103,19 @@ describe('BitbucketProvider.listPullRequests', () => {
     });
   });
 
+  it('filters on creation by default, on the last update when the merge date is asked for', async () => {
+    await withEnv(async () => {
+      const release = { ...rawPr(3, 'MERGED', 'uat'), created_on: '2026-10-01T00:00:00Z', updated_on: '2026-10-20T00:00:00Z' };
+      const minDate = new Date('2026-10-05T00:00:00Z');
+      const byCreation = new BitbucketProvider();
+      stubClient(byCreation as any, [[release]]);
+      expect((await byCreation.listPullRequests({ status: 'merged', minDate }))?.length).to.equal(0);
+      const byMerge = new BitbucketProvider();
+      stubClient(byMerge as any, [[release]]);
+      expect((await byMerge.listPullRequests({ status: 'merged', minDate, minDateOn: 'merged' }))?.map((pr) => pr.idNumber)).to.deep.equal([3]);
+    });
+  });
+
   it('maps the abandoned status to DECLINED', async () => {
     await withEnv(async () => {
       const provider = new BitbucketProvider();

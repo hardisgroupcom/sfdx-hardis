@@ -1,3 +1,7 @@
+---
+title: "hardis:org:configure:monitoring - Configure org monitoring"
+description: "Configures the monitoring of a Salesforce org within a dedicated Git repository."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:configure:monitoring
 
@@ -20,9 +24,11 @@ Key functionalities include:
 - **Monitoring Branch Creation:** Creates or checks out a dedicated Git branch (e.g., `monitoring_yourinstanceurl`) for the monitoring configuration.
 - **SFDX Project Setup:** Initializes an SFDX project structure within the repository if it doesn't already exist, and copies default monitoring files.
 - **Configuration File Update:** Updates the local `.sfdx-hardis.yml` file with the target org's username and instance URL.
+- **Deployment Repository:** Asks for the address of the sfdx-hardis CI/CD repository that deploys to the org (optional, pass `--deployment-repository` to skip the question). It is stored as `deploymentRepository`, and suggested from the other monitoring branches of the repository. Emptying the answer, or passing an empty `--deployment-repository`, removes a value set before. The `AGENTS.md` file written at each backup then tells coding agents to search that repository and the pipelines of both repositories.
 - **SSL Certificate Generation:** Generates an SSL certificate for secure authentication to the monitored org.
 - **Automated Commit and Push:** Offers to automatically commit and push the generated configuration files to the remote Git repository.
-- **Scheduling Guidance:** Provides instructions and links for scheduling the monitoring job on the Git server.
+- **Scheduling:** On GitHub, writes the monitoring workflow on the default branch with this org in its matrix and its two secrets in its jobs, since GitHub only schedules, and only offers Run workflow for, the workflows of that branch. On other Git servers, gives the instructions to schedule the job.
+- **Empty repository:** A repository created empty on the Git server gets a first empty commit on `main`, so that the monitoring branch has something to start from.
 
 <details markdown="1">
 <summary>Technical explanations</summary>
@@ -31,31 +37,57 @@ The command's technical implementation involves a series of Git operations, file
 
 - **Git Operations:** Utilizes `ensureGitRepository`, `getGitRepoName`, `execCommand` (for `git add`, `git stash`), `ensureGitBranch`, and `gitAddCommitPush` to manage the Git repository, branches, and commits.
 - **Interactive Prompts:** Employs the `prompts` library to interact with the user for confirmations and selections.
-- **File System Management:** Uses `fs-extra` for copying default monitoring files (`defaults/monitoring`) and managing the SFDX project structure.
+- **File System Management:** Uses Node.js `fs` for copying default monitoring files (`defaults/monitoring`) and managing the SFDX project structure.
 - **Salesforce CLI Integration:** Calls `sf project generate` to create a new SFDX project and uses `promptOrg` for Salesforce org authentication and selection.
 - **Configuration Management:** Updates the `.sfdx-hardis.yml` file using `setInConfigFile` to store org-specific monitoring configurations.
 - **SSL Certificate Generation:** Leverages `generateSSLCertificate` to create the necessary SSL certificates for JWT-based authentication to the Salesforce org.
 - **External Tool Integration:** Requires `openssl` to be installed on the system for SSL certificate generation.
-- **WebSocket Communication:** Uses `WebSocketClient.sendRunSfdxHardisCommandMessage` to restart the command in VS Code if the default org changes, and `WebSocketClient.sendRefreshStatusMessage` to update the status.
+- **Org Switch:** When the selected org differs from the one the command started with, it loads the selected org with `Org.create` and continues with it, instead of restarting the command.
+- **WebSocket Communication:** Uses `WebSocketClient.sendRefreshStatusMessage` to update the status.
 </details>
 
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) course runs this command, click by click, on an org of your own:
+
+- [Lab 3.8 - Monitor your production org](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-8-monitor-your-production-org/)
+
+<!-- training-links:end -->
+
+
+## Screenshots
+
+![Pick the org to monitor](../../../assets/images/commands/org/configure/monitoring-1.webp)
+
+_Pick the org to monitor_
+
+![The monitoring of the Helios production org is configured in its own repository, with its certificate, its External Client App and its CI/CD variables](../../../assets/images/commands/org/configure/monitoring.webp)
+
+_The monitoring of the Helios production org is configured in its own repository, with its certificate, its External Client App and its CI/CD variables_
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   | Default | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir         | option  | undefined                                                     |         |          |         |
-| json              | boolean | Format output as json.                                        |         |          |         |
-| orginstanceurl    | option  | Org instance url (technical param, do not use manually)       |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-org<br/>-o | option  | undefined                                                     |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+| Name                  |  Type   | Description                                                                                                                                                | Default | Required | Options |
+|:----------------------|:-------:|:-----------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| debug<br/>-d          | boolean | Activate debug mode (more logs)                                                                                                                            |         |          |         |
+| deployment-repository | option  | Address of the sfdx-hardis CI/CD repository that deploys to the monitored org, stored as deploymentRepository without prompting. An empty value removes it |         |          |         |
+| flags-dir             | option  | Import flag values from a directory.                                                                                                                       |         |          |         |
+| json                  | boolean | Format output as json.                                                                                                                                     |         |          |         |
+| orginstanceurl        | option  | Org instance url (technical param, do not use manually)                                                                                                    |         |          |         |
+| skipauth              | boolean | Skip authentication check when a default username is required                                                                                              |         |          |         |
+| target-org<br/>-o     | option  | Username or alias of the target org.                                                                                                                       |         |          |         |
+| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                  |         |          |         |
 
 ## Examples
 
 ```shell
 $ sf hardis:org:configure:monitoring
+```
+
+```shell
+$ sf hardis:org:configure:monitoring --deployment-repository https://github.com/my-company/my-project
 ```
 
 

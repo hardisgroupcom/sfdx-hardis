@@ -1,0 +1,242 @@
+{
+  "command": "hardis:org:retrieve:packageconfig",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Retrieving installed packages from org victor.martin@helios-solar.demo..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf package installed list --target-org victor.martin@helios-solar.demo --json",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 2600,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf package installed list --target-org victor.martin@helios-solar.demo --json",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Successfully retrieved 3 installed packages from org victor.martin@helios-solar.demo.\n- Helios Field Kit (2.4.0.3)\n- Panel Telemetry (1.12.0.1)\n- Salesforce Connected Apps (1.7)"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Do you want to update your project configuration with this list of packages ?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Do you want to update your project configuration with this list of packages ?",
+            "description": "Update your local project files with the list of installed packages for deployment",
+            "choices": [
+              {
+                "title": "✅ Yes",
+                "value": true
+              },
+              {
+                "title": "❌ No",
+                "value": false
+              }
+            ],
+            "initial": 0,
+            "optionsPerPage": 9999
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "✅ Yes"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Updated package Helios Field Kit with version id 04tHL000000hfK24AA"
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Skipped Salesforce Connected Apps as it is a Salesforce standard package"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Please select packages to add to your project configuration",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "multiselect",
+            "name": "value",
+            "message": "🦙 Please select packages to add to your project configuration",
+            "description": "Select packages to add to your project configuration for automatic installation during scratch org creation and/or deployments",
+            "choices": [
+              {
+                "title": "Panel Telemetry (1.12.0.1)",
+                "value": {
+                  "Id": "0A3HL000000pTl1AAE",
+                  "SubscriberPackageId": "033HL000000pTl3YAE",
+                  "SubscriberPackageName": "Panel Telemetry",
+                  "SubscriberPackageNamespace": "ptel",
+                  "SubscriberPackageVersionId": "04tHL000000pTl9YAE",
+                  "SubscriberPackageVersionName": "Winter 27",
+                  "SubscriberPackageVersionNumber": "1.12.0.1"
+                }
+              }
+            ],
+            "optionsPerPage": 9999
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Panel Telemetry (1.12.0.1)"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Please select the install configuration for Panel Telemetry",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Please select the install configuration for Panel Telemetry",
+            "description": "Configure how this package should be automatically installed during CI/CD operations",
+            "choices": [
+              {
+                "title": "Deploy automatically Panel Telemetry on integration/production orgs only",
+                "value": "deploy"
+              },
+              {
+                "title": "Install automatically Panel Telemetry on scratch orgs only",
+                "value": "scratch"
+              },
+              {
+                "title": "Both: Install & deploy automatically Panel Telemetry",
+                "value": "scratch-deploy"
+              },
+              {
+                "title": "Do not configure Panel Telemetry installation / deployment",
+                "value": "none"
+              }
+            ],
+            "optionsPerPage": 9999
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Both: Install & deploy automatically Panel Telemetry"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Updated package configuration in .sfdx-hardis.yml config file"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "reportFile",
+        "file": "config/.sfdx-hardis.yml#installedPackages",
+        "title": "Package config in .sfdx-hardis.yml",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "refreshPipeline"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Successfully retrieved installed packages configuration"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

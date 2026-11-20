@@ -1,4 +1,4 @@
-import { ActionsProvider, ActionResult, PrePostCommand } from './actionsProvider.js';
+import { ActionsProvider, ActionResult, ActionWhen, PrePostCommand, ActionParameterDescription } from './actionsProvider.js';
 import { uxLog } from '../utils/index.js';
 import { countPackageXmlItems, isPackageXmlEmpty, removePackageXmlFilesContent } from '../utils/xmlUtils.js';
 import { t } from '../utils/i18n.js';
@@ -57,6 +57,22 @@ export class RemovePackageXmlItemsAction extends ActionsProvider {
     return 'RemovePackageXmlItemsAction';
   }
 
+  // It only changes what the current deployment sends, so the deployment check must do the same
+  public getDefaultContext(): PrePostCommand['context'] {
+    return 'all';
+  }
+
+  public getParameterDescriptions(): ActionParameterDescription[] {
+    return [
+      { name: 'packageXmlItems', path: 'parameters.packageXmlItems', flag: 'packagexml-items', type: 'string[]', required: true, description: 'package.xml items to remove before the deployment, each as TypeName:Member1,Member2 (the flag separates them with ;)' },
+    ];
+  }
+
+  // Filtering package.xml only makes sense before the metadata deployment
+  public getAllowedWhen(): ActionWhen[] | null {
+    return ['pre-deploy'];
+  }
+
   // Filtering package.xml only affects the current deployment, so it must run every time
   public supportsRunOnlyOnceByOrg(): boolean {
     return false;
@@ -74,6 +90,14 @@ export class RemovePackageXmlItemsAction extends ActionsProvider {
       return { statusCode: 'failed', skippedReason: `Invalid packageXmlItems entries: ${invalidItems.join(' | ')}` };
     }
     return null;
+  }
+
+  // The items to remove, whatever their order: "ApexClass:B,A" removes what "ApexClass:A,B" removes
+  public getIdentityParameters(cmd: PrePostCommand): Record<string, any> | null {
+    const packageXmlItems = parsePackageXmlItems(normalizePackageXmlItems(cmd.parameters?.packageXmlItems))
+      .map((type) => ({ name: type.name[0], members: [...type.members].sort() }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+    return { packageXmlItems };
   }
 
   public async run(cmd: PrePostCommand): Promise<ActionResult> {

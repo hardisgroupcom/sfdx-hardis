@@ -1,0 +1,4 @@
+command: hardis:project:clean:systemdebug
+run: sf hardis:project:clean:systemdebug
+org: none
+caption: The System.debug lines of the Apex classes and triggers of the Helios project commented out

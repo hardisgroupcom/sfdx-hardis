@@ -18,6 +18,8 @@ yarn-error.log
 
 # compile source
 lib
+# ...but not the modules of the command screenshots runner
+!scripts/command-screenshots/lib/
 
 # test artifacts
 *xunit.xml
@@ -58,6 +60,7 @@ node_modules
 .env
 hardis-report/
 megalinter-reports/
+.megalinter-cache/
 config/user/
 
 .sfdx/

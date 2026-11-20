@@ -1,3 +1,7 @@
+---
+title: "hardis:org:ext-client-app:rotate-credentials - Rotate External Client App Credentials"
+description: "Rotates the OAuth consumer key and secret of an External Client App directly in a Salesforce org, without relying on local metadata."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:ext-client-app:rotate-credentials
 
@@ -54,6 +58,16 @@ In agent mode:
 - The new secret is not returned in the `--json` output; capture it from an interactive run instead.
 
 
+## Screenshots
+
+![Pick the External Client App to rotate](../../../assets/images/commands/org/ext-client-app/rotate-credentials-1.webp)
+
+_Pick the External Client App to rotate_
+
+![The credentials of an External Client App are rotated, the new key and secret are shown once, the previous ones stay valid 30 days](../../../assets/images/commands/org/ext-client-app/rotate-credentials.webp)
+
+_The credentials of an External Client App are rotated, the new key and secret are shown once, the previous ones stay valid 30 days_
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                                                                                                         | Default | Required | Options |
@@ -61,12 +75,12 @@ In agent mode:
 | agent             | boolean | Run in non-interactive mode for agents and automation                                                                                                                                               |         |          |         |
 | consumer-key      | option  | Consumer key of the credential to rotate, used when the app has more than one consumer (required in CI or agent mode in that case).                                                                 |         |          |         |
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                                                                                                                     |         |          |         |
-| flags-dir         | option  | undefined                                                                                                                                                                                           |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                                                                                                                                |         |          |         |
 | json              | boolean | Format output as json.                                                                                                                                                                              |         |          |         |
 | name<br/>-n       | option  | Developer name of the External Client App to rotate. Required in CI or agent mode.                                                                                                                  |         |          |         |
 | revoke-previous   | boolean | Immediately revoke the previous credentials after rotation instead of keeping the 30-day overlap. Use for security (e.g. a leaked secret): integrations still using the old credentials will break. |         |          |         |
 | skipauth          | boolean | Skip authentication check when a default username is required                                                                                                                                       |         |          |         |
-| target-org<br/>-o | option  | undefined                                                                                                                                                                                           |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set.                                                                                        |         |   true   |         |
 | websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                                           |         |          |         |
 
 ## Examples

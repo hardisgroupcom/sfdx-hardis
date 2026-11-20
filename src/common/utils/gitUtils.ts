@@ -4,7 +4,7 @@ import c from 'chalk';
 import fs from './fsUtils.js';
 import * as path from "path";
 import sortArray from './sortArray.js';
-import { SfError, SfProject } from '@salesforce/core';
+import { Org, SfError, SfProject } from '@salesforce/core';
 import {
   arrayUniqueByKey,
   arrayUniqueByKeys,
@@ -24,7 +24,7 @@ import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
 import { Ticket, TicketProvider } from '../ticketProvider/index.js';
 import { getTicketCollectionIssues } from '../ticketProvider/ticketProviderRoot.js';
 import { DefaultLogFields, ListLogLine } from 'simple-git';
-import { flowDiffToMarkdownForPullRequest } from '../gitProvider/utilsMarkdown.js';
+import { flowDiffToMarkdownForPullRequest } from '../gitProvider/utils/utilsMarkdown.js';
 import { MessageAttachment } from '@slack/types';
 import { getBranchMarkdown, getNotificationButtons, getOrgMarkdown } from './notifUtils.js';
 import { NotifProvider, UtilsNotifs } from '../notifProvider/index.js';
@@ -525,9 +525,13 @@ export async function buildCheckDeployCommitSummary() {
   try {
     const pullRequestInfo = await GitProvider.getPullRequestInfo({ useCache: true });
     const commitsSummary = await computeCommitsSummary(true, pullRequestInfo);
+    // The comment lists tickets and legacy manual actions, not the commits: they stay in the job log
+    uxLog("other", this, commitsSummary.markdown);
     const prDataCommitsSummary = {
-      commitsSummary: commitsSummary.markdown,
-      flowDiffMarkdown: commitsSummary.flowDiffMarkdown
+      tickets: commitsSummary.tickets,
+      legacyManualActions: commitsSummary.manualActions,
+      flowDiffMarkdown: commitsSummary.flowDiffMarkdown,
+      flowChanges: commitsSummary.flowDiffMarkdown?.flowChanges || [],
     };
     setPullRequestData(prDataCommitsSummary);
   } catch (e3) {
@@ -550,9 +554,21 @@ export async function isDeploymentNotifTranslationEnabled(): Promise<boolean> {
   return config?.notifTranslateDeploymentMessages === true;
 }
 
-export async function handlePostDeploymentNotifications(flags, targetUsername: any, quickDeploy: any, delta: boolean, debugMode: boolean, additionalMessage = "", deploymentMetrics: DeploymentMetrics | null = null) {
+export async function handlePostDeploymentNotifications(
+  // Org the deployment was sent to
+  targetOrg: Org | undefined,
+  targetUsername: any,
+  quickDeploy: any,
+  delta: boolean,
+  debugMode: boolean,
+  additionalMessage = "",
+  deploymentMetrics: DeploymentMetrics | null = null,
+  // Flows a post-deploy Flow deletion left in the org: the notification becomes a warning listing them
+  options: { flowsNotDeleted?: string[] } = {}
+) {
   const pullRequestInfo = await GitProvider.getPullRequestInfo({ useCache: true });
   const translateNotif = await isDeploymentNotifTranslationEnabled();
+  const flowsNotDeleted = options.flowsNotDeleted || [];
   // Only report the split when it accounts for every deployed component (see the predicate)
   const changeDetailComplete = isComponentChangeDetailComplete(deploymentMetrics);
   const deploymentActionsText = buildDeploymentActionsAttachmentText(translateNotif, {
@@ -573,7 +589,7 @@ export async function handlePostDeploymentNotifications(flags, targetUsername: a
     commitAttachments = collected.attachments;
     await TicketProvider.postDeploymentActions(
       collected.commitsSummary.tickets,
-      flags['target-org']?.getConnection()?.instanceUrl || targetUsername || '',
+      targetOrg?.getConnection()?.instanceUrl || targetUsername || '',
       pullRequestInfo
     );
   } catch (e4: any) {
@@ -586,10 +602,19 @@ export async function handlePostDeploymentNotifications(flags, targetUsername: a
     );
   }
 
-  // Section order: tickets, deployment actions, manual actions, commits.
+  // Section order: Flows not deleted, tickets, deployment actions, manual actions, commits.
+  // The Flows not deleted come first, as they are what a reader has to act on.
   // Commits stay last because the size guard trims from the last attachment backwards, and the
   // commit list is both the longest and the least actionable section.
   const attachments: MessageAttachment[] = [
+    flowsNotDeleted.length > 0
+      ? {
+        text: `⚠️ ${tMaybe(translateNotif, 'flowDeletionNotifNotDeleted', {
+          count: flowsNotDeleted.length,
+          flows: flowsNotDeleted.join(', '),
+        })}`,
+      }
+      : undefined,
     commitAttachments.tickets,
     deploymentActionsText ? { text: deploymentActionsText } : undefined,
     commitAttachments.manualActions,
@@ -597,7 +622,7 @@ export async function handlePostDeploymentNotifications(flags, targetUsername: a
   ].filter((attachment): attachment is MessageAttachment => attachment !== undefined);
 
   const orgMarkdown = await getOrgMarkdown(
-    flags['target-org']?.getConnection()?.instanceUrl || targetUsername || ''
+    targetOrg?.getConnection()?.instanceUrl || targetUsername || ''
   );
   const branchMarkdown = await getBranchMarkdown();
   let notifMessage = `Deployment has been successfully processed from branch ${branchMarkdown} to org ${orgMarkdown}`;
@@ -622,14 +647,15 @@ export async function handlePostDeploymentNotifications(flags, targetUsername: a
   } else {
     uxLog("warning", this, c.yellow("WARNING: Unable to get Pull Request info, notif won't have a button URL"));
   }
-  await setConnectionVariables(flags['target-org']?.getConnection(), true);// Required for some notifications providers like Email
+  await setConnectionVariables(targetOrg?.getConnection(), true);// Required for some notifications providers like Email
   await NotifProvider.postNotifications({
     type: 'DEPLOYMENT',
     text: notifMessage,
     buttons: notifButtons,
     pullRequestUrl: pullRequestInfo?.webUrl,
     translateMessages: translateNotif,
-    severity: 'success',
+    // The metadata deployment succeeded either way, so DeploymentSuccess below stays 1
+    severity: flowsNotDeleted.length > 0 ? 'warning' : 'success',
     attachments: attachments,
     logElements: [],
     data: { metric: deploymentMetrics?.componentsDeployed ?? 0 },

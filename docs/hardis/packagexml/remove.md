@@ -1,3 +1,7 @@
+---
+title: "hardis:packagexml:remove"
+description: "Removes metadata components from a package.xml file using either another package.xml as a filter or inline metadata type/member specifications."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:packagexml:remove
 
@@ -48,17 +52,23 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The items of package-no-overwrite.xml removed from the package.xml of the project](../../assets/images/commands/packagexml/remove.webp)
+
+_The items of package-no-overwrite.xml removed from the package.xml of the project_
+
 ## Parameters
 
 | Name                    |  Type   | Description                                                                                                                                           | Default | Required | Options |
 |:------------------------|:-------:|:------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent                   | boolean | Run in non-interactive mode for agents and automation                                                                                                 |         |          |         |
 | debug                   | boolean | debug                                                                                                                                                 |         |          |         |
-| flags-dir               | option  | undefined                                                                                                                                             |         |          |         |
+| flags-dir               | option  | Import flag values from a directory.                                                                                                                  |         |          |         |
 | json                    | boolean | Format output as json.                                                                                                                                |         |          |         |
 | metadatanames<br/>-n    | option  | Comma-separated list of TypeName:MemberName pairs to remove from the package.xml (e.g. ApexClass:MyClass,CustomObject:Account__c)                     |         |          |         |
 | metadatatypes<br/>-t    | option  | Comma-separated list of metadata type names to fully remove from the package.xml (e.g. ApexClass,CustomObject). All members of each type are removed. |         |          |         |
-| outputfile<br/>-f       | option  | package.xml output file                                                                                                                               |         |          |         |
+| outputfile<br/>-f       | option  | package.xml output file                                                                                                                               |         |   true   |         |
 | packagexml<br/>-p       | option  | package.xml file to reduce                                                                                                                            |         |          |         |
 | removedonly<br/>-z      | boolean | Use this flag to generate a package.xml with only removed items                                                                                       |         |          |         |
 | removepackagexml<br/>-r | option  | package.xml file to use to filter input package.xml (alternative to --metadatatypes / --metadatanames)                                                |         |          |         |

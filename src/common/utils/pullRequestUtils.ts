@@ -8,6 +8,7 @@ import { isRetrofit, listMajorOrgs } from "./orgConfigUtils.js";
 import { isBackpromoteBranchName } from "./backpromoteRules.js";
 import { SfError } from "@salesforce/core";
 import { t } from "./i18n.js";
+import { isMajorBranchCheckMode } from "./majorBranchCheckUtils.js";
 import { getConfig } from "../../config/index.js";
 import {
   buildPromotionIndex,
@@ -302,7 +303,7 @@ export function mergePrDescriptionYamlBlocks(merged: any, parsedYaml: any): any 
   return result;
 }
 
-function getYamlFromPrDescription(pr: CommonPullRequestInfo): object | null {
+export function getYamlFromPrDescription(pr: CommonPullRequestInfo): object | null {
   // Every ```yaml block, not only the first: a promotion Pull Request description opens with the
   // promotionPullRequests block, and anything the release manager adds after it (deployment
   // actions, Apex test classes) would otherwise be read by nobody.
@@ -392,6 +393,12 @@ export function buildPrSearchBranches(targetBranch: string, majorOrgs: any[], ex
 }
 
 export async function listAllPullRequestsForCurrentScope(checkOnly: boolean): Promise<CommonPullRequestInfo[]> {
+  // A major branch check has no Pull Request in scope. The provider's own getPullRequestInfo() below
+  // would fall back to the Pull Request merged last on the branch, and its test classes would
+  // replace the full run of the check.
+  if (isMajorBranchCheckMode()) {
+    return [];
+  }
   if (_cachedPullRequests) {
     return _cachedPullRequests;
   }

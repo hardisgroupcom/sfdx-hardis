@@ -1,0 +1,10 @@
+command: hardis:org:diagnose:releaseupdates
+run: sf hardis:org:diagnose:releaseupdates
+org: showcase
+caption: "Release Updates of the Helios org still to check, with their status, category and the date Salesforce enforces them"
+pills:
+  - text: "Due date"
+    legend: "Salesforce enforces the update on this date"
+  - text: "Release Updates to Check"
+    legend: "Every Release Update to check, beyond the first rows shown here"
+    button: true

@@ -2,6 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { AnyJson } from "@salesforce/ts-types";
 import { wrapSfdxCoreCommand } from "../../../../common/utils/wrapUtils.js";
+import { emitDeploymentStartEvent, emitWrappedDeployRunEvent } from "../../../../common/utils/pluginEventUtils.js";
 import { checkDeploymentOrgCoverage, extractOrgCoverageFromLog } from '../../../../common/utils/deployUtils.js';
 import { GitProvider } from '../../../../common/gitProvider/index.js';
 import { buildCheckDeployCommitSummary } from '../../../../common/utils/gitUtils.js';
@@ -12,6 +13,8 @@ export default class ProjectDeployValidate extends SfCommand<any> {
   public static description = `sfdx-hardis wrapper for **sf project deploy validate** that displays tips to solve deployment errors.
 
 Note: Use **--json** argument to have better results
+
+The validation always runs Apex tests and never saves anything in the org. Salesforce intends it for production orgs: on a sandbox, which runs no test by default, use [hardis:project:deploy:start](https://sfdx-hardis.cloudity.com/hardis/project/deploy/start/) with \`--dry-run --test-level RunLocalTests\`.
 
 [![Assisted solving of Salesforce deployments errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](https://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
 
@@ -31,6 +34,8 @@ Post-deployment actions are never run when the metadata deployment failed: they 
 
 After every action runs, its result (✅ success, ❌ failed, 👋 manual) is recorded in a dedicated **"Deployment Actions"** PR comment - ordered by org (integration → uat → preprod → prod) - regardless of \`runOnlyOnceByOrg\`.
 
+When several Pull Requests of the same deployment carry an identical action (same type, phase, user and parameters), it runs once and the other Pull Requests record it as done: see [Identical actions run once](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#identical-actions-run-once).
+
 If the commands are not the same depending on the target org, you can define them into **config/branches/.sfdx-hardis-BRANCHNAME.yml** instead of root **config/.sfdx-hardis.yml**
 
 You can also keep a single definition and restrict it with \`includeTargetBranches\` or \`excludeTargetBranches\` (use \`dev-sandboxes\` for developer sandboxes).
@@ -39,26 +44,32 @@ Example:
 
 \`\`\`yaml
 commandsPreDeploy:
-  - id: knowledgeUnassign
+  - id: 32e7e3d7-eeeb-4162-ae9e-a4013e8439e1
     label: Remove KnowledgeUser right to the user who has it
     command: sf data update record --sobject User --where "UserPermissionsKnowledgeUser='true'" --values "UserPermissionsKnowledgeUser='false'" --json
-  - id: knowledgeAssign
+  - id: bf114a50-8f40-4ac2-bf2b-910139292f76
     label: Assign Knowledge user to the deployment user
     command: sf data update record --sobject User --where "Username='deploy.github@myclient.com'" --values "UserPermissionsKnowledgeUser='true'" --json
 
 commandsPostDeploy:
-  - id: knowledgeUnassign
+  - id: ddd0d387-0b84-4ce5-8b0a-a9a370d2ece3
     label: Remove KnowledgeUser right to the user who has it
     command: sf data update record --sobject User --where "UserPermissionsKnowledgeUser='true'" --values "UserPermissionsKnowledgeUser='false'" --json
-  - id: knowledgeAssign
+  - id: 25891b5b-6053-4f91-9416-037e3e3f6e46
     label: Assign Knowledge user to desired username
     command: sf data update record --sobject User --where "Username='admin-yser@myclient.com'" --values "UserPermissionsKnowledgeUser='true'" --json
-  - id: someActionToRunJustOneTime
+  - id: a807b752-71dd-4345-a115-413ccd3dbbcc
     label: And to run only if deployment is success
     command: sf sfdmu:run ...
     context: process-deployment-only
     runOnlyOnceByOrg: true
 \`\`\`
+
+### Plugin events
+
+Before anything reads the local sources, the installed sf plugins that listen to \`sfdx-hardis:validation-start\` are called, so they can prepare the sources (for example recompose decomposed metadata).
+
+As soon as Salesforce returns the result of the validation, the installed sf plugins that listen to \`sfdx-hardis:validation-done\` receive it, with the path of the Apex code coverage file, before the code coverage check. [More info](https://sfdx-hardis.cloudity.com/sfdx-hardis-plugins/#react-to-sfdx-hardis-events)
 
 ### Agent Mode
 
@@ -83,20 +94,6 @@ In agent mode, all interactive prompts are skipped and default values are used.
     async: Flags.boolean({
       description: "async",
       exclusive: ["wait"],
-    }),
-    "dry-run": Flags.boolean({
-      description: "dry-run",
-      default: false,
-    }),
-    "ignore-conflicts": Flags.boolean({
-      char: "c",
-      description: "ignore-conflicts",
-      default: false,
-    }),
-    "ignore-errors": Flags.boolean({
-      char: "r",
-      description: "ignore-errors",
-      default: false,
     }),
     "ignore-warnings": Flags.boolean({
       char: "g",
@@ -166,6 +163,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
       default: false,
       description: "debug",
     }),
+    websocket: Flags.string({
+      description: 'Websocket host:port for VsCode SFDX Hardis UI integration',
+    }),
+    skipauth: Flags.boolean({
+      description: 'Skip authentication check when a default username is required',
+    }),
   };
 
   public static requiresProject = true;
@@ -173,11 +176,15 @@ In agent mode, all interactive prompts are skipped and default values are used.
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(ProjectDeployValidate);
     await setConnectionVariables(flags['target-org']?.getConnection(), true);
+    // The plugins can prepare the local sources (ex: recompose decomposed metadata) before anything reads them
+    await emitDeploymentStartEvent(this, { checkOnly: true, targetUsername: flags['target-org']?.getUsername() || null });
     // Compute data for PR comments & flow diffs
     await buildCheckDeployCommitSummary();
     // Run pre deployment commands if defined
     await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: true });
-    const result = await wrapSfdxCoreCommand("sf project deploy start", this.argv, this, flags.debug);
+    const result = await wrapSfdxCoreCommand("sf project deploy validate", this.argv, this, flags.debug);
+    // The plugins get the result as soon as Salesforce answered, before the coverage check that can throw an error
+    await emitWrappedDeployRunEvent(this, { checkOnly: true, targetUsername: flags['target-org']?.getUsername() || null });
     // Check org coverage if requested
     if (flags['coverage-formatters'] && result.stdout) {
       const orgCoveragePercent = await extractOrgCoverageFromLog(result.stdout + result.stderr || '');

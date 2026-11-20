@@ -1,3 +1,7 @@
+---
+title: "hardis:scratch:delete - Delete scratch orgs(s)"
+description: "Provides an assisted menu to delete Salesforce scratch orgs associated with a Dev Hub."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:scratch:delete
 
@@ -42,18 +46,28 @@ In agent mode:
 - All confirmation prompts are skipped.
 
 
+## Screenshots
+
+![Tick the scratch orgs to delete](../../assets/images/commands/scratch/delete-1.webp)
+
+_Tick the scratch orgs to delete_
+
+![Two scratch orgs of the Dev Hub are deleted, the one still in use is kept](../../assets/images/commands/scratch/delete.webp)
+
+_Two scratch orgs of the Dev Hub are deleted, the one still in use is kept_
+
 ## Parameters
 
-| Name                  |  Type   | Description                                                                                          | Default | Required | Options |
-|:----------------------|:-------:|:-----------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent                 | boolean | Run in non-interactive mode for agents and automation                                                |         |          |         |
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                                                                      |         |          |         |
-| flags-dir             | option  | undefined                                                                                            |         |          |         |
-| json                  | boolean | Format output as json.                                                                               |         |          |         |
-| name<br/>-n           | option  | Comma-separated list of scratch org usernames to delete. Used in agent mode to target specific orgs. |         |          |         |
-| skipauth              | boolean | Skip authentication check when a default username is required                                        |         |          |         |
-| target-dev-hub<br/>-v | option  | undefined                                                                                            |         |          |         |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                            |         |          |         |
+| Name                  |  Type   | Description                                                                                                       | Default | Required | Options |
+|:----------------------|:-------:|:------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                 | boolean | Run in non-interactive mode for agents and automation                                                             |         |          |         |
+| debug<br/>-d          | boolean | Activate debug mode (more logs)                                                                                   |         |          |         |
+| flags-dir             | option  | Import flag values from a directory.                                                                              |         |          |         |
+| json                  | boolean | Format output as json.                                                                                            |         |          |         |
+| name<br/>-n           | option  | Comma-separated list of scratch org usernames to delete. Used in agent mode to target specific orgs.              |         |          |         |
+| skipauth              | boolean | Skip authentication check when a default username is required                                                     |         |          |         |
+| target-dev-hub<br/>-v | option  | Username or alias of the Dev Hub org. Not required if the `target-dev-hub` configuration variable is already set. |         |   true   |         |
+| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                         |         |          |         |
 
 ## Examples
 

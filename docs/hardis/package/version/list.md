@@ -1,3 +1,7 @@
+---
+title: "hardis:package:version:list - Create a new version of a package"
+description: "Lists all Salesforce package versions associated with your Dev Hub."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:package:version:list
 
@@ -37,17 +41,23 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The versions of the Helios packages listed from the Dev Hub, with their install ids and aliases](../../../assets/images/commands/package/version/list.webp)
+
+_The versions of the Helios packages listed from the Dev Hub, with their install ids and aliases_
+
 ## Parameters
 
-| Name                  |  Type   | Description                                                   | Default | Required | Options |
-|:----------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent                 | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir             | option  | undefined                                                     |         |          |         |
-| json                  | boolean | Format output as json.                                        |         |          |         |
-| skipauth              | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-dev-hub<br/>-v | option  | undefined                                                     |         |          |         |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+| Name                  |  Type   | Description                                                                                                       | Default | Required | Options |
+|:----------------------|:-------:|:------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                 | boolean | Run in non-interactive mode for agents and automation                                                             |         |          |         |
+| debug<br/>-d          | boolean | Activate debug mode (more logs)                                                                                   |         |          |         |
+| flags-dir             | option  | Import flag values from a directory.                                                                              |         |          |         |
+| json                  | boolean | Format output as json.                                                                                            |         |          |         |
+| skipauth              | boolean | Skip authentication check when a default username is required                                                     |         |          |         |
+| target-dev-hub<br/>-v | option  | Username or alias of the Dev Hub org. Not required if the `target-dev-hub` configuration variable is already set. |         |   true   |         |
+| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                         |         |          |         |
 
 ## Examples
 

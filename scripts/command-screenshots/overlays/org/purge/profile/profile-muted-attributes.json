@@ -1,0 +1,78 @@
+{
+  "mode": "replace",
+  "title": "Profile muted attributes report",
+  "columns": [
+    "profile",
+    "node",
+    "name",
+    "attribute",
+    "oldValue",
+    "newValue"
+  ],
+  "rows": [
+    {
+      "profile": "Helios Crew",
+      "node": "fieldPermissions",
+      "name": "Opportunity.CampaignId",
+      "attribute": "readable",
+      "oldValue": "true",
+      "newValue": "false"
+    },
+    {
+      "profile": "Helios Crew",
+      "node": "fieldPermissions",
+      "name": "Opportunity.CampaignId",
+      "attribute": "editable",
+      "oldValue": "true",
+      "newValue": "false"
+    },
+    {
+      "profile": "Helios Crew",
+      "node": "objectPermissions",
+      "name": "ContractLineItem",
+      "attribute": "allowRead",
+      "oldValue": "true",
+      "newValue": "false"
+    },
+    {
+      "profile": "Helios Crew",
+      "node": "objectPermissions",
+      "name": "Entitlement",
+      "attribute": "allowRead",
+      "oldValue": "true",
+      "newValue": "false"
+    },
+    {
+      "profile": "Helios Crew",
+      "node": "objectPermissions",
+      "name": "EntitlementContact",
+      "attribute": "allowRead",
+      "oldValue": "true",
+      "newValue": "false"
+    },
+    {
+      "profile": "Helios Crew",
+      "node": "applicationVisibilities",
+      "name": "standard__AppLauncher",
+      "attribute": "visible",
+      "oldValue": "true",
+      "newValue": "false"
+    },
+    {
+      "profile": "Helios Crew",
+      "node": "applicationVisibilities",
+      "name": "standard__Approvals",
+      "attribute": "visible",
+      "oldValue": "true",
+      "newValue": "false"
+    },
+    {
+      "profile": "Helios Crew",
+      "node": "applicationVisibilities",
+      "name": "standard__Chatter",
+      "attribute": "visible",
+      "oldValue": "true",
+      "newValue": "false"
+    }
+  ]
+}

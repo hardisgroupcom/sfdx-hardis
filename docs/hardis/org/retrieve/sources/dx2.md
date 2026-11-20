@@ -1,3 +1,7 @@
+---
+title: "hardis:org:retrieve:sources:dx2 - Retrieve sfdx sources from org (2)"
+description: "Retrieves Salesforce metadata from an org into SFDX source format, offering flexible input options for specifying metadata to retrieve."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:retrieve:sources:dx2
 
@@ -39,19 +43,29 @@ Use `--agent` to disable all prompts. Typical usage:
 - Org selection uses the `--target-org` flag value directly.
 
 
+## Screenshots
+
+![Give the package.xml that lists what to retrieve](../../../../assets/images/commands/org/retrieve/sources/dx2-1.webp)
+
+_Give the package.xml that lists what to retrieve_
+
+![The metadata of manifest/package.xml retrieved from the org into the project](../../../../assets/images/commands/org/retrieve/sources/dx2.webp)
+
+_The metadata of manifest/package.xml retrieved from the org into the project_
+
 ## Parameters
 
-| Name              |  Type   | Description                                                   | Default | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir         | option  | undefined                                                     |         |          |         |
-| json              | boolean | Format output as json.                                        |         |          |         |
-| packagexml<br/>-x | option  | Path to package.xml file                                      |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-org<br/>-o | option  | undefined                                                     |         |          |         |
-| template<br/>-t   | option  | sfdx-hardis package.xml Template name. ex: wave               |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+| Name              |  Type   | Description                                                                                                  | Default | Required | Options |
+|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                                         |         |          |         |
+| json              | boolean | Format output as json.                                                                                       |         |          |         |
+| packagexml<br/>-x | option  | Path to package.xml file                                                                                     |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| template<br/>-t   | option  | sfdx-hardis package.xml Template name. ex: wave                                                              |         |          |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

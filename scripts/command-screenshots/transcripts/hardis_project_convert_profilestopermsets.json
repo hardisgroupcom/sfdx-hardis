@@ -1,0 +1,114 @@
+{
+  "command": "hardis:project:convert:profilestopermsets",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "This command will convert profiles into permission sets"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Generating Permission set PS_Helios_Crew from profile Helios Crew"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf shane:profile:convert -p \"Helios Crew\" -n \"PS_Helios_Crew\" -e",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 4200,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf shane:profile:convert -p \"Helios Crew\" -n \"PS_Helios_Crew\" -e",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Generating Permission set PS_Helios_Dispatcher from profile Helios Dispatcher"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf shane:profile:convert -p \"Helios Dispatcher\" -n \"PS_Helios_Dispatcher\" -e",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 4200,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf shane:profile:convert -p \"Helios Dispatcher\" -n \"PS_Helios_Dispatcher\" -e",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Generating Permission set PS_Helios_Field_Manager from profile Helios Field Manager"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf shane:profile:convert -p \"Helios Field Manager\" -n \"PS_Helios_Field_Manager\" -e",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 4200,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf shane:profile:convert -p \"Helios Field Manager\" -n \"PS_Helios_Field_Manager\" -e",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

@@ -1,0 +1,114 @@
+{
+  "command": "hardis:org:community:update",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[SOQL Query] SELECT Id, Name, Status FROM Network WHERE Name IN ('Helios Customer Portal','Helios Installer Hub')",
+        "query": {
+          "id": "q1",
+          "type": "soql",
+          "status": "running"
+        }
+      }
+    },
+    {
+      "delay": 800,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[SOQL Query] Retrieved 2 records",
+        "query": {
+          "id": "q1",
+          "type": "soql",
+          "status": "completed",
+          "recordCount": 2,
+          "batchCount": 1
+        }
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Are you sure you want to update the Network status?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Are you sure you want to update the Network status?",
+            "description": "This will update the status of the selected Networks in the org",
+            "choices": [
+              {
+                "title": "✅ Yes",
+                "value": true
+              },
+              {
+                "title": "❌ No",
+                "value": false
+              }
+            ],
+            "optionsPerPage": 9999,
+            "initial": 0
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "✅ Yes"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Updating status of 2 community(ies) to DownForMaintenance..."
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "'Helios Customer Portal' Network was updated."
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "'Helios Installer Hub' Network was updated."
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

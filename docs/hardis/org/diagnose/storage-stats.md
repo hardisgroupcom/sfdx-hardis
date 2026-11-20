@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:storage-stats - Extract Data Storage stats"
+description: "Extracts and analyzes Data Storage usage for a Salesforce org, providing detailed per-object breakdowns with flexible grouping options."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:storage-stats
 
@@ -76,6 +80,32 @@ In agent mode, all interactive prompts are skipped with sensible defaults:
 - No WHERE clause is applied (override with `--where`)
 
 
+## Screenshots
+
+![Pick the objects to count](../../../assets/images/commands/org/diagnose/storage-stats-1.webp)
+
+_Pick the objects to count_
+
+- **(1)** A custom object of the project
+
+![Records of the Helios objects by year of creation, to see what fills the data storage](../../../assets/images/commands/org/diagnose/storage-stats.webp)
+
+_Records of the Helios objects by year of creation, to see what fills the data storage_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Storage stats
+
+One row per object and breakdown value (the file name continues with the breakdown field, granularity and -filtered when a WHERE is used), with its record count and estimated storage in MB and percent; a copy with only the Total row of each object is written next to it with a -totals suffix.
+
+Files: `storage-stats-by-*.csv`, `xls/storage-stats-by-*.xlsx`
+
+![Storage stats report in Excel](../../../assets/images/commands/org/diagnose/storage-stats-report-storage-stats-by-.webp)
+
 ## Parameters
 
 | Name                   |  Type   | Description                                                                                                                                 | Default | Required | Options |
@@ -83,11 +113,11 @@ In agent mode, all interactive prompts are skipped with sensible defaults:
 | agent                  | boolean | Run in non-interactive mode for agents and automation                                                                                       |         |          |         |
 | breakdown-field<br/>-b | option  | Field to use for storage stats breakdown. Example: "CreatedDate", "LastModifiedDate", "RecordType.Name", or custom fields like "Status__c"  |         |          |         |
 | debug<br/>-d           | boolean | Activate debug mode (more logs)                                                                                                             |         |          |         |
-| flags-dir              | option  | undefined                                                                                                                                   |         |          |         |
+| flags-dir              | option  | Import flag values from a directory.                                                                                                        |         |          |         |
 | json                   | boolean | Format output as json.                                                                                                                      |         |          |         |
 | outputfile<br/>-f      | option  | Force the path and name of output report file. Must end with .csv                                                                           |         |          |         |
 | skipauth               | boolean | Skip authentication check when a default username is required                                                                               |         |          |         |
-| target-org<br/>-o      | option  | undefined                                                                                                                                   |         |          |         |
+| target-org<br/>-o      | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set.                                |         |   true   |         |
 | websocket              | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                   |         |          |         |
 | where<br/>-w           | option  | WHERE clause to filter records in the query (without the WHERE keyword). Example: "CreatedDate = LAST_N_DAYS:365" or "Status__c = 'Active'" |         |          |         |
 

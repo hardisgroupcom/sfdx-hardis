@@ -1,0 +1,5 @@
+command: hardis:project:promotion:list-candidates
+run: sf hardis:project:promotion:list-candidates --source-branch uat --target-branch preprod
+mode: replay
+org: none
+caption: "The four Pull Requests merged in uat and waiting for promotion to preprod, one already carried by another promotion"

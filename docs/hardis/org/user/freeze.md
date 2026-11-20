@@ -1,3 +1,7 @@
+---
+title: "hardis:org:user:freeze - Freeze user logins"
+description: "Freezes Salesforce user logins, temporarily revoking access for selected users."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:user:freeze
 
@@ -49,22 +53,46 @@ The command's technical implementation involves:
 </details>
 
 
+## Screenshots
+
+![Pick the profiles whose users to freeze](../../../assets/images/commands/org/user/freeze-1.webp)
+
+_Pick the profiles whose users to freeze_
+
+![Field technicians with the Chatter Free User profile frozen in the Helios test org, with the list of users frozen](../../../assets/images/commands/org/user/freeze.webp)
+
+_Field technicians with the Chatter Free User profile frozen in the Helios test org, with the list of users frozen_
+
+- **(1)** One row per user frozen, with username, name and profile
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Users to freeze
+
+One row per user whose login is about to be frozen, with username, name and profile.
+
+Files: `users-to-freeze-*.csv`, `xls/users-to-freeze-*.xlsx`
+
+![Users to freeze report in Excel](../../../assets/images/commands/org/user/freeze-report-users-to-freeze.webp)
+
 ## Parameters
 
-| Name                   |  Type   | Description                                                                                | Default | Required | Options |
-|:-----------------------|:-------:|:-------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent                  | boolean | Run in non-interactive mode for agents and automation                                      |         |          |         |
-| debug<br/>-d           | boolean | Activate debug mode (more logs)                                                            |         |          |         |
-| excludeprofiles<br/>-e | option  | List of profiles that you want to NOT freeze, separated by commas                          |         |          |         |
-| flags-dir              | option  | undefined                                                                                  |         |          |         |
-| includeprofiles<br/>-p | option  | List of profiles that you want to freeze, separated by commas                              |         |          |         |
-| json                   | boolean | Format output as json.                                                                     |         |          |         |
-| maxuserdisplay<br/>-m  | option  | Maximum users to display in logs                                                           |   100   |          |         |
-| name<br/>-n            | option  | Filter according to Name criteria                                                          |         |          |         |
-| skipauth               | boolean | Skip authentication check when a default username is required                              |         |          |         |
-| target-org<br/>-o      | option  | undefined                                                                                  |         |          |         |
-| usernames<br/>-u       | option  | Comma-separated list of Salesforce usernames to freeze (takes priority over profile flags) |         |          |         |
-| websocket              | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                  |         |          |         |
+| Name                   |  Type   | Description                                                                                                  | Default | Required | Options |
+|:-----------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                  | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| debug<br/>-d           | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| excludeprofiles<br/>-e | option  | List of profiles that you want to NOT freeze, separated by commas                                            |         |          |         |
+| flags-dir              | option  | Import flag values from a directory.                                                                         |         |          |         |
+| includeprofiles<br/>-p | option  | List of profiles that you want to freeze, separated by commas                                                |         |          |         |
+| json                   | boolean | Format output as json.                                                                                       |         |          |         |
+| maxuserdisplay<br/>-m  | option  | Maximum users to display in logs                                                                             |   100   |          |         |
+| name<br/>-n            | option  | Filter according to Name criteria                                                                            |         |          |         |
+| skipauth               | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o      | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| usernames<br/>-u       | option  | Comma-separated list of Salesforce usernames to freeze (takes priority over profile flags)                   |         |          |         |
+| websocket              | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

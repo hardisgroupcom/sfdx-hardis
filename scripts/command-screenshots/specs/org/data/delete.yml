@@ -1,0 +1,16 @@
+command: hardis:org:data:delete
+run: sf hardis:org:data:delete
+org: throwaway
+caption: The panel batches of the scheduled installations deleted from a scratch org, with a data workspace made for deletion
+answers:
+  - q: Please select a data workspace to use for DELETION
+    choice: HeliosScheduledBatchesCleanup
+    shot: true
+    caption: Pick the data workspace whose records are deleted
+  - q: Do you want to use org
+    choice: ^✅ Yes$
+    optional: true
+  - q: Do you confirm you want to DELETE records
+    choice: ^✅ Yes$
+    shot: true
+    caption: The last confirmation names the org and the data workspace before anything is deleted

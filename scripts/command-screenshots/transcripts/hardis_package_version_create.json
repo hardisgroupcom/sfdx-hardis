@@ -1,0 +1,116 @@
+{
+  "command": "hardis:package:version:create",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Please select a package (this is not a drill, it will create an official new version!)",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "name": "packageSelected",
+            "type": "select",
+            "message": "🦙 Please select a package (this is not a drill, it will create an official new version!)",
+            "description": "Choose which package to create a new version for - this action creates a permanent version",
+            "placeholder": "Select a package",
+            "choices": [
+              {
+                "title": "Helios Core",
+                "value": "helios-core"
+              },
+              {
+                "title": "Helios Reporting",
+                "value": "helios-reporting"
+              }
+            ],
+            "optionsPerPage": 9999
+          }
+        ]
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Helios Core"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Do you want to password protect your package? (blank means no)",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "name": "packageInstallationKey",
+            "type": "text",
+            "message": "🦙 Do you want to password protect your package? (blank means no)",
+            "description": "Optionally set a password to protect the package installation",
+            "placeholder": "Ex: mySecretPassword123",
+            "initial": ""
+          }
+        ]
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Generating new package version for Helios Core..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf package version create --package \"Helios Core\" --installation-key-bypass --code-coverage --wait 60",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf package version create --package \"Helios Core\" --installation-key-bypass --code-coverage --wait 60",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

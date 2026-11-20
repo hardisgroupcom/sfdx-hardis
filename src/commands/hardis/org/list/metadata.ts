@@ -7,12 +7,21 @@ import { uxLogTableWithReport } from '../../../../common/utils/filesUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
 import { isMetadataType } from '../../../../common/utils/metadataDepsUtils.js';
 import { isFolderType, listOrgMetadata } from '../../../../common/utils/metadataListingUtils.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class HardisOrgListMetadata extends SfCommand<any> {
   public static title = 'List metadata components of an org';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'list-metadata-',
+      title: 'Metadata components',
+      description: 'One row per component (or folder) of the listed metadata type, with its full name and id; the file name continues with the type and the folder, and it is written only when the list has more than 20 rows.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

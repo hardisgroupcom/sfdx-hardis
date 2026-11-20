@@ -1,3 +1,7 @@
+---
+title: "hardis:package:mergexml - Merge package.xml files"
+description: "Merges multiple Salesforce package.xml files into a single, consolidated package.xml file."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:package:mergexml
 
@@ -27,7 +31,7 @@ The command's technical implementation involves:
 - **Interactive Prompts:** If no `package.xml` files are specified, it uses the `prompts` library to allow the user to interactively select files to merge.
 - **`appendPackageXmlFilesContent` Utility:** The core merging logic is handled by the `appendPackageXmlFilesContent` utility function. This function reads the content of each input `package.xml` file, combines their metadata types and members, and writes the consolidated content to the specified result file.
 - **XML Manipulation:** Internally, `appendPackageXmlFilesContent` parses the XML of each `package.xml`, merges the `<types>` and `<members>` elements, and then rebuilds the XML structure for the output file.
-- **File System Operations:** It uses `fs-extra` to ensure the output directory exists and to write the merged `package.xml` file.
+- **File System Operations:** It uses Node.js `fs` to ensure the output directory exists and to write the merged `package.xml` file.
 - **WebSocket Communication:** It uses `WebSocketClient.requestOpenFile` to open the generated merged `package.xml` file in VS Code for immediate review.
 </details>
 
@@ -42,13 +46,23 @@ Use `--agent` to disable all interactive prompts. In agent mode:
 All interactive file selection prompts are skipped.
 
 
+## Screenshots
+
+![Pick the package.xml files to merge](../../assets/images/commands/package/mergexml-1.webp)
+
+_Pick the package.xml files to merge_
+
+![manifest/package.xml and package-no-overwrite.xml of the Helios project merged into one package-merge.xml](../../assets/images/commands/package/mergexml.webp)
+
+_manifest/package.xml and package-no-overwrite.xml of the Helios project merged into one package-merge.xml_
+
 ## Parameters
 
 | Name               |  Type   | Description                                                                                  |      Default      | Required | Options |
 |:-------------------|:-------:|:---------------------------------------------------------------------------------------------|:-----------------:|:--------:|:-------:|
 | agent              | boolean | Run in non-interactive mode for agents and automation                                        |                   |          |         |
 | debug              | boolean | debug                                                                                        |                   |          |         |
-| flags-dir          | option  | undefined                                                                                    |                   |          |         |
+| flags-dir          | option  | Import flag values from a directory.                                                         |                   |          |         |
 | folder<br/>-f      | option  | Root folder                                                                                  |     manifest      |          |         |
 | json               | boolean | Format output as json.                                                                       |                   |          |         |
 | packagexmls<br/>-p | option  | Comma separated list of package.xml files to merge. Will be prompted to user if not provided |                   |          |         |

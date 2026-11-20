@@ -7,6 +7,8 @@ const DISABLE_WEBSOCKET_COMMANDS = new Set([
   'hardis:config:get',
   'hardis:config:monitoring-defaults',
   'hardis:org:list:metadata',
+  'hardis:project:action:list',
+  'hardis:doc:plugin:generate',
 ]);
 
 // Commands a VS Code panel runs itself in the background, with --json, to feed its own UI.
@@ -179,7 +181,7 @@ function shouldInitWebSocket(commandId: string, config: any): boolean {
         return false; // Hidden commands are likely not meant for end-users, so we can skip
       }
       const pluginName = command?.pluginName ?? command?.plugin?.name;
-      if (!pluginName || ["sfdx-git-delta", "sfdmu", "sf-git-merge-driver"].includes(pluginName)) {
+      if (!pluginName || ["sfdx-git-delta", "sfdmu", "sf-git-merge-driver", "sfdx-browserforce-plugin"].includes(pluginName)) {
         return false; // If we can't determine the plugin, we can't assume it depends on sfdx-hardis
       }
       for (const plugin of config.plugins?.values?.() ?? []) {

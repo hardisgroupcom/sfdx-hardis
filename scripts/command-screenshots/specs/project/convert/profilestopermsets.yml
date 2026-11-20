@@ -1,0 +1,5 @@
+command: hardis:project:convert:profilestopermsets
+run: sf hardis:project:convert:profilestopermsets --except admin
+mode: replay
+org: none
+caption: Three Helios profiles converted into the permission sets PS_Helios_Crew, PS_Helios_Dispatcher and PS_Helios_Field_Manager

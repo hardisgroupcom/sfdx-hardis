@@ -14,6 +14,7 @@ import { parseXmlFile } from '../../../../common/utils/xmlUtils.js';
 import fs from '../../../../common/utils/fsUtils.js';
 import { glob } from 'glob';
 import sortArray from '../../../../common/utils/sortArray.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -38,6 +39,14 @@ const GLOB_IGNORE_PATTERNS = ['**/node_modules/**', '**/.git/**'];
 
 export default class DiagnoseMinimalPermsets extends SfCommand<any> {
   public static title = 'Detect permission sets with minimal permissions';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'minimal-permission-sets',
+      title: 'Minimal permission sets',
+      description: 'One row per permission set of the project that grants very few permissions, with its file path and permission count, as candidates to merge into another permission set.',
+    },
+  ];
 
   public static description = `Analyzes permission set metadata files in the sfdx project to identify permission sets with very few permissions (configurable threshold, default: 5 or fewer).
 
@@ -308,7 +317,7 @@ In agent mode, the command runs fully automatically. The permission threshold de
       minimalPermissionSets: this.minimalPermSets.length,
       errorCount: this.errorCount,
       minimalPermSets: this.minimalPermSets,
-      outputFile: this.outputFile,
+      outputFile: this.outputFilesRes?.csvFile ?? this.outputFile,
     };
   }
 }

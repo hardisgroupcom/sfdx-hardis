@@ -1,0 +1,83 @@
+{
+  "mode": "replace",
+  "title": "Unused Apex classes",
+  "columns": [
+    "severity",
+    "name",
+    "AsyncType",
+    "latestJobDate",
+    "latestJobRunDays",
+    "nextJobDate",
+    "queued",
+    "classCreatedOn",
+    "classCreatedBy"
+  ],
+  "rows": [
+    {
+      "severity": "🔴",
+      "name": "LegacyPanelImportBatch",
+      "AsyncType": "Batch",
+      "latestJobDate": "Not found",
+      "latestJobRunDays": "",
+      "nextJobDate": "None",
+      "queued": "false",
+      "classCreatedOn": "2024-03-12",
+      "classCreatedBy": "Victor Martin"
+    },
+    {
+      "severity": "🔴",
+      "name": "InverterFirmwareQueueable",
+      "AsyncType": "Queueable",
+      "latestJobDate": "Not found",
+      "latestJobRunDays": "",
+      "nextJobDate": "None",
+      "queued": "false",
+      "classCreatedOn": "2024-06-03",
+      "classCreatedBy": "Romain Lefebvre"
+    },
+    {
+      "severity": "🟠",
+      "name": "WarrantyRenewalSchedulable",
+      "AsyncType": "Schedulable",
+      "latestJobDate": "2025-09-14 02:00",
+      "latestJobRunDays": "429",
+      "nextJobDate": "None",
+      "queued": "false",
+      "classCreatedOn": "2023-11-20",
+      "classCreatedBy": "Mariia Kowalska"
+    },
+    {
+      "severity": "🟠",
+      "name": "CrewOvertimeBatch",
+      "AsyncType": "Batch",
+      "latestJobDate": "2025-10-02 11:30",
+      "latestJobRunDays": "411",
+      "nextJobDate": "None",
+      "queued": "false",
+      "classCreatedOn": "2024-01-08",
+      "classCreatedBy": "Victor Martin"
+    },
+    {
+      "severity": "🟡",
+      "name": "PanelBatchArchiveBatch",
+      "AsyncType": "Batch",
+      "latestJobDate": "2026-04-18 03:15",
+      "latestJobRunDays": "213",
+      "nextJobDate": "None",
+      "queued": "false",
+      "classCreatedOn": "2024-09-27",
+      "classCreatedBy": "Tomasz Nowak"
+    },
+    {
+      "severity": "🟡",
+      "name": "SiteSurveyReminderQueueable",
+      "AsyncType": "Queueable",
+      "latestJobDate": "2026-05-30 08:45",
+      "latestJobRunDays": "171",
+      "nextJobDate": "None",
+      "queued": "false",
+      "classCreatedOn": "2025-02-14",
+      "classCreatedBy": "Lucia Fernandez"
+    }
+  ]
+}

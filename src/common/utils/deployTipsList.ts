@@ -28,6 +28,15 @@ function listAllTips() {
 `,
     },
     {
+      name: "agent-user-no-access",
+      label: "Agent running user has no access to the agent",
+      expressionRegex: [/Error (.*) User doesn't have access to agent/gm],
+      tip: `The running user of agent {1} (botUser in its AiAgentDefinition) exists in the target org, but cannot run agents
+- Assign it the permission sets AgentforceServiceAgentBase, AgentforceServiceAgentUser and EinsteinGPTPromptTemplateUser, with the profile Einstein Agent User
+- Or let sfdx-hardis create a user with sf org create agent-user: keep the built-in replacement rule builtin-agent-running-user on, and remove the replacement rule of your own that writes botUser. See ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-agentforce-agents/#the-running-user-of-a-service-agent
+`,
+    },
+    {
       name: "can-not-change-to-formula-field",
       label: "Can not change field type to a formula field",
       expressionRegex: [/Error (.*) Cannot update a field from a Formula to something else/gm],
@@ -80,6 +89,12 @@ THIS MAY BE A FALSE POSITIVE if you are just testing the deployment, as destruct
       tip: `You need to manually delete record type {1} in target org
 - Edit record type {1}, uncheck "Active"
 - Delete record type {1}`,
+      deploymentAction: {
+        type: "browser",
+        when: "pre-deploy",
+        label: "Delete record type {1}",
+        parameters: { setting: "recordTypes", config: { deletions: [{ fullName: "{1}" }] } },
+      },
     },
     {
       name: "can-not-find-folder",
@@ -232,7 +247,20 @@ Example of element to delete:
       name: "duplicate-label",
       label: "Duplicate label",
       expressionRegex: [/Error (.*) Duplicate label: (.*)/gm],
-      tip: `You probably renamed the picklist API name for {2}. Please update manually the picklist {1} in the target org to avoid to have a duplicate label`,
+      tip: `You probably renamed the API name of the picklist value with label {2} in {1}: the target org still has the value with its old API name, and the same label.
+- A deployment action can rename the value in the target org before the deployment: replace OLD_API_NAME with its API name in the target org (Setup, the values of {1})
+- Or rename it manually in the target org, then deploy again`,
+      deploymentAction: {
+        type: "browser",
+        when: "pre-deploy",
+        label: "Rename picklist value {2} of {1}",
+        parameters: {
+          setting: "picklists",
+          config: { picklistValues: [{ metadataType: "METADATA_TYPE", metadataFullName: "{1}", value: "OLD_API_NAME", newApiName: "NEW_API_NAME" }] },
+        },
+        toComplete: ["OLD_API_NAME", "NEW_API_NAME", "METADATA_TYPE"],
+        resolve: resolvePicklistValueRename,
+      },
     },
     {
       name: "email-template-missing",
@@ -423,6 +451,12 @@ If it is already done, you may manually check "MarketingUser" field on the scrat
 - Help: https://help.salesforce.com/articleView?id=sf.shared_contacts_set_up.htm&type=5
 - Scratch org setting:
 "features": ["ContactsToMultipleAccounts"]`,
+      deploymentAction: {
+        type: "browser",
+        when: "pre-deploy",
+        label: "Enable Contacts to Multiple Accounts",
+        parameters: { setting: "relateContactToMultipleAccounts", config: { enabled: true } },
+      },
     },
     {
       name: "missing-feature-chatter-collaboration-groups",
@@ -608,7 +642,19 @@ Go manually make the change in the target org, so the deployment will pass
       tip: `Sources have references to value {1} of picklist {2}
 - If picklist {2} is standard, add the picklist to sfdx sources by using "sf project retrieve start -m StandardValueSet:{2}", then save again
 - Else, perform a search in all code of {1}, then remove XML tags referring to {1} (for example in record types metadatas)
+- If value {1} exists but is inactive in the target org, a deployment action can activate it: replace OBJECT_NAME by the object of picklist {2} (or, for a standard value set, use "metadataType":"StandardValueSet" and "metadataFullName":"{2}")
+- If value {1} was renamed in the sources, rename it in the target org instead: the same picklists setting does it with "newApiName" (https://amtrack.github.io/sfdx-browserforce-plugin/settings/picklists/)
 `,
+      deploymentAction: {
+        type: "browser",
+        when: "pre-deploy",
+        label: "Activate value {1} of picklist {2}",
+        parameters: {
+          setting: "picklists",
+          config: { picklistValues: [{ metadataType: "CustomField", metadataFullName: "OBJECT_NAME.{2}", value: "{1}", active: true }] },
+        },
+        toComplete: ["OBJECT_NAME"],
+      },
     },
     {
       name: "please-choose-a-different-name",
@@ -689,6 +735,73 @@ If you already did that, please try again to run the job`,
       label: "Send email is disabled",
       expressionString: ["Send Email is disabled or activities are not allowed", "Unknown user permission: SendExternalEmailAvailable"],
       tip: `Go to Email -> Deliverability -> Select value "All emails"`,
+      deploymentAction: {
+        type: "browser",
+        when: "pre-deploy",
+        label: "Allow all emails in Deliverability",
+        parameters: { setting: "emailDeliverability", config: { accessLevel: "All email" } },
+      },
+    },
+    {
+      name: "shared-activities-not-deployable",
+      label: "Shared Activities can not be deployed",
+      expressionString: ["You can't use the Tooling API or Metadata API to enable or disable Shared Activities"],
+      tip: `The Metadata API can not change Shared Activities (Allow Users to Relate Multiple Contacts to Tasks and Events)
+- Remove allowUsersToRelateMultipleContactsToTasksAndEvents from Activities.settings-meta.xml in your sources
+- To enable it, go to Setup -> Activity Settings in the target org, or use a deployment action
+- Once enabled, it can not be disabled (only Salesforce support can)`,
+      deploymentAction: {
+        type: "browser",
+        when: "pre-deploy",
+        label: "Enable Shared Activities",
+        parameters: { setting: "activitySettings", config: { allowUsersToRelateMultipleContactsToTasksAndEvents: true } },
+      },
+    },
+    {
+      name: "einstein-conversation-insights-not-enabled",
+      label: "Einstein Conversation Insights not enabled",
+      expressionRegex: [
+        /There was an error enabling or disabling a setting: OrgPreferences\.(CallSummarization|GenECI)/gm,
+        /Error ConversationalIntelligence (enableECICallScoring)\s*$/gm,
+      ],
+      tip: `The ConversationalIntelligence settings of your sources turn on {1}, that needs Einstein Conversation Insights already turned on in the target org: turning it on in the same deployment is not enough
+- Turn on Einstein Conversation Insights in the target org (Setup -> Einstein Conversation Insights), or use a deployment action that waits until it is completely on
+- Once turned on, it can not be turned off with Browserforce
+- If Call Summaries still fails to turn on with the Metadata API, remove enableCallSummarization from ConversationalIntelligence.settings-meta.xml and use the callSummaries setting of Browserforce instead (https://amtrack.github.io/sfdx-browserforce-plugin/settings/callSummaries/)`,
+      deploymentAction: {
+        type: "browser",
+        when: "pre-deploy",
+        label: "Turn on Einstein Conversation Insights",
+        parameters: { setting: "einsteinConversationInsights", config: { enabled: true } },
+      },
+    },
+    {
+      name: "lightning-experience-theme-not-found",
+      label: "Lightning Experience theme not found",
+      expressionRegex: [/no LightningExperienceTheme named (.*) found/gm],
+      tip: `Lightning Experience theme {1} is not in the target org
+- If {1} is a custom theme, add LightningExperienceTheme:{1} to your sources
+- If {1} is a standard theme (Lightning, LightningBlue...), the Metadata API can not activate it: remove activeThemeName from LightningExperience.settings-meta.xml in your sources, then activate the theme in Setup -> Themes and Branding, or with a deployment action`,
+      deploymentAction: {
+        type: "browser",
+        when: "pre-deploy",
+        label: "Activate Lightning Experience theme {1}",
+        parameters: { setting: "lightningExperienceSettings", config: { activeThemeName: "{1}" } },
+      },
+    },
+    {
+      name: "history-tracking-not-enabled",
+      label: "History tracking not enabled on object",
+      expressionRegex: [/The entity: (.*) does not have history tracking enabled/gm],
+      tip: `A field tracks its history, but history tracking is not enabled on object {1} in the target org
+- Enable it in the sources: add <enableHistory>true</enableHistory> to the object {1} metadata and deploy it with the field
+- For a Person Account field, the Metadata API can not enable it: use Setup -> Object Manager -> {1} -> Fields & Relationships -> Set History Tracking, or a deployment action`,
+      deploymentAction: {
+        type: "browser",
+        when: "pre-deploy",
+        label: "Enable history tracking on {1}",
+        parameters: { setting: "historyTracking", config: [{ objectApiName: "{1}", enableHistoryTracking: true }] },
+      },
     },
     {
       name: "sort-order-error",
@@ -766,4 +879,35 @@ Look for {3} in the XML of {1}
 If you see two {2} XML blocks with {3}, please decide which one you keep and remove the other one`,
     },
   ];
+}
+
+// Duplicate label: the sources hold the value with its new API name and the label of the error.
+// The old API name exists only in the target org, so the user still replaces OLD_API_NAME.
+async function resolvePicklistValueRename(filled: any, values: string[], groups: string[]) {
+  const componentName = values[1];
+  // The raw group: a label may hold quotes, that the placeholders drop. The text log can add the
+  // position of the error (3:13) and the border of its table after the label.
+  const label = (groups[2] || "").replace(/\s*│.*$/, "").replace(/\s*\(\d+:\d+\)\s*$/, "").trim();
+  const { findPicklistValueByLabel } = await import("./picklistSourceUtils.js");
+  const found = await findPicklistValueByLabel(componentName, label);
+  if (found) {
+    return {
+      label: `Rename picklist value ${found.label} of ${found.metadataFullName} to ${found.apiName}`,
+      parameters: renamedParameters(filled.parameters, { metadataType: found.metadataType, metadataFullName: found.metadataFullName, newApiName: found.apiName }),
+      toComplete: ["OLD_API_NAME"],
+    };
+  }
+  if (componentName.includes(".")) {
+    // Object.Field: a field, whose value set the sources do not have
+    return {
+      parameters: renamedParameters(filled.parameters, { metadataType: "CustomField" }),
+      toComplete: ["OLD_API_NAME", "NEW_API_NAME"],
+    };
+  }
+  return null;
+}
+
+function renamedParameters(parameters: any, values: Record<string, string>) {
+  const picklistValue = { ...parameters.config.picklistValues[0], ...values };
+  return { ...parameters, config: { ...parameters.config, picklistValues: [picklistValue] } };
 }

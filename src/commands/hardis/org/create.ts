@@ -9,13 +9,13 @@ import { dateHelper } from '../../../common/utils/dateHelper.js';
 import * as os from 'os';
 import * as path from 'path';
 import { clearCache } from '../../../common/cache/index.js';
-import { elapseEnd, elapseStart, execSfdxJson, getCurrentGitBranch, uxLog } from '../../../common/utils/index.js';
-import {
-  initApexScripts,
-  initOrgData,
-  initPermissionSetAssignments,
-  promptUserEmail,
-} from '../../../common/utils/orgUtils.js';
+import { elapseEnd, elapseStart, execSfdxJson, getCurrentGitBranch, isCI, uxLog } from '../../../common/utils/index.js';
+import { selectTargetBranch } from '../../../common/utils/gitUtils.js';
+import { getCurrentGitUser, isDevOrgsRegistryEnabled, registerDevOrgUsage } from '../../../common/utils/devOrgsRegistry.js';
+import { parseDevOrgPersonFlag, promptDevOrgOwner } from '../../../common/utils/devOrgsCommandUtils.js';
+import { DevOrgPerson } from '../../../common/utils/devOrgsRules.js';
+import { openOrgInBrowser, promptUserEmail } from '../../../common/utils/orgUtils.js';
+import { assertOrgInitStepsValid, runOrgInitSteps } from '../../../common/utils/orgInitUtils.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { getConfig } from '../../../config/index.js';
 import { t } from '../../../common/utils/i18n.js';
@@ -39,8 +39,9 @@ Key functionalities:
 - **Dynamic Naming:** Generates a unique sandbox alias based on the current username, Git branch, and a timestamp.
 - **Sandbox Creation:** Executes the Salesforce CLI command to create the sandbox, including setting it as the default org and waiting for its completion.
 - **User Update:** Updates the main sandbox user's details (e.g., Last Name, First Name) and can fix country values or marketing user permissions if needed.
-- **Initialization Scripts:** Runs predefined Apex scripts, assigns permission sets, and imports initial data into the newly created sandbox, based on configurations in your project.
+- **Initialization Steps:** Runs the org initialization steps of the project that apply to sandboxes, in their order (\`orgInitSteps\`, edited from the Org Initialization panel of the VS Code extension). Without that key, the steps are built from the older keys \`initPermissionSets\`, \`sandboxOrgInitApexScripts\`, \`dataPackages\` and the \`scripts/data/SandboxInit\` folder. Run [hardis:org:init](https://sfdx-hardis.cloudity.com/hardis/org/init/) to run them again later.
 - **Error Handling:** Provides detailed error messages for common sandbox creation issues, including Salesforce-specific errors.
+- **Development orgs list:** Registers the new sandbox in the [development orgs](https://sfdx-hardis.cloudity.com/salesforce-devops-dev-orgs/) list of the project, with its owner and target branch (\`--owner\` and \`--target-branch\`, asked before the creation when omitted), so its owner knows when to run a backpromote.
 
 <details markdown="1">
 <summary>Technical explanations</summary>
@@ -52,10 +53,11 @@ The command's technical implementation involves:
 - **File System Operations:** Uses Node.js \`fs\` to manage sandbox definition files (reading \`project-sandbox-def.json\`, writing a user-specific definition file) and temporary directories.
 - **Salesforce CLI Execution:** Executes Salesforce CLI commands (\`sf org create sandbox\`, \`sf data get record\`, \`sf data update record\`, \`sf org open\`) using \`execSfdxJson\` for sandbox creation, user updates, and opening the org in a browser.
 - **Cache Management:** Clears the Salesforce CLI org list cache (\`clearCache('sf org list')\`) to ensure the newly created sandbox is immediately recognized.
-- **Initialization Utilities:** Calls a suite of utility functions (\`initPermissionSetAssignments\`, \`initApexScripts\`, \`initOrgData\`) to perform post-creation setup tasks.
+- **Initialization Steps:** Calls \`runOrgInitSteps\` (\`src/common/utils/orgInitUtils.ts\`) with the \`sandbox\` org type to perform post-creation setup tasks.
 - **Error Assertions:** Uses \`assert\` to check the success of Salesforce CLI commands and provides custom error messages for better debugging.
 - **WebSocket Communication:** Uses \`WebSocketClient.sendRefreshStatusMessage\` to notify connected VS Code clients about the new sandbox.
 - **Required Plugin Check:** Explicitly lists \`sfdmu\` as a required plugin, indicating its role in data initialization.
+- **Development orgs list:** Calls \`registerDevOrgUsage\` (\`src/common/utils/devOrgsRegistry.ts\`) once the sandbox is initialized. Without a git provider token, or with \`enableDevOrgsRegistry: false\`, nothing is registered and the creation goes on.
 </details>
 
 ### Agent Mode
@@ -70,6 +72,7 @@ In agent mode:
 
 - The user email prompt is skipped; \`USER_EMAIL\` env var or \`userEmail\` config property is required.
 - If no email is available, an error is thrown.
+- The owner of the sandbox in the development orgs list is \`--owner\`, else the git user; its target branch is \`--target-branch\`, else \`developmentBranch\`.
 `;
 
   public static examples = ['$ sf hardis:org:create', '$ sf hardis:org:create --agent'];
@@ -91,6 +94,12 @@ In agent mode:
     }),
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
+    }),
+    owner: Flags.string({
+      description: 'Owner of the sandbox in the development orgs list: "Name <email>" or an email',
+    }),
+    'target-branch': Flags.string({
+      description: 'Major branch the sandbox targets, in the development orgs list',
     }),
   };
   protected static supportsDevhubUsername = true;
@@ -118,6 +127,8 @@ In agent mode:
   protected authFileJson: any;
   protected projectName: string;
   protected sandboxOrgFromPool: any;
+  protected devOrgOwner: DevOrgPerson | null = null;
+  protected devOrgTargetBranch: string | null = null;
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(SandboxCreate);
@@ -125,18 +136,35 @@ In agent mode:
     this.agentMode = flags.agent === true;
     elapseStart(`Create and initialize sandbox org`);
     await this.initConfig();
+    // A mistake in the steps is found before the sandbox is created, not after
+    await assertOrgInitStepsValid(this.configInfo, 'sandbox');
+    // Asked before the creation, which takes a while: nobody waits for it to answer a question
+    await this.collectDevOrgRegistration(flags);
     await this.createSandboxOrg();
     try {
       await this.updateSandboxOrgUser();
-      await initPermissionSetAssignments(this.configInfo.initPermissionSets || [], this.sandboxOrgUsername);
-      await initApexScripts(this.configInfo.sandboxOrgInitApexScripts || [], this.sandboxOrgUsername);
-      await initOrgData(path.join('.', 'scripts', 'data', 'SandboxInit'), this.sandboxOrgUsername);
+      await runOrgInitSteps({
+        orgUsername: this.sandboxOrgUsername,
+        orgAlias: this.sandboxOrgAlias,
+        orgType: 'sandbox',
+        phase: 'all',
+        debugMode: this.debugMode,
+        config: this.configInfo,
+      });
     } catch (e) {
       elapseEnd(`Create and initialize sandbox org`);
       uxLog("log", this, c.grey(t('error2') + (e as Error).message + '\n' + (e as Error).stack));
       throw e;
     }
     elapseEnd(`Create and initialize sandbox org`);
+    await registerDevOrgUsage({
+      username: this.sandboxOrgUsername,
+      alias: this.sandboxOrgAlias,
+      targetBranch: this.devOrgTargetBranch,
+      owner: this.devOrgOwner,
+      addCurrentUser: false,
+      commandThis: this,
+    });
     // Return an object to be displayed with --json
     return {
       status: 0,
@@ -223,12 +251,8 @@ In agent mode:
     // Trigger a status refresh on VS Code WebSocket Client
     WebSocketClient.sendRefreshStatusMessage();
 
-    // Open sandbox org for user if not in CI
-    await execSfdxJson('sf org open', this, {
-      fail: true,
-      output: false,
-      debug: this.debugMode,
-    });
+    // Open sandbox org for user (in CI and container mode, log the link instead)
+    await openOrgInBrowser(this, { debug: this.debugMode });
     uxLog(
       "action",
       this,
@@ -287,5 +311,24 @@ In agent mode:
     const userUpdateCommand = `sf data update record --sobject User --record-id ${userQueryRes.result.Id} --values "${updatedUserValues}" --target-org ${this.sandboxOrgAlias}`;
     await execSfdxJson(userUpdateCommand, this, { fail: false, output: true, debug: this.debugMode });
     /* jscpd:ignore-end */
+  }
+
+  // Owner and target branch of the sandbox in the development orgs list
+  protected async collectDevOrgRegistration(flags: any) {
+    if (!(await isDevOrgsRegistryEnabled())) {
+      return;
+    }
+    const interactive = !this.agentMode && !isCI;
+    this.devOrgOwner = parseDevOrgPersonFlag(flags.owner);
+    if (!this.devOrgOwner) {
+      const currentUser = await getCurrentGitUser();
+      this.devOrgOwner = interactive ? await promptDevOrgOwner(this, currentUser) : currentUser;
+    }
+    this.devOrgTargetBranch = flags['target-branch'] || null;
+    if (!this.devOrgTargetBranch) {
+      this.devOrgTargetBranch = interactive
+        ? await selectTargetBranch({ message: t('devOrgTargetBranchPrompt', { name: this.sandboxOrgAlias }) })
+        : this.configInfo.developmentBranch || null;
+    }
   }
 }

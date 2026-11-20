@@ -1,0 +1,60 @@
+
+# --- Command screenshots ----------------------------------------------------
+# What the deployment action, custom function and Apex test class commands of
+# the documentation screenshots work on
+enableDeploymentApexTestClasses: true
+enableDeltaDeploymentBetweenMajorBranches: true
+deploymentApexTestClasses:
+  - InstallationSchedulerTest
+customFunctions:
+  - id: notifyCrew
+    label: Notify the installation crew
+    runtime: node
+    script: scripts/functions/notify-crew.js
+    when: post-deploy
+    inputs:
+      - name: channel
+        label: Channel of the crew
+        type: string
+        default: crew-releases
+commandsPreDeploy:
+  - id: 2b7f4c1e-8a3d-4e56-9c12-7d4e5f6a8b90
+    label: Pause the installation reminders
+    type: apex
+    parameters:
+      apexScript: scripts/apex/pause-installation-reminders.apex
+    context: process-deployment-only
+commandsPostDeploy:
+  - id: 5c9e2d7a-1f4b-4a83-b6e0-3d8c9f1a2e47
+    label: Import the Helios reference data
+    type: data
+    parameters:
+      sfdmuProject: HeliosBaseline
+    context: process-deployment-only
+  - id: 8e1a4b6c-2d3f-4c95-a7b8-9f0e1d2c3b4a
+    label: Notify the installation crew
+    type: notifyCrew
+    parameters:
+      channel: crew-releases
+    context: process-deployment-only
+  - id: a3d5f7b9-4c6e-4d82-9a1b-2c3d4e5f6a7b
+    label: Check the inverter catalog in Setup
+    type: manual
+    parameters:
+      instructions: Open Setup > Custom Metadata Types > Inverter Model and check that the 2026 models are listed.
+    context: process-deployment-only
+replacementRules:
+  - id: warehouse-api-url
+    type: xml-value
+    description: URL of the warehouse stock API, per org
+    files: "**/remoteSiteSettings/Helios_Warehouse.remoteSite-meta.xml"
+    xmlPath: RemoteSiteSetting/url
+    value: https://warehouse-test.helios-solar.demo
+    values:
+      main: https://warehouse.helios-solar.demo
+  - id: crew-support-email
+    type: text
+    description: Support address of the crews in the email templates
+    files: "**/email/**/*.email"
+    find: crews-test@helios-solar.demo
+    value: crews@helios-solar.demo

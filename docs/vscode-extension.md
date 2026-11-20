@@ -20,6 +20,7 @@ Each workbench of the extension has its own guide: what it is for, how to open i
 |---|---|
 | [Welcome panel](vscode-extension-welcome.md) | Check your tools, open any workbench, run the commands of your team |
 | [DevOps Pipeline view](vscode-extension-devops-pipeline.md) | See branches, orgs and deployments, start and publish a User Story, add deployment actions |
+| [Pipeline Settings](vscode-extension-pipeline-settings.md) | Find what each setting of the project does, tab by tab, with the key it writes in `.sfdx-hardis.yml` |
 | [Org Monitoring Workbench](vscode-extension-org-monitoring.md) | Run a monitoring check, edit the monitoring configuration, see what the backup keeps |
 | [Command execution panel](vscode-extension-command-runner.md) | Answer the questions of a command, follow its progress, open its reports |
 | [Orgs Manager](vscode-extension-orgs-manager.md) | Connect orgs, pick the default one, reconnect, run org operations, clean up |
@@ -56,8 +57,8 @@ The extension is Open-Source (AGPL-3.0): [github.com/hardisgroupcom/vscode-sfdx-
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) course does this, click by click, on an org of your own:
 
-- [Lab 1.1 - Install VS Code, Git and sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-1-install-vs-code-and-sfdx-hardis/)
+- [Lab 1.1 - Install VS Code, Git and sfdx-hardis](https://sfdx-hardis-training.cloudity.com/en/level-1-contributor-basics/1-1-install-vs-code-and-sfdx-hardis/)
 
 <!-- training-links:end -->

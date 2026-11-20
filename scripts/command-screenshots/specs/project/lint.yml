@@ -1,0 +1,5 @@
+command: hardis:project:lint
+run: sf hardis:project:lint
+mode: replay
+org: none
+caption: The MegaLinter summary of the Salesforce flavor, run in Docker, with every linter passing on the Helios project

@@ -3,24 +3,22 @@ import { SfCommand, Flags, optionalHubFlagWithDeprecations, optionalOrgFlagWithD
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import * as path from 'path';
 import { MetadataUtils } from '../../../common/metadata-utils/index.js';
 import {
   checkGitClean,
   createWorkBranchFromTarget,
   execCommand,
-  execSfdxJson,
   getGitRepoUrl,
+  isCI,
   uxLog,
+  firstFreeWorkBranchName,
+  workBranchExists,
 } from '../../../common/utils/index.js';
 import { buildAvailableTargetBranches, selectTargetBranch } from '../../../common/utils/gitUtils.js';
 import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
 import {
-  initApexScripts,
-  initOrgData,
-  initPermissionSetAssignments,
-  installPackages,
   makeSureOrgIsConnected,
+  openOrgInBrowser,
   promptOrg,
 } from '../../../common/utils/orgUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
@@ -30,6 +28,8 @@ import SandboxCreate from '../org/create.js';
 import ScratchCreate from '../scratch/create.js';
 import { t } from '../../../common/utils/i18n.js';
 import { runAuthHook } from '../../../common/utils/authUtils.js';
+import { getCurrentGitUser, registerDevOrgUsage } from '../../../common/utils/devOrgsRegistry.js';
+import { formatDevOrgPerson } from '../../../common/utils/devOrgsRules.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -48,7 +48,7 @@ This command guides you through the process of preparing your local environment 
 
 Key features include:
 
-- **Git Branch Management:** Creates a new Git branch with a formatted name based on your User Story details, based on the latest version of the target branch. The new branch is created from \`origin/<target>\` instead of checking out the target branch locally, so it works even when the target branch is already checked out in another git worktree. Branch naming conventions can be customized via the \`branchPrefixChoices\` property in \`.sfdx-hardis.yml\`.
+- **Git Branch Management:** Creates a new Git branch with a formatted name based on your User Story details, based on the latest version of the target branch. The new branch is created from \`origin/<target>\` instead of checking out the target branch locally, so it works even when the target branch is already checked out in another git worktree. Branch naming conventions can be customized via the \`branchPrefixChoices\` property in \`.sfdx-hardis.yml\`. A new User Story never reuses an existing branch: if a branch with the same name already exists, locally or on the remote, the command says so and asks for another name (in \`--agent\` mode or in CI, where nobody can answer, it adds a number suffix instead: \`-2\`, \`-3\`...). When the remote can not be reached, only the branches of the last fetch are checked, with a warning.
 
 - **Org Provisioning & Initialization:** Facilitates the creation and initialization of either a scratch org or a source-tracked sandbox. The configuration for org initialization (e.g., package installation, source push, permission set assignments, Apex script execution, data loading) can be defined in \`config/.sfdx-hardis.yml\
 
@@ -57,8 +57,9 @@ Key features include:
 - **User Story Name Validation:** Enforces User Story name formatting using \`newTaskNameRegex\` and provides examples via \`newTaskNameRegexExample\`. The regex is applied to the name as you type it, so a pattern such as \`^MYPROJECT-[0-9]+ .*\` can require spaces. Once validated, the name is converted into a git-compatible branch name, where spaces and special characters become \`-\`.
 
 - **Shared Development Sandboxes:** Accounts for scenarios with shared development sandboxes, adjusting prompts to prevent accidental overwrites.
-- **Sandbox initialization:** Only when \`offerSandboxInit: true\` is set, the command offers to initialize the selected sandbox: installed packages, \`initPermissionSets\`, \`scratchOrgInitApexScripts\` and \`scripts/data/ScratchInit\`. It never deploys metadata.
+- **Sandbox initialization:** The command never initializes a selected sandbox. Run [hardis:org:init](${CONSTANTS.DOC_URL_ROOT}/hardis/org/init/) to run the org initialization steps on it. A new scratch org, or one taken from the pool, gets them when it is created.
 
+- **Development orgs list:** The selected or created org is registered in the [development orgs](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-dev-orgs/) list of the project: you become one of its users (its owner when it is new), with the User Story branch and its target branch. When the org is already registered for another target branch, a warning says so and the registered one stays. Without a git provider token, the command only says it could not register the org.
 - **Developer sandbox metadata:** The metadata of an existing sandbox is not updated by this command. To bring into it what the team merged in the target branch, use [hardis:work:backpromote](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-backpromote/) (the Backpromote panel in VS Code).
 
 - **Agent Mode (\`--agent\`):** Enables a fully non-interactive execution path for AI agents and automation. In this mode, all required decisions must be provided as flags and are validated at command start with explicit error messages listing missing inputs and available options.
@@ -88,6 +89,7 @@ In \`--agent\` mode, the command also computes automatically:
 
 - branch prefix: value provided by \`--branch-prefix\`, otherwise first configured branch prefix choice, fallback \`feature\`
 - scratch mode: always create a new scratch org
+- branch name: when a branch with the same name already exists, locally or on the remote, a number suffix (\`-2\`, \`-3\`...) is added, and a warning names the branch created
 
 In \`--agent\` mode, the command intentionally skips:
 
@@ -103,10 +105,10 @@ Advanced instructions are available in the [Create New User Story documentation]
 
 The command's logic orchestrates various underlying processes:
 
-- **Git Operations:** Utilizes \`checkGitClean\` and \`createWorkBranchFromTarget\` to manage Git repository state and branches. \`createWorkBranchFromTarget\` fetches \`origin/<target>\` and creates the new branch from it (falling back to the local target ref), checks out the branch if it already exists, and fails with a clear message if it is checked out in another git worktree.
+- **Git Operations:** Utilizes \`checkGitClean\` and \`createWorkBranchFromTarget\` to manage Git repository state and branches. \`createWorkBranchFromTarget\` fetches \`origin/<target>\` and creates the new branch from it (falling back to the local target ref), refuses a branch that already exists (\`workBranchExists\` checks the local branches and \`git ls-remote --heads origin\`, and drops a stale remote-tracking ref of a branch deleted on the remote), and fails with a clear message if it is checked out in another git worktree.
 - **Interactive Prompts:** Leverages the \`prompts\` library to gather user input for User Story type, source types, and User Story names.
 - **Configuration Management:** Reads and applies project-specific configurations from \`.sfdx-hardis.yml\` using \`getConfig\` and \`setConfig\
-- **Org Initialization Utilities:** Calls a suite of utility functions for org setup, including \`initApexScripts\`, \`initOrgData\`, \`initPermissionSetAssignments\`, \`installPackages\`, and \`makeSureOrgIsConnected\
+- **Org Initialization Utilities:** Calls a suite of utility functions for org setup, including \`makeSureOrgIsConnected\
 - **Salesforce CLI Interaction:** Executes Salesforce CLI commands (e.g., \`sf config set target-org\`, \`sf org open\`) via \`execCommand\` and \`execSfdxJson\
 - **Dynamic Org Selection:** Presents choices for scratch orgs or sandboxes based on project configuration and existing orgs, dynamically calling \`ScratchCreate.run\` or \`SandboxCreate.run\` as needed. A scratch org that a major branch deploys to is never offered for reuse.
 - **WebSocket Communication:** Sends refresh status messages via \`WebSocketClient.sendRefreshStatusMessage()\` to update connected VS Code clients.
@@ -116,14 +118,15 @@ The command's logic orchestrates various underlying processes:
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course runs this command, click by click, on an org of your own, in these labs:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) course runs this command, click by click, on an org of your own, in these labs:
 
-- [Lab 1.3 - Start a User Story on its own Git branch](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-3-start-a-user-story-on-a-git-branch/)
-- [Lab 1.7 - Capstone: deliver a User Story on your own](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-7-capstone-deliver-a-user-story-on-your-own/)
-- [Lab 2.2 - Fix a deployment error caused by a missing dependency](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-2-fix-a-missing-dependency-deployment-error/)
-- [Lab 2.9 - Capstone: deliver a User Story that has it all](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-9-capstone-deliver-a-user-story-that-has-it-all/)
-- [Lab 3.7 - Production is broken: hotfix and retrofit](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-7-hotfix-and-retrofit/)
-- [Lab 3.10 - Promote a subset with promotion branches (Beta)](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-10-promote-a-subset-with-promotion-branches/)
+- [Lab 1.3 - Start a User Story on its own Git branch](https://sfdx-hardis-training.cloudity.com/en/level-1-contributor-basics/1-3-start-a-user-story-on-a-git-branch/)
+- [Lab 1.7 - Capstone: deliver a User Story on your own](https://sfdx-hardis-training.cloudity.com/en/level-1-contributor-basics/1-7-capstone-deliver-a-user-story-on-your-own/)
+- [Lab 2.2 - Fix a deployment error caused by a missing dependency](https://sfdx-hardis-training.cloudity.com/en/level-2-contributor-advanced/2-2-fix-a-missing-dependency-deployment-error/)
+- [Lab 2.9 - Capstone: deliver a User Story that has it all](https://sfdx-hardis-training.cloudity.com/en/level-2-contributor-advanced/2-9-capstone-deliver-a-user-story-that-has-it-all/)
+- [Lab 3.1 - Configure the CI/CD pipeline up to production](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-1-configure-the-pipeline-up-to-production/)
+- [Lab 3.7 - Production is broken: hotfix and retrofit](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-7-hotfix-and-retrofit/)
+- [Lab 3.10 - Promote a subset with promotion branches (Beta)](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-10-promote-a-subset-with-promotion-branches/)
 
 <!-- training-links:end -->
 `;
@@ -281,7 +284,23 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
     // Create the new branch from the latest version of the target branch.
     // We branch from origin/<target> instead of checking out <target>, so this works even
     // when the target branch is checked out in another git worktree.
-    const branchName = `${projectBranchPart}${response.branch || 'feature'}/${taskName}`;
+    // A new User Story never reuses an existing branch: an old branch with the same name would
+    // carry its commits into the new Pull Request. The user picks another name instead, and when
+    // nobody can be asked (CI, --agent) a number suffix makes the name free.
+    let branchName = `${projectBranchPart}${response.branch || 'feature'}/${taskName}`;
+    if (agentMode || isCI) {
+      const freeBranchName = await firstFreeWorkBranchName(branchName);
+      if (freeBranchName !== branchName) {
+        uxLog("warning", this, c.yellow(t('workBranchAlreadyExistsUsingSuffix', { branch: branchName, newBranch: freeBranchName })));
+        branchName = freeBranchName;
+      }
+    } else {
+      while (await workBranchExists(branchName)) {
+        uxLog("action", this, c.yellow(t('workBranchAlreadyExistsChooseAnotherName', { branch: branchName })));
+        taskName = await this.promptTaskName(config.newTaskNameRegex || null, config.newTaskNameRegexExample || null);
+        branchName = `${projectBranchPart}${response.branch || 'feature'}/${taskName}`;
+      }
+    }
     const repoUrl = await getGitRepoUrl();
     uxLog(
       "action",
@@ -289,7 +308,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
       c.cyan(t('checkingOutLatestVersionOfBranch', { branch: c.bold(this.targetBranch), repoUrl }))
     );
     uxLog("action", this, c.cyan(t('creatingNewBranch', { branchName: c.green(branchName) })));
-    await createWorkBranchFromTarget(branchName, this.targetBranch);
+    await createWorkBranchFromTarget(branchName, this.targetBranch, { refuseExisting: true });
     // Update config if necessary
     if (config.developmentBranch !== this.targetBranch && (config.availableTargetBranches || null) == null) {
       let shouldUpdateDefaultTargetBranch = false;
@@ -372,6 +391,11 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
       selectedOrgInfo = await this.selectOrCreateSandbox(branchName, config, flags, selectedOrgType, agentInputs);
     } else {
       uxLog("action", this, c.cyan(t('noOrgSelectedEnsureYouKnow')));
+    }
+
+    // The org joins the development orgs list, so its users know when to run a backpromote
+    if (selectedOrgInfo?.username) {
+      await registerDevOrgUsage({ username: selectedOrgInfo.username, targetBranch: this.targetBranch, featureBranch: branchName, commandThis: this });
     }
 
     uxLog("action", this, c.cyan(t('readyToWorkInBranch', { branchName: c.green(branchName) })));
@@ -586,7 +610,6 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
       scratchMode: 'new',
       scratchOrgUsername: null,
       sandboxOrgUsername: null,
-      initSandbox: false,
       openOrg: flags['open-org'] === true,
       updateDefaultTargetBranch: false,
     };
@@ -720,11 +743,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
       });
       // Open selected org
       uxLog("action", this, c.cyan(t('openingScratchOrgInBrowser')));
-      await execSfdxJson('sf org open', this, {
-        fail: true,
-        output: false,
-        debug: this.debugMode,
-      });
+      await openOrgInBrowser(this, { debug: this.debugMode });
       // Trigger a status refresh on VS Code WebSocket Client
       WebSocketClient.sendRefreshStatusMessage();
       return {
@@ -752,76 +771,9 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
       openOrg = promptRes.openOrg;
     }
 
-    // Initialize / Update existing sandbox if available
+    // A sandbox is never initialized from here: its metadata comes from a backpromote, and
+    // sf hardis:org:init runs the org initialization steps on demand
     if (!(config.sharedDevSandboxes === true)) {
-      // Only offered when the project asks for it: the metadata comes from a backpromote, and the
-      // initialization left (packages, permission sets, scripts, data) is not what most teams expect
-      const offerSandboxInit = config.offerSandboxInit === true;
-      let initSandbox = false;
-      if (offerSandboxInit && agentInputs) {
-        initSandbox = agentInputs.initSandbox === true;
-      } else if (offerSandboxInit) {
-        const initSandboxResponse = await prompts({
-          type: 'select',
-          name: 'value',
-          message: c.cyanBright(t('doYouWantToUpdateSandboxToMatchBranch', { branch: this.targetBranch })),
-          description: t('chooseSyncSandboxWithLatestChanges'),
-          placeholder: t('selectSyncOption'),
-          choices: [
-            {
-              title: t('continueWorkingOnCurrentSandboxState'),
-              value: 'no',
-              description: t('useIfMultipleUsersShareSandbox'),
-            },
-            {
-              title: t('yesUpdateMySandbox'),
-              value: 'init',
-              description: t('integrateNewUpdatesFromParentBranch', { targetBranch: this.targetBranch }),
-            },
-          ],
-        });
-        initSandbox = initSandboxResponse.value === 'init';
-        // Ask the user if he's really sure of what he's doing !
-        if (initSandbox) {
-          const promptConfirm = await prompts({
-            type: 'confirm',
-            message: c.cyanBright(t('confirmUpdateDevSandboxWithBranchState', { branch: this.targetBranch })),
-            description: t('confirmResetSandboxToMatchTargetBranch'),
-          });
-          initSandbox = promptConfirm.value === true;
-        }
-      }
-
-      if (initSandbox) {
-        let initSandboxErr: any = null;
-        try {
-          if (config.installedPackages) {
-            await installPackages(config.installedPackages || [], orgUsername);
-          }
-          // The metadata is not deployed from here: a backpromote brings into the sandbox what the
-          // team merged in the target branch
-          await initPermissionSetAssignments(config.initPermissionSets || [], orgUsername);
-          await initApexScripts(config.scratchOrgInitApexScripts || [], orgUsername);
-          await initOrgData(path.join('.', 'scripts', 'data', 'ScratchInit'), orgUsername);
-        } catch (e) {
-          initSandboxErr = e;
-        }
-        if (initSandboxErr) {
-          uxLog(
-            "log",
-            this,
-            c.grey('Error(s) while initializing sandbox: ' + initSandboxErr.message + '\n' + initSandboxErr.stack)
-          );
-          uxLog(
-            "warning",
-            this,
-            c.yellow(
-              'Sandbox may not be fully initialized from git. Share the error above with your release manager.'
-            )
-          );
-        }
-      }
-      // The metadata of the sandbox is brought up to date with a backpromote, not by this command
       uxLog(
         "action",
         this,
@@ -846,11 +798,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
 
       if (shouldOpenOrg) {
         uxLog("action", this, c.cyan(t('openingOrg', { orgUsername: c.green(orgUsername) })));
-        await execSfdxJson('sf org open', this, {
-          fail: true,
-          output: false,
-          debug: this.debugMode,
-        });
+        await openOrgInBrowser(this, { debug: this.debugMode });
       }
     }
 
@@ -917,7 +865,13 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
 
     // Create a new sandbox ( NOT WORKING YET, DO NOT USE)
     else if (sandboxResponse.value === 'newSandbox') {
-      const createResult = await SandboxCreate.run();
+      // The person who creates the sandbox for their User Story owns it: nothing more to ask
+      const currentUser = await getCurrentGitUser();
+      const createResult = await SandboxCreate.run([
+        ...(currentUser ? ['--owner', formatDevOrgPerson(currentUser)] : []),
+        '--target-branch',
+        this.targetBranch,
+      ]);
       if (createResult == null) {
         throw new SfError('Unable to create sandbox org');
       }

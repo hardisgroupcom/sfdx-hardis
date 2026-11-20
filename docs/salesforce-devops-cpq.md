@@ -6,7 +6,7 @@ description: Learn how to deploy Salesforce CPQ configuration with sfdx-hardis a
 
 ## Salesforce CPQ deployments
 
-Salesforce CPQ configuration (products, price rules, quote templates...) is stored as records, not as metadata. sfdx-hardis deploys it as data: the configuration is exported from the source org and imported into the target org with [SFDMU](https://help.sfdmu.com/) data workspaces, which can run automatically as [deployment actions](salesforce-devops-work-on-user-story-deployment-actions.md#import-data-sfdmu).
+Salesforce CPQ configuration (products, price rules, quote templates...) is stored as records, not as metadata. sfdx-hardis deploys it as data: the configuration is exported from the source org and imported into the target org with [SFDMU](https://help.sfdmu.com/) data workspaces, which can run automatically as [deployment actions](salesforce-devops-work-on-user-story-deployment-actions-data.md).
 
 When you build the SFDMU workspaces for CPQ:
 

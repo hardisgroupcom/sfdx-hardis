@@ -19,7 +19,7 @@ import {
   deleteAccounts,
   expectOutputExcludes,
   expectOutputIncludes,
-  getSharedNutOrgSession,
+  getSharedNutOrgSessionOrSkip,
   git,
   NutOrgContext,
   purgeNutApexClasses,
@@ -34,7 +34,7 @@ describe('hardis:project:deploy:smart against a real org', () => {
 
   before(async function () {
     this.timeout(1800000);
-    ctx = await getSharedNutOrgSession();
+    ctx = await getSharedNutOrgSessionOrSkip(this);
   });
 
   describe('validation (--check)', () => {
@@ -123,7 +123,9 @@ describe('hardis:project:deploy:smart against a real org', () => {
     });
 
     after(async () => {
-      await clearBranchConfig(ctx.projectDir);
+      if (ctx) {
+        await clearBranchConfig(ctx.projectDir);
+      }
     });
 
     // Captured once: re-running the deployment would duplicate the records the actions insert
@@ -198,7 +200,9 @@ describe('hardis:project:deploy:smart against a real org', () => {
 
       expectOutputIncludes(output, '[DeploymentActions] Skipping NUT process only action');
       expectOutputExcludes(output, 'HARDIS_NUT_PROCESS_ONLY_RAN');
-      await clearBranchConfig(ctx.projectDir);
+      if (ctx) {
+        await clearBranchConfig(ctx.projectDir);
+      }
     });
 
     it('reports a failing action and stops the deployment', async () => {
@@ -225,7 +229,9 @@ describe('hardis:project:deploy:smart against a real org', () => {
       const output = result.shellOutput.stdout + result.shellOutput.stderr;
 
       expectOutputIncludes(output, '[DeploymentActions] Action NUT failing action failed');
-      await clearBranchConfig(ctx.projectDir);
+      if (ctx) {
+        await clearBranchConfig(ctx.projectDir);
+      }
     });
 
     it('tolerates a failing action declared with allowFailure', async () => {
@@ -253,7 +259,9 @@ describe('hardis:project:deploy:smart against a real org', () => {
       const output = result.shellOutput.stdout + result.shellOutput.stderr;
 
       expectOutputIncludes(output, 'Deployment check summary');
-      await clearBranchConfig(ctx.projectDir);
+      if (ctx) {
+        await clearBranchConfig(ctx.projectDir);
+      }
     });
   });
 
@@ -339,7 +347,9 @@ describe('hardis:project:deploy:smart against a real org', () => {
     });
 
     after(async () => {
-      await clearBranchConfig(ctx.projectDir);
+      if (ctx) {
+        await clearBranchConfig(ctx.projectDir);
+      }
     });
 
     // Captured once: the deployment is the expensive part of this scenario
@@ -397,7 +407,9 @@ describe('hardis:project:deploy:smart against a real org', () => {
       // The later scenarios expect the fixture to be back on its main branch. Forced because the
       // commands under test rewrite their report files as they go, and a hook that throws here
       // would fail every remaining scenario rather than just this one.
-      git(ctx.projectDir, 'checkout --force main');
+      if (ctx) {
+        git(ctx.projectDir, 'checkout --force main');
+      }
     });
 
     it('deploys only what changed between the feature branch and its target branch', async () => {
@@ -522,7 +534,9 @@ describe('hardis:project:deploy:smart against a real org', () => {
       // This class is really deployed, and the org is reused by the scenarios that follow and by
       // the next run. Left there, it is Apex no test covers, and it would drag the org-wide
       // coverage under the 75% gate every deployment then checks.
-      purgeNutApexClasses(ctx);
+      if (ctx) {
+        purgeNutApexClasses(ctx);
+      }
     });
 
     let firstDeployReport: any;

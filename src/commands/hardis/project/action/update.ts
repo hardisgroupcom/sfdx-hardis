@@ -8,18 +8,27 @@ import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { t } from '../../../../common/utils/i18n.js';
 import {
   ACTION_CONTEXTS,
+  ActionScope,
   ActionWhen,
   applyBranchFilterFlagsToAction,
+  assertNoFlagsOfOtherTypes,
   findActionById,
+  getActionSaveDetails,
+  getBuiltInActionProvider,
   listAvailableActionTypes,
   logActionSummary,
   readActions,
+  readPullRequestDescriptionActions,
   resolvePrId,
+  throwActionValidationErrors,
   validateActionParameters,
+  validateMovedFrom,
   writeActions,
 } from '../../../../common/utils/actionUtils.js';
+import { CONSTANTS } from '../../../../config/index.js';
 import { PrePostCommand } from '../../../../common/actionsProvider/actionsProvider.js';
 import { normalizePackageXmlItems } from '../../../../common/actionsProvider/removePackageXmlItemsAction.js';
+import { DEPLOYMENT_ONLY_ACTION_TYPES, resolveRunOnlyOnceByOrg } from '../../../../common/actionsProvider/actionTypes.js';
 import { getCustomFunctionById, isBuiltInActionType } from '../../../../common/utils/customFunctionUtils.js';
 import { castFunctionInputValues, parseFunctionInputFlags } from '../../../../common/utils/customFunctionFlagUtils.js';
 
@@ -37,6 +46,14 @@ export default class ActionUpdate extends ActionCommandBase {
 Allows modifying any field of an existing action, including changing its type (which requires providing new type-specific parameters). Only the fields you specify are updated; all other fields remain unchanged.
 
 The target branch restriction (\`includeTargetBranches\` / \`excludeTargetBranches\`) can also be changed here. The two lists are mutually exclusive: setting one clears the other. Pass an empty value to a flag to remove the restriction and run the action on every target branch again.
+
+### Fix an action that failed after its deployment
+
+When an action of a merged Pull Request fails because its definition is wrong, move it to a fix Pull Request with \`--move-to-pr\`: the action keeps its id, leaves the file of its original Pull Request, and is added to the file of the fix Pull Request (\`current\`, \`draft\` or a number) with \`movedFrom\` set to the original Pull Request number. Correct it there, then merge the fix Pull Request: the action runs from it, and the original Pull Request shows it as moved. An action declared in the description of the original Pull Request cannot be removed from it after the merge: it is copied, and its original version no longer runs.
+
+\`--moved-from\` sets or changes \`movedFrom\` by hand (\`0\` removes it).
+
+See [Recover a failed action](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-work-on-user-story-deployment-actions/#recover-a-failed-action).
 
 ### Agent Mode
 
@@ -56,13 +73,33 @@ Required in agent mode:
 
 - Reads the action list from the YAML config file, finds the action by ID, applies updates, validates, and writes back.
 - Changing \`--type\` clears old type-specific parameters and requires new ones.
+- \`--move-to-pr\` requires \`--scope pr\` and the number of the original Pull Request in \`--pr-id\`. When the action is not in its YAML file, it is read from the description of the Pull Request through the git provider API.
+- A \`run-batch\` action is updated with \`--class-name\`, \`--run-mode\`, \`--batch-size\`, \`--wait-timeout\` and \`--success-even-if-batch-errors\`. It only runs in the \`process-deployment-only\` context.
+- A \`user-access-policy\` action is updated with \`--policies\`, \`--activate\` and \`--apply-to-all\`. It is \`post-deploy\` only, and only runs in the \`process-deployment-only\` context. Changing an action to this type sets \`runOnlyOnceByOrg\` to false, unless \`--run-only-once-by-org\` is passed.
+- An \`agent-publish\` action is updated with \`--agent-name\`. It is \`post-deploy\` only, and only runs in the \`process-deployment-only\` context.
+- An \`agent-activate\` action is updated with \`--agent-name\`. It is \`post-deploy\` only, and only runs in the \`process-deployment-only\` context. Changing an action to this type sets \`runOnlyOnceByOrg\` to false, unless \`--run-only-once-by-org\` is passed.
+- An \`agent-running-user\` action is updated with \`--agent-name\`. It is \`pre-deploy\` only. Changing an action to this type sets \`runOnlyOnceByOrg\` to false, unless \`--run-only-once-by-org\` is passed.
+- A \`browser\` action is updated with \`--browser-setting\` and \`--browser-config\` (JSON, or the path of a .json file). Changing the setting without \`--browser-config\` removes the value of the previous setting. Changing an action to this type sets its context to \`all\`, unless \`--context\` is passed.
+- A \`manual\` action declared \`pre-deploy\` is always stored with the \`all\` context.
 </details>
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) course runs this command, click by click, on an org of your own:
+
+- [Lab 3.3 - Read the deployment log, and what .forceignore hides from it](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-3-deploy-to-integration-and-read-the-log/)
+
+<!-- training-links:end -->
 `;
 
   public static examples = [
     '$ sf hardis:project:action:update',
     '$ sf hardis:project:action:update --agent --scope branch --when pre-deploy --action-id abc-123 --label "New label" --context process-deployment-only',
     '$ sf hardis:project:action:update --agent --scope project --when post-deploy --action-id abc-123 --include-target-branches "uat,preprod"',
+    '$ sf hardis:project:action:update --agent --scope project --when post-deploy --action-id abc-123 --policies "Sales_Rep_Access,Sales_Manager_Access" --no-apply-to-all',
+    '$ sf hardis:project:action:update --agent --scope pr --pr-id 123 --when post-deploy --action-id abc-123 --move-to-pr current',
   ];
 
   public static flags: any = {
@@ -84,7 +121,7 @@ Required in agent mode:
       description: 'Pull request ID (for pr scope, defaults to draft)',
     }),
     type: Flags.string({
-      description: 'New type of action: a built-in type (command, data, apex, publish-community, manual, schedule-batch, remove-packagexml-items) or the id of a project custom function',
+      description: 'New type of action: a built-in type (command, data, apex, publish-community, manual, schedule-batch, run-batch, remove-packagexml-items, user-access-policy, browser, agent-publish, agent-activate, agent-running-user) or the id of a project custom function',
     }),
     label: Flags.string({
       description: 'New label for the action',
@@ -105,7 +142,7 @@ Required in agent mode:
       description: 'New manual instructions text (for manual type)',
     }),
     'class-name': Flags.string({
-      description: 'New Apex batch class name (for schedule-batch type)',
+      description: 'New Apex batch class name (for schedule-batch and run-batch types). Write a global class of a managed package with its namespace: ns.ClassName',
     }),
     'cron-expression': Flags.string({
       description: 'New cron expression (for schedule-batch type)',
@@ -113,12 +150,46 @@ Required in agent mode:
     'job-name': Flags.string({
       description: 'New job name for schedule-batch',
     }),
+    'run-mode': Flags.string({
+      options: ['wait', 'no-wait'],
+      description: 'For run-batch type: wait for the batch to succeed, or launch it without waiting for its result (default: wait)',
+    }),
+    'batch-size': Flags.integer({
+      description: 'Batch size for run-batch type (optional, 1 to 2000, defaults to 200)',
+    }),
+    'wait-timeout': Flags.integer({
+      description: 'Minutes to wait for the batch of a run-batch action in wait mode (optional, defaults to 60)',
+    }),
+    'success-even-if-batch-errors': Flags.boolean({
+      description: 'For run-batch type in wait mode: keep the action successful when the batch completes with errors',
+      allowNo: true,
+    }),
     'packagexml-items': Flags.string({
       description: 'New semicolon-separated list of package.xml items to remove, each in format TypeName:Member1,Member2 (for remove-packagexml-items type)',
+    }),
+    policies: Flags.string({
+      description: 'New comma-separated developer names of User Access Policies (for user-access-policy type)',
+    }),
+    activate: Flags.boolean({
+      allowNo: true,
+      description: 'For user-access-policy type: activate the policies after the deployment',
+    }),
+    'apply-to-all': Flags.boolean({
+      allowNo: true,
+      description: 'For user-access-policy type: also run Apply To All for each policy, with Browserforce',
+    }),
+    'agent-name': Flags.string({
+      description: 'New API name of the Agentforce agent (for agent-publish, agent-activate and agent-running-user types)',
     }),
     'new-when': Flags.string({
       options: ['pre-deploy', 'post-deploy'],
       description: 'Move the action to the other deployment phase. --when still says where to find it',
+    }),
+    'browser-setting': Flags.string({
+      description: 'For browser type: key of the Browserforce setting to apply. List them with sf hardis:project:action:types --type browser',
+    }),
+    'browser-config': Flags.string({
+      description: 'For browser type: value of the setting, as JSON or the path of a .json file. A secret or a value that differs per org can be read from a CI/CD variable: see the deployment actions documentation for the placeholder',
     }),
     'function-input': Flags.string({
       multiple: true,
@@ -145,6 +216,12 @@ Required in agent mode:
     'custom-username': Flags.string({
       description: 'Run action with a specific Salesforce username',
     }),
+    'moved-from': Flags.integer({
+      description: 'Number of the Pull Request the action was moved from (0 removes it)',
+    }),
+    'move-to-pr': Flags.string({
+      description: 'Move the action from the Pull Request of --pr-id to this Pull Request (a number, current or draft), keeping its id and setting movedFrom',
+    }),
     agent: Flags.boolean({
       default: false,
       description: 'Run in non-interactive mode for agents and automation',
@@ -170,6 +247,10 @@ Required in agent mode:
     // Resolve PR ID if scope is pr
     const resolvedPrId = scope === 'pr' ? await resolvePrId(this, flags['pr-id'], agentMode) : flags['pr-id'];
 
+    if (flags['move-to-pr']) {
+      return await this.moveToPullRequest(flags, agentMode, scope, when, resolvedPrId);
+    }
+
     // Read actions
     const actions = await readActions(scope, when, flags.branch, resolvedPrId);
     if (actions.length === 0) {
@@ -179,23 +260,36 @@ Required in agent mode:
     const actionId = await this.resolveActionId(flags, agentMode, actions, t('selectActionToUpdate'));
 
     const { action, index } = findActionById(actions, actionId);
+    // As it was: a type may skip a costly check of what the update did not change
+    const previousAction: PrePostCommand = structuredClone(action);
 
     // In interactive mode, prompt for each field with current value
     if (!agentMode && !isCI) {
-      await this.interactiveUpdate(action, flags);
+      await this.interactiveUpdate(action, flags, (flags['new-when'] as ActionWhen) || when);
     } else {
       await this.applyFlagUpdates(action, flags);
+    }
+    if (flags['moved-from'] !== undefined) {
+      action.movedFrom = flags['moved-from'] > 0 ? flags['moved-from'] : undefined;
     }
 
     // The action may be moved to the other phase: it is then removed from the list it was read
     // from and appended to the other one, instead of ending up in both.
     const targetWhen: ActionWhen = (flags['new-when'] as ActionWhen) || when;
     const isPhaseMove = targetWhen !== when;
+    // A manual step to do before the deployment is listed by the validation job whatever its
+    // context: store what it does, also when it becomes one through --type or --new-when
+    if (action.type === 'manual' && targetWhen === 'pre-deploy') {
+      action.context = 'all';
+    }
 
     // Validate against the phase the action ends up in, which --new-when may have changed
-    const validationErrors = await validateActionParameters(action, targetWhen);
+    const validationErrors = [
+      ...(await validateActionParameters(action, targetWhen, previousAction)),
+      ...validateMovedFrom(action, scope, resolvedPrId),
+    ];
     if (validationErrors.length > 0) {
-      throw new SfError(t('actionValidationErrors', { errors: validationErrors.join('\n') }));
+      await throwActionValidationErrors(action, validationErrors);
     }
 
     uxLog("action", this, c.cyan(t('savingDeploymentActions')));
@@ -217,23 +311,87 @@ Required in agent mode:
     logActionSummary(this, action);
     uxLog("log", this, c.grey(t('actionSavedToFile', { file: configFile })));
 
+    const typeDetails = await getActionSaveDetails(action);
+
     WebSocketClient.sendRefreshPipelineMessage();
 
-    return { outputString: 'Action updated', action: action as any, configFile, movedTo: isPhaseMove ? targetWhen : undefined };
+    return { outputString: 'Action updated', action: action as any, configFile, movedTo: isPhaseMove ? targetWhen : undefined, typeDetails };
   }
 
-  private async interactiveUpdate(action: PrePostCommand, _flags: any): Promise<void> {
+  /**
+   * Move an action of a merged Pull Request to a fix Pull Request, keeping its id and recording
+   * where it comes from, so the corrected definition runs from the fix Pull Request only.
+   */
+  private async moveToPullRequest(flags: any, agentMode: boolean, scope: ActionScope, when: ActionWhen, sourcePrId?: string): Promise<AnyJson> {
+    const sourcePrNumber = Number(sourcePrId);
+    if (scope !== 'pr' || !Number.isInteger(sourcePrNumber) || sourcePrNumber < 1) {
+      throw new SfError(t('actionMoveToPrNeedsSourcePr'));
+    }
+    const targetPrId = await resolvePrId(this, flags['move-to-pr'] === 'draft' ? undefined : flags['move-to-pr'], agentMode);
+    if (targetPrId === sourcePrId) {
+      throw new SfError(t('actionValidationMovedFromSamePr', { pr: sourcePrId }));
+    }
+    const sourceActions = await readActions('pr', when, undefined, sourcePrId);
+    // An action declared in the Pull Request description is not in the YAML file
+    const descriptionActions = await readPullRequestDescriptionActions(sourcePrNumber, when);
+    const candidates = [...sourceActions, ...descriptionActions.filter((d) => !sourceActions.some((a) => a.id === d.id))];
+    if (candidates.length === 0) {
+      throw new SfError(t('noActionsFound', { when, scope }));
+    }
+    const actionId = await this.resolveActionId(flags, agentMode, candidates, t('selectActionToUpdate'));
+    const { action } = findActionById(candidates, actionId);
+    const fromFile = sourceActions.some((a) => a.id === actionId);
+
+    // Remove it from the original file, then add it to the fix Pull Request file
+    const movedAction: PrePostCommand = { ...action, movedFrom: sourcePrNumber };
+    delete movedAction.pullRequest;
+    delete movedAction.when;
+    await this.applyFlagUpdates(movedAction, flags);
+    const validationErrors = [
+      ...(await validateActionParameters(movedAction, when, action)),
+      ...validateMovedFrom(movedAction, 'pr', targetPrId),
+    ];
+    if (validationErrors.length > 0) {
+      await throwActionValidationErrors(movedAction, validationErrors);
+    }
+    uxLog("action", this, c.cyan(t('savingDeploymentActions')));
+    if (fromFile) {
+      await writeActions('pr', when, sourceActions.filter((a) => a.id !== actionId), undefined, sourcePrId);
+    } else {
+      uxLog("warning", this, c.yellow(t('actionMovedFromDescription', { label: action.label, pr: sourcePrId })));
+    }
+    const targetActions = (await readActions('pr', when, undefined, targetPrId)).filter((a) => a.id !== actionId);
+    targetActions.push(movedAction);
+    const configFile = await writeActions('pr', when, targetActions, undefined, targetPrId);
+
+    uxLog("success", this, c.green(t('actionMovedToPr', { label: action.label, oldPr: sourcePrId, target: targetPrId ? `#${targetPrId}` : 'draft' })));
+    logActionSummary(this, movedAction);
+    uxLog("log", this, c.grey(t('actionSavedToFile', { file: configFile })));
+    WebSocketClient.sendRefreshPipelineMessage();
+    return { outputString: 'Action moved', action: movedAction as any, configFile, movedFrom: sourcePrNumber, movedToPr: targetPrId || 'draft' };
+  }
+
+  private async interactiveUpdate(action: PrePostCommand, _flags: any, targetWhen: ActionWhen): Promise<void> {
     const newLabel = await this.promptText(t('enterActionLabel'), action.label);
     if (newLabel) action.label = newLabel;
 
-    const newType = await this.promptSelect(t('selectActionType'), await listAvailableActionTypes(action.when), action.type);
-    if (newType && newType !== action.type) {
+    const newType = await this.promptSelect(t('selectActionType'), await listAvailableActionTypes(targetWhen), action.type);
+    const typeChanged = Boolean(newType && newType !== action.type);
+    if (typeChanged) {
       action.type = newType;
       action.parameters = {};
       action.command = '';
     }
 
-    if (action.type === 'command') {
+    // What is specific to a built-in type is in its provider class
+    const provider = await getBuiltInActionProvider(action.type);
+    // A new type proposes its default context
+    const typeDefaultContext = typeChanged ? provider?.getDefaultContext() : null;
+    if (typeDefaultContext) action.context = typeDefaultContext;
+    const providerParameters = await provider?.collectParameters({}, false, action.parameters);
+    if (providerParameters) {
+      action.parameters = providerParameters;
+    } else if (action.type === 'command') {
       const val = await this.promptText(t('enterCommand'), action.command || '');
       if (val) action.command = val;
     } else if (action.type === 'apex') {
@@ -271,8 +429,16 @@ Required in agent mode:
       action.parameters = await this.promptCustomFunctionInputs(definition, action.parameters || {});
     }
 
-    const newContext = await this.promptSelect(t('selectActionContext'), ACTION_CONTEXTS.map(ctx => ({ title: ctx, value: ctx })), action.context);
-    if (newContext) action.context = newContext;
+    if (DEPLOYMENT_ONLY_ACTION_TYPES.includes(action.type)) {
+      // These types only run in one context: there is nothing to ask
+      action.context = 'process-deployment-only';
+    } else if (action.type === 'manual' && targetWhen === 'pre-deploy') {
+      // Listed by the validation job whatever its context: nothing to ask either
+      action.context = 'all';
+    } else {
+      const newContext = await this.promptSelect(t('selectActionContext'), ACTION_CONTEXTS.map(ctx => ({ title: ctx, value: ctx })), action.context);
+      if (newContext) action.context = newContext;
+    }
 
     // Both keys are assigned, so switching the restriction mode clears the previous list
     const branchFilter = await this.promptTargetBranchFilter(action);
@@ -292,6 +458,7 @@ Required in agent mode:
 
   private async applyFlagUpdates(action: PrePostCommand, flags: any): Promise<void> {
     if (flags.label) action.label = flags.label;
+    const typeChanged = Boolean(flags.type && flags.type !== action.type);
     if (flags.type) {
       action.type = flags.type;
       action.parameters = {};
@@ -305,6 +472,15 @@ Required in agent mode:
     if (flags['class-name']) action.parameters = { ...action.parameters, className: flags['class-name'] };
     if (flags['cron-expression']) action.parameters = { ...action.parameters, cronExpression: flags['cron-expression'] };
     if (flags['job-name']) action.parameters = { ...action.parameters, jobName: flags['job-name'] };
+    await assertNoFlagsOfOtherTypes(action.type, flags);
+    // What is specific to a built-in type is in its provider class
+    const provider = await getBuiltInActionProvider(action.type);
+    if (provider) action.parameters = provider.applyFlags(action.parameters, flags);
+    // A new type takes its default context, unless one is passed: the same type keeps its context
+    const typeDefaultContext = typeChanged ? provider?.getDefaultContext() : null;
+    if (typeDefaultContext && !flags.context) action.context = typeDefaultContext;
+    // These types take their only context, unless one is passed and then validated
+    if (DEPLOYMENT_ONLY_ACTION_TYPES.includes(action.type) && !flags.context) action.context = 'process-deployment-only';
     if (flags['packagexml-items']) {
       action.parameters = {
         ...action.parameters,
@@ -314,6 +490,8 @@ Required in agent mode:
     if (flags.context) action.context = flags.context;
     applyBranchFilterFlagsToAction(action, flags['include-target-branches'], flags['exclude-target-branches']);
     if (flags['allow-failure'] !== undefined) action.allowFailure = flags['allow-failure'];
+    // A type may run at every deployment by default
+    if (flags.type && !resolveRunOnlyOnceByOrg({ type: flags.type })) action.runOnlyOnceByOrg = false;
     if (flags['run-only-once-by-org'] !== undefined) action.runOnlyOnceByOrg = flags['run-only-once-by-org'];
     if (action.type === 'remove-packagexml-items') action.runOnlyOnceByOrg = false;
     if (flags['custom-username']) action.customUsername = flags['custom-username'];

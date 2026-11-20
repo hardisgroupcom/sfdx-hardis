@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:mfa - Diagnose MFA configuration"
+description: "Audits the org's Multi-Factor Authentication (MFA) configuration and reports gaps that violate the Salesforce MFA requirement."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:mfa
 
@@ -61,20 +65,41 @@ Reference: [Salesforce MFA Requirement](https://help.salesforce.com/s/articleVie
 </details>
 
 
+## Screenshots
+
+![MFA audit of the Helios org: each setting to change in Setup, with the users and settings it affects](../../../assets/images/commands/org/diagnose/mfa.webp)
+
+_MFA audit of the Helios org: each setting to change in Setup, with the users and settings it affects_
+
+- **(1)** The verdict: some logins of the org are not covered by MFA
+- **(2)** One row per finding of the six MFA checks, with its recommendation
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### MFA configuration
+
+One row per finding of the six MFA checks, with its severity, details and recommendation, so you can see which gaps to close.
+
+Files: `mfa-config-*.csv`, `xls/mfa-config-*.xlsx`
+
+![MFA configuration report in Excel](../../../assets/images/commands/org/diagnose/mfa-report-mfa-config.webp)
+
 ## Parameters
 
 | Name                             |  Type   | Description                                                                                                                                                                                                          | Default | Required | Options |
 |:---------------------------------|:-------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent                            | boolean | Run in non-interactive mode for agents and automation                                                                                                                                                                |         |          |         |
 | debug<br/>-d                     | boolean | Activate debug mode (more logs)                                                                                                                                                                                      |         |          |         |
-| flags-dir                        | option  | undefined                                                                                                                                                                                                            |         |          |         |
+| flags-dir                        | option  | Import flag values from a directory.                                                                                                                                                                                 |         |          |         |
 | ignore-users                     | option  | Comma-separated list of usernames to exclude from MFA checks (merged with monitoringMfaIgnoreUsers config and MONITORING_MFA_IGNORE_USERS env var).                                                                  |         |          |         |
 | json                             | boolean | Format output as json.                                                                                                                                                                                               |         |          |         |
 | lookback-days                    | option  | Number of days back to scan LoginHistory for non-MFA direct UI logins. Overrides monitoringMfaLoginHistoryLookbackDays from config.                                                                                  |         |          |         |
 | phishing-resistant-lookback-days | option  | Number of days back to scan VerificationHistory for phishing-resistant MFA registration / usage per privileged user. Overrides monitoringMfaPhishingResistantLookbackDays from config (default: 180).                |         |          |         |
 | privileged-permissions           | option  | Comma-separated list of PermissionSet/Profile permission API names that define a privileged user. Defaults to PermissionsModifyAllData,PermissionsViewAllData,PermissionsCustomizeApplication,PermissionsAuthorApex. |         |          |         |
 | skipauth                         | boolean | Skip authentication check when a default username is required                                                                                                                                                        |         |          |         |
-| target-org<br/>-o                | option  | undefined                                                                                                                                                                                                            |         |          |         |
+| target-org<br/>-o                | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set.                                                                                                         |         |   true   |         |
 | websocket                        | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                                                            |         |          |         |
 
 ## Examples

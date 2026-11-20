@@ -1,3 +1,7 @@
+---
+title: "hardis:package:create - Create a new package"
+description: "Creates a new Salesforce package (either Managed or Unlocked) in your Dev Hub."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:package:create
 
@@ -40,20 +44,30 @@ Use `--agent` to disable all interactive prompts. Required flags in agent mode:
 All interactive prompts for package name, path, and type are skipped.
 
 
+## Screenshots
+
+![Choose an unlocked package, meant for internal use](../../assets/images/commands/package/create-1.webp)
+
+_Choose an unlocked package, meant for internal use_
+
+![The unlocked package Helios Core is created in the Dev Hub and its package id is printed](../../assets/images/commands/package/create.webp)
+
+_The unlocked package Helios Core is created in the Dev Hub and its package id is printed_
+
 ## Parameters
 
-| Name                  |  Type   | Description                                                         | Default | Required |       Options        |
-|:----------------------|:-------:|:--------------------------------------------------------------------|:-------:|:--------:|:--------------------:|
-| agent                 | boolean | Run in non-interactive mode for agents and automation               |         |          |                      |
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                                     |         |          |                      |
-| flags-dir             | option  | undefined                                                           |         |          |                      |
-| json                  | boolean | Format output as json.                                              |         |          |                      |
-| name<br/>-n           | option  | Package name (required in agent mode)                               |         |          |                      |
-| path                  | option  | Package source code path (required in agent mode)                   |         |          |                      |
-| skipauth              | boolean | Skip authentication check when a default username is required       |         |          |                      |
-| target-dev-hub<br/>-v | option  | undefined                                                           |         |          |                      |
-| type                  | option  | Package type: Managed or Unlocked (default: Unlocked in agent mode) |         |          | Managed<br/>Unlocked |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration           |         |          |                      |
+| Name                  |  Type   | Description                                                                                                       | Default | Required |       Options        |
+|:----------------------|:-------:|:------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:--------------------:|
+| agent                 | boolean | Run in non-interactive mode for agents and automation                                                             |         |          |                      |
+| debug<br/>-d          | boolean | Activate debug mode (more logs)                                                                                   |         |          |                      |
+| flags-dir             | option  | Import flag values from a directory.                                                                              |         |          |                      |
+| json                  | boolean | Format output as json.                                                                                            |         |          |                      |
+| name<br/>-n           | option  | Package name (required in agent mode)                                                                             |         |          |                      |
+| path                  | option  | Package source code path (required in agent mode)                                                                 |         |          |                      |
+| skipauth              | boolean | Skip authentication check when a default username is required                                                     |         |          |                      |
+| target-dev-hub<br/>-v | option  | Username or alias of the Dev Hub org. Not required if the `target-dev-hub` configuration variable is already set. |         |   true   |                      |
+| type                  | option  | Package type: Managed or Unlocked (default: Unlocked in agent mode)                                               |         |          | Managed<br/>Unlocked |
+| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                         |         |          |                      |
 
 ## Examples
 

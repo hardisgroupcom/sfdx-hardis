@@ -1,0 +1,38 @@
+{
+  "mode": "replace",
+  "title": "Cleaned files committed",
+  "rows": [
+    {
+      "Status": "modified",
+      "File": "force-app/main/default/flows/Installation_Assign_Crew.flow-meta.xml"
+    },
+    {
+      "Status": "modified",
+      "File": "force-app/main/default/flows/Installation_Close_Check.flow-meta.xml"
+    },
+    {
+      "Status": "modified",
+      "File": "force-app/main/default/profiles/Admin.profile-meta.xml"
+    },
+    {
+      "Status": "modified",
+      "File": "force-app/main/default/profiles/Standard.profile-meta.xml"
+    },
+    {
+      "Status": "modified",
+      "File": "force-app/main/default/profiles/ReadOnly.profile-meta.xml"
+    },
+    {
+      "Status": "modified",
+      "File": "force-app/main/default/profiles/Helios Crew.profile-meta.xml"
+    },
+    {
+      "Status": "modified",
+      "File": "force-app/main/default/permissionsets/Helios_Delivery_Crew.permissionset-meta.xml"
+    },
+    {
+      "Status": "modified",
+      "File": "force-app/main/default/permissionsets/Helios_Delivery_Manager.permissionset-meta.xml"
+    }
+  ]
+}

@@ -13,12 +13,21 @@ import { generateCsvFile, generateReportPath } from '../../../../common/utils/fi
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class DiagnoseAuditTrail extends SfCommand<any> {
   public static title = 'Diagnose content of Setup Audit Trail';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'audit-trail',
+      title: 'Setup audit trail',
+      description: 'One row per Setup Audit Trail action of the period, with its date, user, section and action, and the suspect ones flagged.',
+    },
+  ];
 
   public static description = `Export Audit trail into a CSV file with selected criteria, and highlight suspect actions
 
@@ -348,7 +357,7 @@ In agent mode, the audit trail report is generated without interactive prompts, 
       message: msg,
       suspectRecords: this.suspectRecords,
       suspectUsers: this.suspectUsers,
-      csvLogFile: this.outputFile,
+      csvLogFile: this.outputFilesRes?.csvFile ?? this.outputFile,
     };
   }
 

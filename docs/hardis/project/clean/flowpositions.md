@@ -1,3 +1,7 @@
+---
+title: "hardis:project:clean:flowpositions - Clean Flow Positions"
+description: "Replace all positions in Auto-Layout Flows by 0 to simplify conflicts management"
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:clean:flowpositions
 
@@ -52,6 +56,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The positions of the elements of the Auto-Layout Flows of the Helios project set to 0, to avoid merge conflicts](../../../assets/images/commands/project/clean/flowpositions.webp)
+
+_The positions of the elements of the Auto-Layout Flows of the Helios project set to 0, to avoid merge conflicts_
+
 ## Parameters
 
 | Name          |  Type   | Description                                                                |  Default  | Required | Options |
@@ -59,7 +69,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 | agent         | boolean | Run in non-interactive mode for agents and automation                      |           |          |         |
 | debug<br/>-d  | boolean | Activate debug mode (more logs)                                            |           |          |         |
 | files         | option  | Comma-separated list of Flow metadata files to clean, instead of all Flows |           |          |         |
-| flags-dir     | option  | undefined                                                                  |           |          |         |
+| flags-dir     | option  | Import flag values from a directory.                                       |           |          |         |
 | flows         | option  | Comma-separated list of Flow API names to clean, instead of all Flows      |           |          |         |
 | folder<br/>-f | option  | Root folder                                                                | force-app |          |         |
 | json          | boolean | Format output as json.                                                     |           |          |         |

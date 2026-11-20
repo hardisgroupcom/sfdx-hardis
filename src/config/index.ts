@@ -19,12 +19,12 @@ import * as yaml from 'js-yaml';
 import { parseDocument as parseYamlDocument } from 'yaml';
 import * as os from 'os';
 import * as path from 'path';
-import { getCurrentGitBranch, isCI, isGitRepo, uxLog } from '../common/utils/index.js';
+import { formatBranchForConfig, getCurrentGitBranch, isCI, isGitRepo, uxLog } from '../common/utils/index.js';
 import { prompts } from '../common/utils/prompts.js';
 import { t } from '../common/utils/i18n.js';
 
 const moduleName = 'sfdx-hardis';
-const projectConfigFiles = [
+export const projectConfigFiles = [
   'package.json',
   `.${moduleName}.yaml`,
   `.${moduleName}.yml`,
@@ -62,20 +62,25 @@ export const getBannerMarkdownAndLink = () => {
 export type PrCommentBannerKey =
   | 'validation-success'
   | 'validation-failure'
+  | 'validation-waiting'
   | 'deployment-success'
   | 'deployment-failure'
+  | 'deployment-action-failed'
   | 'actions-completed'
   | 'actions-pending'
   | 'actions-error';
 
-// Validation and deployment comments are only posted once completed, so they carry no pending
-// banner: their only statuses are success and failure. Only the deployment actions comment has a
-// pending state (manual actions still waiting to be performed).
+// Validation and deployment comments are only posted once completed. Besides success and failure,
+// each has one orange badge case: a validation stopped by manual actions not done yet (nothing was
+// simulated), and a deployment Salesforce accepted but whose post-deployment action failed. The
+// deployment actions comment has a pending state (manual actions still waiting to be performed).
 const PR_COMMENT_BANNERS: Record<PrCommentBannerKey, { file: string; altTextKey: string }> = {
   'validation-success': { file: 'pr-banner-validation-success.png', altTextKey: 'prBannerValidationSuccess' },
   'validation-failure': { file: 'pr-banner-validation-failure.png', altTextKey: 'prBannerValidationFailure' },
+  'validation-waiting': { file: 'pr-banner-validation-waiting.png', altTextKey: 'prBannerValidationWaiting' },
   'deployment-success': { file: 'pr-banner-deployment-success.png', altTextKey: 'prBannerDeploymentSuccess' },
   'deployment-failure': { file: 'pr-banner-deployment-failure.png', altTextKey: 'prBannerDeploymentFailure' },
+  'deployment-action-failed': { file: 'pr-banner-deployment-action-failed.png', altTextKey: 'prBannerDeploymentActionFailed' },
   'actions-completed': { file: 'pr-banner-actions-completed.png', altTextKey: 'prBannerActionsCompleted' },
   'actions-pending': { file: 'pr-banner-actions-pending.png', altTextKey: 'prBannerActionsPending' },
   'actions-error': { file: 'pr-banner-actions-error.png', altTextKey: 'prBannerActionsError' },
@@ -99,11 +104,11 @@ export const getPrCommentBannerMarkdown = (bannerKey: PrCommentBannerKey | null 
   return `![${altText || t(banner.altTextKey)}](${CONSTANTS.PR_COMMENT_BANNER_BASE_URL}${banner.file})\n\n`;
 }
 
-async function getBranchConfigFiles() {
+async function getBranchConfigFiles(branch?: string) {
   if (!isGitRepo()) {
     return [];
   }
-  const gitBranchFormatted = process.env.CONFIG_BRANCH || (await getCurrentGitBranch({ formatted: true }));
+  const gitBranchFormatted = branch ? formatBranchForConfig(branch) : process.env.CONFIG_BRANCH || (await getCurrentGitBranch({ formatted: true }));
   const branchConfigFiles = [
     `config/branches/.${moduleName}.${gitBranchFormatted}.yaml`,
     `config/branches/.${moduleName}.${gitBranchFormatted}.yml`,
@@ -113,24 +118,32 @@ async function getBranchConfigFiles() {
 
 const promptTemplateCache: Record<string, any> = {};
 
-export const getConfig = async (layer: "project" | "branch" | "user" = 'user', options: { cache: boolean } = { cache: false }): Promise<any> => {
-  if (options.cache && promptTemplateCache[layer]) {
+// options.branch: the config of that branch instead of the current one, never cached, so cached readers keep the job's
+export const getConfig = async (layer: "project" | "branch" | "user" = 'user', options: { cache?: boolean; branch?: string } = { cache: false }): Promise<any> => {
+  const writeCache = !options.branch;
+  if (options.cache && writeCache && promptTemplateCache[layer]) {
     return promptTemplateCache[layer];
   }
   const defaultConfig = await loadFromConfigFile(projectConfigFiles);
   if (layer === 'project') {
-    promptTemplateCache['project'] = defaultConfig;
+    if (writeCache) {
+      promptTemplateCache['project'] = defaultConfig;
+    }
     return defaultConfig;
   }
-  let branchConfig = await loadFromConfigFile(await getBranchConfigFiles());
+  let branchConfig = await loadFromConfigFile(await getBranchConfigFiles(options.branch));
   branchConfig = Object.assign(defaultConfig, branchConfig);
   if (layer === 'branch') {
-    promptTemplateCache['branch'] = branchConfig;
+    if (writeCache) {
+      promptTemplateCache['branch'] = branchConfig;
+    }
     return branchConfig;
   }
   let userConfig = await loadFromConfigFile(userConfigFiles);
   userConfig = Object.assign(branchConfig, userConfig);
-  promptTemplateCache['user'] = userConfig;
+  if (writeCache) {
+    promptTemplateCache['user'] = userConfig;
+  }
   return userConfig;
 };
 
@@ -185,7 +198,8 @@ async function loadFromConfigFile(searchPlaces: string[]): Promise<any> {
     let config = configExplorer != null ? configExplorer.config : {};
     if (config.extends) {
       const remoteConfig = await loadFromRemoteConfigFile(config.extends);
-      config = Object.assign(remoteConfig, config);
+      // A copy: the remote config is cached for the process, and getConfig merges the other layers into this object
+      config = Object.assign({}, remoteConfig, config);
     }
     // A shallow copy: getConfig merges the layers into the object it gets back, and what is
     // memorized here must not collect the keys of the layers above it

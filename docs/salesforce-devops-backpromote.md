@@ -16,6 +16,7 @@ A **backpromote** deploys into your sandbox what the team merged since your last
 
 ## When to backpromote
 
+- **When the [development orgs list](salesforce-devops-dev-orgs.md) says your org misses Pull Requests**: the DevOps Pipeline shows the count under its target branch.
 - **Before starting a User Story**, so that you work on the latest version of the parent branch. [New User Story](salesforce-devops-create-new-user-story.md) no longer updates the metadata of an existing sandbox: backpromote does.
 - **During a long User Story**, when a teammate merged something you need.
 - **After a sandbox refresh**, to bring the refreshed sandbox up to date with the parent branch.
@@ -252,8 +253,8 @@ A refreshed sandbox keeps its name but gets a new org id. Its old rows are histo
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) course does this, click by click, on an org of your own:
 
-- [Lab 2.1 - Backpromote: catch your org up with the team](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-1-backpromote-your-teammates-work/)
+- [Lab 2.1 - Backpromote: catch your dev org up with the team](https://sfdx-hardis-training.cloudity.com/en/level-2-contributor-advanced/2-1-backpromote-your-teammates-work/)
 
 <!-- training-links:end -->

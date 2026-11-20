@@ -1,0 +1,11 @@
+command: hardis:misc:purge-references
+run: sf hardis:misc:purge-references
+org: none
+caption: Every reference to the Crew_Size__c field is removed from the project sources before deleting it
+answers:
+  - q: Please input a comma-separated list of strings you want to purge
+    value: Crew_Size__c
+    shot: true
+    caption: Give the field, class or object to remove from the sources
+  - q: Are your local sources up to date
+    choice: ^Yes

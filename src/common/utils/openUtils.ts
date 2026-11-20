@@ -47,8 +47,13 @@ export function buildLauncher(target: string, platform: NodeJS.Platform = proces
 /**
  * Opens a URL or a file path with the default application.
  * Rejects only when the launcher itself cannot be spawned.
+ * Does nothing when NO_OPEN is "true": the unit tests set it, so they never open a report
+ * or a browser on the desktop of the person running them.
  */
 export async function open(target: string, options: OpenOptions = {}): Promise<void> {
+  if (process.env.NO_OPEN === 'true') {
+    return;
+  }
   const { command, args } = buildLauncher(target);
   await new Promise<void>((resolve, reject) => {
     const child = spawn(command, args, {

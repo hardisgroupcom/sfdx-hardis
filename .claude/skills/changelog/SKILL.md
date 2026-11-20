@@ -1,6 +1,6 @@
 ---
 name: changelog
-description: Style rules for updating CHANGELOG.md entries. Use whenever the user asks to update, add to, or write entries in CHANGELOG.md.
+description: Style rules for CHANGELOG.md entries, and how the beta section is organized (headlines of the major features first, then one group per command or feature, groups ordered by theme). Load it before any edit of CHANGELOG.md - when the user asks to update, add to, or write entries, and at the changelog step of the implement skill and agent.
 user-invocable: false
 ---
 
@@ -22,6 +22,60 @@ CHANGELOG.md entries are read by **end users** (Salesforce admins, devs, ops) de
 - **Group with bullets, never with a header.** The command link is a top-level bullet and its changes are nested bullets under it. Never open a `###` (or any other) header for a command, however many changes it has.
 - **Add entries under `## [beta] (main)`** at the top of the file. Do not create version sections - releases set those.
 - **Sibling repositories have their own changelog, and a change made there from here updates it.** `../vscode-sfdx-hardis/CHANGELOG.md` takes its entries under `## Unreleased`. `../sfdx-hardis-training/CHANGELOG.md` has no versions and no `## Unreleased`: an entry goes under the `## YYYY-MM-DD` heading of the day it is written, and when that heading does not exist yet, it is added at the top. Always in the Pull Request of that repository, with the same style rules.
+
+## Organize the beta section
+
+The beta section is read as a whole at release time. Adding an entry means leaving the whole section organized, not appending a line at the top.
+
+1. **Read the whole `## [beta] (main)` section before writing.**
+2. **One group per command or feature.** Apply the grouping rules above to the section as it is, not only to your entry: when two top-level lines already link the same command or the same feature, merge them into one group in the same edit, even if you did not write them.
+3. **Order the groups by theme**, in this order. Inside a theme, keep the groups that go together next to each other, and put the newest change of a group first.
+
+   | # | Theme                    | What goes there                                                                                                              |
+   |---|--------------------------|------------------------------------------------------------------------------------------------------------------------------|
+   | 0 | Headlines                | The major features of the coming release, see below                                                                          |
+   | 1 | New commands             | Lines starting with `New [hardis:...]`                                                                                       |
+   | 2 | CI/CD pipeline           | `hardis:project:deploy:*`, `hardis:work:*`, Pull Request comments, deployment actions, promotion branches, backpromote, DORA |
+   | 3 | Org monitoring           | `hardis:org:monitor:*`, `hardis:org:diagnose:*`, `hardis:org:configure:monitoring`, notifications, Grafana                   |
+   | 4 | Documentation generation | `hardis:doc:*`                                                                                                               |
+   | 5 | Other commands           | Every other command, sorted by command name                                                                                  |
+   | 6 | Integrations             | Lines starting with a provider name: `GitHub:`, `GitLab:`, `Azure DevOps:`, `Bitbucket:`, `Jira:`, `ServiceNow:`...          |
+   | 7 | Doc site and others      | Lines starting with `Doc:`, dependencies, internal changes worth a line                                                      |
+
+4. **Headlines come first.** The few major features of the coming release (usually one to three, a new feature with its own doc page rather than a fix or an option) open the section, each as one group:
+   - The top-level bullet is the feature name in bold, its doc link, then one short sentence on what the user gets: `- **Scratch org snapshots** ([doc](https://sfdx-hardis.cloudity.com/...)), off by default: <what it does for the user>.`
+   - Every change of that feature goes under it as a nested bullet, one line each, whatever command it touches (a new command, a new env var, a new deployment action type...): a command or an action type that belongs to a headline is not repeated lower in the section.
+   - When a change makes a feature a headline (a new feature with its own doc page, or the user names it), turn its existing group into a headline and move it up. When the user names the headlines, follow their choice and their order.
+   - Only the headlines are in bold at top level. The other groups keep the plain style.
+
+   Example of a beta section with two headlines:
+
+   ```markdown
+   ## [beta] (main)
+
+   - **Browserforce** ([doc](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions-browser/)): apply the Setup settings the Metadata API cannot deploy, with your Pull Request.
+     - New [Browser](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions-browser/) deployment action type.
+     - Both types can also be [org initialization steps](https://sfdx-hardis.cloudity.com/salesforce-devops-org-initialization/).
+   - **Development orgs list** ([doc](https://sfdx-hardis.cloudity.com/salesforce-devops-dev-orgs/)): see which dev sandboxes and scratch orgs miss merged Pull Requests.
+   - New [hardis:project:action:types](https://sfdx-hardis.cloudity.com/hardis/project/action/types/): <change>.
+   - [hardis:doc:plugin:generate](https://sfdx-hardis.cloudity.com/hardis/doc/plugin/generate/): <change>.
+   ```
+
+5. **Trim long entries when you reorganize.** A group whose lines run into paragraphs (several sentences, env vars and implementation details) is rewritten as one line for the feature and one short line per change. What only explains how it works goes to the doc page, not the changelog.
+6. **The themes are an order, not headers.** Never write a theme name in the file: the section stays a flat list of top-level bullets, with nested bullets only for the changes of a group.
+7. **Only the beta section is reorganized.** Never touch a released version section.
+
+Example of a beta section after three Pull Requests on the same command and one on another:
+
+```markdown
+## [beta] (main)
+
+- [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/):
+  - <newest change>.
+  - <older change>.
+  - <oldest change>.
+- [hardis:mdapi:read](https://sfdx-hardis.cloudity.com/hardis/mdapi/read/): <change>.
+```
 
 ## Pattern
 

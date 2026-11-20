@@ -1,3 +1,7 @@
+---
+title: "hardis:org:data:delete - Delete data"
+description: "Deletes records in multiple Salesforce objects using an SFDMU (Salesforce Data Migration Utility) workspace."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:data:delete
 
@@ -21,7 +25,7 @@ Before anything is deleted, the command displays a summary of the objects handle
 If you intend to run this command in a production environment, you must:
 
 - Set `runnableInProduction` to `true` in your `export.json` file within the SFDMU workspace.
-- Define `sfdmuCanModify: YOUR_INSTANCE_URL` in your branch-specific configuration file (e.g., `config/branches/.sfdx-hardis.YOUR_BRANCH.yml`) to explicitly authorize data modification for that instance.
+- Confirm the modification of the production org when the command asks for it, or, in CI or with `--no-prompt`, define `sfdmuCanModify: YOUR_INSTANCE_URL` in your branch-specific configuration file (e.g., `config/branches/.sfdx-hardis.YOUR_BRANCH.yml`) (or the `SFDMU_CAN_MODIFY` environment variable) to explicitly authorize data modification for that instance.
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/p4E2DUGZ3bs" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
@@ -49,18 +53,32 @@ Use `--agent` to disable all prompts. Typical usage:
 - The workspace content is still displayed, but its confirmation prompt is skipped.
 
 
+## Screenshots
+
+![Pick the data workspace whose records are deleted](../../../assets/images/commands/org/data/delete-1.webp)
+
+_Pick the data workspace whose records are deleted_
+
+![The last confirmation names the org and the data workspace before anything is deleted](../../../assets/images/commands/org/data/delete-2.webp)
+
+_The last confirmation names the org and the data workspace before anything is deleted_
+
+![The panel batches of the scheduled installations deleted from a scratch org, with a data workspace made for deletion](../../../assets/images/commands/org/data/delete.webp)
+
+_The panel batches of the scheduled installations deleted from a scratch org, with a data workspace made for deletion_
+
 ## Parameters
 
-| Name              |  Type   | Description                                                   | Default | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir         | option  | undefined                                                     |         |          |         |
-| json              | boolean | Format output as json.                                        |         |          |         |
-| path<br/>-p       | option  | Path to the sfdmu workspace folder                            |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-org<br/>-o | option  | undefined                                                     |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+| Name              |  Type   | Description                                                                                                  | Default | Required | Options |
+|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                                         |         |          |         |
+| json              | boolean | Format output as json.                                                                                       |         |          |         |
+| path<br/>-p       | option  | Path to the sfdmu workspace folder                                                                           |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

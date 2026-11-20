@@ -1,0 +1,61 @@
+{
+  "command": "hardis:git:artifacts:download",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Downloading the artifacts of job https://github.com/helios-energy/salesforce/actions/runs/9412758031..."
+      }
+    },
+    {
+      "delay": 2200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "9 file(s) extracted in hardis-report/job-artifacts/github-run-9412758031"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "table",
+        "message": "[{\"file\":\"apex-coverage-results.json\",\"sizeKb\":13},{\"file\":\"coverage/coverage-summary.json\",\"sizeKb\":2},{\"file\":\"coverage/coverage.json\",\"sizeKb\":6},{\"file\":\"deploy-result-calculated-package-xml.json\",\"sizeKb\":47},{\"file\":\"deployment-components.csv\",\"sizeKb\":3},{\"file\":\"junit/junit.xml\",\"sizeKb\":7},{\"file\":\"test-result-0AfHE00000Q1HelAAA.json\",\"sizeKb\":38},{\"file\":\"test-result-codecoverage.json\",\"sizeKb\":10},{\"file\":\"xls/deployment-components.xlsx\",\"sizeKb\":10}]"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/job-artifacts-files-features__HEL-42-installation-checklist.csv",
+        "title": "job-artifacts-files (CSV)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 60,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/xls/job-artifacts-files-features__HEL-42-installation-checklist.xlsx",
+        "title": "job-artifacts-files (XLSX)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

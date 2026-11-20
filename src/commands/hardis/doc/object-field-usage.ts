@@ -1,4 +1,3 @@
-import path from 'path';
 import { Flags, SfCommand, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { AnyJson } from '@salesforce/ts-types';
 import { Connection, Messages } from '@salesforce/core';
@@ -12,6 +11,7 @@ import { WebSocketClient } from '../../../common/websocketClient.js';
 import { listOrgSObjects } from '../../../common/utils/orgUtils.js';
 import { isManagedApiName } from '../../../common/utils/projectUtils.js';
 import { t } from '../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../common/docBuilder/commandScreenshots.js';
 
 type FieldUsageRow = {
   sObjectName: string;
@@ -79,6 +79,14 @@ In agent mode:
 - The \`Object:Field1,Field2\` syntax can be used to restrict the analysis to specific fields, with an optional \`(WITH_SUM)\` modifier per numeric field.
 - The API usage confirmation prompt is skipped (proceeds automatically).
 `;
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'object-field-usage',
+      title: 'Field usage',
+      description: 'One Excel workbook with a sheet per analyzed object (one row per field, with its record count and fill rate), a summary sheet and the fields that could not be analyzed; each sheet is also written as a CSV file.',
+    },
+  ];
 
   public static examples = [
     '$ sf hardis:doc:object-field-usage',
@@ -677,7 +685,7 @@ In agent mode:
     reportName: string,
     fileTitle: string,
     includeSum = false
-  ): Promise<string> {
+  ): Promise<string | undefined> {
     const csvPath = await generateReportPath(reportName, '', { withDate: true });
     const csvData = rows.map((row) => {
       const csvRow: Record<string, any> = {
@@ -694,12 +702,13 @@ In agent mode:
       }
       return csvRow;
     });
-    await generateCsvFile(csvData, csvPath, {
+    // The path written: another name when the usual file is open in Excel, none when writing failed
+    const result = await generateCsvFile(csvData, csvPath, {
       fileTitle,
       noExcel: true,
       skipNotifyToWebSocket: true,
     });
-    return csvPath;
+    return result.csvFile;
   }
 
   // True for the parent of a compound field (Address or Geolocation). Such fields can't be
@@ -1032,8 +1041,10 @@ In agent mode:
         `Field usage - ${context.sObjectName}`,
         includeSumColumn
       );
-      csvFilesForXlsx.push(csvPath);
-      reportFiles.push({ type: 'csv', file: csvPath });
+      if (csvPath) {
+        csvFilesForXlsx.push(csvPath);
+        reportFiles.push({ type: 'csv', file: csvPath });
+      }
     }
 
     if (aggregatedRows.length > 0) {
@@ -1043,8 +1054,10 @@ In agent mode:
         'Object field usage summary',
         includeSumColumn
       );
-      csvFilesForXlsx.unshift(summaryCsv);
-      reportFiles.push({ type: 'csv', file: summaryCsv });
+      if (summaryCsv) {
+        csvFilesForXlsx.unshift(summaryCsv);
+        reportFiles.push({ type: 'csv', file: summaryCsv });
+      }
     }
 
     if (aggregatedSkipped.length > 0) {
@@ -1053,25 +1066,25 @@ In agent mode:
         this,
         c.yellow(t('fieldsSkippedAcrossObjects', { count: aggregatedSkipped.length }))
       );
-      const skippedCsv = await generateReportPath('object-field-usage-skipped-fields', '', { withDate: true });
-      await generateCsvFile(aggregatedSkipped, skippedCsv, {
+      const skippedCsvPath = await generateReportPath('object-field-usage-skipped-fields', '', { withDate: true });
+      const skippedResult = await generateCsvFile(aggregatedSkipped, skippedCsvPath, {
         fileTitle: 'Object field usage - skipped fields',
         noExcel: true,
       });
-      csvFilesForXlsx.push(skippedCsv);
-      reportFiles.push({ type: 'csv', file: skippedCsv });
+      const skippedCsv: string | undefined = skippedResult.csvFile;
+      if (skippedCsv) {
+        csvFilesForXlsx.push(skippedCsv);
+        reportFiles.push({ type: 'csv', file: skippedCsv });
+      }
     }
 
     if (csvFilesForXlsx.length > 0) {
       const consolidatedBase = await generateReportPath('object-field-usage', '', { withDate: true });
       uxLog("action", this, c.cyan(t('generatingConsolidatedXlsxReport')));
-      await createXlsxFromCsvFiles(csvFilesForXlsx, consolidatedBase, { fileTitle: 'Object field usage (all)' });
-      const consolidatedXlsx = path.join(
-        path.dirname(consolidatedBase),
-        'xls',
-        path.basename(consolidatedBase).replace('.csv', '.xlsx')
-      );
-      reportFiles.push({ type: 'xlsx', file: consolidatedXlsx });
+      const consolidatedXlsx = await createXlsxFromCsvFiles(csvFilesForXlsx, consolidatedBase, { fileTitle: 'Object field usage (all)', mainReport: true });
+      if (consolidatedXlsx) {
+        reportFiles.push({ type: 'xlsx', file: consolidatedXlsx });
+      }
     }
 
     uxLog("action", this, c.cyan(t('summary')));

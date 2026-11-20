@@ -1,3 +1,7 @@
+---
+title: "hardis:datacloud:sql-query - Execute a SQL query on Data Cloud"
+description: "Executes a SQL query against Salesforce Data Cloud and exports the results."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:datacloud:sql-query
 
@@ -45,19 +49,39 @@ In agent mode:
 - The save-query prompt is skipped.
 
 
+## Screenshots
+
+![The SQL query runs on Data Cloud and the 10 latest Helios accounts are exported to CSV and Excel](../../assets/images/commands/datacloud/sql-query.webp)
+
+_The SQL query runs on Data Cloud and the 10 latest Helios accounts are exported to CSV and Excel_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### SQL query results
+
+One row per record returned by the SQL query run on Data Cloud, with one column per selected field.
+
+Files: `datacloud-sql-query-*.csv`, `xls/datacloud-sql-query-*.xlsx`
+
+![SQL query results report in Excel](../../assets/images/commands/datacloud/sql-query-report-datacloud-sql-query.webp)
+
 ## Parameters
 
-| Name              |  Type   | Description                                                       | Default | Required | Options |
-|:------------------|:-------:|:------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation             |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                   |         |          |         |
-| flags-dir         | option  | undefined                                                         |         |          |         |
-| json              | boolean | Format output as json.                                            |         |          |         |
-| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv |         |          |         |
-| query<br/>-q      | option  | Data Cloud query string                                           |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required     |         |          |         |
-| target-org<br/>-o | option  | undefined                                                         |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |         |          |         |
+| Name              |  Type   | Description                                                                                                  | Default | Required | Options |
+|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                                         |         |          |         |
+| json              | boolean | Format output as json.                                                                                       |         |          |         |
+| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                                            |         |          |         |
+| query<br/>-q      | option  | Data Cloud query string                                                                                      |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

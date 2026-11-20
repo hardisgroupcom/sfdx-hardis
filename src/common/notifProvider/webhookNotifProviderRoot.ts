@@ -3,7 +3,7 @@ import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { getCurrentGitBranch, uxLog } from "../utils/index.js";
 import type { NotifMessage } from "./types.js";
 import { getEnvVar } from "../../config/index.js";
-import { applyMessageSizeGuard, SizeGuardLimits } from "./messageSizeGuard.js";
+import { applyMessageSizeGuard, SizeGuardLimits } from "./utils/messageSizeGuard.js";
 
 const ERROR_SEVERITIES = ["critical", "error", "warning"];
 

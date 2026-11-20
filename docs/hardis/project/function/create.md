@@ -1,3 +1,7 @@
+---
+title: "hardis:project:function:create - Create custom function"
+description: "Declares a custom function: a script that becomes a deployment action type of your project."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:function:create
 
@@ -23,7 +27,7 @@ Every value arrives as an environment variable:
 
 When the function declares outputs, the **last non-empty line of stdout must be a JSON object** holding them. Everything printed before it is ordinary logging, kept as the action output.
 
-Outputs are consumable by any later action of the run with `${{ actions.<actionId>.outputs.<name> }}`, and are displayed in the job log, the Pull Request comment and the deployment notification.
+Outputs are consumable by any later action of the run through an `actions.<actionId>.outputs.<name>` placeholder, and are displayed in the job log, the Pull Request comment and the deployment notification. See the custom functions documentation for the exact placeholder syntax.
 
 ### Secrets
 
@@ -54,25 +58,39 @@ The `--outputs` syntax is `name[:type]`, entries separated by `;`.
 </details>
 
 
+## Screenshots
+
+![The id of the function is the type of the deployment actions that use it](../../../assets/images/commands/project/function/create-1.webp)
+
+_The id of the function is the type of the deployment actions that use it_
+
+![Pick the runtime of the script](../../../assets/images/commands/project/function/create-2.webp)
+
+_Pick the runtime of the script_
+
+![A custom function that posts a message to the crew channel becomes a new deployment action type](../../../assets/images/commands/project/function/create.webp)
+
+_A custom function that posts a message to the crew channel becomes a new deployment action type_
+
 ## Parameters
 
-| Name             |  Type   | Description                                                                             | Default | Required | Options |
-|:-----------------|:-------:|:----------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent            | boolean | Run in non-interactive mode for agents and automation                                   |         |          |         |
-| allowed-contexts | option  | Comma-separated execution contexts the function may be used with (default: all of them) |         |          |         |
-| debug<br/>-d     | boolean | Activate debug mode (more logs)                                                         |         |          |         |
-| description      | option  | Description of what the function does                                                   |         |          |         |
-| flags-dir        | option  | undefined                                                                               |         |          |         |
-| id               | option  | Function id, used as the deployment action type (ex: notifySlack)                       |         |          |         |
-|inputs|option|Input contract: "name[:type][:required][|opt1,opt2][=default]" entries separated by ";"||||
-|json|boolean|Format output as json.||||
-|label|option|Human-readable label for the function||||
-|outputs|option|Output contract: "name[:type]" entries separated by ";"||||
-|runtime|option|Script runtime: node, python or bash|||node<br/>python<br/>bash|
-|script|option|Path to the script file, relative to the repository root||||
-|timeout|option|Maximum duration of a run, in seconds (default: 600)||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
-|when|option|Restrict the function to one deployment phase (default: both)|||pre-deploy<br/>post-deploy|
+| Name             |  Type   | Description                                                                              | Default | Required |          Options           |
+|:-----------------|:-------:|:-----------------------------------------------------------------------------------------|:-------:|:--------:|:--------------------------:|
+| agent            | boolean | Run in non-interactive mode for agents and automation                                    |         |          |                            |
+| allowed-contexts | option  | Comma-separated execution contexts the function may be used with (default: all of them)  |         |          |                            |
+| debug<br/>-d     | boolean | Activate debug mode (more logs)                                                          |         |          |                            |
+| description      | option  | Description of what the function does                                                    |         |          |                            |
+| flags-dir        | option  | Import flag values from a directory.                                                     |         |          |                            |
+| id               | option  | Function id, used as the deployment action type (ex: notifySlack)                        |         |          |                            |
+| inputs           | option  | Input contract: "name[:type][:required][\|opt1,opt2][=default]" entries separated by ";" |         |          |                            |
+| json             | boolean | Format output as json.                                                                   |         |          |                            |
+| label            | option  | Human-readable label for the function                                                    |         |          |                            |
+| outputs          | option  | Output contract: "name[:type]" entries separated by ";"                                  |         |          |                            |
+| runtime          | option  | Script runtime: node, python or bash                                                     |         |          |  node<br/>python<br/>bash  |
+| script           | option  | Path to the script file, relative to the repository root                                 |         |          |                            |
+| timeout          | option  | Maximum duration of a run, in seconds (default: 600)                                     |         |          |                            |
+| websocket        | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                |         |          |                            |
+| when             | option  | Restrict the function to one deployment phase (default: both)                            |         |          | pre-deploy<br/>post-deploy |
 
 ## Examples
 

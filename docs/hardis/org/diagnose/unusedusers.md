@@ -1,3 +1,7 @@
+---
+title: "hardis:org:diagnose:unusedusers - Detect unused Users in Salesforce"
+description: "Detects and reports on inactive or unused Salesforce user accounts, helping to optimize license usage and enhance security."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:unusedusers
 
@@ -53,6 +57,36 @@ In agent mode:
 - To target all license types, pass `--licensetypes all`.
 - All interactive prompts are skipped.
 
+## Screenshots
+
+![Pick the period without login](../../../assets/images/commands/org/diagnose/unusedusers-1.webp)
+
+_Pick the period without login_
+
+![Active users who did not log in for 6 months, to free their licenses](../../../assets/images/commands/org/diagnose/unusedusers.webp)
+
+_Active users who did not log in for 6 months, to free their licenses_
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Unused users
+
+One row per active user who has not logged in for the chosen number of days, with the last login date, profile and license; the file name continues with the period, for example unused-users-last-180-days.
+
+Files: `unused-users-*.csv`, `xls/unused-users-*.xlsx`
+
+![Unused users report in Excel](../../../assets/images/commands/org/diagnose/unusedusers-report-unused-users-.webp)
+
+### Active users
+
+One row per active user who logged in during the chosen period, written instead of the unused users report when the command runs with --returnactiveusers.
+
+Files: `active-users-*.csv`, `xls/active-users-*.xlsx`
+
+![Active users report in Excel](../../../assets/images/commands/org/diagnose/unusedusers-report-active-users-.webp)
+
 ## Parameters
 
 | Name                      |  Type   | Description                                                                                                                                                                                                                          | Default | Required |                    Options                    |
@@ -60,14 +94,14 @@ In agent mode:
 | agent                     | boolean | Run in non-interactive mode for agents and automation                                                                                                                                                                                |         |          |                                               |
 | days<br/>-t               | option  | Extracts the users that have been inactive for the amount of days specified. In CI, default is 180 days                                                                                                                              |         |          |                                               |
 | debug<br/>-d              | boolean | Activate debug mode (more logs)                                                                                                                                                                                                      |         |          |                                               |
-| flags-dir                 | option  | undefined                                                                                                                                                                                                                            |         |          |                                               |
+| flags-dir                 | option  | Import flag values from a directory.                                                                                                                                                                                                 |         |          |                                               |
 | json                      | boolean | Format output as json.                                                                                                                                                                                                               |         |          |                                               |
 | licenseidentifiers<br/>-i | option  | Comma-separated list of license identifiers, in case licensetypes is not used.. Identifiers available at https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta/object_reference/sforce_api_objects_userlicense.htm |         |          |                                               |
 | licensetypes<br/>-l       | option  | Type of licenses to check. If set, do not use licenseidentifiers option. In CI, default is all-crm                                                                                                                                   |         |          | all<br/>all-crm<br/>all-paying<br/>experience |
 | outputfile<br/>-f         | option  | Force the path and name of output report file. Must end with .csv                                                                                                                                                                    |         |          |                                               |
 | returnactiveusers         | boolean | Inverts the command by returning the active users                                                                                                                                                                                    |         |          |                                               |
 | skipauth                  | boolean | Skip authentication check when a default username is required                                                                                                                                                                        |         |          |                                               |
-| target-org<br/>-o         | option  | undefined                                                                                                                                                                                                                            |         |          |                                               |
+| target-org<br/>-o         | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set.                                                                                                                         |         |   true   |                                               |
 | websocket                 | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                                                                            |         |          |                                               |
 
 ## Examples

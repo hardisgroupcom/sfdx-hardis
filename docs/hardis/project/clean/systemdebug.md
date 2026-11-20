@@ -1,3 +1,7 @@
+---
+title: "hardis:project:clean:systemdebug - Clean System debug"
+description: "Removes or comments out System.debug() statements from Apex classes and triggers in your Salesforce DX project."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:clean:systemdebug
 
@@ -45,13 +49,19 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The System.debug lines of the Apex classes and triggers of the Helios project commented out](../../../assets/images/commands/project/clean/systemdebug.webp)
+
+_The System.debug lines of the Apex classes and triggers of the Helios project commented out_
+
 ## Parameters
 
 | Name          |  Type   | Description                                                   |  Default  | Required | Options |
 |:--------------|:-------:|:--------------------------------------------------------------|:---------:|:--------:|:-------:|
 | agent         | boolean | Run in non-interactive mode for agents and automation         |           |          |         |
 | delete<br/>-d | boolean | Delete lines with System.debug                                |           |          |         |
-| flags-dir     | option  | undefined                                                     |           |          |         |
+| flags-dir     | option  | Import flag values from a directory.                          |           |          |         |
 | folder<br/>-f | option  | Root folder                                                   | force-app |          |         |
 | json          | boolean | Format output as json.                                        |           |          |         |
 | skipauth      | boolean | Skip authentication check when a default username is required |           |          |         |

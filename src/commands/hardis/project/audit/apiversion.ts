@@ -13,9 +13,18 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 export default class CallInCallOut extends SfCommand<any> {
   public static title = 'Audit Metadatas API Version';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'api-versions',
+      title: 'API versions',
+      description: 'One row per metadata file audited, with its API version and whether it is below the minimum version, to find what to upgrade.',
+    },
+  ];
 
   public static description = `This command identifies metadata with an apiVersion lower than the value specified in the --minimumapiversion parameter.
 

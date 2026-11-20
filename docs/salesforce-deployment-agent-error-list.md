@@ -42,6 +42,22 @@ Go to target org, in Setup -> Deployment Settings -> Activate option "Allow depl
 ```
 
 ---
+## [Agent running user has no access to the agent](sf-deployment-assistant/Agent-running-user-has-no-access-to-the-agent.md)
+
+**Detection**
+
+- RegExp: `Error (.*) User doesn't have access to agent`
+
+**Resolution**
+
+```shell
+The running user of agent {1} (botUser in its AiAgentDefinition) exists in the target org, but cannot run agents
+- Assign it the permission sets AgentforceServiceAgentBase, AgentforceServiceAgentUser and EinsteinGPTPromptTemplateUser, with the profile Einstein Agent User
+- Or let sfdx-hardis create a user with sf org create agent-user: keep the built-in replacement rule builtin-agent-running-user on, and remove the replacement rule of your own that writes botUser. See https://sfdx-hardis.cloudity.com/salesforce-ci-cd-agentforce-agents/#the-running-user-of-a-service-agent
+
+```
+
+---
 ## [Can not change field type to a formula field](sf-deployment-assistant/Can-not-change-field-type-to-a-formula-field.md)
 
 **Detection**
@@ -134,6 +150,18 @@ You need to manually delete record type {1} in target org
 - Edit record type {1}, uncheck "Active"
 - Delete record type {1}
 ```
+
+**Deployment action**
+
+A deployment action can solve this error. Create it on the Pull Request of the current branch:
+
+```shell
+sf hardis:project:action:create --agent --scope pr --pr-id current --when pre-deploy --type browser --label "Delete record type {1}" --browser-setting recordTypes --browser-config '{"deletions":[{"fullName":"{1}"}]}'
+```
+
+A deployment check only simulates a browser action. If this check still fails on this error once the action is created, apply the setting once in the target org with the Run in another org button of the VS Code Deployment Actions tab, or with sf hardis:project:action:run --select-org, then run the check again.
+
+Documentation: https://amtrack.github.io/sfdx-browserforce-plugin/settings/recordTypes/
 
 ---
 ## [Can not find folder](sf-deployment-assistant/Can-not-find-folder.md)
@@ -398,8 +426,24 @@ There are probably issue with conflict management. Open the XML of the source it
 **Resolution**
 
 ```shell
-You probably renamed the picklist API name for {2}. Please update manually the picklist {1} in the target org to avoid to have a duplicate label
+You probably renamed the API name of the picklist value with label {2} in {1}: the target org still has the value with its old API name, and the same label.
+- A deployment action can rename the value in the target org before the deployment: replace OLD_API_NAME with its API name in the target org (Setup, the values of {1})
+- Or rename it manually in the target org, then deploy again
 ```
+
+**Deployment action**
+
+A deployment action can solve this error. Create it on the Pull Request of the current branch:
+
+```shell
+sf hardis:project:action:create --agent --scope pr --pr-id current --when pre-deploy --type browser --label "Rename picklist value {2} of {1}" --browser-setting picklists --browser-config '{"picklistValues":[{"metadataType":"METADATA_TYPE","metadataFullName":"{1}","value":"OLD_API_NAME","newApiName":"NEW_API_NAME"}]}'
+```
+
+Before running it, replace OLD_API_NAME, NEW_API_NAME, METADATA_TYPE in the command with the real value.
+
+A deployment check only simulates a browser action. If this check still fails on this error once the action is created, apply the setting once in the target org with the Run in another org button of the VS Code Deployment Actions tab, or with sf hardis:project:action:run --select-org, then run the check again.
+
+Documentation: https://amtrack.github.io/sfdx-browserforce-plugin/settings/picklists/
 
 ---
 ## [Missing e-mail template](sf-deployment-assistant/Missing-e-mail-template.md)
@@ -733,6 +777,18 @@ Contacts to multiple accounts be activated in the target org.
 "features": ["ContactsToMultipleAccounts"]
 ```
 
+**Deployment action**
+
+A deployment action can solve this error. Create it on the Pull Request of the current branch:
+
+```shell
+sf hardis:project:action:create --agent --scope pr --pr-id current --when pre-deploy --type browser --label "Enable Contacts to Multiple Accounts" --browser-setting relateContactToMultipleAccounts --browser-config '{"enabled":true}'
+```
+
+A deployment check only simulates a browser action. If this check still fails on this error once the action is created, apply the setting once in the target org with the Run in another org button of the VS Code Deployment Actions tab, or with sf hardis:project:action:run --select-org, then run the check again.
+
+Documentation: https://amtrack.github.io/sfdx-browserforce-plugin/settings/relateContactToMultipleAccounts/
+
 ---
 ## [Missing feature Chatter Collaboration Group](sf-deployment-assistant/Missing-feature-Chatter-Collaboration-Group.md)
 
@@ -1057,8 +1113,24 @@ Go manually make the change in the target org, so the deployment will pass
 Sources have references to value {1} of picklist {2}
 - If picklist {2} is standard, add the picklist to sfdx sources by using "sf project retrieve start -m StandardValueSet:{2}", then save again
 - Else, perform a search in all code of {1}, then remove XML tags referring to {1} (for example in record types metadatas)
+- If value {1} exists but is inactive in the target org, a deployment action can activate it: replace OBJECT_NAME by the object of picklist {2} (or, for a standard value set, use "metadataType":"StandardValueSet" and "metadataFullName":"{2}")
+- If value {1} was renamed in the sources, rename it in the target org instead: the same picklists setting does it with "newApiName" (https://amtrack.github.io/sfdx-browserforce-plugin/settings/picklists/)
 
 ```
+
+**Deployment action**
+
+A deployment action can solve this error. Create it on the Pull Request of the current branch:
+
+```shell
+sf hardis:project:action:create --agent --scope pr --pr-id current --when pre-deploy --type browser --label "Activate value {1} of picklist {2}" --browser-setting picklists --browser-config '{"picklistValues":[{"metadataType":"CustomField","metadataFullName":"OBJECT_NAME.{2}","value":"{1}","active":true}]}'
+```
+
+Before running it, replace OBJECT_NAME in the command with the real value.
+
+A deployment check only simulates a browser action. If this check still fails on this error once the action is created, apply the setting once in the target org with the Run in another org button of the VS Code Deployment Actions tab, or with sf hardis:project:action:run --select-org, then run the check again.
+
+Documentation: https://amtrack.github.io/sfdx-browserforce-plugin/settings/picklists/
 
 ---
 ## [Please choose a different name](sf-deployment-assistant/Please-choose-a-different-name.md)
@@ -1200,6 +1272,129 @@ If you changed a field from MasterDetail to Lookup, you must do it manually in t
 ```shell
 Go to Email -> Deliverability -> Select value "All emails"
 ```
+
+**Deployment action**
+
+A deployment action can solve this error. Create it on the Pull Request of the current branch:
+
+```shell
+sf hardis:project:action:create --agent --scope pr --pr-id current --when pre-deploy --type browser --label "Allow all emails in Deliverability" --browser-setting emailDeliverability --browser-config '{"accessLevel":"All email"}'
+```
+
+A deployment check only simulates a browser action. If this check still fails on this error once the action is created, apply the setting once in the target org with the Run in another org button of the VS Code Deployment Actions tab, or with sf hardis:project:action:run --select-org, then run the check again.
+
+Documentation: https://amtrack.github.io/sfdx-browserforce-plugin/settings/emailDeliverability/
+
+---
+## [Shared Activities can not be deployed](sf-deployment-assistant/Shared-Activities-can-not-be-deployed.md)
+
+**Detection**
+
+- String: `You can't use the Tooling API or Metadata API to enable or disable Shared Activities`
+
+**Resolution**
+
+```shell
+The Metadata API can not change Shared Activities (Allow Users to Relate Multiple Contacts to Tasks and Events)
+- Remove allowUsersToRelateMultipleContactsToTasksAndEvents from Activities.settings-meta.xml in your sources
+- To enable it, go to Setup -> Activity Settings in the target org, or use a deployment action
+- Once enabled, it can not be disabled (only Salesforce support can)
+```
+
+**Deployment action**
+
+A deployment action can solve this error. Create it on the Pull Request of the current branch:
+
+```shell
+sf hardis:project:action:create --agent --scope pr --pr-id current --when pre-deploy --type browser --label "Enable Shared Activities" --browser-setting activitySettings --browser-config '{"allowUsersToRelateMultipleContactsToTasksAndEvents":true}'
+```
+
+A deployment check only simulates a browser action. If this check still fails on this error once the action is created, apply the setting once in the target org with the Run in another org button of the VS Code Deployment Actions tab, or with sf hardis:project:action:run --select-org, then run the check again.
+
+Documentation: https://amtrack.github.io/sfdx-browserforce-plugin/settings/activitySettings/
+
+---
+## [Einstein Conversation Insights not enabled](sf-deployment-assistant/Einstein-Conversation-Insights-not-enabled.md)
+
+**Detection**
+
+- RegExp: `There was an error enabling or disabling a setting: OrgPreferences\.(CallSummarization|GenECI)`
+- RegExp: `Error ConversationalIntelligence (enableECICallScoring)\s*$`
+
+**Resolution**
+
+```shell
+The ConversationalIntelligence settings of your sources turn on {1}, that needs Einstein Conversation Insights already turned on in the target org: turning it on in the same deployment is not enough
+- Turn on Einstein Conversation Insights in the target org (Setup -> Einstein Conversation Insights), or use a deployment action that waits until it is completely on
+- Once turned on, it can not be turned off with Browserforce
+- If Call Summaries still fails to turn on with the Metadata API, remove enableCallSummarization from ConversationalIntelligence.settings-meta.xml and use the callSummaries setting of Browserforce instead (https://amtrack.github.io/sfdx-browserforce-plugin/settings/callSummaries/)
+```
+
+**Deployment action**
+
+A deployment action can solve this error. Create it on the Pull Request of the current branch:
+
+```shell
+sf hardis:project:action:create --agent --scope pr --pr-id current --when pre-deploy --type browser --label "Turn on Einstein Conversation Insights" --browser-setting einsteinConversationInsights --browser-config '{"enabled":true}'
+```
+
+A deployment check only simulates a browser action. If this check still fails on this error once the action is created, apply the setting once in the target org with the Run in another org button of the VS Code Deployment Actions tab, or with sf hardis:project:action:run --select-org, then run the check again.
+
+Documentation: https://amtrack.github.io/sfdx-browserforce-plugin/settings/einsteinConversationInsights/
+
+---
+## [Lightning Experience theme not found](sf-deployment-assistant/Lightning-Experience-theme-not-found.md)
+
+**Detection**
+
+- RegExp: `no LightningExperienceTheme named (.*) found`
+
+**Resolution**
+
+```shell
+Lightning Experience theme {1} is not in the target org
+- If {1} is a custom theme, add LightningExperienceTheme:{1} to your sources
+- If {1} is a standard theme (Lightning, LightningBlue...), the Metadata API can not activate it: remove activeThemeName from LightningExperience.settings-meta.xml in your sources, then activate the theme in Setup -> Themes and Branding, or with a deployment action
+```
+
+**Deployment action**
+
+A deployment action can solve this error. Create it on the Pull Request of the current branch:
+
+```shell
+sf hardis:project:action:create --agent --scope pr --pr-id current --when pre-deploy --type browser --label "Activate Lightning Experience theme {1}" --browser-setting lightningExperienceSettings --browser-config '{"activeThemeName":"{1}"}'
+```
+
+A deployment check only simulates a browser action. If this check still fails on this error once the action is created, apply the setting once in the target org with the Run in another org button of the VS Code Deployment Actions tab, or with sf hardis:project:action:run --select-org, then run the check again.
+
+Documentation: https://amtrack.github.io/sfdx-browserforce-plugin/settings/lightningExperienceSettings/
+
+---
+## [History tracking not enabled on object](sf-deployment-assistant/History-tracking-not-enabled-on-object.md)
+
+**Detection**
+
+- RegExp: `The entity: (.*) does not have history tracking enabled`
+
+**Resolution**
+
+```shell
+A field tracks its history, but history tracking is not enabled on object {1} in the target org
+- Enable it in the sources: add <enableHistory>true</enableHistory> to the object {1} metadata and deploy it with the field
+- For a Person Account field, the Metadata API can not enable it: use Setup -> Object Manager -> {1} -> Fields & Relationships -> Set History Tracking, or a deployment action
+```
+
+**Deployment action**
+
+A deployment action can solve this error. Create it on the Pull Request of the current branch:
+
+```shell
+sf hardis:project:action:create --agent --scope pr --pr-id current --when pre-deploy --type browser --label "Enable history tracking on {1}" --browser-setting historyTracking --browser-config '[{"objectApiName":"{1}","enableHistoryTracking":true}]'
+```
+
+A deployment check only simulates a browser action. If this check still fails on this error once the action is created, apply the setting once in the target org with the Run in another org button of the VS Code Deployment Actions tab, or with sf hardis:project:action:run --select-org, then run the check again.
+
+Documentation: https://amtrack.github.io/sfdx-browserforce-plugin/settings/historyTracking/
 
 ---
 ## [Sort order must be in sequential order](sf-deployment-assistant/Sort-order-must-be-in-sequential-order.md)
