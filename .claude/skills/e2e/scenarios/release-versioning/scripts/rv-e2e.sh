@@ -35,7 +35,7 @@ PART="${PART:-default}"
 # shellcheck source=/dev/null
 source "$PROMO_SCRIPTS/env-lib.sh"
 e2e_defaults
-e2e_load_env DEVHUB RV_ORG GH_E2E_OWNER GITLAB_E2E_HOST GITLAB_E2E_GROUP
+e2e_load_env DEVHUB RV_ORG GH_E2E_OWNER GH_E2E_VISIBILITY GITLAB_E2E_HOST GITLAB_E2E_GROUP
 ROOT="$E2E_ROOT"
 DEVHUB="${DEVHUB:-DevHub}"
 STAMP="$(date +%m%d%H%M)"

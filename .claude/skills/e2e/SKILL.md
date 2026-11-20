@@ -68,6 +68,10 @@ works in the sibling clones of the course, not in a throwaway repository.
 - **Clean up** what the run created (throwaway repositories, scratch orgs) once the report is written,
   unless the user wants to look at them.
 - **No customer name** in a report, a commit or a Pull Request: throwaway orgs and repositories only.
+- **Throwaway GitHub repositories are public** (`GH_E2E_VISIBILITY`, default `public`): GitHub-hosted
+  runners cost nothing there, while a private one stops when the minutes or the spending limit of
+  the account run out. Their files and job logs are public: org logins go in repository secrets,
+  never in a file, and nothing else secret is committed there.
 
 ## Add a scenario
 
