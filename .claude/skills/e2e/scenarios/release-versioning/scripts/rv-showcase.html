@@ -111,7 +111,7 @@ $("title").textContent = total.FAIL === 0
   : `Release versioning: ${total.FAIL} of ${total.OK + total.FAIL + total.SKIP} checks fail`;
 $("lede").textContent = `${DATA.runs.length} runs in real CI jobs built from the branch under test, on throwaway repositories. ${total.OK} OK, ${total.FAIL} FAIL, ${total.SKIP} SKIP. Pick a run, then a step: the DevOps Pipeline as it was right after that deployment.`;
 $("runs").innerHTML = DATA.runs.map((r) => `<button type="button" data-run="${slug(r)}">${esc(label(r))} <small class="${r.count.FAIL ? "bad" : ""}">${r.count.OK} OK${r.count.FAIL ? ` · ${r.count.FAIL} FAIL` : ""}${r.count.SKIP ? ` · ${r.count.SKIP} SKIP` : ""}</small></button>`).join("");
-const KIND = { bug: "Product bug", fixed: "Fixed during the runs", harness: "Test harness", environment: "Environment" };
+const KIND = { bug: "Product bug", fixed: "Fixed during the runs", question: "Open question", harness: "Test harness", environment: "Environment" };
 if (DATA.findings.length) {
   $("finds").innerHTML = DATA.findings.map((f) => `<article class="${esc(f.kind)}"><b>${esc(KIND[f.kind] || f.kind)}</b><h3>${esc(f.title)}</h3><p>${esc(f.text)}</p></article>`).join("");
 } else { $("findBand").hidden = true; }

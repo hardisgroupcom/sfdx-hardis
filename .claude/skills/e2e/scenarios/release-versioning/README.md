@@ -174,7 +174,7 @@ python rv-showcase.py ../../../../../../hardis-report/e2e/release-versioning/sho
   ../../../../../../hardis-report/e2e/release-versioning/<run> [<run> ...] --findings findings.json
 ```
 
-`findings.json` lists what the runs found: `[{"kind": "bug" | "fixed" | "harness" | "environment",
+`findings.json` lists what the runs found: `[{"kind": "bug" | "fixed" | "question" | "harness" | "environment",
 "title": "...", "text": "..."}]`. The script writes `index.html` and `shots/<run>/*.png`, the
 captures cropped to the editor area. Publish the folder with `publish_files` of the claude-artifacts
 server (`index.html` and every capture as `shots/<run>/<file>`), or republish the artifact of the

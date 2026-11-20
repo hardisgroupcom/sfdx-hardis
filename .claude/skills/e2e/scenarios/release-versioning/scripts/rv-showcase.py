@@ -7,7 +7,7 @@ and every check. Publish the folder with the publish_files tool of the claude-ar
 
     python rv-showcase.py <out folder> <run folder> [<run folder> ...] [--findings findings.json]
 
-findings.json: [{"kind": "bug" | "fixed" | "harness" | "environment", "title": "...", "text": "..."}]
+findings.json: [{"kind": "bug" | "fixed" | "question" | "harness" | "environment", "title": "...", "text": "..."}]
 
 The captures are cropped to the editor area of VS Code (no title bar, activity bar or status bar),
 with Pillow when it is installed, else copied as they are.

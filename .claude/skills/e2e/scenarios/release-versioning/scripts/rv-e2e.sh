@@ -265,17 +265,32 @@ expect_tag() {
     record "$id-TAG" FAIL "$branch: $want:$problems"
   fi
 }
-# The Release of a production version: the release notes as body, the PDF and the XLSX attached
+# The Release of a production version: the release notes as body, listing the Pull Requests of the
+# release (stories, hotfixes and the promotion to production), the PDF and the XLSX attached
+# Usage: expect_release <id> <tag> <number of Pull Requests the release notes list>
 expect_release() {
-  local id="$1" tag="$2" files
+  local id="$1" tag="$2" want_prs="$3" files body prs
   case "$PROVIDER" in
-  github) files=$(gh release view "$tag" -R "$REPO" --json assets --jq '[.assets[].name] | join(",")' 2>/dev/null) ;;
-  gitlab) files=$(_glci_api GET "projects/$PROJECT_ID/releases/$tag" | _glci_json "((d.assets||{}).links||[]).map(l=>l.name).join(',')") ;;
+  github)
+    files=$(gh release view "$tag" -R "$REPO" --json assets --jq '[.assets[].name] | join(",")' 2>/dev/null)
+    body=$(gh release view "$tag" -R "$REPO" --json body --jq .body 2>/dev/null)
+    ;;
+  gitlab)
+    files=$(_glci_api GET "projects/$PROJECT_ID/releases/$tag" | _glci_json "((d.assets||{}).links||[]).map(l=>l.name).join(',')")
+    body=$(_glci_api GET "projects/$PROJECT_ID/releases/$tag" | _glci_json "d.description||''")
+    ;;
   esac
+  # The summary table of the release notes: | Pull Requests | <n> |
+  prs=$(printf '%s\n' "$body" | sed -nE 's/^\| Pull Requests \| ([0-9]+) \|.*/\1/p' | head -1)
   if [[ "$files" == *.pdf* && "$files" == *.xlsx* ]]; then
     record "$id-RELEASE" OK "Release $tag exists with its release notes files ($files)"
   else
     record "$id-RELEASE" FAIL "Release $tag: files [${files:-none}], expected a PDF and an XLSX"
+  fi
+  if [ "$prs" = "$want_prs" ]; then
+    record "$id-RELEASE-PRS" OK "the release notes of $tag list its $prs Pull Requests"
+  else
+    record "$id-RELEASE-PRS" FAIL "the release notes of $tag list ${prs:-no} Pull Requests, expected $want_prs"
   fi
 }
 
@@ -424,12 +439,12 @@ if [ "$PART" = "default" ]; then
   step a04 && cycle_step a04 story integration uat v1.5.0-rc.1 "1.4.0 moved up to preprod: uat opens 1.5.0"
   if step a05; then
     cycle_step a05 promote preprod main v1.4.0 "Production gets the plain version" "" "releases"
-    expect_release a05 v1.4.0
+    expect_release a05 v1.4.0 3
   fi
   step a06 && cycle_step a06 hotfix "" preprod v1.4.1-rc.1 "Nothing waits in preprod: the hotfix starts a patch"
   if step a07; then
     cycle_step a07 promote preprod main v1.4.1 "The patch reaches production"
-    expect_release a07 v1.4.1
+    expect_release a07 v1.4.1 2
   fi
   step a08 && cycle_step a08 promote preprod uat v1.5.0-rc.2 "preprod merged back into uat: 1.5.0 stays open"
   step a09 && cycle_step a09 promote uat preprod v1.5.0-rc.3 "1.5.0 moves up, the shared counter goes on"
@@ -462,7 +477,7 @@ if [ "$PART" = "custom" ]; then
   step c05 && cycle_step c05 hotfix "" preprod v1.0.0-rc2-preprod "The hotfix joins the release waiting in preprod"
   if step c06; then
     cycle_step c06 promote preprod main v1.0.0 "Production keeps the plain version, its format is ignored" "" "releases"
-    expect_release c06 v1.0.0
+    expect_release c06 v1.0.0 4
     assert_log c06-FINAL-FORMAT c06-deploy - "the format declared by main is ignored, with a warning" \
       "releaseVersioningTagFormat is ignored on main"
   fi
@@ -489,7 +504,7 @@ if [ "$PART" = "custom" ]; then
   fi
   if step c12; then
     cycle_step c12 promote preprod main v1.1.0 "1.1.0 reaches production" "" "releases,branch:uat,branch:preprod,branch:main,views,versions-off"
-    expect_release c12 v1.1.0
+    expect_release c12 v1.1.0 6
     for v in $RV_VARIABLES; do ci_var_unset "$v"; done
   fi
 fi
