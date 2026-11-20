@@ -75,11 +75,12 @@ The rules behind it:
 
 - **Lowest versioned branch** (uat): it adds release candidates to its open release until a tag of that release exists on a higher branch, or the release is in production. The next deployment then opens the next minor version.
 - **Middle branches** (preprod): a promotion from the branch below (or a [promotion branch](salesforce-devops-promotion-branches.md) built from it) takes the version coming up. Anything else is a hotfix, including a higher branch merged back into it: it joins the release waiting there for production, or starts the next patch of production when nothing waits.
-- **Highest versioned branch** (main): it gets the plain version of the newest release candidate reachable from the deployed commit and not released yet. A promotion branch cherry-picks its User Stories, so nothing of its source is reachable: it gets the version last deployed on that source. When a release overtook another one in preprod, only the newest is released, and its release notes start from the previous production version.
+- **Highest versioned branch** (main): it gets the plain version of the newest release candidate reachable from the deployed commit and not released yet. A promotion branch cherry-picks its User Stories, so nothing of its source is reachable: it gets the version last deployed on that source. When a release overtook another one in preprod, only the newest is released, and its release notes start from the previous production version. When no release candidate waits (a fix merged straight into main), it gets the next patch of production: `v1.3.1` after `v1.3.0`.
+- **A single versioned branch**: every deployment is a release, and gets the next minor version.
 - **Major versions**: set `releaseVersioningMinimumVersion: 2.0.0`.
 - A deployment job run again on a commit that already has its version tag creates no new tag. On the highest versioned branch, it publishes the Release only when the first run could not create it.
 - A shallow clone (the default of GitLab CI) is completed with its history first, so the release candidates older than the clone depth are found.
-- When two jobs compute the same version at the same time, the second one sees the tag exists and takes the next one.
+- When the tag name is already taken (two jobs computing the same version at the same time, or a tag created by hand with that name), the git provider refuses it and the job takes the next release candidate.
 
 Each tag is an annotated tag whose message says which branch and which org it was deployed to, when, from which Pull Request and by which job, with its version, release candidate number and variables. Tags created by hand count for the numbering, without a branch, when their name is a plain semver version (`v1.3.0`, `v1.3.0-rc.2`).
 
@@ -107,23 +108,29 @@ releaseVersioning: true
 |--------------------------------|------------------------------------------------------------------------------------|
 | `{MAJ}`, `{MIN}`, `{PATCH}`    | The version, chosen by the [rules above](#how-a-version-is-chosen). Required.      |
 | `{RC}`                         | The release candidate number. Required.                                            |
-| `{BRANCH}`                     | The git branch name, `/` written `-`: `release/uat` gives `release-uat`.          |
+| `{BRANCH}`                     | The git branch name, `/` and any character a tag cannot hold written `-`: `release/uat` gives `release-uat`. Use it rather than writing the branch name in the format: one format then serves several branches, each with its own counter. |
 | Any other `{NAME}` (`{PI}`...) | A custom variable, from `releaseVersioningMinimumVariables` and the previous tags. |
 
-The release cycle of this config, with no tag at the start:
+#### Use case: program increments and iterations
 
-| Deployment                                    | Tag                      | Why                                                                       |
-|-----------------------------------------------|--------------------------|---------------------------------------------------------------------------|
-| int promoted to uat                           | `v1.0.0-pi2-it4-uat-rc1` | First release, PI and IT from the config                                  |
-| int promoted to uat, twice                    | `v1.0.0-pi2-it4-uat-rc3` | Same release, same text: next release candidates                          |
-| uat promoted to preprod                       | `v1.0.0-preprod-rc1`     | Another text: its own counter starts at 1                                 |
-| A Pull Request sets `IT: 5`, int to uat       | `v1.1.0-pi2-it5-uat-rc1` | 1.0.0 moved up to preprod: uat opens 1.1.0, with IT 5                     |
-| hotfix merged into preprod                    | `v1.0.0-preprod-rc2`     | The hotfix joins the release waiting in preprod                           |
-| preprod promoted to main                      | `v1.0.0`                 | Production always gets the plain version                                  |
-| A Pull Request sets `PI: 3, IT: 1`, int to uat | `v1.1.0-pi3-it1-uat-rc1` | Release 1.1.0 is still open, but the text is new: the counter restarts   |
-| A Pull Request sets `PI: 2, IT: 9`, int to uat | `v1.1.0-pi3-it1-uat-rc2` | The tags hold PI 3 / IT 1 already: lowering the config has no effect     |
-| uat promoted to preprod                       | `v1.1.0-preprod-rc1`     |                                                                           |
-| preprod promoted to main                      | `v1.1.0`                 | Its release notes start from `v1.0.0`                                     |
+A team plans its work in program increments (PI) of several iterations (IT), and its testers want to read the PI and the iteration in the name of each UAT release candidate. With the config above, and no tag at the start:
+
+| Deployment                                                                                  | Tag                      | Why                                                                                          |
+|---------------------------------------------------------------------------------------------|--------------------------|----------------------------------------------------------------------------------------------|
+| int promoted to uat                                                                         | `v1.0.0-pi2-it4-uat-rc1` | First release, PI 2 and IT 4 from the config                                                 |
+| int promoted to uat, once `v1.0.0-pi2-it4-uat-rc2` was created by hand                      | `v1.0.0-pi2-it4-uat-rc3` | The name is taken: the job takes the next release candidate                                  |
+| uat promoted to preprod                                                                     | `v1.0.0-preprod-rc1`     | Another text: its own counter starts at 1                                                    |
+| A Pull Request sets `IT: 5` in `config/.sfdx-hardis.yml`, int promoted to uat              | `v1.1.0-pi2-it5-uat-rc1` | 1.0.0 moved up to preprod: uat opens 1.1.0, with the IT the Pull Request brought             |
+| hotfix merged into preprod                                                                  | `v1.0.0-preprod-rc2`     | The hotfix joins the release waiting in preprod                                              |
+| preprod promoted to main                                                                    | `v1.0.0`                 | Production gets the plain version, and a Release listing the Pull Requests of 1.0.0          |
+| A new PI starts: CI/CD variables `..._VAR_PI=3` and `..._VAR_IT=1`, int promoted to uat      | `v1.1.0-pi3-it1-uat-rc1` | No Pull Request needed. PI 3 / IT 1 is above PI 2 / IT 5. A new text: the counter restarts   |
+| Only uat moves to the next iteration: `..._VAR_UAT_IT=2`, int promoted to uat                | `v1.1.0-pi3-it2-uat-rc1` | The variable of one branch wins over the variable of every branch                            |
+| `..._VAR_UAT_IT=1`, int promoted to uat                                                     | `v1.1.0-pi3-it2-uat-rc2` | A value is a minimum: the tags hold IT 2 already, lowering it has no effect                  |
+| `..._TAG_FORMAT=v{MAJ}.{MIN}.{PATCH}-{BRANCH}-rc.{RC}`, int promoted to uat                  | `v1.1.0-uat-rc.1`        | One format for every branch, from the CI/CD server. A new text: the counter restarts         |
+| That variable removed, uat promoted to preprod                                              | `v1.1.0-preprod-rc1`     | preprod uses its own format again                                                            |
+| preprod promoted to main                                                                    | `v1.1.0`                 | Its release notes start from `v1.0.0`                                                        |
+
+The CI/CD variables are listed in the rules below. MIN only goes up once, when uat opens 1.1.0: production takes the version of the release candidate it receives, and a hotfix joins the release waiting in preprod.
 
 The rules:
 
@@ -166,7 +173,7 @@ When the deployment to the highest versioned branch succeeds, the job runs [hard
 
 - the Markdown of the release notes is the body of the Release
 - the PDF and the XLSX are attached
-- the release notes cover the previous production version to the new one: `v1.4.1` to `v1.5.0`, never one of its own release candidates
+- the release notes cover the previous production version to the new one: `v1.4.1` to `v1.5.0`, never one of its own release candidates. They list the Pull Requests of the release: its User Stories, its hotfixes and the promotion to production
 - the release notes notification (Slack, Teams, email...) is sent once the Release exists: its summary, the PDF and the XLSX, and a **View Release** button
 
 If the release notes cannot be generated, the Release is still created, with a link to the comparison between the two versions and to the job.
@@ -191,7 +198,7 @@ Off by default. With `releaseVersioningTicketVersions`, the tickets referenced b
 - **Pull Request comment** of the deployment: `Release version: v1.5.0-rc.3`, linked to the tag.
 - **Deployment notification** (Slack, Teams, email...): the same line, for every versioned deployment, release candidates included.
 - **Release notes notification**: for each production version, with the release notes files and a link to the Release.
-- **VS Code DevOps Pipeline**: the version deployed on each versioned branch and org, the version each promotion will create, and a **Releases** tab listing the versions.
+- **VS Code DevOps Pipeline**: the version deployed under each versioned branch and org, the version each promotion will create under its Pull Request, a **Versions** button to hide them, and a **Releases** tab listing the versions. A click on the version of a branch opens its history and its release notes.
 - **Command line**: [hardis:project:version:list](hardis/project/version/list.md) lists the version of each branch, the version each promotion would create, and the history of the version tags.
 
 ```sh
@@ -201,6 +208,7 @@ sf hardis:project:version:list --json
 
 ### Limits
 
+- Versions are created by CI/CD jobs only: a deployment run from a computer creates no tag and no Release.
 - Projects that deploy before the merge (deploy before merge mode) get no version: the deployed commit is not on the branch yet.
 - Azure DevOps and Bitbucket have no Release object: the version is a tag, and the release notes stay in the artifacts of the job.
 - Two branches merged into the same one (uat and uatrun into preprod) can open two releases at the same time.
