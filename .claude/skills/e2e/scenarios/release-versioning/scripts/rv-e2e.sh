@@ -468,13 +468,13 @@ if [ "$PART" = "custom" ]; then
     assert_log c02-RETRY c02-deploy - "the job saw rc2 taken and computed the next version" \
       "Tag v1.0.0-pi2-it4-uat-rc2 was just created by another job"
   fi
-  step c03 && cycle_step c03 promote uat preprod v1.0.0-rc1-preprod "preprod format: its own counter starts at 1"
+  step c03 && cycle_step c03 promote uat preprod v1.0.0-preprod-rc1 "preprod format: its own counter starts at 1"
   if step c04; then
     # The story raises IT in the project config: it reaches uat with the promotion
     STORY_EDIT="sed -i 's/^  IT: 4\$/  IT: 5/' config/.sfdx-hardis.yml" \
       cycle_step c04 story integration uat v1.1.0-pi2-it5-uat-rc1 "A Pull Request sets IT 5: uat opens 1.1.0 with it" "PI=2 IT=5" "branch:uat"
   fi
-  step c05 && cycle_step c05 hotfix "" preprod v1.0.0-rc2-preprod "The hotfix joins the release waiting in preprod"
+  step c05 && cycle_step c05 hotfix "" preprod v1.0.0-preprod-rc2 "The hotfix joins the release waiting in preprod"
   if step c06; then
     cycle_step c06 promote preprod main v1.0.0 "Production keeps the plain version, its format is ignored" "" "releases"
     expect_release c06 v1.0.0 4
@@ -500,7 +500,7 @@ if [ "$PART" = "custom" ]; then
   fi
   if step c11; then
     ci_var_unset SFDX_HARDIS_RELEASE_VERSIONING_TAG_FORMAT
-    cycle_step c11 promote uat preprod v1.1.0-rc1-preprod "Variable removed: preprod uses its own format again"
+    cycle_step c11 promote uat preprod v1.1.0-preprod-rc1 "Variable removed: preprod uses its own format again"
   fi
   if step c12; then
     cycle_step c12 promote preprod main v1.1.0 "1.1.0 reaches production" "" "releases,branch:uat,branch:preprod,branch:main,views,versions-off"
@@ -565,8 +565,8 @@ if step version-list; then
     want_current="uat=v1.6.0-rc.1 preprod=v1.5.0-rc.3 main=v1.4.1"
     want_history="v1.3.0 v1.4.0 v1.4.0-rc.1 v1.4.0-rc.2 v1.4.0-rc.3 v1.4.1 v1.4.1-rc.1 v1.5.0-rc.1 v1.5.0-rc.2 v1.5.0-rc.3 v1.6.0-rc.1"
   else
-    want_current="uat=v1.1.0-uat-rc.1 preprod=v1.1.0-rc1-preprod main=v1.1.0"
-    want_history="v1.0.0 v1.0.0-pi2-it4-uat-rc1 v1.0.0-pi2-it4-uat-rc3 v1.0.0-rc1-preprod v1.0.0-rc2-preprod v1.1.0 v1.1.0-pi2-it5-uat-rc1 v1.1.0-pi3-it1-uat-rc1 v1.1.0-pi3-it2-uat-rc1 v1.1.0-pi3-it2-uat-rc2 v1.1.0-rc1-preprod v1.1.0-uat-rc.1"
+    want_current="uat=v1.1.0-uat-rc.1 preprod=v1.1.0-preprod-rc1 main=v1.1.0"
+    want_history="v1.0.0 v1.0.0-pi2-it4-uat-rc1 v1.0.0-pi2-it4-uat-rc3 v1.0.0-preprod-rc1 v1.0.0-preprod-rc2 v1.1.0 v1.1.0-pi2-it5-uat-rc1 v1.1.0-pi3-it1-uat-rc1 v1.1.0-pi3-it2-uat-rc1 v1.1.0-pi3-it2-uat-rc2 v1.1.0-preprod-rc1 v1.1.0-uat-rc.1"
   fi
   got_current="uat=$(current uat) preprod=$(current preprod) main=$(current main)"
   if [ "$got_current" = "$want_current" ]; then

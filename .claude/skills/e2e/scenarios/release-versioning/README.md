@@ -52,7 +52,7 @@ releaseVersioningMinimumVariables:
 # config/branches/.sfdx-hardis.uat.yml
 releaseVersioningTagFormat: v{MAJ}.{MIN}.{PATCH}-pi{PI}-it{IT}-uat-rc{RC}
 # config/branches/.sfdx-hardis.preprod.yml
-releaseVersioningTagFormat: v{MAJ}.{MIN}.{PATCH}-rc{RC}-{BRANCH}
+releaseVersioningTagFormat: v{MAJ}.{MIN}.{PATCH}-{BRANCH}-rc{RC}
 # config/branches/.sfdx-hardis.main.yml: ignored, with a warning
 releaseVersioningTagFormat: v{MAJ}.{MIN}.{PATCH}-main-rc{RC}
 ```
@@ -61,15 +61,15 @@ releaseVersioningTagFormat: v{MAJ}.{MIN}.{PATCH}-main-rc{RC}
 |------|---------------------------------------------------------------------------------|--------------------------|--------------------------------------------------------------------|
 | c01  | A story, promote integration to uat                                             | `v1.0.0-pi2-it4-uat-rc1` | The format of uat, PI and IT from the config                       |
 | c02  | `v1.0.0-pi2-it4-uat-rc2` pushed by hand first, then a story, promote to uat     | `v1.0.0-pi2-it4-uat-rc3` | A name taken by hand: the provider refuses it, the job retries     |
-| c03  | Promote uat to preprod                                                          | `v1.0.0-rc1-preprod`     | Another text, its own counter; `{BRANCH}`                          |
+| c03  | Promote uat to preprod                                                          | `v1.0.0-preprod-rc1`     | Another text, its own counter; `{BRANCH}`                          |
 | c04  | A story that sets `IT: 5` in the project config, promote to uat                 | `v1.1.0-pi2-it5-uat-rc1` | A config change reaches uat with its promotion; 1.1.0 opens        |
-| c05  | A hotfix merged into preprod                                                    | `v1.0.0-rc2-preprod`     | The hotfix joins the release waiting in preprod                    |
+| c05  | A hotfix merged into preprod                                                    | `v1.0.0-preprod-rc2`     | The hotfix joins the release waiting in preprod                    |
 | c06  | Promote preprod to main                                                         | `v1.0.0`                 | Production keeps the plain version, its format ignored with a warning, Release created |
 | c07  | CI/CD variables `..._VAR_PI=3`, `..._VAR_IT=1`, a story, promote to uat         | `v1.1.0-pi3-it1-uat-rc1` | A new PI without a Pull Request; PI 3 / IT 1 is above PI 2 / IT 5  |
 | c08  | CI/CD variable `..._VAR_UAT_IT=2`, a story, promote to uat                      | `v1.1.0-pi3-it2-uat-rc1` | The variable of one branch wins over the variable of every branch |
 | c09  | `..._VAR_UAT_IT=1`, a story, promote to uat                                     | `v1.1.0-pi3-it2-uat-rc2` | Lowering a value has no effect: the tags hold IT 2                 |
 | c10  | CI/CD variable `..._TAG_FORMAT=v{MAJ}.{MIN}.{PATCH}-{BRANCH}-rc.{RC}`, promote to uat | `v1.1.0-uat-rc.1`  | The format of every branch from a CI/CD variable; a new text restarts at 1 |
-| c11  | That variable removed, promote uat to preprod                                   | `v1.1.0-rc1-preprod`     | preprod uses its own format again                                  |
+| c11  | That variable removed, promote uat to preprod                                   | `v1.1.0-preprod-rc1`     | preprod uses its own format again                                  |
 | c12  | Promote preprod to main                                                         | `v1.1.0`                 | Release notes from `v1.0.0`                                        |
 
 The `..._VAR_` variables are `SFDX_HARDIS_RELEASE_VERSIONING_VAR_<NAME>` and
