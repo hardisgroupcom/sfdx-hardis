@@ -43,4 +43,22 @@ description: Learn how to initialize a Salesforce DX project for CI/CD with sfdx
 
 > Some workflow files contain additional configuration instructions: read the comments at the beginning of the files.
 
+## Cancelled pipelines
+
+When a new commit is pushed on a Pull Request, the Git provider cancels the previous pipeline. Cancelling it does not stop its deployment simulation in the Salesforce org: Salesforce keeps it running, and the next simulations on the same org wait for it.
+
+The GitLab, GitHub and Azure workflow files call [hardis:project:deploy:cancel](hardis/project/deploy/cancel.md) when a deployment simulation job is cancelled, so the simulation is cancelled in the org too. Only the simulation of the cancelled job is cancelled, never the one of another Pull Request, and never a real deployment.
+
+Real deployments, after a merge, are not cancelled by the next merge: they run one after the other, so the pre-deployment and post-deployment actions of each merged Pull Request are run.
+
+| Git provider | Cancellation hook                                 | Requirement                                        |
+|--------------|---------------------------------------------------|----------------------------------------------------|
+| GitLab       | `after_script` when `CI_JOB_STATUS` is `canceled` | GitLab 17.0 or later, GitLab Runner 16.11 or later |
+| GitHub       | step with `if: cancelled()`                       | -                                                  |
+| Azure        | step with `condition: canceled()`                 | -                                                  |
+
+On GitLab, a new commit only cancels the previous pipeline while none of its non-interruptible jobs has started. To cancel its interruptible jobs in any case, uncomment the `workflow: auto_cancel: on_new_commit: interruptible` block at the beginning of `.gitlab-ci.yml` (GitLab 16.10 or later).
+
+If your project was created with an older version of sfdx-hardis, copy these parts from the [latest workflow files](https://github.com/hardisgroupcom/sfdx-hardis/tree/main/defaults/ci) into yours.
+
 You can now go to step [4. Configure CI authentication](salesforce-devops-setup-auth.md).

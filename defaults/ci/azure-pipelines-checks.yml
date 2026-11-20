@@ -107,6 +107,11 @@ jobs:
           BUILD_BUILD_ID: $(Build.BuildId)
           SFDX_DISABLE_FLOW_DIFF: false # Set to true to disable Flow doc during CI/CD setup
         displayName: "Simulate deploy to org"
+      # When this run is cancelled (ex: new commit on the Pull Request), also cancel its deployment simulation
+      # in the Salesforce org: cancelling the run does not stop it in the org, where the next simulations would wait for it
+      - script: sf hardis:project:deploy:cancel || true
+        condition: canceled()
+        displayName: "Cancel deployment simulation in org"
       # Publish sfdx-hardis reports, including the complete deployment result JSON
       # continueOnError: the folder is not created when there is nothing to deploy
       # (empty delta package.xml), and the publish task hard-fails on a missing path

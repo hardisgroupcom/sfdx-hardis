@@ -41,6 +41,7 @@ import { executePrePostCommands, resetActionOutputsRegistry } from './prePostCom
 import { resetExecutedDeploymentActions } from './deploymentActionsRegistry.js';
 import { t } from './i18n.js';
 import { autoFixDeployErrors } from './deployErrorAutoFix.js';
+import { startDeployJobIdWatcher } from './deployCancelUtils.js';
 import { countDeployComponentChanges, isComponentChangeDetailComplete, logDeployResultSummary, summarizeDeployErrorMessage, writeDeployResultReportFile } from './deployResultSummary.js';
 
 // Push sources to org
@@ -654,6 +655,8 @@ export async function smartDeploy(
         ` --json`;
       let deployRes;
       const deployCommandStartTime = Date.now();
+      // In CI, record the job id of the simulation so a cancelled CI job can cancel it in the org (sf hardis:project:deploy:cancel)
+      const deployJobIdWatcher = check && isCI ? startDeployJobIdWatcher(options.targetUsername, true) : null;
       try {
         deployRes = await execCommand(deployCommand, commandThis, {
           output: false,
@@ -661,7 +664,9 @@ export async function smartDeploy(
           fail: true,
           retry: deployment.retry || null,
         });
+        await deployJobIdWatcher?.stop();
       } catch (e: any) {
+        await deployJobIdWatcher?.stop();
         await generateApexCoverageOutputFile();
 
         // Special handling for "nothing to deploy" error with destructive changes

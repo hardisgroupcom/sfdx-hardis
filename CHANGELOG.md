@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- New [hardis:project:deploy:cancel](https://sfdx-hardis.cloudity.com/hardis/project/deploy/cancel/): when a CI job is cancelled, its deployment simulation is now cancelled in the Salesforce org too, and deployments after a merge are no longer cancelled by the next merge ([update your workflow files](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-init-project/#cancelled-pipelines)).
+
 ## [8.12.1] 2026-10-02
 
 - [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) (Beta): the upcoming promotion notes of a branch no longer list the User Stories a merged promotion branch already carried to the target branch. In the VS Code extension, the DevOps Pipeline reads the merged promotions of each step from the git provider, so a promoted story stays out of the branch it left after the next branch goes live.

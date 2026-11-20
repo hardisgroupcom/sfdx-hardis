@@ -312,6 +312,7 @@ The table below lists every sfdx-hardis command that supports `--agent`. Click t
 | [**hardis:org:retrieve:sources:dx2**](hardis/org/retrieve/sources/dx2.md)               | Pull metadata from any org with fine-grained control via `package.xml`                                        |
 | [**hardis:org:retrieve:sources:metadata**](hardis/org/retrieve/sources/metadata.md)     | Retrieve metadata using Metadata API format into the local project                                            |
 | [**hardis:org:retrieve:sources:retrofit**](hardis/org/retrieve/sources/retrofit.md)     | Retrofit an existing org into an SFDX project by retrieving all current metadata                              |
+| [**hardis:project:deploy:cancel**](hardis/project/deploy/cancel.md)                     | Cancel in the org the deployment simulation of a cancelled CI job                                             |
 | [**hardis:project:deploy:notify**](hardis/project/deploy/notify.md)                     | Send deployment or simulation status notifications to configured team channels                                |
 | [**hardis:project:deploy:quick**](hardis/project/deploy/quick.md)                       | Quickly deploy a previously validated set of changes                                                          |
 | [**hardis:project:deploy:simulate**](hardis/project/deploy/simulate.md)                 | Dry-run a deployment to check what would be deployed without touching the org                                 |
