@@ -168,6 +168,8 @@ By default, only changed files are used to generate the documentation (diff-only
   - CLOUDFLARE_PROJECT_NAME_FR=cloudity-demo-french
   - CLOUDFLARE_PROJECT_NAME_DE=cloudity-demo-german
 
+A documentation that cannot be generated or published never fails the backup job: the org state is still committed, the other languages are still generated, and a **DOCUMENTATION** warning notification gives the language and the error.
+
 If Flow history doc always display a single state, you probably need to update your workflow configuration:
 
 ${getMonitoringFetchDepthLinksMarkdown()}
@@ -540,26 +542,42 @@ In agent mode:
     if (this.skipDoc !== true) {
       const prevPromptsLanguage = getEnvVar('PROMPTS_LANGUAGE') || 'en';
       const prevSfdxHardisLang = getEnvVar('SFDX_HARDIS_LANG') || 'en';
+      // The documentation is a by-product of the backup: once it fails, the job must still end the
+      // way the backup did, so the next step of the pipeline commits and pushes the org state
+      const exitCodeBeforeDoc = process.exitCode;
       try {
         const config = await getConfig("user");
-        const docLanguages = (getEnvVar('SFDX_DOC_LANGUAGES') || getEnvVar('PROMPTS_LANGUAGE') || config.promptsLanguage || 'en').split(",").reverse(); // Can be 'fr,en,de' for example
+        const docLanguages = (getEnvVar('SFDX_DOC_LANGUAGES') || getEnvVar('PROMPTS_LANGUAGE') || config.promptsLanguage || 'en')
+          .split(",")
+          .map((lang: string) => lang.trim())
+          .filter((lang: string) => lang !== '')
+          .reverse(); // Can be 'fr,en,de' for example
         for (const langKey of docLanguages) {
-          uxLog("action", this, c.cyan(t('generatingDocInLanguage') + c.bold(langKey)));
-          process.env.PROMPTS_LANGUAGE = langKey;
-          process.env.SFDX_HARDIS_LANG = langKey;
-          reinitI18n();
+          // One language failing does not keep the next ones from being generated and published
+          try {
+            uxLog("action", this, c.cyan(t('generatingDocInLanguage') + c.bold(langKey)));
+            process.env.PROMPTS_LANGUAGE = langKey;
+            process.env.SFDX_HARDIS_LANG = langKey;
+            reinitI18n();
 
-          await Project2Markdown.run(this.rebuildFullDoc ? ["--with-history"] : ["--diff-only", "--with-history"]);
-          uxLog("action", this, c.cyan(t('documentationGeneratedFromRetrievedSourcesIfYou')));
+            await Project2Markdown.run(this.rebuildFullDoc ? ["--with-history"] : ["--diff-only", "--with-history"]);
+            uxLog("action", this, c.cyan(t('documentationGeneratedFromRetrievedSourcesIfYou')));
 
-          if (config.docDeployToOrg || process.env?.SFDX_HARDIS_DOC_DEPLOY_TO_ORG === "true") {
-            await MkDocsToSalesforce.run(["--type", "Monitoring"]);
-          }
-          else if (config.docDeployToCloudflare || process.env?.SFDX_HARDIS_DOC_DEPLOY_TO_CLOUDFLARE === "true") {
-            await MkDocsToCloudflare.run([]);
-          }
-          if (config.docDeployToConfluence || process.env?.SFDX_HARDIS_DOC_DEPLOY_TO_CONFLUENCE === "true") {
-            await MkDocsToConfluence.run([]);
+            if (config.docDeployToOrg || process.env?.SFDX_HARDIS_DOC_DEPLOY_TO_ORG === "true") {
+              // A failed deployment of the doc is logged and returned, not thrown
+              const mkDocsToSalesforceRes: any = await MkDocsToSalesforce.run(["--type", "Monitoring"]);
+              if (mkDocsToSalesforceRes?.success === false) {
+                throw new SfError('The documentation could not be deployed to the org: see the deployment error in the job log');
+              }
+            }
+            else if (config.docDeployToCloudflare || process.env?.SFDX_HARDIS_DOC_DEPLOY_TO_CLOUDFLARE === "true") {
+              await MkDocsToCloudflare.run([]);
+            }
+            if (config.docDeployToConfluence || process.env?.SFDX_HARDIS_DOC_DEPLOY_TO_CONFLUENCE === "true") {
+              await MkDocsToConfluence.run([]);
+            }
+          } catch (e: any) {
+            await this.onDocumentationFailure(flags, langKey, e, exitCodeBeforeDoc);
           }
         }
       } catch (e: any) {
@@ -577,28 +595,59 @@ In agent mode:
 
   // Never throws: the error of the backup is the one the job must fail with
   private async postBackupFailureNotification(flags: any, error: any, retrieved = false) {
+    await this.postFailureNotification(flags, error, 'backupFailureNotificationError', (orgMarkdown) => ({
+      type: 'BACKUP',
+      // After the retrieve, the metadata is backed up: only the report of the changes failed
+      text: retrieved
+        ? `Metadata backup of ${orgMarkdown} retrieved, but its report of the changes failed`
+        : `Metadata backup failed in ${orgMarkdown}`,
+      severity: 'error',
+      data: {},
+    }));
+  }
+
+  // A sub-command started with .run() sets process.exitCode in SfCommand.catch before throwing
+  // again: catching its error is not enough, the exit code the backup had must be set back too.
+  // Never throws, like the backup failure notification.
+  private async onDocumentationFailure(flags: any, langKey: string, error: any, exitCodeBeforeDoc: typeof process.exitCode) {
+    process.exitCode = exitCodeBeforeDoc;
+    uxLog("warning", this, c.yellow(t('errorWhileGeneratingProjectDocumentation') + (error?.message || String(error))));
+    uxLog("log", this, c.grey(error?.stack || ''));
+    await this.postFailureNotification(flags, error, 'documentationFailureNotificationError', (orgMarkdown) => ({
+      type: 'DOCUMENTATION',
+      text: `Documentation of ${orgMarkdown} in language ${langKey} could not be generated or published`,
+      severity: 'warning',
+      data: { language: langKey },
+    }));
+  }
+
+  // Never throws: a failure notification that cannot be sent is only logged
+  private async postFailureNotification(
+    flags: any,
+    error: any,
+    notifErrorKey: string,
+    buildMessage: (orgMarkdown: string) => { type: 'BACKUP' | 'DOCUMENTATION'; text: string; severity: NotifSeverity; data: Record<string, any> },
+  ) {
     try {
       const conn = flags['target-org']?.getConnection();
       await setConnectionVariables(conn);// Required for some notifications providers like Email
       const orgMarkdown = await getOrgMarkdown(conn?.instanceUrl);
       const errorMessage = backupErrorMessage(error);
+      const { type, text, severity, data } = buildMessage(orgMarkdown);
       await NotifProvider.postNotifications({
-        type: 'BACKUP',
-        // After the retrieve, the metadata is backed up: only the report of the changes failed
-        text: retrieved
-          ? `Metadata backup of ${orgMarkdown} retrieved, but its report of the changes failed`
-          : `Metadata backup failed in ${orgMarkdown}`,
+        type,
+        text,
         buttons: await getNotificationButtons(),
         attachments: [{ text: errorMessage }],
-        severity: 'error',
+        severity,
         sideImage: 'backup',
         attachedFiles: [],
         logElements: [],
-        data: { error: errorMessage },
+        data: { error: errorMessage, ...data },
         metrics: {},
       });
     } catch (notifError: any) {
-      uxLog("warning", this, c.yellow(t('backupFailureNotificationError', { message: notifError?.message || String(notifError) })));
+      uxLog("warning", this, c.yellow(t(notifErrorKey, { message: notifError?.message || String(notifError) })));
     }
   }
 

@@ -111,6 +111,8 @@ By default, only changed files are used to generate the documentation (diff-only
   - CLOUDFLARE_PROJECT_NAME_FR=cloudity-demo-french
   - CLOUDFLARE_PROJECT_NAME_DE=cloudity-demo-german
 
+A documentation that cannot be generated or published never fails the backup job: the org state is still committed, the other languages are still generated, and a **DOCUMENTATION** warning notification gives the language and the error.
+
 If Flow history doc always display a single state, you probably need to update your workflow configuration:
 
 - on Gitlab: Env variable [`GIT_FETCH_EXTRA_FLAGS: --depth 10000`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/.gitlab-ci.yml#L17)

@@ -8,9 +8,14 @@
   - The version shows in the Pull Request comment and the notification, and can optionally be written on tickets.
   - New [hardis:project:version:list](https://sfdx-hardis.cloudity.com/hardis/project/version/list/): lists the version of each versioned branch, the version each promotion would create, and the history of the version tags.
   - [hardis:doc:release-notes](https://sfdx-hardis.cloudity.com/hardis/doc/release-notes/): with a plain version tag, the release notes start from the previous plain version instead of one of its release candidates.
+
+## [8.26.0] 2026-11-19
+
 - [hardis:project:deploy:start](https://sfdx-hardis.cloudity.com/hardis/project/deploy/start/), [hardis:project:deploy:validate](https://sfdx-hardis.cloudity.com/hardis/project/deploy/validate/) and [hardis:project:deploy:quick](https://sfdx-hardis.cloudity.com/hardis/project/deploy/quick/): no longer fail with an unknown flag error when run from VS Code.
+- [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/): a documentation that cannot be generated or published no longer fails the backup job, it sends a warning notification instead.
 - [hardis:org:diagnose:instanceupgrade](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/instanceupgrade/): the days left before the Salesforce upgrade are no longer shown as a negative number, the log line shows the org URL instead of raw markdown, and the notification is a warning only in the last 15 days.
 - [hardis:org:diagnose:unusedlicenses](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedlicenses/): the reports of deleted and failed assignments no longer overwrite the report of unused assignments.
+- [hardis:doc:mkdocs-to-cf](https://sfdx-hardis.cloudity.com/hardis/doc/mkdocs-to-cf/): the AI and diagram caches are no longer published as pages, and the site of a large org fits the Cloudflare Pages file size limit.
 - [hardis:doc:plugin:generate](https://sfdx-hardis.cloudity.com/hardis/doc/plugin/generate/): command pages can show screenshots of the command and list the reports it writes.
 - [hardis:doc:fieldusage](https://sfdx-hardis.cloudity.com/hardis/doc/fieldusage/): no longer fails with an unknown flag error when run from VS Code.
 - [hardis:org:community:update](https://sfdx-hardis.cloudity.com/hardis/org/community/update/): no longer fails with an unknown flag error when run from VS Code.

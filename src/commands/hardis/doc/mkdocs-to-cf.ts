@@ -16,6 +16,14 @@ import {
 import { CONSTANTS, getEnvVar, getLocalizedEnvVar } from '../../../config/index.js';
 import { which } from '../../../common/utils/whichUtils.js';
 import { generateMkDocsHTML } from '../../../common/docBuilder/docUtils.js';
+import {
+  CLOUDFLARE_PAGES_MAX_FILE_SIZE,
+  CLOUDFLARE_PAGES_SAFE_FILE_SIZE,
+  fitSearchIndexToSize,
+  formatFileSize,
+  listSiteFilesOverSize,
+  removeDocCacheFromSite,
+} from '../../../common/docBuilder/docSiteUtils.js';
 import { UtilsAi } from '../../../common/aiProvider/utils/utils.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { t } from '../../../common/utils/i18n.js';
@@ -39,7 +47,7 @@ Key operations performed:
 - **Cloudflare Pages Project Creation/Update:** Creates a new Cloudflare Pages project if one doesn't exist for your documentation, or updates an existing one.
 - **Cloudflare Access Policy Assignment:** Assigns a policy to restrict access to the deployed application, ensuring only authorized users can view your documentation.
 - **Cloudflare Access Application Setup:** Configures a Cloudflare Access application for the deployed site, integrating it with your Zero Trust policies.
-- **HTML Page Upload:** Deploys the generated HTML pages to Cloudflare Pages.
+- **HTML Page Upload:** Deploys the generated HTML pages to Cloudflare Pages. The AI and diagram caches are left out of the site, and a search index too big for Cloudflare is trimmed so the upload still goes through.
 - **Browser Opening (Non-CI):** Opens the newly deployed website in your default browser if the command is not run in a CI/CD environment.
 
 **Prerequisite:** The documentation must have been previously generated using \`sf hardis:doc:project2markdown --with-history\`.
@@ -72,6 +80,7 @@ The command orchestrates interactions with MkDocs, Cloudflare APIs, and Git:
   - **Access Policy Management:** Lists existing access policies and creates a new one if the required policy doesn't exist. It configures the policy with email domain restrictions and a default login method.
   - **Access Application Management:** Lists existing access applications and creates a new one for the deployed site. It then updates the application to associate it with the created access policy.
 - **Git Integration:** Retrieves the current Git branch name using \`getCurrentGitBranch()\` to construct the Cloudflare project name and branch for deployment.
+- **Site size limits:** Before the upload, removes the AI and Mermaid caches (\`cache-ai-results\`, \`cache-mermaid\`) from the site and from its search index: they only serve to regenerate the documentation. Cloudflare Pages refuses files over 25 MiB, so when \`search.json\` is still too big, the text of its largest entries is emptied (their titles stay searchable). A file still over the limit stops the command with its name and size.
 - **Wrangler CLI:** Uses the \`wrangler\` CLI (Cloudflare's developer tool) to deploy the generated HTML pages to Cloudflare Pages via \`wrangler pages deploy\`.
 - **Environment Variable Management:** Reads various environment variables to configure Cloudflare settings and project names.
 - **Error Handling:** Includes checks for missing \`mkdocs.yml\` and Cloudflare environment variables, throwing \`SfError\` when necessary.
@@ -152,9 +161,13 @@ In agent mode, all interactive prompts are skipped and default values are used.
     this.setupCloudflareClient();
 
     // Generate HTML pages
-    if ((process.env?.SKIP_BUILD_HTML || "false") !== "true") {
+    const skipBuildHtml = (process.env?.SKIP_BUILD_HTML || "false") === "true";
+    if (!skipBuildHtml) {
       await generateMkDocsHTML();
     }
+
+    // Before any Cloudflare resource is created, so a site that cannot be uploaded creates none
+    await this.fitSiteToCloudflareLimits(skipBuildHtml);
 
     // Get or Create Cloudflare Pages project
     await this.ensureCloudflarePagesProject();
@@ -201,6 +214,34 @@ In agent mode, all interactive prompts are skipped and default values are used.
       accountId: this.accountId,
     });
     uxLog("log", this, c.grey(t('cloudflareClientInfoFound')));
+  }
+
+  // Cloudflare Pages refuses the whole deployment when a single file is over 25 MiB, and the
+  // search index of a large org gets there first
+  private async fitSiteToCloudflareLimits(skipBuildHtml: boolean) {
+    const siteDir = path.join(process.cwd(), "site");
+    // generateMkDocsHTML already removed the caches: only a site built by something else
+    // (SKIP_BUILD_HTML=true) still has them
+    if (skipBuildHtml) {
+      const removedSearchEntries = await removeDocCacheFromSite(siteDir);
+      if (removedSearchEntries > 0) {
+        uxLog("log", this, c.grey(t('docCacheRemovedFromSite', { count: removedSearchEntries })));
+      }
+    }
+    const searchIndexTrim = await fitSearchIndexToSize(siteDir, CLOUDFLARE_PAGES_SAFE_FILE_SIZE);
+    if (searchIndexTrim.trimmed > 0) {
+      uxLog("warning", this, c.yellow(t('searchIndexTrimmed', {
+        maxSize: formatFileSize(CLOUDFLARE_PAGES_SAFE_FILE_SIZE),
+        count: searchIndexTrim.trimmed,
+        pages: searchIndexTrim.largest.join(', '),
+      })));
+    }
+    const filesOverSize = await listSiteFilesOverSize(siteDir, CLOUDFLARE_PAGES_MAX_FILE_SIZE);
+    if (filesOverSize.length > 0) {
+      throw new SfError(t('docSiteFilesTooLargeForCloudflare', {
+        files: filesOverSize.map((fileOverSize) => `${fileOverSize.file} (${formatFileSize(fileOverSize.size)})`).join(', '),
+      }));
+    }
   }
 
   private async ensureCloudflarePagesProject() {
@@ -302,5 +343,4 @@ In agent mode, all interactive prompts are skipped and default values are used.
     }
     await execCommand(wranglerCommand, this, { fail: true, output: true, debug: this.debugMode });
   }
-
 }
