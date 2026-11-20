@@ -444,10 +444,10 @@
     hashery "^1.5.1"
     keyv "^5.6.0"
 
-"@cfworker/json-schema@^4.0.2":
-  version "4.1.1"
-  resolved "https://registry.yarnpkg.com/@cfworker/json-schema/-/json-schema-4.1.1.tgz#4a2a3947ee9fa7b7c24be981422831b8674c3be6"
-  integrity sha512-gAmrUZSGtKc3AiBL71iNWxDsyUC5uMaKKGdvzYsBoTW/xi42JQHl7eKV2OYzCUqvc+D2RCcf7EXY2iCyFIk6og==
+"@cfworker/json-schema@^4.1.4":
+  version "4.1.6"
+  resolved "https://registry.yarnpkg.com/@cfworker/json-schema/-/json-schema-4.1.6.tgz#4ae859f7536206c8716b3c44f8e644f00edf97c7"
+  integrity sha512-YzVGTHXf4bzlyAL5KAvHYCdNbbt6zM5cYkAgxqxQPDQM6aZ4ShIIN5yJ+6q7YeonnevxT8k/LmD2tJi/jOiKkg==
 
 "@commitlint/cli@^17.1.2":
   version "17.8.1"
@@ -1428,12 +1428,12 @@
     "@anthropic-ai/sdk" "^0.129.0"
     zod "^3.25.76 || ^4"
 
-"@langchain/core@1.3.4":
-  version "1.3.4"
-  resolved "https://registry.yarnpkg.com/@langchain/core/-/core-1.3.4.tgz#3cf27b5a7b146dc1dd38decc385bd13fcb8b330d"
-  integrity sha512-4LnkVpxOzA4BuMPuAQKDDf4SujSzd4WahKk51eyUJzSEsQjyGpbyAgDRWPYr3wzgtAJ59UXewemsyIxRKTXFrA==
+"@langchain/core@1.3.5":
+  version "1.3.5"
+  resolved "https://registry.yarnpkg.com/@langchain/core/-/core-1.3.5.tgz#df9015ac3cd4f1230338b05496b5784efd2526c2"
+  integrity sha512-7mk6lrHhD9vGZ+HnUhbHJzWTuJVktV+XSgDFmDlFu6qOHuNao4iuu5wqOgFNyx3Khjv7PydgbWOwcYeRXZ/ygA==
   dependencies:
-    "@cfworker/json-schema" "^4.0.2"
+    "@cfworker/json-schema" "^4.1.4"
     "@standard-schema/spec" "^1.1.0"
     js-tiktoken "^1.0.12"
     langsmith ">=0.11.0 <1.0.0"
