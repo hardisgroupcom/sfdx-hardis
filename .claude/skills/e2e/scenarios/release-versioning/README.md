@@ -87,7 +87,9 @@ variables on GitLab. The run removes them at its start and at its end.
 - On production (a05, a07, c06, c12): the GitHub / GitLab Release exists with the PDF and the XLSX.
 - The DevOps Pipeline, run headless on the clone, shows the current tag of each versioned branch
   before it is captured (`<step>-pipeline.png`), plus the Releases tab and the Release version tab
-  of a branch where the table says so.
+  of a branch where the table says so. Every version chip must be readable: a contrast of at least
+  4.5 between its text and its background. Reading the text of the chips is not enough: on
+  2026-11-19 the text was in the page and painted in the color of its background.
 
 Then, without CI job:
 
@@ -144,6 +146,17 @@ of vscode-sfdx-hardis (`SFDX_HARDIS_REAL_RELEASE_VERSIONS=true`).
   the deployment job only learns that the name is taken when the provider refuses it.
 - One org for the four branches: the org nodes of the DevOps Pipeline all point to it, each with the
   version of its own branch.
+- A run stopped from outside (Claude Code stops background commands when memory runs low, mostly
+  during a capture) can go on as an orphan: its bash processes keep running the steps. Before you
+  replay steps with `RUN=`, stop every `bash` running `rv-e2e.sh` and every process under
+  `.vscode-test`. Two copies on one repository race: each opens the Pull Request of the other, reads
+  the tags before the other's tag appears, and their captures share the VS Code debug connection,
+  which answers `Unexpected server response: 500` (2026-11-19).
+- A step replayed after its story was merged reuses that Pull Request (`PR_<step>_story` in
+  `run.env`) instead of committing the same change again; its `-INTEGRATION-NO-TAG` check says SKIP.
+- The captures are what fills the memory: one VS Code of the test harness, plus
+  `sf hardis:project:version:list` (about 550 MB, 36 s on a real repository). Keep about 4 GB free
+  before a run.
 
 ## Reports
 

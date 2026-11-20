@@ -263,7 +263,13 @@ _gh_wait_run_id() {
     [ "$status" = "completed" ] && break
     sleep 20
   done
-  conclusion=$(gh run view "$id" -R "$REPO" --json conclusion --jq .conclusion 2>/dev/null)
+  # gh can answer nothing for a moment (2026-11-19: an empty conclusion failed a run that succeeded):
+  # a completed run always has a conclusion, so ask again until it comes
+  for _ in 1 2 3 4 5 6; do
+    conclusion=$(gh run view "$id" -R "$REPO" --json conclusion --jq .conclusion 2>/dev/null)
+    [ -n "$conclusion" ] && break
+    sleep 10
+  done
   # the latest attempt of the run
   gh run view "$id" -R "$REPO" --log >"$LOGS/$label.log" 2>&1
   # Right after a run completes, gh run view --log can answer nothing (2026-11-08: an empty

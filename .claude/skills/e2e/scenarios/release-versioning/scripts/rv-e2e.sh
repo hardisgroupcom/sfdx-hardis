@@ -148,8 +148,15 @@ patch_github_workflow() {
 
 # ------------------------------------------------------------------ tags
 # Tag names of the remote, one per line, sorted (the peeled ^{} lines of annotated tags folded)
+# A failed ls-remote prints nothing, which reads as "every tag disappeared" (2026-11-19: a check
+# that no tag was created failed on such a read): ask again until it answers
 remote_tags() {
-  git -C "$WORK" ls-remote --tags origin 2>/dev/null | awk '{sub("refs/tags/","",$2); sub(/\^\{\}$/,"",$2); print $2}' | sort -u
+  local lines
+  for _ in 1 2 3 4 5 6; do
+    lines=$(git -C "$WORK" ls-remote --tags origin 2>/dev/null) && break
+    sleep 10
+  done
+  printf '%s\n' "$lines" | awk 'NF {sub("refs/tags/","",$2); sub(/\^\{\}$/,"",$2); print $2}' | sort -u
 }
 # The commit a remote tag points to (the peeled commit for an annotated tag)
 remote_tag_commit() {
@@ -185,9 +192,19 @@ open_merge() {
 # integration is not versioned: its deployment creates no tag. Extra edits of the story come in
 # STORY_EDIT, a command run in the clone before the commit
 story() {
-  local id="$1" before after
+  local id="$1" before after saved="PR_${1//-/_}_story"
   cd "$WORK" || return 1
   git fetch -q origin
+  # Replay of a step whose story was already merged (a run stopped in the middle of the step): the
+  # same change again would make an empty commit and no Pull Request, so the merged one is reused
+  if [ -n "${!saved:-}" ] && MERGE_SHA=$(ci_merge_sha "${!saved}") && [ -n "$MERGE_SHA" ] && [ "$MERGE_SHA" != "null" ]; then
+    PR="${!saved}"
+    say "$id: story already merged in #$PR, resumed from its deployment to integration"
+    ci_wait_deploy integration "$MERGE_SHA" "$id-integration"
+    assert_log "$id-INTEGRATION" "$id-integration" 0 "the story of $id is deployed to integration"
+    record "$id-INTEGRATION-NO-TAG" SKIP "step resumed after the story was merged: the tags before its deployment are unknown"
+    return 0
+  fi
   git checkout -q -f -B "feature/rv-$id" origin/integration
   sed -i "s#<value>.*</value>#<value>story $id</value>#" force-app/main/default/labels/CustomLabels.labels-meta.xml
   [ -n "${STORY_EDIT:-}" ] && eval "$STORY_EDIT"
