@@ -3913,8 +3913,8 @@
       "default": "v{MAJ}.{MIN}.{PATCH}-rc.{RC}",
       "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-release-versioning/",
       "examples": [
-        "v{MAJ}.{MIN}.{PATCH}-pi{PI}-it{IT}-uat-rc{RC}",
-        "v{MAJ}.{MIN}.{PATCH}-rc{RC}-{BRANCH}"
+        "v{MAJ}.{MIN}.{PATCH}-pi{PI}-it{IT}-{BRANCH}-rc{RC}",
+        "v{MAJ}.{MIN}.{PATCH}-{BRANCH}-rc{RC}"
       ],
       "pattern": "^[A-Za-z0-9._{}-]+$",
       "title": "Release versioning: tag format of release candidates",

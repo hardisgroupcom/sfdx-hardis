@@ -90,14 +90,14 @@ By default, release candidates are named `v{MAJ}.{MIN}.{PATCH}-rc.{RC}`. Set `re
 ```yaml
 # config/branches/.sfdx-hardis.uat.yml
 releaseVersioning: true
-releaseVersioningTagFormat: v{MAJ}.{MIN}.{PATCH}-pi{PI}-it{IT}-uat-rc{RC}
+releaseVersioningTagFormat: v{MAJ}.{MIN}.{PATCH}-pi{PI}-it{IT}-{BRANCH}-rc{RC}
 releaseVersioningMinimumVariables:
   PI: 2
   IT: 4
 
 # config/branches/.sfdx-hardis.preprod.yml
 releaseVersioning: true
-releaseVersioningTagFormat: v{MAJ}.{MIN}.{PATCH}-rc{RC}-preprod
+releaseVersioningTagFormat: v{MAJ}.{MIN}.{PATCH}-{BRANCH}-rc{RC}
 
 # config/branches/.sfdx-hardis.main.yml
 releaseVersioning: true
@@ -116,13 +116,13 @@ The release cycle of this config, with no tag at the start:
 |-----------------------------------------------|--------------------------|---------------------------------------------------------------------------|
 | int promoted to uat                           | `v1.0.0-pi2-it4-uat-rc1` | First release, PI and IT from the config                                  |
 | int promoted to uat, twice                    | `v1.0.0-pi2-it4-uat-rc3` | Same release, same text: next release candidates                          |
-| uat promoted to preprod                       | `v1.0.0-rc1-preprod`     | Another text: its own counter starts at 1                                 |
+| uat promoted to preprod                       | `v1.0.0-preprod-rc1`     | Another text: its own counter starts at 1                                 |
 | A Pull Request sets `IT: 5`, int to uat       | `v1.1.0-pi2-it5-uat-rc1` | 1.0.0 moved up to preprod: uat opens 1.1.0, with IT 5                     |
-| hotfix merged into preprod                    | `v1.0.0-rc2-preprod`     | The hotfix joins the release waiting in preprod                           |
+| hotfix merged into preprod                    | `v1.0.0-preprod-rc2`     | The hotfix joins the release waiting in preprod                           |
 | preprod promoted to main                      | `v1.0.0`                 | Production always gets the plain version                                  |
 | A Pull Request sets `PI: 3, IT: 1`, int to uat | `v1.1.0-pi3-it1-uat-rc1` | Release 1.1.0 is still open, but the text is new: the counter restarts   |
 | A Pull Request sets `PI: 2, IT: 9`, int to uat | `v1.1.0-pi3-it1-uat-rc2` | The tags hold PI 3 / IT 1 already: lowering the config has no effect     |
-| uat promoted to preprod                       | `v1.1.0-rc1-preprod`     |                                                                           |
+| uat promoted to preprod                       | `v1.1.0-preprod-rc1`     |                                                                           |
 | preprod promoted to main                      | `v1.1.0`                 | Its release notes start from `v1.0.0`                                     |
 
 The rules:

@@ -336,8 +336,8 @@ describe('releaseVersionRules', () => {
   });
 
   describe('tag formats', () => {
-    const UAT_FORMAT = parseTagFormat('v{MAJ}.{MIN}.{PATCH}-pi{PI}-it{IT}-uat-rc{RC}') as TagFormat;
-    const PREPROD_FORMAT = parseTagFormat('v{MAJ}.{MIN}.{PATCH}-rc{RC}-preprod') as TagFormat;
+    const UAT_FORMAT = parseTagFormat('v{MAJ}.{MIN}.{PATCH}-pi{PI}-it{IT}-{BRANCH}-rc{RC}') as TagFormat;
+    const PREPROD_FORMAT = parseTagFormat('v{MAJ}.{MIN}.{PATCH}-{BRANCH}-rc{RC}') as TagFormat;
 
     function withFormats(tagFormats: Record<string, TagFormat>, variables: Record<string, string> = {}): ReleaseVersionSettings {
       return { ...SETTINGS, tagFormats, minimumVariables: { uat: variables, preprod: variables } };
@@ -350,7 +350,7 @@ describe('releaseVersionRules', () => {
     it('reads valid formats and rejects invalid ones', () => {
       expect(parseTagFormat('v{MAJ}.{MIN}.{PATCH}-rc.{RC}')?.variables).to.deep.equal([]);
       expect(UAT_FORMAT.variables).to.deep.equal(['PI', 'IT']);
-      expect(parseTagFormat('v{MAJ}.{MIN}.{PATCH}-rc{RC}-{BRANCH}')?.variables).to.deep.equal([]);
+      expect(parseTagFormat('v{MAJ}.{MIN}.{PATCH}-{BRANCH}-rc{RC}')?.variables).to.deep.equal([]);
       for (const invalid of [
         '',
         'v{MAJ}.{MIN}.{PATCH}-uat',
@@ -396,10 +396,10 @@ describe('releaseVersionRules', () => {
       expect(repo.deploy('uat', fromInt)).to.equal('v1.0.0-pi2-it4-uat-rc1');
       expect(repo.deploy('uat', fromInt)).to.equal('v1.0.0-pi2-it4-uat-rc2');
       expect(repo.deploy('uat', fromInt)).to.equal('v1.0.0-pi2-it4-uat-rc3');
-      expect(repo.deploy('preprod', fromUat)).to.equal('v1.0.0-rc1-preprod');
+      expect(repo.deploy('preprod', fromUat)).to.equal('v1.0.0-preprod-rc1');
       setVariables(repo, { PI: '2', IT: '5' });
       expect(repo.deploy('uat', fromInt)).to.equal('v1.1.0-pi2-it5-uat-rc1');
-      expect(repo.deploy('preprod', hotfix)).to.equal('v1.0.0-rc2-preprod');
+      expect(repo.deploy('preprod', hotfix)).to.equal('v1.0.0-preprod-rc2');
       expect(repo.deploy('main', fromPreprod, repo.names().filter((name) => name.startsWith('v1.0.0')))).to.equal('v1.0.0');
       // A new PI: the variables go up together, IT 1 of PI 3 is above IT 5 of PI 2
       setVariables(repo, { PI: '3', IT: '1' });
@@ -408,11 +408,11 @@ describe('releaseVersionRules', () => {
       // Lowering the config has no effect: the tags hold higher values
       setVariables(repo, { PI: '2', IT: '9' });
       expect(repo.deploy('uat', fromInt)).to.equal('v1.1.0-pi3-it1-uat-rc3');
-      expect(repo.deploy('preprod', fromUat)).to.equal('v1.1.0-rc1-preprod');
+      expect(repo.deploy('preprod', fromUat)).to.equal('v1.1.0-preprod-rc1');
       expect(repo.deploy('main', fromPreprod, repo.names())).to.equal('v1.1.0');
       // Release notes: a release candidate starts from the tag deployed before it on its branch
       expect(findPreviousVersionTag('v1.1.0-pi3-it1-uat-rc1', repo.tags)?.name).to.equal('v1.1.0-pi2-it5-uat-rc1');
-      expect(findPreviousVersionTag('v1.1.0-rc1-preprod', repo.tags)?.name).to.equal('v1.0.0-rc2-preprod');
+      expect(findPreviousVersionTag('v1.1.0-preprod-rc1', repo.tags)?.name).to.equal('v1.0.0-preprod-rc2');
       expect(findPreviousVersionTag('v1.1.0', repo.tags)?.name).to.equal('v1.0.0');
     });
 
