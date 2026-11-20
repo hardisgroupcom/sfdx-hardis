@@ -757,11 +757,14 @@ export async function getReleaseDate(scope: ReleaseNotesScope): Promise<string> 
  * - `branches`: merged into the source branch since its last merge into the target branch (what is
  *   waiting). Not in post mode once a merge commit is chosen: right after that merge, "since the last
  *   merge" is empty
- * - `goLive`: introduced by the chosen merge commit
+ * - `goLive`: introduced by the chosen merge commit, or by the merges between the previous tag and the
+ *   release tag. A release tag created by a deployment sits on the merge of the go live: the merged
+ *   Pull Requests of the target branch would only give that merge between two major branches, which
+ *   the notes leave out, and none of the User Stories it carries
  * - `recent`: the recently merged Pull Requests of the target branch
  */
 export function pullRequestsLookup(scope: ReleaseNotesScope): "dates" | "branches" | "goLive" | "recent" {
-  const mergeCommitChosen = Boolean(scope.toCommit && scope.toCommit !== "HEAD" && !scope.releaseTag);
+  const mergeCommitChosen = Boolean(scope.toCommit && scope.toCommit !== "HEAD");
   if (scope.fromDate || scope.toDate) {
     return "dates";
   }
@@ -829,30 +832,37 @@ export async function collectPullRequests(
     // introduced by the merge commit. This excludes hotfixes merged directly to the
     // target branch at other times, which a plain "recent merged PRs" list catches.
     const childBranches = recursiveGetChildBranches(scope.targetBranch, majorOrgs);
-    try {
-      pullRequests = await gitProvider.listPullRequestsInGoLive(
-        scope.targetBranch,
-        [...childBranches],
-        scope.toCommit,
-      );
-    } catch (e: any) {
-      uxLog("warning", commandRef, c.yellow(t("releaseNotesCouldNotListPrs", { message: e.message })));
+    // A release tag covers every merge of the target branch since the previous tag, usually one
+    const goLiveCommits = scope.releaseTag ? await listFirstParentCommits(scope.fromCommit, scope.toCommit) : [scope.toCommit];
+    const found = new Map<string, CommonPullRequestInfo>();
+    for (const goLiveCommit of goLiveCommits) {
+      try {
+        const goLivePullRequests = await gitProvider.listPullRequestsInGoLive(
+          scope.targetBranch,
+          [...childBranches],
+          goLiveCommit,
+        );
+        for (const pr of goLivePullRequests || []) {
+          if (!found.has(pr.idStr)) {
+            found.set(pr.idStr, pr);
+          }
+          // The go-live merge PR itself (e.g. preprod -> main) carries the release and
+          // must survive the inter-major-branch filter below.
+          const sha = pr.mergeCommitSha;
+          if (sha && (sha === goLiveCommit || sha.startsWith(goLiveCommit) || goLiveCommit.startsWith(sha))) {
+            releaseCommitPrIds.add(pr.idStr);
+          }
+        }
+      } catch (e: any) {
+        uxLog("warning", commandRef, c.yellow(t("releaseNotesCouldNotListPrs", { message: e.message })));
+      }
     }
-    if (!pullRequests || pullRequests.length === 0) {
+    pullRequests = [...found.values()];
+    if (pullRequests.length === 0) {
       // Fallback (e.g. provider without go-live support): list merged PRs for the target branch
       pullRequests = (await gitProvider.listPullRequests(
         { targetBranch: scope.targetBranch, status: "merged" },
       )) || [];
-    } else {
-      // The go-live merge PR itself (e.g. preprod -> main) carries the release and
-      // must survive the inter-major-branch filter below.
-      for (const pr of pullRequests) {
-        const sha = pr.mergeCommitSha;
-        const to = scope.toCommit;
-        if (sha && (sha === to || sha.startsWith(to) || to.startsWith(sha))) {
-          releaseCommitPrIds.add(pr.idStr);
-        }
-      }
     }
   } else {
     // Tag-based or generic: list merged PRs for the target branch
@@ -980,6 +990,22 @@ function recursiveGetChildBranches(
     }
   }
   return collected;
+}
+
+// The commits of the target branch itself between two tags (its merges, squashes and direct commits),
+// newest first, at most 20: each one is the go live of what it brought. Only the tagged commit when
+// there is no previous tag or git cannot list the range
+async function listFirstParentCommits(fromCommit: string, toCommit: string): Promise<string[]> {
+  if (!fromCommit || fromCommit === toCommit) {
+    return [toCommit];
+  }
+  try {
+    const raw = await git().raw(["rev-list", "--first-parent", "--max-count=20", `${fromCommit}..${toCommit}`]);
+    const commits = raw.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    return commits.length > 0 ? commits : [toCommit];
+  } catch {
+    return [toCommit];
+  }
 }
 
 export interface TicketCollectionResult {

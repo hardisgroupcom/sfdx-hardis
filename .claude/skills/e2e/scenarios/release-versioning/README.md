@@ -87,7 +87,9 @@ variables on GitLab. The run removes them at its start and at its end.
 - On production (a05, a07, c06, c12): the GitHub / GitLab Release exists with the PDF and the XLSX.
 - The DevOps Pipeline, run headless on the clone, shows the current tag of each versioned branch
   before it is captured (`<step>-pipeline.png`), plus the Releases tab and the Release version tab
-  of a branch where the table says so. Every version chip must be readable: a contrast of at least
+  of a branch where the table says so. The last step (a10, c12) also captures each view of the
+  switch (Major branches, Feature branches, Dev orgs) and the diagram with the Versions button off,
+  with no version chip left on it. Every version chip must be readable: a contrast of at least
   4.5 between its text and its background. Reading the text of the chips is not enough: on
   2026-11-19 the text was in the page and painted in the color of its background.
 
@@ -160,6 +162,22 @@ of vscode-sfdx-hardis (`SFDX_HARDIS_REAL_RELEASE_VERSIONS=true`).
 
 ## Reports
 
-The `report` step writes `report.md` with the results, the captures in step order and the timeline,
-and copies it with `shots/` and `timeline.gif` into `reports/<run>/`. The images are not committed
-(`reports/.gitignore`): attach them to the Pull Request when they are useful there.
+Nothing of a run is committed. The `report` step writes `report.md` (the results, the captures in
+step order and the timeline), `results-last.tsv`, `meta.json`, `shots/` and `timeline.gif` into
+`hardis-report/e2e/release-versioning/<run>/` of the working copy, which git ignores.
+
+Once the runs are done, show them in one claude.ai artifact, private to the user until they share it:
+
+```bash
+cd .claude/skills/e2e/scenarios/release-versioning/scripts
+python rv-showcase.py ../../../../../../hardis-report/e2e/release-versioning/showcase \
+  ../../../../../../hardis-report/e2e/release-versioning/<run> [<run> ...] --findings findings.json
+```
+
+`findings.json` lists what the runs found: `[{"kind": "bug" | "fixed" | "harness" | "environment",
+"title": "...", "text": "..."}]`. The script writes `index.html` and `shots/<run>/*.png`, the
+captures cropped to the editor area. Publish the folder with `publish_files` of the claude-artifacts
+server (`index.html` and every capture as `shots/<run>/<file>`), or republish the artifact of the
+last batch with its slug. The page lists the runs; for each one, its steps with the tag created, the
+DevOps Pipeline after the step picked (with the other captures of the step), a play button that
+walks the steps, and every check. Give the user the link, and put it in the Pull Request.

@@ -104,6 +104,10 @@ describe('pullRequestsLookup()', () => {
     expect(pullRequestsLookup({ mode: 'post', targetBranch: 'uat', fromCommit: '', toCommit: '', fromDate: '2026-09-01' })).to.equal('dates');
   });
 
+  it('reads the go live of a release tag, not the recent merges of the target branch', () => {
+    expect(pullRequestsLookup({ mode: 'post', targetBranch: 'main', fromCommit: 'edeb5ae', toCommit: merge, releaseTag: 'v1.5.0', previousTag: 'v1.4.0' })).to.equal('goLive');
+  });
+
   it('falls back to the recent merges of the target branch', () => {
     expect(pullRequestsLookup({ mode: 'post', targetBranch: 'main', fromCommit: '', toCommit: 'HEAD' })).to.equal('recent');
   });

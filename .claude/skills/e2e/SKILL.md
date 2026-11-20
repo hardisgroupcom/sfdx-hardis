@@ -12,7 +12,7 @@ model: opus
 Each scenario proves one feature against real Salesforce orgs, real CI jobs running sfdx-hardis built
 from the branch under test, and real Pull Requests, then writes a report. A scenario lives in its own
 folder under `scenarios/`: its `README.md` is the procedure, next to its `scripts/`, `reference/` and
-`reports/`.
+`reports/` (text reports only, see the rules below).
 
 ## Pick the scenario
 
@@ -57,7 +57,14 @@ works in the sibling clones of the course, not in a throwaway repository.
   documents.
 - **A check that cannot run says SKIP with the reason, never OK.** A wrong expectation found during a
   run is fixed in the script and written in the scenario `README.md` traps, not only in the report.
-- **Each run writes its report** in the `reports/` folder of its scenario.
+- **Each run writes its report.** A text report (Markdown, no image) may be committed in the
+  `reports/` folder of its scenario. Screenshots, GIFs, videos and full run outputs are never
+  committed: they go to `hardis-report/e2e/<scenario>/<run>/` of the working copy, which git ignores.
+- **Show the results in a claude.ai artifact** when the run captured screens: one page for the batch
+  of runs, with each step, its captures and every check, published with the claude-artifacts server
+  (`publish_files`) and private to the user until they share it. Give the user the link, and put it
+  in the Pull Request. A scenario that captures screens keeps its page builder in its `scripts/`
+  (the release-versioning `rv-showcase.py` is the reference).
 - **Clean up** what the run created (throwaway repositories, scratch orgs) once the report is written,
   unless the user wants to look at them.
 - **No customer name** in a report, a commit or a Pull Request: throwaway orgs and repositories only.
@@ -65,7 +72,7 @@ works in the sibling clones of the course, not in a throwaway repository.
 ## Add a scenario
 
 1. Create `scenarios/<name>/` with `README.md` (what it proves, prerequisites, how to run, what each
-   step proves, traps), `scripts/` and `reports/`.
+   step proves, traps), `scripts/` and, for text reports, `reports/`.
 2. Reuse the shared harness by a path relative to the script (`$HERE/../../promotion-branches/scripts`),
    so the scenario runs from any working copy or worktree.
 3. Add its row to the table above, and its feature to the `description` of this skill.

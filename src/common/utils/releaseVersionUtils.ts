@@ -8,7 +8,7 @@
 import c from 'chalk';
 import * as path from 'path';
 import fs from './fsUtils.js';
-import { git, uxLog } from './index.js';
+import { git, isCI, uxLog } from './index.js';
 import { t } from './i18n.js';
 import { getConfig, getEnvVar } from '../../config/index.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
@@ -97,10 +97,11 @@ const TAG_FORMAT_ENV_VAR = 'SFDX_HARDIS_RELEASE_VERSIONING_TAG_FORMAT';
 
 /**
  * True when a deployment job on this branch creates a version: the branch declares
- * releaseVersioning, the job deploys (not a check) and the deployed commit is on the branch.
+ * releaseVersioning, the job deploys (not a check) and the deployed commit is on the branch. A
+ * deployment run from a workstation never tags: its checkout is not the commit the CI deployed.
  */
 export async function isReleaseVersioningActive(branch: string | null, options: { checkOnly: boolean }, commandRef: any): Promise<boolean> {
-  if (!branch || options.checkOnly || isMajorBranchCheckMode()) {
+  if (!isCI || !branch || options.checkOnly || isMajorBranchCheckMode()) {
     return false;
   }
   const graph = buildVersionedBranchGraph(await listMajorOrgs());

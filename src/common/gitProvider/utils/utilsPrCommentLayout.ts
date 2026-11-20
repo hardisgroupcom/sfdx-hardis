@@ -194,7 +194,8 @@ function buildReleaseVersionLine(prData: Partial<PullRequestData>): string {
     return '';
   }
   const tag = releaseVersion.url ? `[**${releaseVersion.tag}**](${releaseVersion.url})` : `**${releaseVersion.tag}**`;
-  return `Release version: ${tag}`;
+  // Ends like a sentence: the note of an empty deployment can follow it on the same line
+  return `Release version: ${tag}.`;
 }
 
 // Stopped only by manual steps not done yet: nothing to fix in the code, and a push is not needed

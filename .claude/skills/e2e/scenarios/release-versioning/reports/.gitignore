@@ -1,4 +1,0 @@
-# The captures of a run stay local: attach them to the Pull Request when useful
-*/shots/
-*.gif
-*.png

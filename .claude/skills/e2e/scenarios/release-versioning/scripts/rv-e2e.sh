@@ -25,7 +25,7 @@
 #   (see ../../promotion-branches/scripts/ci-provider-<provider>.sh)
 #
 # Results: $LOGS/results.tsv (id, OK|FAIL|SKIP, detail), report and captures in $LOGS, copied to
-# ../reports/<run>/ by the report step
+# <working copy>/hardis-report/e2e/release-versioning/<run>/ (git-ignored) by the report step
 set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -433,7 +433,7 @@ if [ "$PART" = "default" ]; then
   fi
   step a08 && cycle_step a08 promote preprod uat v1.5.0-rc.2 "preprod merged back into uat: 1.5.0 stays open"
   step a09 && cycle_step a09 promote uat preprod v1.5.0-rc.3 "1.5.0 moves up, the shared counter goes on"
-  step a10 && cycle_step a10 story integration uat v1.6.0-rc.1 "1.5.0 moved up: uat opens 1.6.0" "" "releases,branch:uat,branch:preprod"
+  step a10 && cycle_step a10 story integration uat v1.6.0-rc.1 "1.5.0 moved up: uat opens 1.6.0" "" "releases,branch:uat,branch:preprod,views,versions-off"
 fi
 
 # ------------------------------------------------------------------ PART=custom: tag formats, variables, CI/CD variables
@@ -488,7 +488,7 @@ if [ "$PART" = "custom" ]; then
     cycle_step c11 promote uat preprod v1.1.0-rc1-preprod "Variable removed: preprod uses its own format again"
   fi
   if step c12; then
-    cycle_step c12 promote preprod main v1.1.0 "1.1.0 reaches production" "" "releases,branch:uat,branch:preprod,branch:main"
+    cycle_step c12 promote preprod main v1.1.0 "1.1.0 reaches production" "" "releases,branch:uat,branch:preprod,branch:main,views,versions-off"
     expect_release c12 v1.1.0
     for v in $RV_VARIABLES; do ci_var_unset "$v"; done
   fi
@@ -627,12 +627,16 @@ if step report; then
     column -t -s $'\t' "$LOGS/ci-jobs.tsv" 2>/dev/null || cat "$LOGS/ci-jobs.tsv"
     echo '```'
   } >"$LOGS/report.md"
-  # The report, its captures and the timeline, next to the scenario (the images are not committed)
-  REPORT_DIR="$HERE/../reports/$RUN"
+  # The report, its results, its captures and the timeline in the git-ignored hardis-report folder of
+  # the working copy: nothing of a run is committed. rv-showcase.py builds the artifact page from it.
+  REPORT_DIR="$ROOT/hardis-report/e2e/release-versioning/$RUN"
   mkdir -p "$REPORT_DIR"
-  cp "$LOGS/report.md" "$REPORT_DIR/report.md"
+  cp "$LOGS/report.md" "$LOGS/results-last.tsv" "$REPORT_DIR/"
   [ -d "$SHOTS" ] && cp -r "$SHOTS" "$REPORT_DIR/"
   [ -f "$LOGS/timeline.gif" ] && cp "$LOGS/timeline.gif" "$REPORT_DIR/"
+  node -e 'const [run,part,provider,repo,branch,commit,extension]=process.argv.slice(1);console.log(JSON.stringify({run,part,provider,repo,branch,commit,extension,date:new Date().toISOString().slice(0,10)},null,2))' \
+    "$RUN" "$PART" "$PROVIDER" "$REPO_URL" "$SFDX_HARDIS_BRANCH" "$(git -C "$ROOT" rev-parse --short HEAD)" \
+    "$(git -C "$EXT" branch --show-current 2>/dev/null) $(git -C "$EXT" rev-parse --short HEAD 2>/dev/null)" >"$REPORT_DIR/meta.json"
   say "report: $REPORT_DIR/report.md ($ok OK, $fail FAIL, $skip SKIP)"
 fi
 echo "RV E2E DONE"
