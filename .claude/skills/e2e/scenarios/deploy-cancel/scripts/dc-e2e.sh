@@ -852,5 +852,7 @@ if step report; then
     done
   } >"$LOGS/report.md"
   say "report: $LOGS/report.md"
-  grep -c "	FAIL	" "$RESULTS" | xargs -I{} echo "FAIL lines: {}"
+  fail_lines=$(grep -c "	FAIL	" "$RESULTS" || true)
+  echo "FAIL lines: ${fail_lines:-0}"
+  [ "${fail_lines:-0}" -eq 0 ]
 fi
