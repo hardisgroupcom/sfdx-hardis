@@ -1,0 +1,317 @@
+{
+  "command": "hardis:org:configure:grafana-dashboards",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Do you already have a Grafana instance?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Do you already have a Grafana instance?",
+            "description": "Grafana Cloud stack or self-hosted Grafana instance where the Org Monitoring dashboards will be installed",
+            "choices": [
+              {
+                "title": "✅ Yes",
+                "value": true
+              },
+              {
+                "title": "❌ No",
+                "value": false
+              }
+            ],
+            "optionsPerPage": 9999,
+            "initial": 0
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "✅ Yes"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 What is your Grafana instance URL?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "text",
+            "name": "value",
+            "message": "🦙 What is your Grafana instance URL?",
+            "description": "URL of your Grafana instance, for example https://mycompany.grafana.net"
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "https://helios-solar.grafana.net"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 What is your Grafana service account token?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "text",
+            "name": "value",
+            "message": "🦙 What is your Grafana service account token?",
+            "description": "Service account token with the Editor role. It is never written in a file.",
+            "sensitive": true
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Selection hidden because it contains sensitive information."
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Installing Org Monitoring by sfdx-hardis Grafana dashboards on https://helios-solar.grafana.net ..."
+      }
+    },
+    {
+      "delay": 700,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Grafana folder ready: Org Monitoring by sfdx-hardis (uid: sfdx-hardis-v2)"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Downloading and importing dashboards from GitHub (ref: main) ..."
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Imported dashboard: 00 - Fleet Overview"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Imported dashboard: 01 - Org Home"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Imported dashboard: 02 - Reliability (Apex & Flow errors)"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Imported dashboard: 03 - Limits & Capacity"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Imported dashboard: 04 - DevOps & DORA"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Imported dashboard: 05 - Security Posture"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Imported dashboard: 06 - Technical Debt"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Imported dashboard: 07 - Adoption & Licenses"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Imported dashboard: 08 - Usage & Cost"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Imported dashboard: 80 - Indicator Detail"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Imported dashboard: 90 - Search: Org"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Imported dashboard: 91 - Search: Licenses"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Imported dashboard: 92 - Search: Packages"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Importing sfdx-hardis alert rules (paused) ..."
+      }
+    },
+    {
+      "delay": 600,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Using prometheus datasource: grafanacloud-heliossolar-prom (uid: grafanacloud-prom)"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Using loki datasource: grafanacloud-heliossolar-logs (uid: grafanacloud-logs)"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Importing 1 alert rule group(s)..."
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Imported 8 alert rules, all paused."
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "table",
+        "message": "[{\"dashboard\":\"00 - Fleet Overview\",\"url\":\"https://helios-solar.grafana.net/d/sfdx-hardis-v2-fleet/00-fleet-overview\"},{\"dashboard\":\"01 - Org Home\",\"url\":\"https://helios-solar.grafana.net/d/sfdx-hardis-v2-org-home/01-org-home\"},{\"dashboard\":\"02 - Reliability (Apex & Flow errors)\",\"url\":\"https://helios-solar.grafana.net/d/sfdx-hardis-v2-org-reliability/02-reliability-apex-flow-errors\"},{\"dashboard\":\"03 - Limits & Capacity\",\"url\":\"https://helios-solar.grafana.net/d/sfdx-hardis-v2-org-limits/03-limits-capacity\"},{\"dashboard\":\"04 - DevOps & DORA\",\"url\":\"https://helios-solar.grafana.net/d/sfdx-hardis-v2-org-devops/04-devops-dora\"},{\"dashboard\":\"05 - Security Posture\",\"url\":\"https://helios-solar.grafana.net/d/sfdx-hardis-v2-org-security/05-security-posture\"},{\"dashboard\":\"06 - Technical Debt\",\"url\":\"https://helios-solar.grafana.net/d/sfdx-hardis-v2-org-debt/06-technical-debt\"},{\"dashboard\":\"07 - Adoption & Licenses\",\"url\":\"https://helios-solar.grafana.net/d/sfdx-hardis-v2-org-adoption/07-adoption-licenses\"},{\"dashboard\":\"08 - Usage & Cost\",\"url\":\"https://helios-solar.grafana.net/d/sfdx-hardis-v2-org-usage/08-usage-cost\"},{\"dashboard\":\"80 - Indicator Detail\",\"url\":\"https://helios-solar.grafana.net/d/sfdx-hardis-v2-dtl-indicator/80-indicator-detail\"},{\"dashboard\":\"90 - Search: Org\",\"url\":\"https://helios-solar.grafana.net/d/sfdx-hardis-v2-search-org/90-search-org\"},{\"dashboard\":\"91 - Search: Licenses\",\"url\":\"https://helios-solar.grafana.net/d/sfdx-hardis-v2-search-licenses/91-search-licenses\"},{\"dashboard\":\"92 - Search: Packages\",\"url\":\"https://helios-solar.grafana.net/d/sfdx-hardis-v2-search-packages/92-search-packages\"}]"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "13 Grafana dashboards installed. Open the Fleet Overview: https://helios-solar.grafana.net/d/sfdx-hardis-v2-fleet/00-fleet-overview"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Enable the alert rules you want from Alerting -> Alert rules, then configure your contact points and notification policies."
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

@@ -1,0 +1,194 @@
+{
+  "command": "hardis:package:install",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Please select the package you want to install on org  victor.martin@helios-solar.demo",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "name": "value",
+            "type": "select",
+            "message": "🦙 Please select the package you want to install on org  victor.martin@helios-solar.demo",
+            "description": "Choose which package to install from the available list",
+            "placeholder": "Select a package",
+            "choices": [
+              {
+                "title": "Other",
+                "value": "other"
+              }
+            ],
+            "initial": 0,
+            "optionsPerPage": 9999
+          }
+        ]
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Other"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 What is the id of the Package Version to install ? (starting with 04t)\nYou can find it using tooling api request Select Id,SubscriberPackage.Name,SubscriberPackageVersionId from InstalledSubscriberPackage",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "name": "value",
+            "type": "text",
+            "message": "🦙 What is the id of the Package Version to install ? (starting with 04t)\nYou can find it using tooling api request Select Id,SubscriberPackage.Name,SubscriberPackageVersionId from InstalledSubscriberPackage",
+            "description": "Enter the package version ID for the package you want to install",
+            "placeholder": "Ex: 04t2p000000XXXXXX"
+          }
+        ]
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "04t0b000000HeLiOSAA"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Enter the password for this package (leave empty if package is not protected by a password)",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "name": "installationkey",
+            "type": "text",
+            "message": "🦙 Enter the password for this package (leave empty if package is not protected by a password)",
+            "description": "Provide the installation password if the package is protected",
+            "placeholder": "Ex: mypassword123"
+          }
+        ]
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Listing packages installed on current org..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf package installed list",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1200,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf package installed list",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Installing package  - ..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf package install --package 04t0b000000HeLiOSAA --no-prompt --security-type AdminsOnly --wait 60 --json",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf package install --package 04t0b000000HeLiOSAA --no-prompt --security-type AdminsOnly --wait 60 --json",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf package installed list",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1000,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf package installed list",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

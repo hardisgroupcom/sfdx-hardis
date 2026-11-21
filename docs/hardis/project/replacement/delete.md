@@ -36,6 +36,16 @@ Required in agent mode: `--layer` (and `--branch` with `--layer branch`) and `--
 </details>
 
 
+## Screenshots
+
+![Pick the rule to delete](../../../assets/images/commands/project/replacement/delete-1.webp)
+
+_Pick the rule to delete_
+
+![The crew-support-email replacement rule is removed from the project configuration](../../../assets/images/commands/project/replacement/delete.webp)
+
+_The crew-support-email replacement rule is removed from the project configuration_
+
 ## Parameters
 
 | Name         |  Type   | Description                                                                                                                                                     | Default | Required |           Options            |

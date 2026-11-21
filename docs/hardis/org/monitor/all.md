@@ -80,11 +80,11 @@ The default list of commands is the following:
 |                                                   Key                                                    | Description                                                                         | Command                                                                                                                                                        | Frequency |
 |:--------------------------------------------------------------------------------------------------------:|:------------------------------------------------------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------:|
 |              [AUDIT_TRAIL](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail)              | Detect **suspect setup actions** in major org                                       | [sf hardis:org:diagnose:audittrail](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail)                                                           |   daily   |
-|               [LEGACY_API](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi)               | Detect calls to **deprecated API versions**                                         | [sf hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi)                                                             |   daily   |
 |                 [ORG_LIMITS](https://sfdx-hardis.cloudity.com/hardis/org/monitor/limits)                 | Detect if **org limits** are close to be reached                                    | [sf hardis:org:monitor:limits](https://sfdx-hardis.cloudity.com/hardis/org/monitor/limits)                                                                     |   daily   |
 |            [APEX_FLEX_QUEUE](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/flex-queue)            | Detect **Apex flex queue backlog**                                                  | [sf hardis:org:diagnose:flex-queue](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/flex-queue)                                                           |   daily   |
 |              [APEX_FLOW_ERRORS](https://sfdx-hardis.cloudity.com/hardis/org/monitor/errors)              | Detect **Apex and Flow errors**                                                     | [sf hardis:org:monitor:errors](https://sfdx-hardis.cloudity.com/hardis/org/monitor/errors)                                                                     |   daily   |
 |                  [AGENT_TESTS](https://sfdx-hardis.cloudity.com/hardis/org/test/agents)                  | **Agentforce agent tests** run results                                              | [sf hardis:org:test:agents](https://sfdx-hardis.cloudity.com/hardis/org/test/agents)                                                                           |  weekly   |
+|         [WHAT_WILL_BREAK](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/what-will-break)          | Detect **what will break** after dated Salesforce changes                           | [sf hardis:org:diagnose:what-will-break](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/what-will-break)                                                 |   daily   |
 | [UNSECURED_CONNECTED_APPS](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps) | Detect **unsecured Connected Apps** in an org                                       | [sf hardis:org:diagnose:unsecure-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps)                                 |   daily   |
 |                  [MFA_CONFIG](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/mfa)                  | Detect **MFA configuration gaps** in the org                                        | [sf hardis:org:diagnose:mfa](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/mfa)                                                                         |  weekly   |
 |    [DANGEROUS_PERMISSIONS](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-permissions)    | Audit **dangerous permissions** granted through Profiles and Permission Sets        | [sf hardis:org:diagnose:unsecure-permissions](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-permissions)                                       |    off    |
@@ -97,7 +97,6 @@ The default list of commands is the following:
 |   [UNUSED_USERS_EXPERIENCE_6_MONTHS](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedusers)   | Detect **active users without recent logins** (Experience, 6 months)                | [sf hardis:org:diagnose:unusedusers --licensetypes experience --days 180](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedusers)                    |  weekly   |
 |       [ACTIVE_USERS_CRM_WEEKLY](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedusers)        | Detect **active users with recent logins** (CRM, 1 week)                            | [sf hardis:org:diagnose:unusedusers --returnactiveusers --licensetypes all-crm --days 7](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedusers)     |  weekly   |
 |   [ACTIVE_USERS_EXPERIENCE_MONTHLY](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedusers)    | Detect **active users with recent logins** (Experience, 1 month)                    | [sf hardis:org:diagnose:unusedusers --returnactiveusers --licensetypes experience --days 30](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedusers) |  weekly   |
-|          [RELEASE_UPDATES](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/releaseupdates)          | Gather warnings about **incoming and overdue Release Updates**                      | [sf hardis:org:diagnose:releaseupdates](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/releaseupdates)                                                   |  weekly   |
 |             [ORG_INFO](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/instanceupgrade)             | Get **org info** + SF instance info + next major upgrade date                       | [sf hardis:org:diagnose:instanceupgrade](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/instanceupgrade)                                                 |  weekly   |
 |           [ORG_HEALTH_CHECK](https://sfdx-hardis.cloudity.com/hardis/org/monitor/health-check)           | Run **Salesforce Security Health Check**                                            | [sf hardis:org:monitor:health-check](https://sfdx-hardis.cloudity.com/hardis/org/monitor/health-check)                                                         |  weekly   |
 |             [UNUSED_METADATAS](https://sfdx-hardis.cloudity.com/hardis/lint/unusedmetadatas)             | Detect **custom labels and custom permissions** that are not in use                 | [sf hardis:lint:unusedmetadatas](https://sfdx-hardis.cloudity.com/hardis/lint/unusedmetadatas)                                                                 |  weekly   |
@@ -113,6 +112,27 @@ The default list of commands is the following:
 |                [AI_USAGE](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/ai-usage)                 | Track **Agentforce and Data 360 credit** consumption                                | [sf hardis:org:diagnose:ai-usage](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/ai-usage)                                                               |  weekly   |
 
 
+
+## Screenshots
+
+![Every monitoring command run on the Helios org, with its status, frequency and duration in one summary](../../../assets/images/commands/org/monitor/all.webp)
+
+_Every monitoring command run on the Helios org, with its status, frequency and duration in one summary_
+
+- **(1)** Skipped commands are the ones not due today, or turned off
+- **(2)** One row per monitoring command, with its status and duration
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Monitoring commands
+
+One row per monitoring command configured for the org, with its status, frequency and duration, written only when there are more than 20 rows.
+
+Files: `monitoring-commands-*.csv`, `xls/monitoring-commands-*.xlsx`
+
+![Monitoring commands report in Excel](../../../assets/images/commands/org/monitor/all-report-monitoring-commands.webp)
 
 ## Parameters
 

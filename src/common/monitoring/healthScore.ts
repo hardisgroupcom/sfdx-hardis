@@ -108,7 +108,10 @@ function computeSecurityScore(notifications: any[], details: string[]): number |
   const healthCheckNotifs = findNotifs(notifications, 'ORG_HEALTH_CHECK');
   const unsecuredAppsNotifs = findNotifs(notifications, 'UNSECURED_CONNECTED_APPS');
   const auditTrailNotifs = findNotifs(notifications, 'AUDIT_TRAIL');
-  const legacyApiNotifs = findNotifs(notifications, 'LEGACY_API');
+  // Legacy API calls come from WHAT_WILL_BREAK since it replaced LEGACY_API in the monitoring
+  const legacyApiNotifs = [...findNotifs(notifications, 'WHAT_WILL_BREAK'), ...findNotifs(notifications, 'LEGACY_API')].filter(
+    (notif) => metricNumber(notif?.metrics, 'LegacyApiCalls') != null
+  );
   if (
     healthCheckNotifs.length === 0 &&
     unsecuredAppsNotifs.length === 0 &&

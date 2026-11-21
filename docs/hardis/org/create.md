@@ -56,6 +56,12 @@ In agent mode:
 - The owner of the sandbox in the development orgs list is `--owner`, else the git user; its target branch is `--target-branch`, else `developmentBranch`.
 
 
+## Screenshots
+
+![A developer sandbox is created from the production org, initialized with its steps, and registered for the integration branch](../../assets/images/commands/org/create.webp)
+
+_A developer sandbox is created from the production org, initialized with its steps, and registered for the integration branch_
+
 ## Parameters
 
 | Name          |  Type   | Description                                                                   | Default | Required | Options |

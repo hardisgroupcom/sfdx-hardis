@@ -57,6 +57,26 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 <!-- training-links:end -->
 
 
+## Screenshots
+
+![The files of a deployment job downloaded from GitHub Actions, listed with their size](../../../assets/images/commands/git/artifacts/download.webp)
+
+_The files of a deployment job downloaded from GitHub Actions, listed with their size_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Downloaded files
+
+One row per file extracted from the artifacts of the job, with its path and its size in KB.
+
+Files: `job-artifacts-files-*.csv`, `xls/job-artifacts-files-*.xlsx`
+
+![Downloaded files report in Excel](../../../assets/images/commands/git/artifacts/download-report-job-artifacts-files.webp)
+
 ## Parameters
 
 | Name         |  Type   | Description                                                               | Default | Required | Options |

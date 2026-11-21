@@ -1,0 +1,4 @@
+command: hardis:packagexml:append
+run: sf hardis:packagexml:append --packagexmls manifest/package.xml,manifest/package-no-overwrite.xml --outputfile manifest/package-all.xml
+org: none
+caption: Two package.xml files merged into one

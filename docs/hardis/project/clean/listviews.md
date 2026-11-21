@@ -20,6 +20,12 @@ sf hardis:project:clean:listviews --agent
 In agent mode, all interactive prompts are skipped and default values are used.
 
 
+## Screenshots
+
+![A list view of the Helios sources switched from scope Mine to Everything, so that its deployment passes](../../../assets/images/commands/project/clean/listviews.webp)
+
+_A list view of the Helios sources switched from scope Mine to Everything, so that its deployment passes_
+
 ## Parameters
 
 | Name          |  Type   | Description                                                   |  Default  | Required | Options |

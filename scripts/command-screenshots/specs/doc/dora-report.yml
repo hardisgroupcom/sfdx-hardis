@@ -1,0 +1,5 @@
+command: hardis:doc:dora-report
+run: sf hardis:doc:dora-report
+mode: replay
+org: none
+caption: "The DORA metrics of the four major branches over 90 days, with the markdown report and the deployment data behind it"

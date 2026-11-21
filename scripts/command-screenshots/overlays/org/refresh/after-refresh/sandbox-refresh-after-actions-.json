@@ -1,0 +1,118 @@
+{
+  "mode": "replace",
+  "title": "Sandbox Refresh Actions Report",
+  "rows": [
+    {
+      "step": "Restore Certificates",
+      "type": "Certificate",
+      "name": "Helios_Installer_Signing",
+      "status": "Success",
+      "details": "",
+      "runDate": "2026-11-17T09:12:41.208Z"
+    },
+    {
+      "step": "Restore Certificates",
+      "type": "Certificate",
+      "name": "Helios_SSO_Request",
+      "status": "Success",
+      "details": "",
+      "runDate": "2026-11-17T09:12:41.208Z"
+    },
+    {
+      "step": "Restore Other Metadata",
+      "type": "ExternalCredential",
+      "name": "Helios_Crew_Scheduler_Cred",
+      "status": "Success",
+      "details": "",
+      "runDate": "2026-11-17T09:12:41.208Z"
+    },
+    {
+      "step": "Restore Other Metadata",
+      "type": "RemoteSiteSetting",
+      "name": "Helios_Panel_Supplier",
+      "status": "Success",
+      "details": "",
+      "runDate": "2026-11-17T09:12:41.208Z"
+    },
+    {
+      "step": "Restore Custom Settings",
+      "type": "CustomSetting",
+      "name": "Helios_Settings__c",
+      "status": "Success",
+      "details": "",
+      "runDate": "2026-11-17T09:12:41.208Z"
+    },
+    {
+      "step": "Restore Custom Settings",
+      "type": "CustomSetting",
+      "name": "Installation_Config__c",
+      "status": "Success",
+      "details": "",
+      "runDate": "2026-11-17T09:12:41.208Z"
+    },
+    {
+      "step": "Restore External Client Apps",
+      "type": "ExternalClientApplication",
+      "name": "Helios_Crew_Scheduler_Sync",
+      "status": "Success",
+      "details": "",
+      "runDate": "2026-11-17T09:12:41.208Z"
+    },
+    {
+      "step": "Restore External Client Apps",
+      "type": "ExternalClientApplication",
+      "name": "Helios_Installer_Mobile",
+      "status": "Success",
+      "details": "",
+      "runDate": "2026-11-17T09:12:41.208Z"
+    },
+    {
+      "step": "Restore External Client Apps",
+      "type": "ExternalClientApplication",
+      "name": "Helios_Panel_Telemetry",
+      "status": "Success",
+      "details": "",
+      "runDate": "2026-11-17T09:12:41.208Z"
+    },
+    {
+      "step": "Restore Connected Apps",
+      "type": "ConnectedApp",
+      "name": "N/A",
+      "status": "Skipped",
+      "details": "No backup found",
+      "runDate": "2026-11-17T09:12:41.208Z"
+    },
+    {
+      "step": "Manual Actions",
+      "type": "ExternalOauthApp",
+      "name": "Helios Installer Mobile Sync",
+      "status": "Manual",
+      "details": "Re-authorize from the external tool with \"Log in with Salesforce\" (users: victor.martin@helios-solar.demo.uat, mariia.kowalska@helios-solar.demo.uat)",
+      "runDate": "2026-11-17T09:12:41.208Z"
+    },
+    {
+      "step": "Manual Actions",
+      "type": "AuthProvider",
+      "name": "Helios_SSO_Azure",
+      "status": "Manual",
+      "details": "Re-enter Consumer Secret manually",
+      "runDate": "2026-11-17T09:12:41.208Z"
+    },
+    {
+      "step": "Manual Actions",
+      "type": "ScheduledJob",
+      "name": "Installation Scheduler Nightly",
+      "status": "Manual",
+      "details": "Scheduled Apex (0 0 2 * * ?, owner: victor.martin@helios-solar.demo.uat): re-schedule if missing",
+      "runDate": "2026-11-17T09:12:41.208Z"
+    },
+    {
+      "step": "Manual Actions",
+      "type": "Reminder",
+      "name": "Post-refresh org checks",
+      "status": "Manual",
+      "details": "Email deliverability, .invalid user emails, endpoint URLs, Experience Cloud sites, scheduled jobs, Shield tenant secret",
+      "runDate": "2026-11-17T09:12:41.208Z"
+    }
+  ]
+}

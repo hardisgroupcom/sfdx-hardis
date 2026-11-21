@@ -1,0 +1,73 @@
+{
+  "command": "hardis:datacloud:sql-query",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Executing Data Cloud SQL query..."
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[DataCloudSqlQuery] Submitting initial query to https://helios-solar.my.salesforce.com/services/data/v67.0/ssot/query-sql?dataspace=default&workloadName=sfdx-hardis-cli:\nSELECT ssot__Name__c, ssot__CreatedDate__c FROM ssot__Account__dlm ORDER BY ssot__CreatedDate__c DESC LIMIT 10",
+        "query": {
+          "id": "hardis:datacloud:sql-query-q1",
+          "type": "datacloud",
+          "status": "running"
+        }
+      }
+    },
+    {
+      "delay": 1000,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[DataCloudSqlQuery] Retrieved 10 records.",
+        "query": {
+          "id": "hardis:datacloud:sql-query-q1",
+          "type": "datacloud",
+          "status": "completed",
+          "recordCount": 10,
+          "batchCount": 1
+        }
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/datacloud-sql-query-features__HEL-42-installation-checklist.csv",
+        "title": "DataCloud Sql Query Results (CSV)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 80,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/xls/datacloud-sql-query-features__HEL-42-installation-checklist.xlsx",
+        "title": "DataCloud Sql Query Results (XLSX)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

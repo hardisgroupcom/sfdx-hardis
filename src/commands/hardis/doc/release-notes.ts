@@ -2,30 +2,8 @@
 import { SfCommand, Flags, optionalOrgFlagWithDeprecations } from "@salesforce/sf-plugins-core";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import c from "chalk";
-import fs from '../../../common/utils/fsUtils.js';
-import * as path from "path";
-import { t } from "../../../common/utils/i18n.js";
-import { uxLog, uxLogTable } from "../../../common/utils/index.js";
-import { generatePdfFileFromMarkdown } from "../../../common/utils/markdownUtils.js";
-import { WebSocketClient } from "../../../common/websocketClient.js";
-import { CONSTANTS, getReportDirectory } from "../../../config/index.js";
-import {
-  resolveReleaseScope,
-  collectPullRequests,
-  collectTickets,
-  collectMetadataChanges,
-  collectMetadataAttribution,
-  collectDeploymentActions,
-  collectContributors,
-  generateReleaseSummary,
-  buildReleaseNotesMarkdown,
-  buildReleaseNotesXlsx,
-  sendReleaseNotification,
-  getReleaseDate,
-  prettifyMetadataType,
-  ReleaseNotesData,
-} from "../../../common/utils/releaseNotesUtils.js";
+import { CONSTANTS } from "../../../config/index.js";
+import { generateReleaseNotes } from "../../../common/utils/releaseNotesUtils.js";
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages("sfdx-hardis", "org");
@@ -57,6 +35,8 @@ Output includes a **Markdown report** (optionally converted to PDF), a **multi-t
 In the XLSX file, the **Metadata Changes** tab lists for each metadata item the Pull Requests (number, title, author) and the commits (title, author, date) that touched it.
 
 The command can determine the release scope from git tags (semver), branch names, commit ranges, or date ranges.
+
+With a semver \`--release-tag\` and no \`--previous-tag\`, the previous tag follows the rules of [release versioning](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-release-versioning/): a plain version (\`v1.5.0\`) starts from the previous plain version, never from one of its own release candidates, and a release candidate created by a deployment (\`v1.5.0-rc.3\`) starts from the previous version of its branch, which is also its target branch.
 
 This command is part of [sfdx-hardis Documentation](${CONSTANTS.DOC_URL_ROOT}/salesforce-project-documentation/).
 
@@ -193,187 +173,6 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(ReleaseNotes);
-    const agentMode = flags.agent === true;
-    const outputFile = flags.outputfile || null;
-    const withPdf = flags.pdf === true;
-
-    // Validate mutual exclusivity: tags vs dates
-    const hasTagFlags = !!(flags["release-tag"] || flags["previous-tag"]);
-    const hasDateFlags = !!(flags["from-date"] || flags["to-date"]);
-    if (hasTagFlags && hasDateFlags) {
-      uxLog("error", this, c.red(t("releaseNotesInvalidFlagCombination")));
-      return { success: false } as AnyJson;
-    }
-
-    uxLog("action", this, c.cyan(t("releaseNotesGenerating")));
-
-    // 1. Resolve scope
-    const scope = await resolveReleaseScope(flags, this, agentMode);
-    uxLog("action", this, c.cyan(t("releaseNotesScopeResolved", { mode: scope.mode, branch: scope.targetBranch })));
-
-    // 2. Collect pull requests
-    uxLog("action", this, c.cyan(t("releaseNotesCollectingPrs")));
-    const pullRequests = await collectPullRequests(scope, this, { includePromotions: flags["include-promotions"] === true });
-    uxLog("action", this, c.cyan(t("releaseNotesPrsCollected", { count: String(pullRequests.length) })));
-    // Note: PR table with ticket cross-references is displayed after ticket collection
-
-    // 3. Collect tickets
-    uxLog("action", this, c.cyan(t("releaseNotesCollectingTickets")));
-    const ticketResult = await collectTickets(pullRequests, this);
-    const tickets = ticketResult.tickets;
-    const { ticketToPrs, prToTickets } = ticketResult;
-
-    // Display tickets table
-    if (tickets.length > 0) {
-      uxLogTable(this, tickets.map((tk) => ({
-        ID: tk.id,
-        Title: tk.subject || "",
-        Status: tk.statusLabel || tk.status || "",
-        Assignee: tk.assigneeLabel || tk.assignee || "",
-        PRs: (ticketToPrs.get(tk.id) || []).map((id) => `#${id}`).join(", "),
-      })), ["ID", "Title", "Status", "Assignee", "PRs"]);
-    }
-
-    // Display PR table with ticket cross-references
-    if (pullRequests.length > 0) {
-      uxLogTable(this, pullRequests.map((pr) => ({
-        "#": `#${pr.idStr}`,
-        Title: pr.title,
-        Author: pr.authorName || "",
-        Merged: pr.mergedDate ? pr.mergedDate.split("T")[0] : "",
-        Tickets: (prToTickets.get(pr.idStr) || []).join(", "),
-      })), ["#", "Title", "Author", "Merged", "Tickets"]);
-    }
-
-    // Prepare output directory: hardis-report/release-notes/{branch}-{date}/
-    const reportDate = await getReleaseDate(scope);
-    const version = scope.releaseTag || scope.targetBranch;
-    const releaseNotesDir = outputFile
-      ? path.dirname(outputFile)
-      : path.join(await getReportDirectory(), "release-notes", `${version}-${reportDate}`);
-    await fs.ensureDir(releaseNotesDir);
-
-    // 4. Collect metadata changes (copies package.xml / destructiveChanges.xml into output dir)
-    uxLog("action", this, c.cyan(t("releaseNotesCollectingMetadata")));
-    const metadataChanges = await collectMetadataChanges(scope, this, releaseNotesDir);
-    metadataChanges.attribution = await collectMetadataAttribution(scope, metadataChanges, pullRequests, this);
-    if (metadataChanges.addedCount > 0 || metadataChanges.deletedCount > 0) {
-      const metadataRows: any[] = [];
-      for (const [mdType, members] of Object.entries(metadataChanges.added)) {
-        metadataRows.push({ Type: prettifyMetadataType(mdType), Count: members.length, Change: "Added/Modified" });
-      }
-      for (const [mdType, members] of Object.entries(metadataChanges.deleted)) {
-        metadataRows.push({ Type: prettifyMetadataType(mdType), Count: members.length, Change: "Deleted" });
-      }
-      uxLogTable(this, metadataRows, ["Type", "Count", "Change"]);
-    }
-
-    // 5. Collect deployment actions
-    uxLog("action", this, c.cyan(t("releaseNotesCollectingActions")));
-    const deploymentActions = await collectDeploymentActions(pullRequests, this, scope.targetBranch);
-    if (deploymentActions.length > 0) {
-      uxLogTable(this, deploymentActions.map((a) => ({
-        Action: a.actionLabel,
-        When: a.when,
-        Status: a.status,
-        PR: (a.prNumber ?? 0) > 0 ? `#${a.prNumber}` : "",
-      })), ["Action", "When", "Status", "PR"]);
-    }
-
-    // 6. Collect contributors
-    const contributors = collectContributors(pullRequests);
-    if (contributors.length > 0) {
-      uxLogTable(this, contributors.map((c) => ({
-        Contributor: c.name,
-        PRs: c.prCount,
-      })), ["Contributor", "PRs"]);
-    }
-
-    // Build data structure
-    const data: ReleaseNotesData = {
-      scope,
-      pullRequests,
-      tickets,
-      metadataChanges,
-      deploymentActions,
-      contributors,
-      ticketToPrs,
-      prToTickets,
-    };
-
-    // 7. AI summary (optional)
-    data.aiSummary = await generateReleaseSummary(data, this);
-
-    // 8. Build markdown report
-    uxLog("action", this, c.cyan(t("releaseNotesGeneratingMarkdown")));
-    const markdown = await buildReleaseNotesMarkdown(data, reportDate);
-
-    // Write markdown file into the release notes subfolder
-    const mdFileName = `release-notes-${version}-${reportDate}.md`;
-    const mdOutputFile = outputFile || path.join(releaseNotesDir, mdFileName);
-    await fs.writeFile(mdOutputFile, markdown, "utf8");
-    uxLog("success", this, c.green(t("releaseNotesComplete", { outputFile: mdOutputFile })));
-    WebSocketClient.sendReportFileMessage(mdOutputFile, `${t("releaseNotesReportTitle")} (MD)`, "report");
-
-    // 9. Generate PDF (optional)
-    let pdfFile: string | undefined;
-    if (withPdf) {
-      uxLog("action", this, c.cyan(t("releaseNotesGeneratingPdf")));
-      // Expand <details> sections for PDF
-      const pdfMarkdown = markdown.replace(/<details[^>]*>/g, "").replace(/<\/details>/g, "").replace(/<summary>(.*?)<\/summary>/g, "### $1");
-      const pdfSourceFile = mdOutputFile.replace(/\.md$/i, `.pdf-source-${Date.now()}.md`);
-      await fs.writeFile(pdfSourceFile, pdfMarkdown, "utf8");
-      // Landscape by default: the PR and ticket tables are wide and read better in landscape.
-      // Keep the first column (ticket ID / PR number) on a single line so IDs like CLIENT-61034 don't wrap.
-      const pdfResult = await generatePdfFileFromMarkdown(pdfSourceFile, {
-        landscape: flags.portrait !== true,
-        extraCss: "td:first-child, th:first-child { white-space: nowrap; }",
-        silent: true,
-      });
-      if (pdfResult) {
-        const defaultPdfFile = mdOutputFile.replace(/\.md$/i, ".pdf");
-        try {
-          await fs.copy(pdfResult, defaultPdfFile, { overwrite: true });
-          if (pdfResult !== defaultPdfFile) {
-            await fs.remove(pdfResult);
-          }
-          pdfFile = defaultPdfFile;
-        } catch {
-          pdfFile = typeof pdfResult === "string" ? pdfResult : undefined;
-        }
-        if (pdfFile) {
-          uxLog("success", this, c.green(t("pdfFileGeneratedFromDocumentation", { markdownFile: mdOutputFile, outputPdfFile: c.bold(pdfFile) })));
-          WebSocketClient.sendReportFileMessage(pdfFile, `${t("releaseNotesReportTitle")} (PDF)`, "report");
-        }
-      }
-      await fs.remove(pdfSourceFile).catch(() => {});
-    }
-
-    // 10. Generate XLSX
-    uxLog("action", this, c.cyan(t("releaseNotesGeneratingXlsx")));
-    const xlsxFile = await buildReleaseNotesXlsx(data, mdOutputFile, this);
-
-    // 11. Send notification (post mode + production only)
-    await sendReleaseNotification(data, pdfFile, xlsxFile, this);
-
-    return {
-      scope: {
-        mode: scope.mode,
-        targetBranch: scope.targetBranch,
-        releaseTag: scope.releaseTag,
-        previousTag: scope.previousTag,
-      },
-      counts: {
-        pullRequests: pullRequests.length,
-        tickets: tickets.length,
-        contributors: contributors.length,
-        metadataAdded: metadataChanges.addedCount,
-        metadataDeleted: metadataChanges.deletedCount,
-        deploymentActions: deploymentActions.length,
-      },
-      outputFile: mdOutputFile,
-      pdfFile: pdfFile || null,
-      xlsxFile: xlsxFile || null,
-    } as AnyJson;
+    return (await generateReleaseNotes(flags, this)) as AnyJson;
   }
 }

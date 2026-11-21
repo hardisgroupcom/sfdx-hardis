@@ -37,6 +37,30 @@ In agent mode:
 - The API usage confirmation prompt is skipped (proceeds automatically).
 
 
+## Screenshots
+
+![Pick the objects whose fields are measured](../../assets/images/commands/doc/object-field-usage-1.webp)
+
+_Pick the objects whose fields are measured_
+
+![How many Installation__c and Panel_Batch__c records fill each custom field, with the most and least populated fields](../../assets/images/commands/doc/object-field-usage.webp)
+
+_How many Installation__c and Panel_Batch__c records fill each custom field, with the most and least populated fields_
+
+- **(1)** The custom field the fewest records use, a candidate for cleanup
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Field usage
+
+One Excel workbook with a sheet per analyzed object (one row per field, with its record count and fill rate), a summary sheet and the fields that could not be analyzed; each sheet is also written as a CSV file.
+
+Files: `object-field-usage-*.csv`, `xls/object-field-usage-*.xlsx`
+
+![Field usage report in Excel](../../assets/images/commands/doc/object-field-usage-report-object-field-usage.webp)
+
 ## Parameters
 
 | Name                   |  Type   | Description                                                                                                                                                                                                                                                                                                                                                                                                                                 | Default | Required | Options |

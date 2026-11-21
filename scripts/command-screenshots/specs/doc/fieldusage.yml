@@ -1,0 +1,4 @@
+command: hardis:doc:fieldusage
+run: sf hardis:doc:fieldusage --sObjects Installation__c,Panel_Batch__c
+org: showcase
+caption: Where each field of the installations and panel batches is used, in layouts, Apex and Flows

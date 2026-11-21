@@ -1,0 +1,4 @@
+command: hardis:project:fix:v53flexipages
+run: sf hardis:project:fix:v53flexipages
+org: none
+caption: The component instances of the Lightning pages of the Helios project checked for the identifier that API 53 requires

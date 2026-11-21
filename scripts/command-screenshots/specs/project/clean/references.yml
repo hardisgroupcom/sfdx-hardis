@@ -1,0 +1,13 @@
+command: hardis:project:clean:references
+run: sf hardis:project:clean:references
+org: none
+caption: A cleaning picked in the list run on the Helios sources, here the check that every custom item is in a permission set
+answers:
+  - q: What references do you want to clean from your SFDX project sources
+    choice: "^Check custom items are existing it at least one Permission Set$"
+    shot: true
+    caption: Pick the cleanings to run on the sources
+  - q: Do you want to save this action in your project configuration
+    choice: "^❌ No$"
+  - q: Do you want to add the missing accesses in permission sets
+    choice: ^❌ No$

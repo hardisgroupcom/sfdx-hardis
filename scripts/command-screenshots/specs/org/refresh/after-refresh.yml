@@ -1,0 +1,24 @@
+command: hardis:org:refresh:after-refresh
+run: sf hardis:org:refresh:after-refresh
+mode: replay
+org: none
+caption: The saved certificates, metadata, custom settings and External Client Apps are restored in the refreshed sandbox, with the manual actions listed
+answers:
+  - q: "Select the project path"
+    choice: "helios-solar"
+    shot: true
+    caption: Pick the backup saved before the refresh
+  - q: "Select certificates to restore"
+    choice: "."
+  - q: "restore 2 certificate"
+    choice: "Yes"
+  - q: "double check package-metadata-to-restore"
+    choice: "Yes"
+  - q: "Select custom settings to restore"
+    choice: "."
+  - q: "restore 2 Custom Settings"
+    choice: "Yes"
+  - q: "Select the External Client Apps you want to restore"
+    choice: "."
+    shot: true
+    caption: Pick the External Client Apps to restore with their credentials

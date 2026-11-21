@@ -9,6 +9,12 @@ description: "Deploy metadatas to source org"
 
 Deploy metadatas to source org
 
+## Screenshots
+
+![A folder in Metadata API format, with its package.xml, deployed to a scratch org](../../../../assets/images/commands/project/deploy/sources/metadata.webp)
+
+_A folder in Metadata API format, with its package.xml, deployed to a scratch org_
+
 ## Parameters
 
 | Name                         |  Type   | Description                                                                                                  |    Default    | Required |                                           Options                                           |

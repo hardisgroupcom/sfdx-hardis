@@ -175,7 +175,7 @@ Then:
 
 ```bash
 git add -A && git commit -qm "chore: base project"
-gh repo create "$REPO" --private --source=. --remote=origin --push
+gh repo create "$REPO" "--${GH_E2E_VISIBILITY:-public}" --source=. --remote=origin --push
 git branch preprod && git branch uat && git branch integration
 git push -q origin preprod uat integration
 sf project deploy start --source-dir force-app --target-org "$ORG" --ignore-conflicts

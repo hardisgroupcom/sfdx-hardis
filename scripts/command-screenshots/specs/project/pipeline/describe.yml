@@ -1,0 +1,4 @@
+command: hardis:project:pipeline:describe
+run: sf hardis:project:pipeline:describe
+org: none
+caption: The major branches of the Helios pipeline, the org each one deploys to and the branch it is merged into

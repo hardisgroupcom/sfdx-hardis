@@ -38,7 +38,7 @@ More information can be found in the [Documentation section](https://sfdx-hardis
 
 The command orchestrates interactions with MkDocs, Salesforce CLI, and file system operations:
 
-- **Zensical Integration:** It first modifies the `mkdocs.yml` file to ensure compatibility with Salesforce static resources (e.g., setting `use_directory_urls` to `false`). Then, it calls `generateMkDocsHTML()` to build the static HTML content with Zensical.
+- **Zensical Integration:** It first modifies the `mkdocs.yml` file to ensure compatibility with Salesforce static resources (e.g., setting `use_directory_urls` to `false`). Then, it calls `generateMkDocsHTML()` to build the static HTML content with Zensical. The AI and Mermaid caches of `docs/` (`cache-ai-results`, `cache-mermaid`) are removed from the built site and from its search index: they only serve to regenerate the documentation.
 - **Temporary SFDX Project:** It creates a temporary SFDX project using `createTempDir` and `createBlankSfdxProject` to stage the generated Salesforce metadata before deployment.
 - **Metadata Generation:** It dynamically creates the XML metadata files for the Static Resource, Visualforce Page, Custom Tab, and Permission Set. The HTML content from the Zensical build is moved into the static resource folder.
 - **Salesforce CLI Deployment:** It constructs and executes a `sf project deploy start` command to deploy the generated metadata to the target Salesforce org. It intelligently adds `--test-level RunLocalTests` for production orgs and `--test-level NoTestRun` for sandboxes.
@@ -59,6 +59,12 @@ sf hardis:doc:mkdocs-to-salesforce --agent
 In agent mode, all interactive prompts are skipped and default values are used.
 
 
+
+## Screenshots
+
+![The project documentation is deployed to the org as a static resource shown in a Visualforce page and a custom tab](../../assets/images/commands/doc/mkdocs-to-salesforce.webp)
+
+_The project documentation is deployed to the org as a static resource shown in a Visualforce page and a custom tab_
 
 ## Parameters
 

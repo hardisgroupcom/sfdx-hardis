@@ -1,0 +1,2 @@
+command: hardis:config:monitoring-defaults
+skip: "The extension reads it in the background to build the Org Monitoring panel: it shows nothing of its own."

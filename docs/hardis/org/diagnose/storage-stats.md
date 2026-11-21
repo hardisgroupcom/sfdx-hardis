@@ -80,6 +80,32 @@ In agent mode, all interactive prompts are skipped with sensible defaults:
 - No WHERE clause is applied (override with `--where`)
 
 
+## Screenshots
+
+![Pick the objects to count](../../../assets/images/commands/org/diagnose/storage-stats-1.webp)
+
+_Pick the objects to count_
+
+- **(1)** A custom object of the project
+
+![Records of the Helios objects by year of creation, to see what fills the data storage](../../../assets/images/commands/org/diagnose/storage-stats.webp)
+
+_Records of the Helios objects by year of creation, to see what fills the data storage_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Storage stats
+
+One row per object and breakdown value (the file name continues with the breakdown field, granularity and -filtered when a WHERE is used), with its record count and estimated storage in MB and percent; a copy with only the Total row of each object is written next to it with a -totals suffix.
+
+Files: `storage-stats-by-*.csv`, `xls/storage-stats-by-*.xlsx`
+
+![Storage stats report in Excel](../../../assets/images/commands/org/diagnose/storage-stats-report-storage-stats-by-.webp)
+
 ## Parameters
 
 | Name                   |  Type   | Description                                                                                                                                 | Default | Required | Options |

@@ -44,6 +44,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![Two package.xml files merged into one](../../assets/images/commands/packagexml/append.webp)
+
+_Two package.xml files merged into one_
+
 ## Parameters
 
 | Name               |  Type   | Description                                           | Default | Required | Options |

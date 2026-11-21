@@ -53,6 +53,30 @@ The command's technical implementation involves:
 </details>
 
 
+## Screenshots
+
+![Pick the profiles whose users to freeze](../../../assets/images/commands/org/user/freeze-1.webp)
+
+_Pick the profiles whose users to freeze_
+
+![Field technicians with the Chatter Free User profile frozen in the Helios test org, with the list of users frozen](../../../assets/images/commands/org/user/freeze.webp)
+
+_Field technicians with the Chatter Free User profile frozen in the Helios test org, with the list of users frozen_
+
+- **(1)** One row per user frozen, with username, name and profile
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Users to freeze
+
+One row per user whose login is about to be frozen, with username, name and profile.
+
+Files: `users-to-freeze-*.csv`, `xls/users-to-freeze-*.xlsx`
+
+![Users to freeze report in Excel](../../../assets/images/commands/org/user/freeze-report-users-to-freeze.webp)
+
 ## Parameters
 
 | Name                   |  Type   | Description                                                                                                  | Default | Required | Options |

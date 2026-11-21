@@ -52,6 +52,16 @@ In agent mode:
 - If neither flag is provided, an error is thrown.
 
 
+## Screenshots
+
+![Pick the org that the sources are compared with](../../../assets/images/commands/project/clean/orgmissingitems-1.webp)
+
+_Pick the org that the sources are compared with_
+
+![The items that the target org does not have are removed from the project sources](../../../assets/images/commands/project/clean/orgmissingitems.webp)
+
+_The items that the target org does not have are removed from the project sources_
+
 ## Parameters
 
 | Name                       |  Type   | Description                                                                                                                                                             |  Default  | Required | Options |

@@ -42,6 +42,27 @@ sf hardis:org:diagnose:unsecure-permissions --agent --target-org myorg@example.c
 
 The command has no interactive prompts, so agent mode behaves like a normal run. Use `--source` to control what is analyzed and `--outputfile` to set the report path.
 
+## Screenshots
+
+![Dangerous permissions such as Modify All Data granted by profiles and permission sets, with the active users holding them](../../../assets/images/commands/org/diagnose/unsecure-permissions.webp)
+
+_Dangerous permissions such as Modify All Data granted by profiles and permission sets, with the active users holding them_
+
+- **(1)** Grants found and the number of active users they reach
+- **(2)** A sheet each for profiles, permission sets, groups and users, with a criticality tier
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Dangerous permissions
+
+One workbook with a sheet each for the profiles, permission sets, permission set groups and users that hold dangerous permissions, with a criticality tier per row.
+
+Files: `unsecure-permissions-*.csv`, `xls/unsecure-permissions-*.xlsx`
+
+![Dangerous permissions report in Excel](../../../assets/images/commands/org/diagnose/unsecure-permissions-report-unsecure-permissions.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                           | Default | Required |        Options         |

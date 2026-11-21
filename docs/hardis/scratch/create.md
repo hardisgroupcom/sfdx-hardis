@@ -68,6 +68,14 @@ In agent mode:
 - All other interactive prompts are skipped.
 
 
+## Screenshots
+
+![The scratch org helios-HEL-42 is created from the Dev Hub and initialized with the Helios project steps](../../assets/images/commands/scratch/create.webp)
+
+_The scratch org helios-HEL-42 is created from the Dev Hub and initialized with the Helios project steps_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
 ## Parameters
 
 | Name                  |  Type   | Description                                                                                                       | Default | Required | Options |

@@ -1,0 +1,4 @@
+command: hardis:project:clean:flowpositions
+run: sf hardis:project:clean:flowpositions
+org: none
+caption: The positions of the elements of the Auto-Layout Flows of the Helios project set to 0, to avoid merge conflicts

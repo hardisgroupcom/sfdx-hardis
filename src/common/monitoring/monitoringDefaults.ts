@@ -32,14 +32,6 @@ export const monitoringCommandsDefault: MonitoringCommandEntry[] = [
     icon: "utility:shield",
   },
   {
-    key: "LEGACY_API",
-    command: "sf hardis:org:diagnose:legacyapi",
-    frequency: "daily",
-    notificationTypes: ["LEGACY_API"],
-    category: "orgActivity",
-    icon: "utility:deprecate",
-  },
-  {
     key: "ORG_LIMITS",
     command: "sf hardis:org:monitor:limits",
     frequency: "daily",
@@ -70,6 +62,15 @@ export const monitoringCommandsDefault: MonitoringCommandEntry[] = [
     notificationTypes: ["AGENT_TESTS"],
     category: "apexTestsSecurity",
     icon: "utility:einstein",
+  },
+  // Right after the tests: the Org Monitoring panel shows it third in its category, after Apex tests and Agent tests
+  {
+    key: "WHAT_WILL_BREAK",
+    command: "sf hardis:org:diagnose:what-will-break",
+    frequency: "daily",
+    notificationTypes: ["WHAT_WILL_BREAK"],
+    category: "apexTestsSecurity",
+    icon: "utility:warning",
   },
   {
     key: "UNSECURED_CONNECTED_APPS",
@@ -168,14 +169,6 @@ export const monitoringCommandsDefault: MonitoringCommandEntry[] = [
     notificationTypes: ["ACTIVE_USERS_EXPERIENCE_MONTHLY"],
     category: "userActivity",
     icon: "utility:user",
-  },
-  {
-    key: "RELEASE_UPDATES",
-    command: "sf hardis:org:diagnose:releaseupdates",
-    frequency: "weekly",
-    notificationTypes: ["RELEASE_UPDATES"],
-    category: "orgInfo",
-    icon: "utility:date_time",
   },
   {
     key: "ORG_INFO",

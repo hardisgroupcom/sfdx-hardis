@@ -107,6 +107,26 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 <!-- training-links:end -->
 
 
+## Screenshots
+
+![The DORA metrics of the four major branches over 90 days, with the markdown report and the deployment data behind it](../../assets/images/commands/doc/dora-report.webp)
+
+_The DORA metrics of the four major branches over 90 days, with the markdown report and the deployment data behind it_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Deployment data
+
+One row per deployment or validation job of the period, with its branch, status, dates, author, pull request and job URL, behind the DORA numbers.
+
+Files: `dora-report-data-*.csv`, `xls/dora-report-data-*.xlsx`
+
+![Deployment data report in Excel](../../assets/images/commands/doc/dora-report-report-dora-report-data.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                          | Default | Required | Options |

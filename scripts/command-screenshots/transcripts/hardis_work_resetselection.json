@@ -1,0 +1,181 @@
+{
+  "command": "hardis:work:resetselection",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Automatically selected target branch is integration"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "This script will rebuild selection that you will want to merge into integration"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 This command will git reset (soft) your branch features/HEL-42-installation-checklist. You will need to select and commit again your files. Are you sure ?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 60,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "name": "value",
+            "type": "select",
+            "message": "🦙 This command will git reset (soft) your branch features/HEL-42-installation-checklist. You will need to select and commit again your files. Are you sure ?",
+            "description": "Confirm that you want to perform a soft git reset on your current branch",
+            "choices": [
+              {
+                "title": "✅ Yes",
+                "value": true
+              },
+              {
+                "title": "❌ No",
+                "value": false
+              }
+            ],
+            "initial": 0
+          }
+        ]
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "✅ Yes"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "This command will git reset (soft) your branch features/HEL-42-installation-checklist. You will need to select and commit again your files. Are you sure ?"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "git reset --soft HEAD~3",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 600,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "git reset --soft HEAD~3",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "git reset",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "git reset",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "git checkout -- manifest/package.xml",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "git checkout -- manifest/package.xml",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "git checkout -- manifest/destructiveChanges.xml",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "git checkout -- manifest/destructiveChanges.xml",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "The following items are now available for selection"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Selection has been reset"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

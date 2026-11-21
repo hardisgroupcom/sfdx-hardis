@@ -53,6 +53,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The empty sharing rules files of standard objects removed from the Helios sources after a retrieve](../../../assets/images/commands/project/clean/emptyitems.webp)
+
+_The empty sharing rules files of standard objects removed from the Helios sources after a retrieve_
+
 ## Parameters
 
 | Name          |  Type   | Description                                                                                                                                      | Default | Required |                                     Options                                      |

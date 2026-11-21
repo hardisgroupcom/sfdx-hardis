@@ -51,6 +51,16 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 <!-- training-links:end -->
 
 
+## Screenshots
+
+![Pick one of the orgs you are logged in to, or log in to another one](../../assets/images/commands/org/select-1.webp)
+
+_Pick one of the orgs you are logged in to, or log in to another one_
+
+![The helios-dev scratch org becomes the default org of the project](../../assets/images/commands/org/select.webp)
+
+_The helios-dev scratch org becomes the default org of the project_
+
 ## Parameters
 
 | Name             |  Type   | Description                                                                                                                                         | Default | Required | Options |

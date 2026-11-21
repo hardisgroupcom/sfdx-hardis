@@ -76,7 +76,8 @@ In agent mode, all interactive prompts are skipped and default values are used.
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(PackageVersionList);
     const debugMode = flags.debug || false;
-    const createCommand = 'sf package version list';
+    // On the Dev Hub given by --target-dev-hub, not only the default one
+    const createCommand = `sf package version list --target-dev-hub ${flags['target-dev-hub'].getUsername()}`;
     await execCommand(createCommand, this, {
       fail: true,
       output: true,

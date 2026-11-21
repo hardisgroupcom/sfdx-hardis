@@ -49,6 +49,16 @@ In agent mode:
 - Apex log deletion proceeds without confirmation.
 
 
+## Screenshots
+
+![Confirm the deletion of every Apex debug log of the org](../../../assets/images/commands/org/purge/apexlog-1.webp)
+
+_Confirm the deletion of every Apex debug log of the org_
+
+![1248 Apex debug logs of the Helios UAT sandbox deleted with the Bulk API](../../../assets/images/commands/org/purge/apexlog.webp)
+
+_1248 Apex debug logs of the Helios UAT sandbox deleted with the Bulk API_
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

@@ -1,0 +1,10 @@
+{
+  "sfdxHardisLabel": "Installation documents",
+  "sfdxHardisDescription": "Site surveys and wiring plans attached to the installations",
+  "soqlQuery": "SELECT Id,External_Id__c FROM Installation__c WHERE Status__c = 'Completed'",
+  "fileTypes": "all",
+  "outputFolderNameField": "External_Id__c",
+  "outputFileNameFormat": "title",
+  "overwriteParentRecords": true,
+  "overwriteFiles": true
+}

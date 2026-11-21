@@ -25,6 +25,27 @@ sf hardis:org:diagnose:flex-queue --agent --target-org myorg@example.com
 
 In agent mode, the command runs fully automatically. The `--threshold` defaults to 90 (or `APEX_FLEX_QUEUE_THRESHOLD` env var) when not provided.
 
+## Screenshots
+
+![Apex jobs holding in the flex queue of the Helios org, counted against the alert threshold of 90 out of 100](../../../assets/images/commands/org/diagnose/flex-queue.webp)
+
+_Apex jobs holding in the flex queue of the Helios org, counted against the alert threshold of 90 out of 100_
+
+- **(1)** The alert fires at 90 jobs, Salesforce refuses new ones at 100
+- **(2)** One row per job waiting in the queue
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Flex queue jobs
+
+One row per Apex job in Holding status, with its Apex class, job type and creation date.
+
+Files: `flex-queue-holding-*.csv`, `xls/flex-queue-holding-*.xlsx`
+
+![Flex queue jobs report in Excel](../../../assets/images/commands/org/diagnose/flex-queue-report-flex-queue-holding.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                    | Default | Required | Options |

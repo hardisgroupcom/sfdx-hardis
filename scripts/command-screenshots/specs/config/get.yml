@@ -1,0 +1,2 @@
+command: hardis:config:get
+skip: "The extension reads it in the background to build its panels: it shows nothing of its own."

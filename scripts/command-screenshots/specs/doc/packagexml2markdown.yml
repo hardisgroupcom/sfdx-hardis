@@ -1,0 +1,4 @@
+command: hardis:doc:packagexml2markdown
+run: sf hardis:doc:packagexml2markdown --inputfile manifest/package.xml
+org: none
+caption: The manifest/package.xml of the Helios project as a Markdown page, its 35 metadata grouped by type

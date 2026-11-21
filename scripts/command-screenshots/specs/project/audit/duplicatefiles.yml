@@ -1,0 +1,4 @@
+command: hardis:project:audit:duplicatefiles
+run: sf hardis:project:audit:duplicatefiles
+org: none
+caption: The files of the Helios project that share their name with another one, such as the two package.xml manifests

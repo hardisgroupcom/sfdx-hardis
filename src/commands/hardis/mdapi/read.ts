@@ -7,6 +7,7 @@ import { isCI, uxLog } from '../../../common/utils/index.js';
 import { uxLogTableWithReport } from '../../../common/utils/filesUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { t } from '../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../common/docBuilder/commandScreenshots.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import {
   buildTargetComponentSet,
@@ -18,6 +19,24 @@ import {
 
 export default class MdapiRead extends SfCommand<any> {
   public static title = 'Read metadata using the CRUD-based Metadata API';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'mdapi-read-successes',
+      title: 'Read successes',
+      description: 'One row per metadata component read from the org and written to the output folder.',
+    },
+    {
+      file: 'mdapi-read-failures',
+      title: 'Read failures',
+      description: 'One row per metadata component that could not be read, with the error returned by the Metadata API.',
+    },
+    {
+      file: 'mdapi-read-skipped',
+      title: 'Read skipped items',
+      description: 'One row per metadata component skipped because its type is not supported by the CRUD-based Metadata API.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

@@ -29,7 +29,8 @@ Key functionalities:
   - **OAuth Tokens Report:** Lists all OAuth tokens with security status, app type, user information, and usage data
   - **Unsecured Connected Apps Summary:** Aggregates unsecured apps with counts of associated OAuth tokens and app type
   - **OAuth Tokens by User:** Lists each user with the apps they hold a token for and the last usage date
-  - **Connected Apps Usage:** Lists every Connected App and External Client App that has OAuth tokens (secured or not), with its last usage date and the usernames who use it
+  - **Connected Apps Usage:** Lists every Connected App and External Client App that has OAuth tokens (secured or not), with its last usage date, the usernames who use it, and whether it must be moved to an External Client App
+- **Move to External Client Apps:** Salesforce ends the support of Connected Apps in Summer '27 (they keep working, without fixes or support). The usage report tells, for each app, whether the move is `Required` (a Connected App of the org used in the last 90 days), done by its `Vendor` (an app of Salesforce or of a package, used in the last 90 days), `Done (converted)`, `Not needed` (already an External Client App) or not worth it (`Not used` for 90 days: delete it instead). The apps to move are also reported by [hardis:org:diagnose:what-will-break](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/what-will-break/), with the date.
 - **Visual Indicators:** Uses status icons (❌ for unsecured, ✅ for secured, ⚪ for ignored) to provide immediate visual feedback on security status.
 - **Security Recommendations:** Provides actionable guidance on how to secure Connected Apps and External Client Apps through proper configuration.
 - **Notifications:** Sends alerts to configured channels (Grafana, Slack, MS Teams) with security findings and attached reports.
@@ -43,7 +44,8 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
 The command's technical implementation involves:
 
-- **SOQL Query Execution:** Executes a comprehensive SOQL query on the `OauthToken` object, joining with `AppMenuItem` and `User` objects to gather complete security context.
+- **SOQL Query Execution:** Executes a comprehensive SOQL query on the `OauthToken` object, joining with `AppMenuItem` and `User` objects to gather complete security context. A Bulk query returns at most 2500 tokens, so the next ones are read page by page on `CreatedDate`.
+- **External Client App Migration Logic:** the apps the org owns are its `ConnectedApp` metadata (`listMetadata`), compared with the app label turned into an API name (`ClickDeploy.io` becomes `ClickDeploy_io`). `AppMenuItem.NamespacePrefix` marks packaged apps, and the most recent `LastUsedDate` of the app's tokens tells if it is still used.
 - **Connected App Security Logic:** Analyzes the `ConnectedApplication.OptionsAllowAdminApprovedUsersOnly` field (falling back to `AppMenuItem.IsUsingAdminAuthorization`) to determine if a Connected App requires admin pre-approval for user authorization. Booleans returned as strings by the Bulk API are normalized, so a `"false"` value is never read as secured.
 - **External Client App Security Logic:** Queries `ExtlClntAppOauthPlcyCnfg` for each External Client App and checks `PermittedUsersPolicyType === 'AdminApprovedPreAuthorized'` to determine if admin pre-approval is required. Falls back to AppName-based matching when `AppMenuItem.ApplicationId` is not populated.
 - **Converted Connected App Logic:** When a token points to a Connected App whose name matches an `ExternalClientApplication` `MasterLabel` or `DeveloperName`, the Connected App is considered migrated: the External Client App OAuth policy decides the status and the app type is reported as `Ext Client App (converted)`. The match is made on the name only, so every app whose status comes from an External Client App policy is logged, as well as every name match without an available policy.
@@ -71,6 +73,74 @@ In agent mode:
 - Phantom app OAuth token revocation prompt is skipped (no tokens are revoked automatically).
 - Stale token deletion prompt is skipped (no tokens are deleted automatically).
 - All other interactive prompts are skipped.
+
+## Screenshots
+
+![OAuth tokens of Connected Apps that are not locked down, and the apps they belong to](../../../assets/images/commands/org/diagnose/unsecure-connected-apps.webp)
+
+_OAuth tokens of Connected Apps that are not locked down, and the apps they belong to_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### OAuth tokens
+
+One row per OAuth token of the org, with its app, user, last used date and a secured or unsecured status.
+
+Files: `unsecured-oauth-tokens-*.csv`, `xls/unsecured-oauth-tokens-*.xlsx`
+
+![OAuth tokens report in Excel](../../../assets/images/commands/org/diagnose/unsecure-connected-apps-report-unsecured-oauth-tokens.webp)
+
+### Unsecured apps
+
+One row per app that has unsecured OAuth tokens, with the number of tokens, its latest usage date and the profiles of the users using it, so you can decide which apps to secure.
+
+Files: `unsecured-connected-apps-*.csv`, `xls/unsecured-connected-apps-*.xlsx`
+
+![Unsecured apps report in Excel](../../../assets/images/commands/org/diagnose/unsecure-connected-apps-report-unsecured-connected-apps.webp)
+
+### Tokens by user
+
+One row per user holding OAuth tokens, with the apps they connected and the last usage date of each.
+
+Files: `oauth-tokens-by-user-*.csv`, `xls/oauth-tokens-by-user-*.xlsx`
+
+![Tokens by user report in Excel](../../../assets/images/commands/org/diagnose/unsecure-connected-apps-report-oauth-tokens-by-user.webp)
+
+### Connected apps usage
+
+One row per app that has OAuth tokens, with its last usage date, its users and whether it must move to an External Client App.
+
+Files: `connected-apps-usage-*.csv`, `xls/connected-apps-usage-*.xlsx`
+
+![Connected apps usage report in Excel](../../../assets/images/commands/org/diagnose/unsecure-connected-apps-report-connected-apps-usage.webp)
+
+### Deletable tokens
+
+One row per unsecured OAuth token of an app that no longer exists in the org, written in interactive mode before you choose which ones to revoke.
+
+Files: `deletable-auth-tokens-*.csv`, `xls/deletable-auth-tokens-*.xlsx`
+
+![Deletable tokens report in Excel](../../../assets/images/commands/org/diagnose/unsecure-connected-apps-report-deletable-auth-tokens.webp)
+
+### Deleted tokens
+
+One row per OAuth token revoked by the command after your confirmation.
+
+Files: `deleted-auth-tokens-*.csv`, `xls/deleted-auth-tokens-*.xlsx`
+
+![Deleted tokens report in Excel](../../../assets/images/commands/org/diagnose/unsecure-connected-apps-report-deleted-auth-tokens.webp)
+
+### Stale tokens of secured apps
+
+One row per unsecured OAuth token of an app that is otherwise secured, written in interactive mode for each such app (the app name ends the file name).
+
+Files: `unsecured-tokens-secured-app-*.csv`, `xls/unsecured-tokens-secured-app-*.xlsx`
+
+![Stale tokens of secured apps report in Excel](../../../assets/images/commands/org/diagnose/unsecure-connected-apps-report-unsecured-tokens-secured-app-.webp)
 
 ## Parameters
 

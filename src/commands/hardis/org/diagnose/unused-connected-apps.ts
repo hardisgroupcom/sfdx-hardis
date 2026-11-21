@@ -17,6 +17,7 @@ import { createBlankSfdxProject } from '../../../../common/utils/projectUtils.js
 import { parseXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -34,6 +35,14 @@ export function parseInactiveDays(value: string | null | undefined): number {
 
 export default class DiagnoseUnusedConnectedApps extends SfCommand<any> {
   public static title = 'Unused Connected Apps in an org';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'connected-apps',
+      title: 'Connected apps',
+      description: 'One row per Connected App of the org, with its last modification, its last OAuth usage and a severity reason, so you can decide which apps to remove.',
+    },
+  ];
 
   public static allowedInactiveConnectedApps = [
     "Ant Migration Tool",

@@ -1,0 +1,4 @@
+command: hardis:mdapi:deploy
+run: sf hardis:mdapi:deploy --deploydir mdapi-deploy --checkonly --testlevel NoTestRun
+org: throwaway
+caption: A folder in Metadata API format validated in a scratch org, with the deployment tips of sfdx-hardis

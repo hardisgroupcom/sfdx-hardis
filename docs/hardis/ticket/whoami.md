@@ -50,6 +50,12 @@ sf hardis ticket whoami --provider azure --agent --json
 ```
 
 
+## Screenshots
+
+![The Jira account the credentials of the project belong to](../../assets/images/commands/ticket/whoami.webp)
+
+_The Jira account the credentials of the project belong to_
+
 ## Parameters
 
 | Name            |  Type   | Description                                                    | Default | Required |                Options                |

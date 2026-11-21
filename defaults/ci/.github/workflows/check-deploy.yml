@@ -116,6 +116,12 @@ jobs:
           sf hardis:auth:login
           sf hardis:project:deploy:smart --check
 
+      # When this run is cancelled (ex: new commit on the Pull Request), also cancel its deployment simulation
+      # in the Salesforce org: cancelling the run does not stop it in the org, where the next simulations would wait for it
+      - name: Cancel deployment simulation in org
+        if: cancelled()
+        run: sf hardis:project:deploy:cancel || true
+
       # Upload sfdx-hardis reports, including the complete deployment result JSON
       - name: Archive sfdx-hardis reports
         if: always() # Also when the job was stopped by the timeout

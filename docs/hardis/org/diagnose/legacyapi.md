@@ -1,11 +1,15 @@
 ---
 title: "hardis:org:diagnose:legacyapi - Check for legacy API use"
-description: "Checks if an org uses retired or someday retired API version"
+description: "This command is deprecated: use hardis:org:diagnose:what-will-break, which checks the legacy API calls together with everything else that will break after a dated Salesforce change."
 ---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:legacyapi
 
 ## Description
+
+## DEPRECATED
+
+This command is deprecated: use [hardis:org:diagnose:what-will-break](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/what-will-break/), which checks the legacy API calls together with everything else that will break after a dated Salesforce change.
 
 Checks if an org uses retired or someday retired API version
 
@@ -26,6 +30,15 @@ sf hardis:org:diagnose:legacyapi --agent --target-org myorg@example.com
 ```
 
 In agent mode, the command runs fully automatically with no interactive prompts.
+
+## Screenshots
+
+![Calls to retired API versions found in the Helios org event logs, counted by retirement wave: none here](../../../assets/images/commands/org/diagnose/legacyapi.webp)
+
+_Calls to retired API versions found in the Helios org event logs, counted by retirement wave: none here_
+
+- **(1)** One row per legacy call, with the client and the API version it used
+- **(2)** How to fix the calls before the retirement
 
 ## Parameters
 

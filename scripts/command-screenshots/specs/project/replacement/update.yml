@@ -1,0 +1,4 @@
+command: hardis:project:replacement:update
+run: sf hardis:project:replacement:update --layer project --id warehouse-api-url --value https://warehouse-uat.helios-solar.demo
+org: none
+caption: The warehouse-api-url replacement rule now sends the sandboxes to the warehouse system of the uat org

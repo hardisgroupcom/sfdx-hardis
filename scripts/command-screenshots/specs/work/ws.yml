@@ -1,0 +1,2 @@
+command: hardis:work:ws
+skip: "Technical command the extension uses to talk to sfdx-hardis: it shows nothing of its own."

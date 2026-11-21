@@ -1,0 +1,50 @@
+{
+  "mode": "replace",
+  "title": "Unused Metadatas",
+  "columns": [
+    "type",
+    "name"
+  ],
+  "rows": [
+    {
+      "type": "Label",
+      "name": "Helios_Install_Confirmation"
+    },
+    {
+      "type": "Label",
+      "name": "Helios_Panel_Batch_Empty"
+    },
+    {
+      "type": "Label",
+      "name": "Helios_Inverter_Not_Found"
+    },
+    {
+      "type": "Label",
+      "name": "Helios_Crew_Unavailable"
+    },
+    {
+      "type": "Label",
+      "name": "Helios_Old_Quote_Disclaimer"
+    },
+    {
+      "type": "Label",
+      "name": "Helios_Roof_Survey_Pending"
+    },
+    {
+      "type": "Label",
+      "name": "Helios_Grid_Connection_Delayed"
+    },
+    {
+      "type": "Custom Permission",
+      "name": "Helios_Override_Allocation"
+    },
+    {
+      "type": "Custom Permission",
+      "name": "Helios_Export_Panel_Batches"
+    },
+    {
+      "type": "Custom Permission",
+      "name": "Helios_Legacy_Quote_Access"
+    }
+  ]
+}

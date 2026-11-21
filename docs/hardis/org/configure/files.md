@@ -45,6 +45,18 @@ The command's technical implementation involves:
 </details>
 
 
+## Screenshots
+
+![Type the query of the records whose files are exported](../../../assets/images/commands/org/configure/files-1.webp)
+
+_Type the query of the records whose files are exported_
+
+![A files export configuration for the documents attached to the Helios installations, saved in scripts/files](../../../assets/images/commands/org/configure/files.webp)
+
+_A files export configuration for the documents attached to the Helios installations, saved in scripts/files_
+
+- **(1)** The export.json written for this configuration
+
 ## Parameters
 
 | Name         |  Type   | Description                                                   | Default | Required | Options |

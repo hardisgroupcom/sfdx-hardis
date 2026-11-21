@@ -1,0 +1,5 @@
+command: hardis:ticket:whoami
+run: sf hardis:ticket:whoami
+mode: replay
+org: none
+caption: "The Jira account the credentials of the project belong to"

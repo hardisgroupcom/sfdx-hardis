@@ -1,0 +1,4 @@
+command: hardis:project:clean:emptyitems
+run: sf hardis:project:clean:emptyitems
+org: none
+caption: The empty sharing rules files of standard objects removed from the Helios sources after a retrieve

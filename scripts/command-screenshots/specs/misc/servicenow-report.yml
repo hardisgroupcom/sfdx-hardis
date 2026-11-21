@@ -1,0 +1,10 @@
+command: hardis:misc:servicenow-report
+run: sf hardis:misc:servicenow-report
+mode: replay
+org: none
+caption: "The user stories of UAT are cross-checked with their ServiceNow change requests, all valid, with a report of the matches"
+answers:
+  - q: "WHERE condition"
+    choice: "^UAT all$"
+    shot: true
+    caption: "Choose which deployments to check against ServiceNow"

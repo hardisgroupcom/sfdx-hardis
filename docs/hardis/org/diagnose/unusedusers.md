@@ -57,6 +57,36 @@ In agent mode:
 - To target all license types, pass `--licensetypes all`.
 - All interactive prompts are skipped.
 
+## Screenshots
+
+![Pick the period without login](../../../assets/images/commands/org/diagnose/unusedusers-1.webp)
+
+_Pick the period without login_
+
+![Active users who did not log in for 6 months, to free their licenses](../../../assets/images/commands/org/diagnose/unusedusers.webp)
+
+_Active users who did not log in for 6 months, to free their licenses_
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Unused users
+
+One row per active user who has not logged in for the chosen number of days, with the last login date, profile and license; the file name continues with the period, for example unused-users-last-180-days.
+
+Files: `unused-users-*.csv`, `xls/unused-users-*.xlsx`
+
+![Unused users report in Excel](../../../assets/images/commands/org/diagnose/unusedusers-report-unused-users-.webp)
+
+### Active users
+
+One row per active user who logged in during the chosen period, written instead of the unused users report when the command runs with --returnactiveusers.
+
+Files: `active-users-*.csv`, `xls/active-users-*.xlsx`
+
+![Active users report in Excel](../../../assets/images/commands/org/diagnose/unusedusers-report-active-users-.webp)
+
 ## Parameters
 
 | Name                      |  Type   | Description                                                                                                                                                                                                                          | Default | Required |                    Options                    |

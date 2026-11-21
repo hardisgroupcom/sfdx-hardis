@@ -1,0 +1,5 @@
+command: hardis:doc:release-notes
+run: sf hardis:doc:release-notes --mode prepare --source-branch uat --target-branch preprod
+mode: replay
+org: none
+caption: "The release notes of what uat will bring to preprod - four Pull Requests, their tickets, the metadata delta and the deployment actions"

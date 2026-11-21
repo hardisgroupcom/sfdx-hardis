@@ -1,0 +1,8 @@
+# Deployment actions of the User Story HEL-42, before its Pull Request exists
+commandsPreDeploy:
+  - id: 4f2a9c71-3b5e-4d18-a6c0-8e7f1b2d3c45
+    label: Pause the installation reminders
+    type: apex
+    parameters:
+      apexScript: scripts/apex/pause-installation-reminders.apex
+    context: process-deployment-only

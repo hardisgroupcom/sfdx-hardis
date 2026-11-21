@@ -45,6 +45,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The workstation is checked: the git provider token and the encryption key allow taking scratch orgs from the pool](../../../assets/images/commands/scratch/pool/localauth.webp)
+
+_The workstation is checked: the git provider token and the encryption key allow taking scratch orgs from the pool_
+
 ## Parameters
 
 | Name                  |  Type   | Description                                                                                                       | Default | Required | Options |

@@ -1,0 +1,2 @@
+command: hardis:project:action:list
+skip: "The extension reads it in the background for the Deployment Actions tab: it shows nothing of its own."

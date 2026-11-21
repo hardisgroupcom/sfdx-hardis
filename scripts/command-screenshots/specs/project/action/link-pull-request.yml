@@ -1,0 +1,5 @@
+command: hardis:project:action:link-pull-request
+run: sf hardis:project:action:link-pull-request --pr-id current
+mode: replay
+org: none
+caption: "The draft deployment actions of the branch renamed after the Pull Request #118 they now belong to"

@@ -1,0 +1,58 @@
+{
+  "mode": "replace",
+  "title": "Reactivated users",
+  "columns": [
+    "Id",
+    "Email"
+  ],
+  "rows": [
+    {
+      "Id": "005Hb00000075GLIAY",
+      "Email": "victor.martin@helios-solar.demo"
+    },
+    {
+      "Id": "005Hb00000077K4IAI",
+      "Email": "mariia.kowalska@helios-solar.demo"
+    },
+    {
+      "Id": "005Hb00000079NnIAI",
+      "Email": "romain.lefebvre@helios-solar.demo"
+    },
+    {
+      "Id": "005Hb0000007BRWIA2",
+      "Email": "lucia.fernandez@helios-solar.demo"
+    },
+    {
+      "Id": "005Hb0000007DVFIA2",
+      "Email": "tomasz.nowak@helios-solar.demo"
+    },
+    {
+      "Id": "005Hb0000007FYyIAM",
+      "Email": "amelie.dubois@helios-solar.demo"
+    },
+    {
+      "Id": "005Hb0000007HchIAE",
+      "Email": "hugo.perrin@helios-solar.demo"
+    },
+    {
+      "Id": "005Hb0000007JgQIAU",
+      "Email": "ines.moreau@helios-solar.demo"
+    },
+    {
+      "Id": "005Hb0000007Lk9IAE",
+      "Email": "jakub.zielinski@helios-solar.demo"
+    },
+    {
+      "Id": "005Hb0000007NnsIAE",
+      "Email": "sofia.marchetti@helios-solar.demo"
+    },
+    {
+      "Id": "005Hb0000007PrbIAE",
+      "Email": "lena.hoffmann@helios-solar.demo"
+    },
+    {
+      "Id": "005Hb0000007RvKIAU",
+      "Email": "nils.berger@helios-solar.demo"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+command: hardis:lint:access
+run: sf hardis:lint:access
+org: none
+caption: An Apex class that no permission set gives access to, found in the project sources
+allowedStatuses: [completed, error]
+answers:
+  - q: Do you want to add the missing accesses in permission sets
+    choice: ^❌ No$
+    shot: true
+    caption: The command offers to add the missing accesses to permission sets

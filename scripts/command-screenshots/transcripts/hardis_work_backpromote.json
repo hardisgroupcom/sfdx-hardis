@@ -1,0 +1,372 @@
+{
+  "command": "hardis:work:backpromote",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Backpromote from integration to helios-dev..."
+      }
+    },
+    {
+      "delay": 700,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Listing merged pull requests on integration..."
+      }
+    },
+    {
+      "delay": 600,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Select the start Pull Request for helios-dev: it and everything merged after it are backpromoted",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 60,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "name": "value",
+            "type": "select",
+            "message": "🦙 Select the start Pull Request for helios-dev: it and everything merged after it are backpromoted",
+            "description": "Newest first. The Pull Requests already backpromoted to this sandbox show their date.",
+            "initial": 3,
+            "choices": [
+              {
+                "title": "#126 HEL-48 Panel batch traceability (lucia-fernandez, 2026-11-13, 5 files, 0 actions)",
+                "value": "232e00007e9630004892a000532e500067184000"
+              },
+              {
+                "title": "#125 HEL-58 Fix duplicate crew assignment on reschedule (tomasz-nowak, 2026-11-12, 2 files, 0 actions)",
+                "value": "4e9500005b7130000bd1a000270150405382db00"
+              },
+              {
+                "title": "#124 HEL-66 Gate code of a site (amelie-dubois, 2026-11-11, 3 files, 1 actions)",
+                "value": "79fc0000384c30004f10a0007ad450005cc64000"
+              },
+              {
+                "title": "#122 HEL-61 Installation close check (tomasz-nowak, 2026-11-10, 4 files, 0 actions)",
+                "value": "50cb0000406f30006ff7a0005f2f500051854000"
+              },
+              {
+                "title": "#121 HEL-57 Installation scheduler batch (lucia-fernandez, 2026-11-09, 3 files, 0 actions) [backpromoted on 2026-11-10 by Victor Martin]",
+                "value": "7c3200001d4a30003336a0402495eb00036f3f00"
+              },
+              {
+                "title": "#120 HEL-45 Crew assignment flow (romain-lefebvre, 2026-11-06, 2 files, 0 actions) [backpromoted on 2026-11-10 by Victor Martin]",
+                "value": "279900007a2530007675a00006d5500047334040"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "#122 HEL-61 Installation close check (tomasz-nowak, 2026-11-10, 4 files, 0 actions)"
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Backpromote window: from Pull Request #122 to the head of integration"
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Select the metadata to backpromote to helios-dev (deselect to skip)",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 60,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "name": "value",
+            "type": "multiselect",
+            "message": "🦙 Select the metadata to backpromote to helios-dev (deselect to skip)",
+            "description": "Select the metadata to backpromote to helios-dev (deselect to skip)",
+            "choices": [
+              {
+                "title": "ApexClass:InstallationScheduler",
+                "value": "deploy:ApexClass:InstallationScheduler",
+                "selected": true
+              },
+              {
+                "title": "CustomField:Installation__c.Checklist_Status__c",
+                "value": "deploy:CustomField:Installation__c.Checklist_Status__c",
+                "selected": true
+              },
+              {
+                "title": "CustomObject:Panel_Batch__c",
+                "value": "deploy:CustomObject:Panel_Batch__c",
+                "selected": true
+              },
+              {
+                "title": "Flow:Installation_Assign_Crew",
+                "value": "deploy:Flow:Installation_Assign_Crew",
+                "selected": true
+              },
+              {
+                "title": "Flow:Installation_Close_Check",
+                "value": "deploy:Flow:Installation_Close_Check",
+                "selected": true
+              },
+              {
+                "title": "Layout:Installation__c-Installation Layout",
+                "value": "deploy:Layout:Installation__c-Installation Layout",
+                "selected": true
+              },
+              {
+                "title": "PermissionSet:Helios_Delivery_Crew",
+                "value": "deploy:PermissionSet:Helios_Delivery_Crew",
+                "selected": true
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "- ApexClass:InstallationScheduler\n- CustomField:Installation__c.Checklist_Status__c\n- CustomObject:Panel_Batch__c\n- Flow:Installation_Assign_Crew\n- Flow:Installation_Close_Check\n- Layout:Installation__c-Installation Layout\n- PermissionSet:Helios_Delivery_Crew"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 force-app/main/default/flows/Installation_Assign_Crew.flow-meta.xml differs between helios-dev and integration. What do you want to deploy?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 60,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "name": "value",
+            "type": "select",
+            "message": "🦙 force-app/main/default/flows/Installation_Assign_Crew.flow-meta.xml differs between helios-dev and integration. What do you want to deploy?",
+            "description": "force-app/main/default/flows/Installation_Assign_Crew.flow-meta.xml differs between helios-dev and integration. What do you want to deploy?",
+            "choices": [
+              {
+                "title": "Overwrite with the integration version",
+                "value": "git"
+              },
+              {
+                "title": "Keep the helios-dev version (the item is not deployed and is offered again next time)",
+                "value": "org"
+              },
+              {
+                "title": "Merge both versions by hand (the file is written with conflict markers, a coding agent prompt is saved)",
+                "value": "merge"
+              },
+              {
+                "title": "Overwrite this file and every remaining one with the integration version",
+                "value": "git:all"
+              },
+              {
+                "title": "Keep the helios-dev version for this file and every remaining one",
+                "value": "org:all"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Overwrite with the integration version"
+      }
+    },
+    {
+      "delay": 350,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Select the deployment actions to run in the sandbox (deselect to skip)",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 60,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "name": "value",
+            "type": "multiselect",
+            "message": "🦙 Select the deployment actions to run in the sandbox (deselect to skip)",
+            "description": "Select the deployment actions to run in the sandbox (deselect to skip)",
+            "choices": [
+              {
+                "title": "[Post-deploy] Assign Helios_Delivery_Crew to the delivery users (#124)",
+                "value": "HEL-66-assign-crew",
+                "selected": true
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "- HEL-66-assign-crew"
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Checkout switched to backpromote/integration/helios-dev (child of integration)"
+      }
+    },
+    {
+      "delay": 700,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Delta summary: 7 items to deploy, 0 items to delete"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Deploying 7 metadata item(s) to the sandbox..."
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf project deploy start --manifest package.xml --ignore-warnings --ignore-conflicts --test-level NoTestRun -o victor.martin@helios-solar.demo.dev --wait 120 --json",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 2600,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf project deploy start --manifest package.xml --ignore-warnings --ignore-conflicts --test-level NoTestRun -o victor.martin@helios-solar.demo.dev --wait 120 --json",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "7 metadata item(s) deployed to the sandbox"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Running 1 Post-deploy action(s)..."
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Running deployment action \"Assign Helios_Delivery_Crew to the delivery users\"..."
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf apex run --file scripts/actions/assign-crew-permission-set.apex",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1300,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf apex run --file scripts/actions/assign-crew-permission-set.apex",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Action \"Assign Helios_Delivery_Crew to the delivery users\" completed successfully"
+      }
+    },
+    {
+      "delay": 700,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Backpromote to helios-dev completed"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Your checkout is now on backpromote/integration/helios-dev. To get back to your own branch: git checkout features/HEL-42-installation-checklist, then merge integration into it (git merge origin/integration) so that your next hardis:work:save does not commit the backpromoted metadata as your own work."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

@@ -62,6 +62,14 @@ describe('pipelineDescribeUtils', () => {
       expect(description.availableTargetBranches).to.deep.equal([]);
     });
 
+    it('lists the branch names of "branch,label" availableTargetBranches entries', () => {
+      const description = buildPipelineDescription(
+        [{ branchName: 'integration', level: 50, mergeTargets: [] }],
+        { developmentBranch: 'integration', availableTargetBranches: ['integration,BUILD tickets', 'preprod,HOTFIX tickets', 'preprod'] },
+      );
+      expect(description.availableTargetBranches).to.deep.equal(['integration', 'preprod']);
+    });
+
     it('marks the steps a promotion branch may be assembled on', () => {
       const majorOrgs = [
         { branchName: 'main', level: 100, mergeTargets: [] },

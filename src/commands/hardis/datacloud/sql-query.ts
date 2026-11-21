@@ -7,12 +7,21 @@ import { isCI, uxLog } from "../../../common/utils/index.js";
 import { prompts } from "../../../common/utils/prompts.js";
 import c from "chalk";
 import { t } from '../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class DataCloudSqlQuery extends SfCommand<any> {
   public static title = 'Execute a SQL query on Data Cloud';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'datacloud-sql-query',
+      title: 'SQL query results',
+      description: 'One row per record returned by the SQL query run on Data Cloud, with one column per selected field.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

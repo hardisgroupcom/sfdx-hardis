@@ -26,6 +26,7 @@ import {
   withCommentPrefix,
 } from '../../../common/ticketProvider/utils/ticketQualify.js';
 import { t } from '../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -49,6 +50,14 @@ interface QualifySteps {
 
 export default class TicketPostComment extends SfCommand<any> {
   public static title = 'Post a comment on tickets';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'ticket-post-comment',
+      title: 'Posted comments',
+      description: 'One row per ticket, with its provider, whether the comment was created, updated, skipped or failed, and the URL or the error.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

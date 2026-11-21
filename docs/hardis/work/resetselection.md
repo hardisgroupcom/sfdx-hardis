@@ -61,6 +61,16 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 <!-- training-links:end -->
 
 
+## Screenshots
+
+![Confirm the soft reset of the User Story branch](../../assets/images/commands/work/resetselection-1.webp)
+
+_Confirm the soft reset of the User Story branch_
+
+![The three commits of the User Story reset softly, so the files can be selected and committed again](../../assets/images/commands/work/resetselection.webp)
+
+_The three commits of the User Story reset softly, so the files can be selected and committed again_
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

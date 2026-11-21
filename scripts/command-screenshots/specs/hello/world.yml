@@ -1,0 +1,2 @@
+command: hello:world
+skip: "Sample command of the plugin template, never run by users"

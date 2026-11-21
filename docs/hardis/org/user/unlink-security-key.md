@@ -56,6 +56,38 @@ Reference: [Salesforce Help - Remove a user's security key](https://help.salesfo
 </details>
 
 
+## Screenshots
+
+![Type the users whose security keys to unlink](../../../assets/images/commands/org/user/unlink-security-key-1.webp)
+
+_Type the users whose security keys to unlink_
+
+![Security keys and authenticator apps unlinked from 13 of the 24 Helios users listed, with the targets and results reports](../../../assets/images/commands/org/user/unlink-security-key.webp)
+
+_Security keys and authenticator apps unlinked from 13 of the 24 Helios users listed, with the targets and results reports_
+
+- **(1)** One row per username, found or not, active or not
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Targeted users
+
+One row per user targeted by the unlink, with its id, whether it is active and its status before the run.
+
+Files: `unlink-security-key-targets-*.csv`, `xls/unlink-security-key-targets-*.xlsx`
+
+![Targeted users report in Excel](../../../assets/images/commands/org/user/unlink-security-key-report-unlink-security-key-targets.webp)
+
+### Unlink results
+
+One row per user, with the MFA methods unlinked, the ones that were not linked, the final status and who triggered the run.
+
+Files: `users-security-key-unlink-*.csv`, `xls/users-security-key-unlink-*.xlsx`
+
+![Unlink results report in Excel](../../../assets/images/commands/org/user/unlink-security-key-report-users-security-key-unlink.webp)
+
 ## Parameters
 
 | Name                             |  Type   | Description                                                                                                                                                   | Default | Required | Options |

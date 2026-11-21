@@ -19,6 +19,7 @@ Key features:
 - **Assisted Metadata Selection:** If no `sourcepath`, `manifest`, `metadata`, or `packagenames` flags are specified, an interactive menu will prompt you to select the metadata types you wish to retrieve.
 - **Assisted Org Selection:** If no target org is specified, an interactive menu will guide you to choose an org for the retrieval operation.
 - **Backward Compatibility:** While this command wraps the newer `sf project retrieve start`, it maintains compatibility with the older `sfdx force:source:retrieve` flags.
+- **Plugin events:** once the retrieve is over, the installed sf plugins that listen to `sfdx-hardis:retrieve-done` receive its status and what was asked (manifest, metadata, source paths, packages). [More info](https://sfdx-hardis.cloudity.com/sfdx-hardis-plugins/#react-to-sfdx-hardis-events)
 
 **Important Note:** The underlying Salesforce CLI command `sfdx force:source:retrieve` is being deprecated by Salesforce in November 2024. It is recommended to migrate to `sf project retrieve start` for future compatibility. See [Salesforce CLI Migration Guide](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_mig_deploy_retrieve.htm) for more information.
 
@@ -31,6 +32,7 @@ This command acts as an intelligent wrapper around the Salesforce CLI's source r
 - **Interactive Prompts:** It leverages `MetadataUtils.promptMetadataTypes()` and `promptOrgUsernameDefault()` to provide interactive menus for metadata and org selection when the user does not provide them as flags.
 - **Argument Transformation:** It dynamically constructs the command-line arguments for the underlying Salesforce CLI command based on user selections and provided flags.
 - **Error Handling:** It includes basic error handling, such as prompting the user to re-select an org if an issue occurs during org selection.
+- **Plugin events:** after the wrapped command returns, `emitRetrieveEvent()` fires the `sfdx-hardis:retrieve-done` oclif custom event. The status follows `process.exitCode`, set by `wrapSfdxCoreCommand`. Nothing is loaded when no plugin listens to it.
 - **Deprecation Warning:** It explicitly logs warnings about the deprecation of `sfdx force:source:retrieve` to inform users about upcoming changes.
 </details>
 
@@ -45,6 +47,12 @@ sf hardis:source:retrieve --agent
 In agent mode, all interactive prompts are skipped and default values are used.
 
 
+
+## Screenshots
+
+![The metadata of manifest/package.xml retrieved from the org into the project](../../assets/images/commands/source/retrieve.webp)
+
+_The metadata of manifest/package.xml retrieved from the org into the project_
 
 ## Parameters
 

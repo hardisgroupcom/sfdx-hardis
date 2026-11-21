@@ -1,0 +1,91 @@
+{
+  "command": "hardis:project:deploy:notify",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Handling Pull Request comments for a validation job..."
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[GitHub Integration] Listing comments of Pull Request..."
+      }
+    },
+    {
+      "delay": 700,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[GitHub Integration] Updating Pull Request Comment on GitHub..."
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "[JiraProvider] Try to post comments on 4 tickets..."
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[JiraProvider] Using JIRA_EMAIL and JIRA_TOKEN for authentication"
+      }
+    },
+    {
+      "delay": 1100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[JiraProvider] Posted comments on 4 ticket(s): HEL-42, HEL-57, HEL-61, HEL-66"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[JiraProvider] Added label UAT_DEPLOYED on 4 ticket(s): HEL-42, HEL-57, HEL-61, HEL-66"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[NotifProvider] Handling notification of type DEPLOYMENT..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[NotifProvider] - Notif target found: sfdx-hardis Slack connector"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

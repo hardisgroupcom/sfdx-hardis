@@ -19,12 +19,22 @@ import { generateCsvFile, generateReportPath } from '../../../common/utils/files
 import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
 import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
 import { t } from '../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 /* jscpd:ignore-end */
 export default class MetadataStatus extends SfCommand<any> {
   public static title = 'check missing description on custom fields';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'lint-missingattributes',
+      title: 'Missing descriptions',
+      description: 'One row per custom field that has no description, to know which fields to document.',
+    },
+  ];
+
   public static description = `
 ## Command Behavior
 

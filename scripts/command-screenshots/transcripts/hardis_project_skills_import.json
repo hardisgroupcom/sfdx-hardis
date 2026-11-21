@@ -1,0 +1,167 @@
+{
+  "command": "hardis:project:skills:import",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 600,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Enter the git repository URL containing Claude Code skills to import",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "text",
+            "name": "repoUrl",
+            "message": "🦙 Enter the git repository URL containing Claude Code skills to import",
+            "description": "Enter the git repository URL containing Claude Code skills to import"
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "https://github.com/helios-energy/claude-skills.git"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Cloning skills repository https://github.com/helios-energy/claude-skills.git..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "git clone --depth 1 https://github.com/helios-energy/claude-skills.git /tmp/sfdx-hardis-k3x9q2",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 2400,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "git clone --depth 1 https://github.com/helios-energy/claude-skills.git /tmp/sfdx-hardis-k3x9q2",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Saved https://github.com/helios-energy/claude-skills.git in skillsRepo project config for future use."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Copying skills files into the project..."
+      }
+    },
+    {
+      "delay": 80,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Copied skills/helios-data-model/SKILL.md"
+      }
+    },
+    {
+      "delay": 80,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Copied skills/helios-installation-flows/SKILL.md"
+      }
+    },
+    {
+      "delay": 80,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Copied skills/helios-release-checklist/SKILL.md"
+      }
+    },
+    {
+      "delay": 80,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Copied agents/helios-apex-reviewer.md"
+      }
+    },
+    {
+      "delay": 80,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Copied agents/helios-flow-reviewer.md"
+      }
+    },
+    {
+      "delay": 80,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Copied rules/helios-naming.md"
+      }
+    },
+    {
+      "delay": 80,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Copied rules/helios-permissions.md"
+      }
+    },
+    {
+      "delay": 80,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Copied CLAUDE.md"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Skills import complete: 8 file(s) copied, 0 file(s) skipped."
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

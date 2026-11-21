@@ -22,6 +22,7 @@ import { uxLogTableWithReport } from '../../../common/utils/filesUtils.js';
 import { exportData } from '../../../common/utils/dataUtils.js';
 import { forceSourcePull } from '../../../common/utils/deployUtils.js';
 import { buildAvailableTargetBranches, buildConventionalCommitMessage, callSfdxGitDelta, getGitDeltaScope, selectTargetBranch } from '../../../common/utils/gitUtils.js';
+import { getTargetBranchName } from '../../../common/utils/targetBranchUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import {
   appendPackageXmlFilesContent,
@@ -40,12 +41,31 @@ import { t } from '../../../common/utils/i18n.js';
 import { getPromotionBranchConfig, isPromotionBranchName } from '../../../common/utils/promotionBranchUtils.js';
 import { isBackpromoteBranchName, parseBackpromoteBranchName } from '../../../common/utils/backpromoteRules.js';
 import { registerDevOrgUsage } from '../../../common/utils/devOrgsRegistry.js';
+import type { CommandReport } from '../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class SaveTask extends SfCommand<any> {
   public static title = 'Save User Story';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'commit-files-package-xml-updates',
+      title: 'Package.xml updates',
+      description: 'One row per file committed with the package.xml updates, with its status (created, modified or deleted).',
+    },
+    {
+      file: 'commit-files-cleaned-sources',
+      title: 'Cleaned files',
+      description: 'One row per source file cleaned and committed by the save, so the cleaning is visible in the User Story.',
+    },
+    {
+      file: 'commit-files-deployment-plan',
+      title: 'Deployment plan files',
+      description: 'One row per file committed with the deployment plan updates, with its status (created, modified or deleted).',
+    },
+  ];
 
   public static description = `
 ## Command Behavior
@@ -271,8 +291,10 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
     }
     if (this.targetBranch == null) {
       const userConfig = await getConfig('user');
-      if (userConfig?.localStorageBranchTargets && userConfig?.localStorageBranchTargets[localBranch]) {
-        this.targetBranch = userConfig?.localStorageBranchTargets[localBranch];
+      // An older work:new could store a "branch,label" entry of availableTargetBranches as is
+      const storedTargetBranch = getTargetBranchName(userConfig?.localStorageBranchTargets?.[localBranch]);
+      if (storedTargetBranch) {
+        this.targetBranch = storedTargetBranch;
       }
     }
     if (this.targetBranch == null) {
@@ -1022,7 +1044,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 
     const projectConfig = await getConfig('project');
     const userConfig = await getConfig('user');
-    const inferredTargetBranch = userConfig?.localStorageBranchTargets?.[localBranch] || null;
+    const inferredTargetBranch = getTargetBranchName(userConfig?.localStorageBranchTargets?.[localBranch]) || null;
     const { branches: availableTargetBranches, display: availableTargetBranchesDisplay } = buildAvailableTargetBranches(projectConfig);
 
     available.push(`targetbranch: ${this.toOptionList(availableTargetBranchesDisplay)}`);

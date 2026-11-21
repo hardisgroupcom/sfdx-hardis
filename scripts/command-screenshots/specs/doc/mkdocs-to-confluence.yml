@@ -1,0 +1,5 @@
+command: hardis:doc:mkdocs-to-confluence
+run: sf hardis:doc:mkdocs-to-confluence
+mode: replay
+org: none
+caption: "Every page of the project documentation is published to the HELIOS Confluence space, with its images and diagrams"

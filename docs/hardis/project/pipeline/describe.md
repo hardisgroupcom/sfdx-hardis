@@ -55,6 +55,12 @@ In agent mode:
 - When `mergeTargetsRecommendation` is not null, relay it to the user: the pipeline was partly guessed, and they should declare `mergeTargets` in the files it names.
 
 
+## Screenshots
+
+![The major branches of the Helios pipeline, the org each one deploys to and the branch it is merged into](../../../assets/images/commands/project/pipeline/describe.webp)
+
+_The major branches of the Helios pipeline, the org each one deploys to and the branch it is merged into_
+
 ## Parameters
 
 | Name         |  Type   | Description                                                   | Default | Required | Options |

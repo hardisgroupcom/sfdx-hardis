@@ -583,7 +583,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=LEGACY_API&var-metric=LegacyApiCalls_metric"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=WHAT_WILL_BREAK&var-metric=LegacyApiCalls_metric"
             }
           ]
         },
@@ -829,6 +829,587 @@
       }
     },
     {
+      "id": 193,
+      "type": "row",
+      "title": "What will break (click a number for details)",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
+      "panels": []
+    },
+    {
+      "id": 194,
+      "type": "stat",
+      "title": "SOAP no API Auth",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 0,
+        "y": 21
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "max by (orgIdentifier) (last_over_time(SoapLoginUsersMissingPermission_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
+          "refId": "A"
+        }
+      ],
+      "description": "Users calling SOAP login() without the Use Any API Auth permission: they get INSUFFICIENT_ACCESS from December 1, 2026. Requires a recent sfdx-hardis version on the monitoring pipeline (empty until then).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          },
+          "links": [
+            {
+              "title": "Open indicator detail",
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=WHAT_WILL_BREAK&var-metric=SoapLoginUsersMissingPermission_metric"
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 195,
+      "type": "stat",
+      "title": "Device flow users",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 6,
+        "y": 21
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "max by (orgIdentifier) (last_over_time(DeviceFlowUsers_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
+          "refId": "A"
+        }
+      ],
+      "description": "Users logging in with the OAuth device flow, restricted to local External Client Apps from November 30, 2026. Requires a recent sfdx-hardis version on the monitoring pipeline (empty until then).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          },
+          "links": [
+            {
+              "title": "Open indicator detail",
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=WHAT_WILL_BREAK&var-metric=DeviceFlowUsers_metric"
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 196,
+      "type": "stat",
+      "title": "Password flow",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 12,
+        "y": 21
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "max by (orgIdentifier) (last_over_time(UsernamePasswordFlowUsers_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
+          "refId": "A"
+        }
+      ],
+      "description": "Users logging in with the OAuth username-password flow, retired on February 20, 2027. Requires a recent sfdx-hardis version on the monitoring pipeline (empty until then).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          },
+          "links": [
+            {
+              "title": "Open indicator detail",
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=WHAT_WILL_BREAK&var-metric=UsernamePasswordFlowUsers_metric"
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 197,
+      "type": "stat",
+      "title": "SOAP login users",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 18,
+        "y": 21
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "max by (orgIdentifier) (last_over_time(SoapLoginUsers_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
+          "refId": "A"
+        }
+      ],
+      "description": "Users calling SOAP login(), retired in Summer '27: each integration must move to OAuth with an External Client App. Requires a recent sfdx-hardis version on the monitoring pipeline (empty until then).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          },
+          "links": [
+            {
+              "title": "Open indicator detail",
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=WHAT_WILL_BREAK&var-metric=SoapLoginUsers_metric"
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 198,
+      "type": "stat",
+      "title": "Idle tokens",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 0,
+        "y": 26
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "max by (orgIdentifier) (last_over_time(IdleRefreshTokensExpiringSoon_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
+          "refId": "A"
+        }
+      ],
+      "description": "Refresh tokens of API only users unused for 20 days or more: they expire after 30 days without use. Requires a recent sfdx-hardis version on the monitoring pipeline (empty until then).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          },
+          "links": [
+            {
+              "title": "Open indicator detail",
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=WHAT_WILL_BREAK&var-metric=IdleRefreshTokensExpiringSoon_metric"
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 199,
+      "type": "stat",
+      "title": "Apps to migrate",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 6,
+        "y": 26
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "max by (orgIdentifier) (last_over_time(ConnectedAppsToMigrate_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
+          "refId": "A"
+        }
+      ],
+      "description": "Connected Apps of the org still in use, to move to External Client Apps before Summer '27. Requires a recent sfdx-hardis version on the monitoring pipeline (empty until then).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          },
+          "links": [
+            {
+              "title": "Open indicator detail",
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=WHAT_WILL_BREAK&var-metric=ConnectedAppsToMigrate_metric"
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 200,
+      "type": "stat",
+      "title": "Rare refreshes",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 12,
+        "y": 26
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "max by (orgIdentifier) (last_over_time(IntegrationsRefreshingTooRarely_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
+          "refId": "A"
+        }
+      ],
+      "description": "Integrations that went 30 days or more without using their refresh token: a monthly or quarterly sync loses its token between two runs. Requires a recent sfdx-hardis version on the monitoring pipeline (empty until then).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          },
+          "links": [
+            {
+              "title": "Open indicator detail",
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=WHAT_WILL_BREAK&var-metric=IntegrationsRefreshingTooRarely_metric"
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 201,
+      "type": "stat",
+      "title": "SOAP token needed",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 18,
+        "y": 26
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "max by (orgIdentifier) (last_over_time(SoapLoginUsersNeedingToken_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
+          "refId": "A"
+        }
+      ],
+      "description": "SOAP login() callers only covered by a trusted IP range wider than /8: they need the security token from January 31, 2027. Requires a recent sfdx-hardis version on the monitoring pipeline (empty until then).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          },
+          "links": [
+            {
+              "title": "Open indicator detail",
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=WHAT_WILL_BREAK&var-metric=SoapLoginUsersNeedingToken_metric"
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
+    },
+    {
       "id": 118,
       "type": "row",
       "title": "Trends",
@@ -837,7 +1418,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 20
+        "y": 31
       },
       "panels": []
     },
@@ -853,7 +1434,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 21
+        "y": 32
       },
       "targets": [
         {
@@ -935,7 +1516,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 21
+        "y": 32
       },
       "targets": [
         {
@@ -965,7 +1546,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=LEGACY_API&var-metric=LegacyApiCalls_metric"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=WHAT_WILL_BREAK&var-metric=LegacyApiCalls_metric"
             }
           ],
           "custom": {
@@ -1014,7 +1595,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 29
+        "y": 40
       },
       "panels": []
     },
@@ -1030,7 +1611,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 30
+        "y": 41
       },
       "targets": [
         {

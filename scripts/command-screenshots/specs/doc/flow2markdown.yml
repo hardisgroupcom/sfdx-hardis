@@ -1,0 +1,10 @@
+command: hardis:doc:flow2markdown
+run: sf hardis:doc:flow2markdown
+org: none
+caption: The Installation_Assign_Crew flow documented in Markdown, with its diagram and general information, in the VS Code preview
+reportPill: false
+answers:
+  - q: Please select the Flows you want to create the documentation
+    choice: ^Installation_Assign_Crew$
+    shot: true
+    caption: Pick the flows of the project to document

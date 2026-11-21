@@ -49,6 +49,20 @@ Required in agent mode: `--layer` (and `--branch` with `--layer branch`), then e
 </details>
 
 
+## Screenshots
+
+![Store the rule in the project config, a branch config file, or a git provider issue](../../../assets/images/commands/project/replacement/create-1.webp)
+
+_Store the rule in the project config, a branch config file, or a git provider issue_
+
+![Pick what the rule does](../../../assets/images/commands/project/replacement/create-2.webp)
+
+_Pick what the rule does_
+
+![A replacement rule sets the sender address of the crew email templates](../../../assets/images/commands/project/replacement/create.webp)
+
+_A replacement rule sets the sender address of the crew email templates_
+
 ## Parameters
 
 | Name             |  Type   | Description                                                                                                                                                                   | Default | Required |              Options              |

@@ -1,0 +1,31 @@
+{
+  "mode": "replace",
+  "title": "Metadata read failures",
+  "columns": [
+    "type",
+    "fullName",
+    "error"
+  ],
+  "rows": [
+    {
+      "type": "CustomObject",
+      "fullName": "Inverter_Firmware__c",
+      "error": "INVALID_CROSS_REFERENCE_KEY: no CustomObject named Inverter_Firmware__c found"
+    },
+    {
+      "type": "Layout",
+      "fullName": "Installation__c-Installation Legacy Layout",
+      "error": "INVALID_CROSS_REFERENCE_KEY: no Layout named Installation__c-Installation Legacy Layout found"
+    },
+    {
+      "type": "PermissionSet",
+      "fullName": "Helios_Inverter_Specialist",
+      "error": "INVALID_CROSS_REFERENCE_KEY: no PermissionSet named Helios_Inverter_Specialist found"
+    },
+    {
+      "type": "Profile",
+      "fullName": "Helios Partner Installer",
+      "error": "Read timed out after 3 attempts, retry with a smaller batch"
+    }
+  ]
+}

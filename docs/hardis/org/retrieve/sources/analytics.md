@@ -46,6 +46,12 @@ In agent mode:
 - The interactive org selection prompt is skipped; `--target-org` flag value is used directly.
 
 
+## Screenshots
+
+![The CRM Analytics apps, dashboards, datasets and recipes of the org are retrieved into the project](../../../../assets/images/commands/org/retrieve/sources/analytics.webp)
+
+_The CRM Analytics apps, dashboards, datasets and recipes of the org are retrieved into the project_
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

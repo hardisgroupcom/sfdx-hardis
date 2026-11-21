@@ -1,0 +1,46 @@
+{
+  "mode": "replace",
+  "title": "Connected Apps not converted to External Client Apps",
+  "rows": [
+    {
+      "Name": "Helios_Crew_Scheduler_Sync",
+      "Last Updated Date": "2026-09-14 08:21",
+      "Last Updated By": "Victor Martin"
+    },
+    {
+      "Name": "Helios_Installer_Mobile",
+      "Last Updated Date": "2026-08-02 15:40",
+      "Last Updated By": "Romain Lefebvre"
+    },
+    {
+      "Name": "Helios_Panel_Telemetry",
+      "Last Updated Date": "2026-05-27 11:05",
+      "Last Updated By": "Tomasz Nowak"
+    },
+    {
+      "Name": "Helios_Customer_Portal_SSO",
+      "Last Updated Date": "2026-04-11 09:30",
+      "Last Updated By": "Mariia Kowalska"
+    },
+    {
+      "Name": "Helios_Warehouse_Scanner",
+      "Last Updated Date": "2026-03-19 16:12",
+      "Last Updated By": "Lucia Fernandez"
+    },
+    {
+      "Name": "Helios_Panel_Supplier_Sync",
+      "Last Updated Date": "2026-02-03 10:48",
+      "Last Updated By": "Amelie Dubois"
+    },
+    {
+      "Name": "Helios_Field_Service_App",
+      "Last Updated Date": "2025-12-18 13:02",
+      "Last Updated By": "Romain Lefebvre"
+    },
+    {
+      "Name": "Helios_BI_Connector",
+      "Last Updated Date": "2025-11-07 17:25",
+      "Last Updated By": "Victor Martin"
+    }
+  ]
+}

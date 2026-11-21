@@ -45,6 +45,24 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The pool configuration, its 5 available scratch orgs with their expiration date, and the link to its dashboard](../../../assets/images/commands/scratch/pool/view.webp)
+
+_The pool configuration, its 5 available scratch orgs with their expiration date, and the link to its dashboard_
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Scratch org pool
+
+One row per scratch org of the pool, with its alias, username, expiration date and days left.
+
+Files: `scratch-org-pool-*.csv`, `xls/scratch-org-pool-*.xlsx`
+
+![Scratch org pool report in Excel](../../../assets/images/commands/scratch/pool/view-report-scratch-org-pool.webp)
+
 ## Parameters
 
 | Name                  |  Type   | Description                                                   | Default | Required | Options |

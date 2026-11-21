@@ -1,0 +1,163 @@
+{
+  "command": "hardis:misc:toml2csv",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Generating CSV files from data/helios-legacy-export.txt (encoding utf8) into folder data/csv."
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "- Initialized output CSV file: data/csv/Account___CLIENTS.csv"
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "- Initialized CSV file: data/csv/errors/err__Account___CLIENTS.csv"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "- Initialized output CSV file: data/csv/Installation__c___INSTALLATIONS.csv"
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "- Initialized CSV file: data/csv/errors/err__Installation__c___INSTALLATIONS.csv"
+      }
+    },
+    {
+      "delay": 600,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "error",
+        "message": "Installation__c.Install_Date__c: Missing required value"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "- Initialized output CSV file: data/csv/Panel_Batch__c___PANELS.csv"
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "- Initialized CSV file: data/csv/errors/err__Panel_Batch__c___PANELS.csv"
+      }
+    },
+    {
+      "delay": 600,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "error",
+        "message": "Panel_Batch__c.Panel_Type__c: Missing matching value for MONO-410 in [\"MONO-375\",\"MONO-400\",\"POLY-330\"]"
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Stats: \n{\n  \"sectionLinesNb\": 3,\n  \"dataLinesNb\": 386,\n  \"emptyLinesNb\": 3,\n  \"totalLinesNb\": 392,\n  \"dataSuccessLinesNb\": 381,\n  \"dataErrorLinesNb\": 5,\n  \"dataFilteredLinesNb\": 0,\n  \"dataDuplicatesNb\": 0,\n  \"sections\": {\n    \"CLIENTS\": {\n      \"dataLinesNb\": 48,\n      \"dataSuccessLinesNb\": 48,\n      \"dataErrorLinesNb\": 0,\n      \"dataFilteredLinesNb\": 0,\n      \"dataFilterErrorsNb\": 0,\n      \"dataDuplicatesNb\": null\n    },\n    \"INSTALLATIONS\": {\n      \"dataLinesNb\": 126,\n      \"dataSuccessLinesNb\": 123,\n      \"dataErrorLinesNb\": 3,\n      \"dataFilteredLinesNb\": 0,\n      \"dataFilterErrorsNb\": 0,\n      \"dataDuplicatesNb\": null\n    },\n    \"PANELS\": {\n      \"dataLinesNb\": 212,\n      \"dataSuccessLinesNb\": 210,\n      \"dataErrorLinesNb\": 2,\n      \"dataFilteredLinesNb\": 0,\n      \"dataFilterErrorsNb\": 0,\n      \"dataDuplicatesNb\": null\n    }\n  }\n}"
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "There have been parsing errors:"
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "- 3 lines: Installation__c.Install_Date__c: Missing required value"
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "- 2 lines: Panel_Batch__c.Panel_Type__c: Missing matching value for MONO-410 in [\"MONO-375\",\"MONO-400\",\"POLY-330\"]"
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[CLIENTS] kept 48 entries on 48"
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[INSTALLATIONS] kept 123 entries on 126"
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[PANELS] kept 210 entries on 212"
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[TOTAL] kept 381 entries on 386 total"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "TOML file successfully split into CSV files"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

@@ -40,6 +40,12 @@ Required in agent mode: `--layer` (and `--branch` with `--layer branch`), `--id`
 </details>
 
 
+## Screenshots
+
+![The warehouse-api-url replacement rule now sends the sandboxes to the warehouse system of the uat org](../../../assets/images/commands/project/replacement/update.webp)
+
+_The warehouse-api-url replacement rule now sends the sandboxes to the warehouse system of the uat org_
+
 ## Parameters
 
 | Name             |  Type   | Description                                                                                                                                                                   | Default | Required |              Options              |

@@ -55,6 +55,26 @@ sf hardis:lint:metadatastatus --agent
 
 In agent mode, the command runs fully automatically with no interactive prompts.
 
+## Screenshots
+
+![Draft flows and inactive validation rules searched in the Helios project sources, before they reach production](../../assets/images/commands/lint/metadatastatus.webp)
+
+_Draft flows and inactive validation rules searched in the Helios project sources, before they reach production_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Inactive metadata
+
+One row per inactive or draft metadata element (flow, validation rule, record type, workflow rule...), to decide whether to activate it or delete it.
+
+Files: `lint-metadatastatus-*.csv`, `xls/lint-metadatastatus-*.xlsx`
+
+![Inactive metadata report in Excel](../../assets/images/commands/lint/metadatastatus-report-lint-metadatastatus.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                   | Default | Required | Options |

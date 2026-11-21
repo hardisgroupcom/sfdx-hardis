@@ -49,6 +49,14 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![Every metadata of the Helios org retrieved in Metadata API format, managed package items left out](../../../../assets/images/commands/org/retrieve/sources/metadata.webp)
+
+_Every metadata of the Helios org retrieved in Metadata API format, managed package items left out_
+
+- **(1)** Items of managed packages are not retrieved
+
 ## Parameters
 
 | Name               |  Type   | Description                                                                                                  | Default | Required | Options |

@@ -14,12 +14,21 @@ import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class OrgPurgeProfile extends SfCommand<any> {
   public static title = 'Remove PS attributes from Profile';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'profile-muted-attributes',
+      title: 'Muted attributes',
+      description: 'One row per attribute removed or reset in a profile, with the profile, the node, the attribute name, and its old and new value.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior
@@ -179,12 +188,10 @@ In agent mode:
     await this.filterFullOrgPackageByNamespaces(packageFullOrgPath, packageFilteredPackagesPath);
 
     let selectedProfiles: string[];
-    if (isCI || this.agentMode) {
-      const profilesFlag = flags.profiles;
-      if (!profilesFlag) {
-        throw new SfError(c.red('In agent/CI mode, --profiles flag is required (comma-separated profile API names).'));
-      }
-      selectedProfiles = profilesFlag.split(',').map((p: string) => p.trim());
+    if (flags.profiles) {
+      selectedProfiles = flags.profiles.split(',').map((p: string) => p.trim());
+    } else if (isCI || this.agentMode) {
+      throw new SfError(c.red('In agent/CI mode, --profiles flag is required (comma-separated profile API names).'));
     } else {
       selectedProfiles = await promptProfiles(flags['target-org'].getConnection(), { multiselect: true, returnApiName: true });
     }
@@ -615,9 +622,17 @@ In agent mode:
       );
       uxLog("action", this, c.cyan(t('successfullyDeployed2', { selectedProfiles: selectedProfiles.length })));
       uxLog("success", this, c.green(t('profilesDeployedSuccessfully', { selectedProfiles: selectedProfiles.join(', ') })));
-    } catch (error) {
+    } catch (error: any) {
+      // The run must end in error: a purge whose profiles were not deployed did nothing in the org
+      let problems: string[] = [];
+      try {
+        const failures = JSON.parse(error?.stdout || '{}')?.result?.details?.componentFailures || [];
+        problems = [].concat(failures).map((failure: any) => `${failure.fullName}: ${failure.problem}`);
+      } catch {
+        // stdout is not the JSON of the deployment
+      }
       uxLog("action", this, c.red(`Failed to deploy profiles.`));
-      uxLog("error", this, c.red(JSON.stringify(error, null, 2)));
+      throw new SfError(`Failed to deploy profiles: ${problems.length > 0 ? problems.join('\n') : error?.message || String(error)}`);
     }
   }
 }

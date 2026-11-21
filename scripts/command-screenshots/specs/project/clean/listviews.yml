@@ -1,0 +1,4 @@
+command: hardis:project:clean:listviews
+run: sf hardis:project:clean:listviews
+org: none
+caption: A list view of the Helios sources switched from scope Mine to Everything, so that its deployment passes

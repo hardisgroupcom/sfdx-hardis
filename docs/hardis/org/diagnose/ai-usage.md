@@ -50,6 +50,24 @@ sf hardis:org:diagnose:ai-usage --agent --target-org myorg@example.com
 
 In agent mode, the command runs fully automatically with no interactive prompts. The analysis window defaults to the last 30 days unless `--days` is provided.
 
+## Screenshots
+
+![Credits consumed by the Agentforce agents of the Helios production org over 30 days: 9420 billed out of 15400, with the report buttons](../../../assets/images/commands/org/diagnose/ai-usage.webp)
+
+_Credits consumed by the Agentforce agents of the Helios production org over 30 days: 9420 billed out of 15400, with the report buttons_
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Credit usage
+
+One row per agent, action and usage type with the credits consumed and whether they are metered (billed), or the raw Data 360 credit rows when no agent usage exists.
+
+Files: `ai-usage-*.csv`, `xls/ai-usage-*.xlsx`
+
+![Credit usage report in Excel](../../../assets/images/commands/org/diagnose/ai-usage-report-ai-usage.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

@@ -1,0 +1,29 @@
+command: hardis:project:action:update
+run: sf hardis:project:action:update
+org: none
+caption: The label of a post-deployment action is changed in the project configuration
+answers:
+  - q: Select the configuration scope
+    choice: ^Project$
+  - q: Select when the action runs
+    choice: ^Post-deploy$
+  - q: (Select|Pick).*action
+    choice: Import the Helios reference data
+    shot: true
+    caption: Pick the action to update
+  - q: Enter a label for this action
+    value: __INITIAL__
+  - q: Select the action type
+    choice: ^data$
+  - q: Enter the SFDMU workspace name
+    value: __INITIAL__
+  - q: Select the execution context
+    choice: ^process-deployment-only$
+  - q: Restrict this action to specific target branches\?
+    choice: ^Run on all target branches \(default\)$
+  - q: Allow this action to fail without blocking the deployment\?
+    choice: ^❌ No$
+  - q: Run this action only once per target org\?
+    choice: ^❌ No$
+  - q: Custom Salesforce username to run this action \(leave empty f
+    value: ''

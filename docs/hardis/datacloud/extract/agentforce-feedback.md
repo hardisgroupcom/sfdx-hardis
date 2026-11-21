@@ -51,6 +51,26 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The good and bad feedback left on the Helios Installation Assistant in the last 30 days, with the full conversation of each](../../../assets/images/commands/datacloud/extract/agentforce-feedback.webp)
+
+_The good and bad feedback left on the Helios Installation Assistant in the last 30 days, with the full conversation of each_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Agentforce feedback
+
+One row per feedback (good or bad) left on an Agentforce answer, with the feedback message, the full conversation and a link to it, to review what users found wrong.
+
+Files: `datacloud-agentforce-feedback-*.csv`, `xls/datacloud-agentforce-feedback-*.xlsx`
+
+![Agentforce feedback report in Excel](../../../assets/images/commands/datacloud/extract/agentforce-feedback-report-datacloud-agentforce-feedback.webp)
+
 ## Parameters
 
 | Name                     |  Type   | Description                                                                                                  | Default | Required | Options |

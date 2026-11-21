@@ -53,6 +53,26 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The Helios Installation Assistant conversations of the last 30 days are exported with their transcript, feedback and a link to each one](../../../assets/images/commands/datacloud/extract/agentforce-conversations.webp)
+
+_The Helios Installation Assistant conversations of the last 30 days are exported with their transcript, feedback and a link to each one_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Agentforce conversations
+
+One row per Agentforce conversation of the period, with its date, full transcript, user feedback and a link to the conversation.
+
+Files: `datacloud-agentforce-conversations-*.csv`, `xls/datacloud-agentforce-conversations-*.xlsx`
+
+![Agentforce conversations report in Excel](../../../assets/images/commands/datacloud/extract/agentforce-conversations-report-datacloud-agentforce-conversations.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

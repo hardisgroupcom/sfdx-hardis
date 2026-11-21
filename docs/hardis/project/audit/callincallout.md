@@ -48,6 +48,26 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The inbound web services and outbound HTTP calls found in the Apex code of the Helios project, in a CSV report](../../../assets/images/commands/project/audit/callincallout.webp)
+
+_The inbound web services and outbound HTTP calls found in the Apex code of the Helios project, in a CSV report_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### CallIns and CallOuts
+
+One row per CallIn or CallOut found in the Apex code, with its protocol, namespace, number of matches and detail.
+
+Files: `callins-callouts-audit-*.csv`, `xls/callins-callouts-audit-*.xlsx`
+
+![CallIns and CallOuts report in Excel](../../../assets/images/commands/project/audit/callincallout-report-callins-callouts-audit.webp)
+
 ## Parameters
 
 | Name         |  Type   | Description                                                   | Default | Required | Options |

@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { AnyJson } from "@salesforce/ts-types";
 import { wrapSfdxCoreCommand } from "../../../../common/utils/wrapUtils.js";
-import { emitWrappedDeployRunEvent } from "../../../../common/utils/pluginEventUtils.js";
+import { emitDeploymentStartEvent, emitWrappedDeployRunEvent } from "../../../../common/utils/pluginEventUtils.js";
 import { checkDeploymentOrgCoverage, extractOrgCoverageFromLog } from '../../../../common/utils/deployUtils.js';
 import { GitProvider } from '../../../../common/gitProvider/index.js';
 import { buildCheckDeployCommitSummary } from '../../../../common/utils/gitUtils.js';
@@ -66,6 +66,8 @@ commandsPostDeploy:
 \`\`\`
 
 ### Plugin events
+
+Before anything reads the local sources, the installed sf plugins that listen to \`sfdx-hardis:validation-start\` are called, so they can prepare the sources (for example recompose decomposed metadata).
 
 As soon as Salesforce returns the result of the validation, the installed sf plugins that listen to \`sfdx-hardis:validation-done\` receive it, with the path of the Apex code coverage file, before the code coverage check. [More info](https://sfdx-hardis.cloudity.com/sfdx-hardis-plugins/#react-to-sfdx-hardis-events)
 
@@ -161,6 +163,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
       default: false,
       description: "debug",
     }),
+    websocket: Flags.string({
+      description: 'Websocket host:port for VsCode SFDX Hardis UI integration',
+    }),
+    skipauth: Flags.boolean({
+      description: 'Skip authentication check when a default username is required',
+    }),
   };
 
   public static requiresProject = true;
@@ -168,6 +176,8 @@ In agent mode, all interactive prompts are skipped and default values are used.
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(ProjectDeployValidate);
     await setConnectionVariables(flags['target-org']?.getConnection(), true);
+    // The plugins can prepare the local sources (ex: recompose decomposed metadata) before anything reads them
+    await emitDeploymentStartEvent(this, { checkOnly: true, targetUsername: flags['target-org']?.getUsername() || null });
     // Compute data for PR comments & flow diffs
     await buildCheckDeployCommitSummary();
     // Run pre deployment commands if defined

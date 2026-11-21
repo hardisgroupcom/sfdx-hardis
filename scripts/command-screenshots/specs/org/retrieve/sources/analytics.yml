@@ -1,0 +1,5 @@
+command: hardis:org:retrieve:sources:analytics
+run: sf hardis:org:retrieve:sources:analytics
+mode: replay
+org: none
+caption: The CRM Analytics apps, dashboards, datasets and recipes of the org are retrieved into the project

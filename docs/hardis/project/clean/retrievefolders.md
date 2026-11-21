@@ -41,6 +41,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The report, dashboard, document and email template folders of the Helios sources retrieved again from the org](../../../assets/images/commands/project/clean/retrievefolders.webp)
+
+_The report, dashboard, document and email template folders of the Helios sources retrieved again from the org_
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

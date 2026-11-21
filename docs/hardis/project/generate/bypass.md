@@ -81,6 +81,42 @@ In agent mode:
 - `--apply-to-vrs`, `--apply-to-triggers`, `--apply-to-flows` default to false if not explicitly set
 
 
+## Screenshots
+
+![Pick the objects whose automations can be bypassed](../../../assets/images/commands/project/generate/bypass-1.webp)
+
+_Pick the objects whose automations can be bypassed_
+
+![Pick the kinds of automation to bypass](../../../assets/images/commands/project/generate/bypass-2.webp)
+
+_Pick the kinds of automation to bypass_
+
+![Bypass custom permissions for Installation__c and Panel_Batch__c, applied to their Flows and validation rules](../../../assets/images/commands/project/generate/bypass.webp)
+
+_Bypass custom permissions for Installation__c and Panel_Batch__c, applied to their Flows and validation rules_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Bypass generation
+
+One row per sObject and automation type, with the custom permission and permission set generated and the outcome.
+
+Files: `project-generate-bypass-generation-*.csv`, `xls/project-generate-bypass-generation-*.xlsx`
+
+![Bypass generation report in Excel](../../../assets/images/commands/project/generate/bypass-report-project-generate-bypass-generation.webp)
+
+### Bypass implementation
+
+One row per validation rule, trigger or flow where the bypass was added or skipped, with the outcome and a comment.
+
+Files: `project-generate-bypass-implementation-*.csv`, `xls/project-generate-bypass-implementation-*.xlsx`
+
+![Bypass implementation report in Excel](../../../assets/images/commands/project/generate/bypass-report-project-generate-bypass-implementation.webp)
+
 ## Parameters
 
 | Name                   |  Type   | Description                                                                                                                 | Default | Required | Options |

@@ -1,0 +1,4 @@
+command: hardis:project:audit:apiversion
+run: sf hardis:project:audit:apiversion --minimumapiversion 65
+org: none
+caption: The API version of the Apex and Visualforce files of the Helios project, checked against a minimum of 65, in a CSV report

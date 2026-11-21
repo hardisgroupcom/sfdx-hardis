@@ -111,7 +111,9 @@ Optional flag:
     // Check git repo
     await ensureGitRepository({ clone: true });
     let orgType: string;
-    if (!agentMode) {
+    if (flags.orgtype) {
+      orgType = flags.orgtype;
+    } else if (!agentMode) {
       const devHubPrompt = await prompts({
         name: 'orgType',
         type: 'select',
@@ -135,10 +137,7 @@ Optional flag:
       });
       orgType = devHubPrompt.orgType;
     } else {
-      if (!flags.orgtype) {
-        throw new SfError('In agent mode, --orgtype is required. Allowed values: scratch, sandbox, sandboxAndScratch.');
-      }
-      orgType = flags.orgtype;
+      throw new SfError('In agent mode, --orgtype is required. Allowed values: scratch, sandbox, sandboxAndScratch.');
     }
     if (['scratch', 'sandboxAndScratch'].includes(orgType)) {
       // Connect to DevHub
@@ -153,12 +152,11 @@ Optional flag:
     let config = await getConfig('project');
     let projectName: string;
     let setProjectName = false;
-    if (agentMode) {
-      if (!flags.projectname) {
-        throw new SfError('In agent mode, --projectname is required.');
-      }
+    if (flags.projectname) {
       projectName = flags.projectname;
       setProjectName = true;
+    } else if (agentMode) {
+      throw new SfError('In agent mode, --projectname is required.');
     } else if (config.projectName != null) {
       projectName = config.projectName;
     } else {
@@ -204,11 +202,10 @@ Optional flag:
 
     config = await getConfig('project');
     if (config.developmentBranch == null) {
-      if (agentMode) {
-        if (!flags.devbranch) {
-          throw new SfError('In agent mode, --devbranch is required.');
-        }
+      if (flags.devbranch) {
         await setConfig('project', { developmentBranch: flags.devbranch });
+      } else if (agentMode) {
+        throw new SfError('In agent mode, --devbranch is required.');
       } else {
         // User prompts
         const devBranchRes = await prompts({

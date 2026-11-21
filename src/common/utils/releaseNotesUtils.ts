@@ -4,7 +4,10 @@ import fs from './fsUtils.js';
 import * as os from "os";
 import * as path from "path";
 import Papa from "papaparse";
-import { arrayUniqueByKey, execCommand, getCurrentGitBranch, git, isCI, uxLog } from "./index.js";
+import { arrayUniqueByKey, execCommand, getCurrentGitBranch, git, isCI, uxLog, uxLogTable } from "./index.js";
+import { generatePdfFileFromMarkdown } from "./markdownUtils.js";
+import { listVersionTags } from "./releaseVersionUtils.js";
+import { findPreviousVersionTag, parseReleaseVersion, VersionTag } from "./releaseVersionRules.js";
 import { CommonPullRequestInfo, GitProvider } from "../gitProvider/index.js";
 import { Ticket, TicketProvider } from "../ticketProvider/index.js";
 import { listMajorOrgs, isProduction } from "./orgConfigUtils.js";
@@ -40,7 +43,7 @@ import { prompts } from "./prompts.js";
 import { WebSocketClient } from "../websocketClient.js";
 import { t } from "./i18n.js";
 import { writeReportFile } from "./reportFileWriteUtils.js";
-import { CONSTANTS } from "../../config/index.js";
+import { CONSTANTS, getReportDirectory } from "../../config/index.js";
 
 // ---------------------------------------------------------------------------
 // Interfaces
@@ -115,6 +118,214 @@ export interface ReleaseNotesResult {
 }
 
 // ---------------------------------------------------------------------------
+// Generation (what hardis:doc:release-notes runs, also called by deploy:smart
+// to publish the Release of a production version)
+// ---------------------------------------------------------------------------
+
+/**
+ * Generates the release notes from the flags of hardis:doc:release-notes: Markdown, PDF (unless
+ * pdf is false), XLSX, and the release notification in post mode. Returns the JSON of the command.
+ */
+export async function generateReleaseNotes(flags: any, commandRef: any): Promise<any> {
+  const built = await buildReleaseNotes(flags, commandRef);
+  if (built.data) {
+    await sendReleaseNotification(built.data, built.pdfFile, built.xlsxFile, commandRef);
+  }
+  return built.result;
+}
+
+/**
+ * The release notes files, without the notification: a production deployment sends it once the
+ * Release of the git provider exists, so the notification can link to it. data is undefined when
+ * the flags are refused.
+ */
+export async function buildReleaseNotes(
+  flags: any,
+  commandRef: any
+): Promise<{ result: any; data?: ReleaseNotesData; pdfFile?: string; xlsxFile?: string }> {
+  const agentMode = flags.agent === true;
+  const outputFile = flags.outputfile || null;
+  const withPdf = flags.pdf !== false;
+
+  // Validate mutual exclusivity: tags vs dates
+  const hasTagFlags = !!(flags["release-tag"] || flags["previous-tag"]);
+  const hasDateFlags = !!(flags["from-date"] || flags["to-date"]);
+  if (hasTagFlags && hasDateFlags) {
+    uxLog("error", commandRef, c.red(t("releaseNotesInvalidFlagCombination")));
+    return { result: { success: false } };
+  }
+
+  uxLog("action", commandRef, c.cyan(t("releaseNotesGenerating")));
+
+  // 1. Resolve scope
+  const scope = await resolveReleaseScope(flags, commandRef, agentMode);
+  uxLog("action", commandRef, c.cyan(t("releaseNotesScopeResolved", { mode: scope.mode, branch: scope.targetBranch })));
+
+  // 2. Collect pull requests
+  uxLog("action", commandRef, c.cyan(t("releaseNotesCollectingPrs")));
+  const pullRequests = await collectPullRequests(scope, commandRef, { includePromotions: flags["include-promotions"] === true });
+  uxLog("action", commandRef, c.cyan(t("releaseNotesPrsCollected", { count: String(pullRequests.length) })));
+  // Note: PR table with ticket cross-references is displayed after ticket collection
+
+  // 3. Collect tickets
+  uxLog("action", commandRef, c.cyan(t("releaseNotesCollectingTickets")));
+  const ticketResult = await collectTickets(pullRequests, commandRef);
+  const tickets = ticketResult.tickets;
+  const { ticketToPrs, prToTickets } = ticketResult;
+
+  // Display tickets table
+  if (tickets.length > 0) {
+    uxLogTable(commandRef, tickets.map((tk) => ({
+      ID: tk.id,
+      Title: tk.subject || "",
+      Status: tk.statusLabel || tk.status || "",
+      Assignee: tk.assigneeLabel || tk.assignee || "",
+      PRs: (ticketToPrs.get(tk.id) || []).map((id) => `#${id}`).join(", "),
+    })), ["ID", "Title", "Status", "Assignee", "PRs"]);
+  }
+
+  // Display PR table with ticket cross-references
+  if (pullRequests.length > 0) {
+    uxLogTable(commandRef, pullRequests.map((pr) => ({
+      "#": `#${pr.idStr}`,
+      Title: pr.title,
+      Author: pr.authorName || "",
+      Merged: pr.mergedDate ? pr.mergedDate.split("T")[0] : "",
+      Tickets: (prToTickets.get(pr.idStr) || []).join(", "),
+    })), ["#", "Title", "Author", "Merged", "Tickets"]);
+  }
+
+  // Prepare output directory: hardis-report/release-notes/{branch}-{date}/
+  const reportDate = await getReleaseDate(scope);
+  const version = scope.releaseTag || scope.targetBranch;
+  const releaseNotesDir = outputFile
+    ? path.dirname(outputFile)
+    : path.join(await getReportDirectory(), "release-notes", `${version}-${reportDate}`);
+  await fs.ensureDir(releaseNotesDir);
+
+  // 4. Collect metadata changes (copies package.xml / destructiveChanges.xml into output dir)
+  uxLog("action", commandRef, c.cyan(t("releaseNotesCollectingMetadata")));
+  const metadataChanges = await collectMetadataChanges(scope, commandRef, releaseNotesDir);
+  metadataChanges.attribution = await collectMetadataAttribution(scope, metadataChanges, pullRequests, commandRef);
+  if (metadataChanges.addedCount > 0 || metadataChanges.deletedCount > 0) {
+    const metadataRows: any[] = [];
+    for (const [mdType, members] of Object.entries(metadataChanges.added)) {
+      metadataRows.push({ Type: prettifyMetadataType(mdType), Count: members.length, Change: "Added/Modified" });
+    }
+    for (const [mdType, members] of Object.entries(metadataChanges.deleted)) {
+      metadataRows.push({ Type: prettifyMetadataType(mdType), Count: members.length, Change: "Deleted" });
+    }
+    uxLogTable(commandRef, metadataRows, ["Type", "Count", "Change"]);
+  }
+
+  // 5. Collect deployment actions
+  uxLog("action", commandRef, c.cyan(t("releaseNotesCollectingActions")));
+  const deploymentActions = await collectDeploymentActions(pullRequests, commandRef, scope.targetBranch);
+  if (deploymentActions.length > 0) {
+    uxLogTable(commandRef, deploymentActions.map((a) => ({
+      Action: a.actionLabel,
+      When: a.when,
+      Status: a.status,
+      PR: (a.prNumber ?? 0) > 0 ? `#${a.prNumber}` : "",
+    })), ["Action", "When", "Status", "PR"]);
+  }
+
+  // 6. Collect contributors
+  const contributors = collectContributors(pullRequests);
+  if (contributors.length > 0) {
+    uxLogTable(commandRef, contributors.map((contributor) => ({
+      Contributor: contributor.name,
+      PRs: contributor.prCount,
+    })), ["Contributor", "PRs"]);
+  }
+
+  // Build data structure
+  const data: ReleaseNotesData = {
+    scope,
+    pullRequests,
+    tickets,
+    metadataChanges,
+    deploymentActions,
+    contributors,
+    ticketToPrs,
+    prToTickets,
+  };
+
+  // 7. AI summary (optional)
+  data.aiSummary = await generateReleaseSummary(data, commandRef);
+
+  // 8. Build markdown report
+  uxLog("action", commandRef, c.cyan(t("releaseNotesGeneratingMarkdown")));
+  const markdown = await buildReleaseNotesMarkdown(data, reportDate);
+
+  // Write markdown file into the release notes subfolder
+  const mdFileName = `release-notes-${version}-${reportDate}.md`;
+  const mdOutputFile = outputFile || path.join(releaseNotesDir, mdFileName);
+  await fs.writeFile(mdOutputFile, markdown, "utf8");
+  uxLog("success", commandRef, c.green(t("releaseNotesComplete", { outputFile: mdOutputFile })));
+  WebSocketClient.sendReportFileMessage(mdOutputFile, `${t("releaseNotesReportTitle")} (MD)`, "report");
+
+  // 9. Generate PDF (optional)
+  let pdfFile: string | undefined;
+  if (withPdf) {
+    uxLog("action", commandRef, c.cyan(t("releaseNotesGeneratingPdf")));
+    // Expand <details> sections for PDF
+    const pdfMarkdown = markdown.replace(/<details[^>]*>/g, "").replace(/<\/details>/g, "").replace(/<summary>(.*?)<\/summary>/g, "### $1");
+    const pdfSourceFile = mdOutputFile.replace(/\.md$/i, `.pdf-source-${Date.now()}.md`);
+    await fs.writeFile(pdfSourceFile, pdfMarkdown, "utf8");
+    // Landscape by default: the PR and ticket tables are wide and read better in landscape.
+    // Keep the first column (ticket ID / PR number) on a single line so IDs like CLIENT-61034 don't wrap.
+    const pdfResult = await generatePdfFileFromMarkdown(pdfSourceFile, {
+      landscape: flags.portrait !== true,
+      extraCss: "td:first-child, th:first-child { white-space: nowrap; }",
+      silent: true,
+    });
+    if (pdfResult) {
+      const defaultPdfFile = mdOutputFile.replace(/\.md$/i, ".pdf");
+      try {
+        await fs.copy(pdfResult, defaultPdfFile, { overwrite: true });
+        if (pdfResult !== defaultPdfFile) {
+          await fs.remove(pdfResult);
+        }
+        pdfFile = defaultPdfFile;
+      } catch {
+        pdfFile = typeof pdfResult === "string" ? pdfResult : undefined;
+      }
+      if (pdfFile) {
+        uxLog("success", commandRef, c.green(t("pdfFileGeneratedFromDocumentation", { markdownFile: mdOutputFile, outputPdfFile: c.bold(pdfFile) })));
+        WebSocketClient.sendReportFileMessage(pdfFile, `${t("releaseNotesReportTitle")} (PDF)`, "report");
+      }
+    }
+    await fs.remove(pdfSourceFile).catch(() => {});
+  }
+
+  // 10. Generate XLSX
+  uxLog("action", commandRef, c.cyan(t("releaseNotesGeneratingXlsx")));
+  const xlsxFile = await buildReleaseNotesXlsx(data, mdOutputFile, commandRef);
+
+  const result = {
+    scope: {
+      mode: scope.mode,
+      targetBranch: scope.targetBranch,
+      releaseTag: scope.releaseTag,
+      previousTag: scope.previousTag,
+    },
+    counts: {
+      pullRequests: pullRequests.length,
+      tickets: tickets.length,
+      contributors: contributors.length,
+      metadataAdded: metadataChanges.addedCount,
+      metadataDeleted: metadataChanges.deletedCount,
+      deploymentActions: deploymentActions.length,
+    },
+    outputFile: mdOutputFile,
+    pdfFile: pdfFile || null,
+    xlsxFile: xlsxFile || null,
+  };
+  return { result, data, pdfFile, xlsxFile: xlsxFile || undefined };
+}
+
+// ---------------------------------------------------------------------------
 // Scope resolution
 // ---------------------------------------------------------------------------
 
@@ -130,7 +341,9 @@ export async function resolveReleaseScope(
   if (flags["release-tag"]) {
     const releaseTag = flags["release-tag"];
     await assertTagExists(releaseTag, commandRef);
-    const previousTag = flags["previous-tag"] || (await findPreviousSemverTag(releaseTag, commandRef));
+    // Read once: the previous tag and the target branch both come from the version tags
+    const versionTags = await listVersionTags().catch(() => []);
+    const previousTag = flags["previous-tag"] || (await findPreviousSemverTag(releaseTag, commandRef, versionTags));
     if (previousTag) {
       await assertTagExists(previousTag, commandRef);
     }
@@ -138,7 +351,9 @@ export async function resolveReleaseScope(
     // The first release tag has no tag before it: bound the range with the first parent of the
     // tagged commit, as the post mode does for a first promotion, rather than an empty range
     const fromCommit = previousTag ? await getCommitForTag(previousTag) : (await getFirstParentCommit(toCommit)) || toCommit;
-    const targetBranch = flags["target-branch"] || (await detectTargetBranchForTag(releaseTag, majorOrgs, agentMode));
+    // A version tag created by a deployment says which branch it was deployed to
+    const taggedBranch = versionTags.find((tag) => tag.name === releaseTag && tag.managed)?.branch || null;
+    const targetBranch = flags["target-branch"] || taggedBranch || (await detectTargetBranchForTag(releaseTag, majorOrgs, agentMode));
     return { fromCommit, toCommit, releaseTag, previousTag, targetBranch, mode };
   }
 
@@ -451,7 +666,26 @@ async function assertTagExists(tag: string, commandRef: any): Promise<void> {
   }
 }
 
-export async function findPreviousSemverTag(currentTag: string, commandRef: any): Promise<string | undefined> {
+/**
+ * The tag a release starts from. For a version tag (v1.5.0, v1.5.0-rc.3, or a release candidate in
+ * the tag format of its branch), the rules of release versioning: a plain version starts from the
+ * previous plain version, never from one of its own release candidates, and a release candidate
+ * created by a deployment starts from the previous version of the same branch. Any other tag starts
+ * from the tag before it in version order.
+ */
+export async function findPreviousSemverTag(currentTag: string, commandRef: any, versionTags?: VersionTag[]): Promise<string | undefined> {
+  const tags = versionTags || (await listVersionTags().catch(() => []));
+  if (parseReleaseVersion(currentTag) || tags.some((tag) => tag.name === currentTag)) {
+    try {
+      const previous = findPreviousVersionTag(currentTag, tags);
+      if (previous) {
+        uxLog("action", commandRef, c.cyan(t("releaseNotesPreviousTagAutoDetected", { tag: previous.name })));
+      }
+      return previous?.name;
+    } catch {
+      // Fall back on the version order below
+    }
+  }
   try {
     const tags = await git().tags(["--sort=-v:refname"]);
     const semverRegex = /^v?\d+\.\d+\.\d+/;
@@ -523,11 +757,14 @@ export async function getReleaseDate(scope: ReleaseNotesScope): Promise<string> 
  * - `branches`: merged into the source branch since its last merge into the target branch (what is
  *   waiting). Not in post mode once a merge commit is chosen: right after that merge, "since the last
  *   merge" is empty
- * - `goLive`: introduced by the chosen merge commit
+ * - `goLive`: introduced by the chosen merge commit, or by the merges between the previous tag and the
+ *   release tag. A release tag created by a deployment sits on the merge of the go live: the merged
+ *   Pull Requests of the target branch would only give that merge between two major branches, which
+ *   the notes leave out, and none of the User Stories it carries
  * - `recent`: the recently merged Pull Requests of the target branch
  */
 export function pullRequestsLookup(scope: ReleaseNotesScope): "dates" | "branches" | "goLive" | "recent" {
-  const mergeCommitChosen = Boolean(scope.toCommit && scope.toCommit !== "HEAD" && !scope.releaseTag);
+  const mergeCommitChosen = Boolean(scope.toCommit && scope.toCommit !== "HEAD");
   if (scope.fromDate || scope.toDate) {
     return "dates";
   }
@@ -595,30 +832,37 @@ export async function collectPullRequests(
     // introduced by the merge commit. This excludes hotfixes merged directly to the
     // target branch at other times, which a plain "recent merged PRs" list catches.
     const childBranches = recursiveGetChildBranches(scope.targetBranch, majorOrgs);
-    try {
-      pullRequests = await gitProvider.listPullRequestsInGoLive(
-        scope.targetBranch,
-        [...childBranches],
-        scope.toCommit,
-      );
-    } catch (e: any) {
-      uxLog("warning", commandRef, c.yellow(t("releaseNotesCouldNotListPrs", { message: e.message })));
+    // A release tag covers every merge of the target branch since the previous tag, usually one
+    const goLiveCommits = scope.releaseTag ? await listFirstParentCommits(scope.fromCommit, scope.toCommit) : [scope.toCommit];
+    const found = new Map<string, CommonPullRequestInfo>();
+    for (const goLiveCommit of goLiveCommits) {
+      try {
+        const goLivePullRequests = await gitProvider.listPullRequestsInGoLive(
+          scope.targetBranch,
+          [...childBranches],
+          goLiveCommit,
+        );
+        for (const pr of goLivePullRequests || []) {
+          if (!found.has(pr.idStr)) {
+            found.set(pr.idStr, pr);
+          }
+          // The go-live merge PR itself (e.g. preprod -> main) carries the release and
+          // must survive the inter-major-branch filter below.
+          const sha = pr.mergeCommitSha;
+          if (sha && (sha === goLiveCommit || sha.startsWith(goLiveCommit) || goLiveCommit.startsWith(sha))) {
+            releaseCommitPrIds.add(pr.idStr);
+          }
+        }
+      } catch (e: any) {
+        uxLog("warning", commandRef, c.yellow(t("releaseNotesCouldNotListPrs", { message: e.message })));
+      }
     }
-    if (!pullRequests || pullRequests.length === 0) {
+    pullRequests = [...found.values()];
+    if (pullRequests.length === 0) {
       // Fallback (e.g. provider without go-live support): list merged PRs for the target branch
       pullRequests = (await gitProvider.listPullRequests(
         { targetBranch: scope.targetBranch, status: "merged" },
       )) || [];
-    } else {
-      // The go-live merge PR itself (e.g. preprod -> main) carries the release and
-      // must survive the inter-major-branch filter below.
-      for (const pr of pullRequests) {
-        const sha = pr.mergeCommitSha;
-        const to = scope.toCommit;
-        if (sha && (sha === to || sha.startsWith(to) || to.startsWith(sha))) {
-          releaseCommitPrIds.add(pr.idStr);
-        }
-      }
     }
   } else {
     // Tag-based or generic: list merged PRs for the target branch
@@ -746,6 +990,22 @@ function recursiveGetChildBranches(
     }
   }
   return collected;
+}
+
+// The commits of the target branch itself between two tags (its merges, squashes and direct commits),
+// newest first, at most 20: each one is the go live of what it brought. Only the tagged commit when
+// there is no previous tag or git cannot list the range
+async function listFirstParentCommits(fromCommit: string, toCommit: string): Promise<string[]> {
+  if (!fromCommit || fromCommit === toCommit) {
+    return [toCommit];
+  }
+  try {
+    const raw = await git().raw(["rev-list", "--first-parent", "--max-count=20", `${fromCommit}..${toCommit}`]);
+    const commits = raw.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    return commits.length > 0 ? commits : [toCommit];
+  } catch {
+    return [toCommit];
+  }
 }
 
 export interface TicketCollectionResult {
@@ -1633,15 +1893,21 @@ export async function sendReleaseNotification(
   pdfFile: string | undefined,
   xlsxFile: string | undefined,
   commandRef: any,
+  // A plain version of release versioning is a production release, whatever its branch is named;
+  // releaseUrl: the Release of the git provider, linked by a button
+  options: { finalVersion?: boolean; releaseUrl?: string | null } = {}
 ): Promise<void> {
   // Only send in post mode for production branches
-  if (data.scope.mode !== "post" || !isProduction(data.scope.targetBranch)) {
+  if (data.scope.mode !== "post" || !(isProduction(data.scope.targetBranch) || options.finalVersion === true)) {
     return;
   }
 
   try {
     const version = data.scope.releaseTag || data.scope.targetBranch;
     const notifButtons = await getNotificationButtons();
+    if (options.releaseUrl) {
+      notifButtons.push({ text: "View Release", url: options.releaseUrl });
+    }
 
     const attachedFiles: string[] = [];
     if (pdfFile) attachedFiles.push(pdfFile);

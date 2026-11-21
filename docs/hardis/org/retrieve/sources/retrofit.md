@@ -85,6 +85,14 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 <!-- training-links:end -->
 
 
+## Screenshots
+
+![Retrofit is deprecated: the command stops and explains how to recover a change made in a major org as a User Story](../../../../assets/images/commands/org/retrieve/sources/retrofit.webp)
+
+_Retrofit is deprecated: the command stops and explains how to recover a change made in a major org as a User Story_
+
+- **(1)** Start a branch under integration and retrieve the change with the Metadata Retriever instead
+
 ## Parameters
 
 | Name                 |  Type   | Description                                                                                                                                             | Default | Required |         Options          |

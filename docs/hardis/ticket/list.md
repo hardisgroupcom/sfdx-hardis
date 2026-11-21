@@ -62,6 +62,26 @@ sf hardis ticket list --project ACME --open-only --agent --json
 ```
 
 
+## Screenshots
+
+![The 12 open tickets of the HEL Jira project, listed with their type, status, priority and assignee](../../assets/images/commands/ticket/list.webp)
+
+_The 12 open tickets of the HEL Jira project, listed with their type, status, priority and assignee_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Tickets
+
+One row per ticket found, with its type, status, priority, assignee and subject.
+
+Files: `ticket-list-*.csv`, `xls/ticket-list-*.xlsx`
+
+![Tickets report in Excel](../../assets/images/commands/ticket/list-report-ticket-list.webp)
+
 ## Parameters
 
 | Name               |  Type   | Description                                                                                                                             | Default | Required |                Options                |

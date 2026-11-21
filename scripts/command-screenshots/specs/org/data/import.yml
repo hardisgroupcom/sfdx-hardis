@@ -1,0 +1,16 @@
+command: hardis:org:data:import
+run: sf hardis:org:data:import
+org: throwaway
+caption: Accounts, contacts, opportunities, installations and panel batches of the HeliosBaseline workspace upserted into an org with SFDMU
+answers:
+  - q: Do you want to use org
+    choice: ^✅ Yes$
+  - q: Select the data workspace to import
+    choice: ^📁 \[HeliosBaseline\]$
+    shot: true
+    caption: Pick the data workspace whose CSV files are loaded
+  - q: Do you confirm you want to import the data of \[HeliosBaseline\]
+    choice: ^✅ Yes$
+pills:
+  - text: Successfully imported data
+    legend: Records are upserted, so the import can run again without duplicates

@@ -1,0 +1,10 @@
+command: hardis:project:action:set-status
+run: sf hardis:project:action:set-status --org-branch uat --pr 118 --note "Assigned in Setup once the new licenses were added."
+mode: replay
+org: none
+caption: A deployment action that failed in uat is recorded as done by hand in Pull Request #118
+answers:
+  - q: "Select the action"
+    choice: "^Assign Helios_Delivery_Crew"
+    shot: true
+    caption: Pick the failed, stopped or manual action to record as done in uat

@@ -48,6 +48,14 @@ In agent mode (or in CI):
 - No prompt is displayed and the browser is never opened.
 
 
+## Screenshots
+
+![Versions of Salesforce CLI and its plugins on the machine, with a warning on each one that has a newer release](../assets/images/commands/doctor.webp)
+
+_Versions of Salesforce CLI and its plugins on the machine, with a warning on each one that has a newer release_
+
+- **(1)** A warning sign shows the newer version to install
+
 ## Parameters
 
 | Name               |  Type   | Description                                                      | Default | Required | Options |

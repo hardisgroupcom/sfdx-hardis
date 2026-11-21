@@ -1,0 +1,58 @@
+{
+  "mode": "replace",
+  "title": "Missing Attributes",
+  "columns": [
+    "type",
+    "name"
+  ],
+  "rows": [
+    {
+      "type": "Field",
+      "name": "Installation__c.Roof_Angle__c"
+    },
+    {
+      "type": "Field",
+      "name": "Installation__c.Roof_Material__c"
+    },
+    {
+      "type": "Field",
+      "name": "Installation__c.Grid_Connection_Date__c"
+    },
+    {
+      "type": "Field",
+      "name": "Installation__c.Crew_Lead__c"
+    },
+    {
+      "type": "Field",
+      "name": "Installation__c.Site_Survey_Notes__c"
+    },
+    {
+      "type": "Field",
+      "name": "Panel_Batch__c.Supplier_Lot__c"
+    },
+    {
+      "type": "Field",
+      "name": "Panel_Batch__c.Warranty_Years__c"
+    },
+    {
+      "type": "Field",
+      "name": "Panel_Batch__c.Received_Date__c"
+    },
+    {
+      "type": "Field",
+      "name": "Inverter_Model__c.Max_Power_kW__c"
+    },
+    {
+      "type": "Field",
+      "name": "Inverter_Model__c.Efficiency_Percent__c"
+    },
+    {
+      "type": "Field",
+      "name": "Inverter_Model__c.Firmware_Version__c"
+    },
+    {
+      "type": "Field",
+      "name": "Account.Helios_Customer_Since__c"
+    }
+  ]
+}

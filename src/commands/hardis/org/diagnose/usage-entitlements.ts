@@ -22,12 +22,21 @@ import {
   UsageEntitlementRow,
 } from '../../../../common/utils/usageEntitlementsUtils.js';
 import { formatCost, resolveUsageCostConfig, sumEstimatedCosts } from '../../../../common/utils/usageCostUtils.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class DiagnoseUsageEntitlements extends SfCommand<any> {
   public static title = 'Check usage-based entitlements';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'usage-entitlements',
+      title: 'Usage entitlements',
+      description: 'One row per usage-based entitlement of the org, with its allowance, consumption, forecast and severity, so you can see which ones are over or on track to exceed their allowance.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

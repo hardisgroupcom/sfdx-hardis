@@ -44,6 +44,18 @@ The command's technical implementation involves:
 </details>
 
 
+## Screenshots
+
+![Start from a template, or from a blank workspace](../../../assets/images/commands/org/configure/data-1.webp)
+
+_Start from a template, or from a blank workspace_
+
+![A new SFDMU data workspace to copy the installations and their panel batches between orgs](../../../assets/images/commands/org/configure/data.webp)
+
+_A new SFDMU data workspace to copy the installations and their panel batches between orgs_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
 ## Parameters
 
 | Name         |  Type   | Description                                                   | Default | Required | Options |

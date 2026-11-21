@@ -37,6 +37,24 @@ No prompt. Without `--target-branch`, the dev sandbox target is used.
 </details>
 
 
+## Screenshots
+
+![The warehouse URL that the replacement rules would write in the remote site setting before a deployment to the uat org](../../../assets/images/commands/project/replacement/preview.webp)
+
+_The warehouse URL that the replacement rules would write in the remote site setting before a deployment to the uat org_
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Rules preview
+
+One row per file and rule tested, with the result and its detail, to see what the rules would change before a deployment.
+
+Files: `replacement-rules-preview-*.csv`, `xls/replacement-rules-preview-*.xlsx`
+
+![Rules preview report in Excel](../../../assets/images/commands/project/replacement/preview-report-replacement-rules-preview.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                             | Default | Required | Options |

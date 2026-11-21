@@ -1,0 +1,16 @@
+command: hardis:project:generate:flow-git-diff
+run: sf hardis:project:generate:flow-git-diff
+org: none
+caption: The visual diff of the Installation_Crew_Warning Flow between main and the User Story branch, opened in VS Code
+reportPill: false
+answers:
+  - q: Please select the Flow you want to visually compare
+    choice: "^Installation_Crew_Warning$"
+    shot: true
+    caption: Pick the Flow to compare
+  - q: Please select BEFORE UPDATE commit
+    choice: "^Branch main$"
+    shot: true
+    caption: Pick the state before the change, a commit or a branch
+  - q: Please select AFTER UPDATE commit
+    choice: "^Branch features/HEL-42-installation-checklist$"

@@ -60,6 +60,16 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 <!-- training-links:end -->
 
 
+## Screenshots
+
+![Pick the failed, stopped or manual action to record as done in uat](../../../assets/images/commands/project/action/set-status-1.webp)
+
+_Pick the failed, stopped or manual action to record as done in uat_
+
+![A deployment action that failed in uat is recorded as done by hand in Pull Request](../../../assets/images/commands/project/action/set-status.webp)
+
+_A deployment action that failed in uat is recorded as done by hand in Pull Request_
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                                   | Default | Required | Options |

@@ -1,4 +1,4 @@
-import { CiRunFilters, CiRunStatus, CommonCiRun, DashboardComment, DashboardRef, GitProviderRepositorySettings, GitProviderRoot, PullRequestCommentRef, PullRequestCreateUrlResult, getOldestCommitDateWithMargin } from './gitProviderRoot.js';
+import { CiRunFilters, CiRunStatus, CommonCiRun, CreateVersionTagRequest, CreateVersionTagResult, DashboardComment, DashboardRef, GitProviderRepositorySettings, GitProviderRoot, PullRequestCommentRef, PullRequestCreateUrlResult, getOldestCommitDateWithMargin } from './gitProviderRoot.js';
 import c from 'chalk';
 import fs from '../utils/fsUtils.js';
 import * as path from "path";
@@ -1493,4 +1493,39 @@ ${getBannerMarkdownAndLink()}
     };
   }
 
+  public supportsVersionTags(): boolean {
+    return true;
+  }
+
+  // A tag created with a message is an annotated tag. Bitbucket answers 400 "tag ... already exists"
+  // when another job took the name first
+  public async createAnnotatedTag(request: CreateVersionTagRequest): Promise<CreateVersionTagResult> {
+    if (!this.workspace || !this.repoSlug) {
+      throw new SfError("[Bitbucket Integration] BITBUCKET_WORKSPACE and BITBUCKET_REPO_SLUG must be defined");
+    }
+    try {
+      await this.bitbucket.refs.createTag({
+        workspace: this.workspace,
+        repo_slug: this.repoSlug,
+        _body: { name: request.name, target: { hash: request.commitSha }, message: request.message } as any,
+      });
+    } catch (e: any) {
+      const details = `${e?.message || ""} ${JSON.stringify(e?.error || {})}`;
+      if (/already exists/i.test(details)) {
+        return { created: false, alreadyExists: true, url: this.getTagUrl(request.name) };
+      }
+      throw e;
+    }
+    return { created: true, alreadyExists: false, url: this.getTagUrl(request.name) };
+  }
+
+  public getTagUrl(tagName: string): string | null {
+    return this.workspace && this.repoSlug ? `${this.serverUrl}/${this.workspace}/${this.repoSlug}/src/${encodeURIComponent(tagName)}` : null;
+  }
+
+  public getCompareUrl(fromRef: string, toRef: string): string | null {
+    return this.workspace && this.repoSlug
+      ? `${this.serverUrl}/${this.workspace}/${this.repoSlug}/branches/compare/${encodeURIComponent(toRef)}%0D${encodeURIComponent(fromRef)}`
+      : null;
+  }
 }

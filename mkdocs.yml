@@ -168,6 +168,7 @@ nav:
           - Retrofit: salesforce-devops-retrofit.md
           - Promotion branches (Beta): salesforce-devops-promotion-branches.md
           - Release Notes: hardis/doc/salesforce-devops-release-notes.md
+          - Release versioning: salesforce-ci-cd-release-versioning.md
           - DORA Metrics: hardis/doc/salesforce-devops-dora-report.md
           - Smart Deploy internals: salesforce-devops-smart-deployment.md
           - Project configuration:
@@ -209,12 +210,13 @@ nav:
           - Apex and Flow errors: salesforce-monitoring-apex-flow-errors.md
           - Limits issues: salesforce-monitoring-org-limits.md
           - Apex flex queue: salesforce-monitoring-apex-flex-queue.md
-          - Calls to deprecated API versions: salesforce-monitoring-deprecated-api-calls.md
+          - Calls to deprecated API versions (deprecated): salesforce-monitoring-deprecated-api-calls.md
           - Unsecured Connected Apps: salesforce-monitoring-unsecured-connected-apps.md
           - MFA Configuration: salesforce-monitoring-mfa.md
+          - What will break: salesforce-monitoring-what-will-break.md
           - Licenses overview: salesforce-monitoring-licenses-overview.md
           - Org and instance upgrade info: salesforce-monitoring-org-instance-upgrade.md
-          - Release Updates: salesforce-monitoring-release-updates.md
+          - Release Updates (deprecated): salesforce-monitoring-release-updates.md
           - Security Health Check: salesforce-monitoring-health-check.md
           - Inactive users: salesforce-monitoring-inactive-users.md
           - Unused licenses: salesforce-monitoring-unused-licenses.md
@@ -461,6 +463,7 @@ nav:
           - configure auth: hardis/project/configure/auth.md
           - convert profilestopermsets: hardis/project/convert/profilestopermsets.md
           - create: hardis/project/create.md
+          - deploy cancel: hardis/project/deploy/cancel.md
           - deploy notify: hardis/project/deploy/notify.md
           - deploy quick: hardis/project/deploy/quick.md
           - deploy simulate: hardis/project/deploy/simulate.md

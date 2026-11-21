@@ -1,0 +1,105 @@
+{
+  "mode": "replace",
+  "title": "Unlink security key report",
+  "columns": [
+    "Username",
+    "UserId",
+    "Status",
+    "Unlinked",
+    "NotLinked",
+    "Message",
+    "TriggeredBy"
+  ],
+  "rows": [
+    {
+      "Username": "mariia.kowalska@helios-solar.demo",
+      "UserId": "005Hb00000077K4IAI",
+      "Status": "unlinked",
+      "Unlinked": "securityKey",
+      "NotLinked": "totp",
+      "Message": "Disconnected method securityKey for user mariia.kowalska@helios-solar.demo",
+      "TriggeredBy": "Victor Martin (victor.martin@helios-solar.demo)"
+    },
+    {
+      "Username": "romain.lefebvre@helios-solar.demo",
+      "UserId": "005Hb00000079NnIAI",
+      "Status": "unlinked",
+      "Unlinked": "securityKey, totp",
+      "NotLinked": "",
+      "Message": "Disconnected method securityKey, totp for user romain.lefebvre@helios-solar.demo",
+      "TriggeredBy": "Victor Martin (victor.martin@helios-solar.demo)"
+    },
+    {
+      "Username": "lucia.fernandez@helios-solar.demo",
+      "UserId": "005Hb0000007BRWIA2",
+      "Status": "unlinked",
+      "Unlinked": "securityKey",
+      "NotLinked": "totp",
+      "Message": "Disconnected method securityKey for user lucia.fernandez@helios-solar.demo",
+      "TriggeredBy": "Victor Martin (victor.martin@helios-solar.demo)"
+    },
+    {
+      "Username": "tomasz.nowak@helios-solar.demo",
+      "UserId": "005Hb0000007DVFIA2",
+      "Status": "notLinked",
+      "Unlinked": "",
+      "NotLinked": "securityKey, totp",
+      "Message": "Method securityKey, totp is not registered for user tomasz.nowak@helios-solar.demo",
+      "TriggeredBy": "Victor Martin (victor.martin@helios-solar.demo)"
+    },
+    {
+      "Username": "amelie.dubois@helios-solar.demo",
+      "UserId": "005Hb0000007FYyIAM",
+      "Status": "unlinked",
+      "Unlinked": "totp",
+      "NotLinked": "securityKey",
+      "Message": "Disconnected method totp for user amelie.dubois@helios-solar.demo",
+      "TriggeredBy": "Victor Martin (victor.martin@helios-solar.demo)"
+    },
+    {
+      "Username": "hugo.perrin@helios-solar.demo",
+      "UserId": "005Hb0000007HchIAE",
+      "Status": "unlinked",
+      "Unlinked": "securityKey",
+      "NotLinked": "totp",
+      "Message": "Disconnected method securityKey for user hugo.perrin@helios-solar.demo",
+      "TriggeredBy": "Victor Martin (victor.martin@helios-solar.demo)"
+    },
+    {
+      "Username": "ines.moreau@helios-solar.demo",
+      "UserId": "005Hb0000007JgQIAU",
+      "Status": "notLinked",
+      "Unlinked": "",
+      "NotLinked": "securityKey, totp",
+      "Message": "Method securityKey, totp is not registered for user ines.moreau@helios-solar.demo",
+      "TriggeredBy": "Victor Martin (victor.martin@helios-solar.demo)"
+    },
+    {
+      "Username": "pablo.serrano.old@helios-solar.demo",
+      "UserId": "",
+      "Status": "notFound",
+      "Unlinked": "",
+      "NotLinked": "",
+      "Message": "User pablo.serrano.old@helios-solar.demo not found in org",
+      "TriggeredBy": "Victor Martin (victor.martin@helios-solar.demo)"
+    },
+    {
+      "Username": "sofia.marchetti@helios-solar.demo",
+      "UserId": "005Hb0000007NnsIAE",
+      "Status": "inactive",
+      "Unlinked": "",
+      "NotLinked": "",
+      "Message": "User sofia.marchetti@helios-solar.demo is inactive, skipping",
+      "TriggeredBy": "Victor Martin (victor.martin@helios-solar.demo)"
+    },
+    {
+      "Username": "lena.hoffmann@helios-solar.demo",
+      "UserId": "005Hb0000007PrbIAE",
+      "Status": "unlinked",
+      "Unlinked": "securityKey",
+      "NotLinked": "totp",
+      "Message": "Disconnected method securityKey for user lena.hoffmann@helios-solar.demo",
+      "TriggeredBy": "Victor Martin (victor.martin@helios-solar.demo)"
+    }
+  ]
+}

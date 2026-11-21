@@ -6,7 +6,7 @@
 // (repository, event payload, ref, run id), computed from the same environment
 // variables @actions/github used, so behavior inside GitHub Actions is unchanged.
 import fs from '../../utils/fsUtils.js';
-import { createHttpClient, httpDownloadFile, HttpClient, HttpError, HttpRequestConfig, HttpResponse } from '../../utils/httpUtils.js';
+import { createHttpClient, httpDownloadFile, HttpClient, HttpError, HttpRequestConfig, HttpResponse, proxyFetch } from '../../utils/httpUtils.js';
 
 export const GITHUB_DEFAULT_API_URL = 'https://api.github.com';
 export const GITHUB_DEFAULT_SERVER_URL = 'https://github.com';
@@ -161,6 +161,23 @@ export class GithubApiClient {
         throw new GithubApiError(e.message, e.status, { status: e.status, statusText: e.response.statusText, data: e.response.data }, { method: 'GET', url });
       }
       throw e;
+    }
+  }
+
+  // Uploads a file as an asset of a Release. uploadUrlTemplate is the upload_url of the Release
+  // (https://uploads.github.com/repos/{owner}/{repo}/releases/{id}/assets{?name,label}): the
+  // body is the raw file, which the JSON client of this class cannot send
+  public async uploadReleaseAsset(uploadUrlTemplate: string, file: string, name: string, contentType: string): Promise<void> {
+    const url = `${uploadUrlTemplate.replace(/\{[^}]*\}$/, '')}?name=${encodeURIComponent(name)}`;
+    const content = await fs.readFile(file);
+    const response = await proxyFetch(url, {
+      method: 'POST',
+      headers: { ...this.headers, 'Content-Type': contentType, 'Content-Length': String(content.length) },
+      body: content,
+    });
+    if (!response.ok) {
+      const detail = await response.text().catch(() => '');
+      throw new GithubApiError(`${response.statusText || 'Upload failed'} (HTTP ${response.status}, POST ${url}) ${detail}`.trim(), response.status, { status: response.status, statusText: response.statusText, data: detail }, { method: 'POST', url });
     }
   }
 

@@ -44,6 +44,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The files of the Helios project that share their name with another one, such as the two package.xml manifests](../../../assets/images/commands/project/audit/duplicatefiles.webp)
+
+_The files of the Helios project that share their name with another one, such as the two package.xml manifests_
+
 ## Parameters
 
 | Name         |  Type   | Description                                                   |      Default       | Required | Options |

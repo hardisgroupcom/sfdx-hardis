@@ -1,0 +1,54 @@
+{
+  "mode": "replace",
+  "title": "Retrieved agent components",
+  "rows": [
+    {
+      "Type": "AiAuthoringBundle",
+      "Member": "Helios_Installation_Assistant"
+    },
+    {
+      "Type": "ApexClass",
+      "Member": "InstallationScheduler"
+    },
+    {
+      "Type": "ApexClass",
+      "Member": "InstallationSlotFinder"
+    },
+    {
+      "Type": "ApexClass",
+      "Member": "PanelBatchStatusAction"
+    },
+    {
+      "Type": "Flow",
+      "Member": "Installation_Assign_Crew"
+    },
+    {
+      "Type": "Flow",
+      "Member": "Installation_Close_Check"
+    },
+    {
+      "Type": "Flow",
+      "Member": "Installation_Get_Status"
+    },
+    {
+      "Type": "Flow",
+      "Member": "Panel_Batch_Get_Status"
+    },
+    {
+      "Type": "GenAiPromptTemplate",
+      "Member": "Helios_Installation_Summary"
+    },
+    {
+      "Type": "GenAiPromptTemplate",
+      "Member": "Helios_Reschedule_Confirmation"
+    },
+    {
+      "Type": "GenAiFunction",
+      "Member": "Helios_Find_Available_Slots"
+    },
+    {
+      "Type": "GenAiFunction",
+      "Member": "Helios_Create_Escalation_Case"
+    }
+  ]
+}

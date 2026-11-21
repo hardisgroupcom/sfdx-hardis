@@ -46,6 +46,16 @@ Use `--agent` to disable all interactive prompts. In agent mode:
 All interactive file selection prompts are skipped.
 
 
+## Screenshots
+
+![Pick the package.xml files to merge](../../assets/images/commands/package/mergexml-1.webp)
+
+_Pick the package.xml files to merge_
+
+![manifest/package.xml and package-no-overwrite.xml of the Helios project merged into one package-merge.xml](../../assets/images/commands/package/mergexml.webp)
+
+_manifest/package.xml and package-no-overwrite.xml of the Helios project merged into one package-merge.xml_
+
 ## Parameters
 
 | Name               |  Type   | Description                                                                                  |      Default      | Required | Options |

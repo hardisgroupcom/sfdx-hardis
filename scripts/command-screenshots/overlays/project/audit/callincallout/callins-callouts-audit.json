@@ -1,0 +1,54 @@
+{
+  "mode": "replace",
+  "title": "Call-ins and call-outs audit",
+  "columns": [
+    "IN/OUT",
+    "Protocol",
+    "Apex",
+    "Namespace",
+    "Number",
+    "Detail"
+  ],
+  "rows": [
+    {
+      "IN/OUT": "OUT",
+      "Protocol": "HTTP",
+      "Apex": "WarehouseStockClient",
+      "Namespace": "",
+      "Number": "2",
+      "Detail": "new HttpRequest() with endpoint callout:Helios_Warehouse/stock"
+    },
+    {
+      "IN/OUT": "OUT",
+      "Protocol": "HTTP",
+      "Apex": "InverterWarrantySync",
+      "Namespace": "",
+      "Number": "1",
+      "Detail": "req.setEndpoint('https://warranty.helios-solar.demo/api/v2/claims')"
+    },
+    {
+      "IN/OUT": "IN",
+      "Protocol": "REST",
+      "Apex": "InstallationStatusResource",
+      "Namespace": "",
+      "Number": "1",
+      "Detail": "@RestResource(urlMapping='/installations/status/*')"
+    },
+    {
+      "IN/OUT": "IN",
+      "Protocol": "REST",
+      "Apex": "PanelBatchArrivalResource",
+      "Namespace": "",
+      "Number": "1",
+      "Detail": "@RestResource(urlMapping='/panel-batches/arrival')"
+    },
+    {
+      "IN/OUT": "OUT",
+      "Protocol": "SOAP",
+      "Apex": "GridOperatorService",
+      "Namespace": "",
+      "Number": "1",
+      "Detail": "WebServiceCallout.invoke(this, request_x, response_map_x, ...)"
+    }
+  ]
+}

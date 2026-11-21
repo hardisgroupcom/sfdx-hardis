@@ -46,6 +46,16 @@ In agent mode:
 - All confirmation prompts are skipped.
 
 
+## Screenshots
+
+![Tick the scratch orgs to delete](../../assets/images/commands/scratch/delete-1.webp)
+
+_Tick the scratch orgs to delete_
+
+![Two scratch orgs of the Dev Hub are deleted, the one still in use is kept](../../assets/images/commands/scratch/delete.webp)
+
+_Two scratch orgs of the Dev Hub are deleted, the one still in use is kept_
+
 ## Parameters
 
 | Name                  |  Type   | Description                                                                                                       | Default | Required | Options |

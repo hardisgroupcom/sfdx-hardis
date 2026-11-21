@@ -1,0 +1,5 @@
+command: hardis:org:create
+run: sf hardis:org:create --owner "Victor Martin <victor.martin@helios-solar.demo>" --target-branch integration
+mode: replay
+org: none
+caption: A developer sandbox is created from the production org, initialized with its steps, and registered for the integration branch

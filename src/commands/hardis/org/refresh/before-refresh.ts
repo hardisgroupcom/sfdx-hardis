@@ -48,6 +48,7 @@ import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
 import { exportData, hasDataWorkspaces, selectDataWorkspace } from '../../../../common/utils/dataUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -77,6 +78,19 @@ interface RefreshActionRow {
 }
 
 export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
+  public static reports: CommandReport[] = [
+    {
+      file: 'connected-apps-not-converted',
+      title: 'Connected Apps to convert',
+      description: 'One row per Connected App not yet converted to an External Client App, with its last update date and author, to convert before the refresh.',
+    },
+    {
+      file: 'sandbox-refresh-before-actions',
+      title: 'Before refresh actions',
+      description: 'One row per backup or check step run before the refresh, with its type, name, status and details. The file name ends with the name of the sandbox folder.',
+    },
+  ];
+
   public static description = `
 ## Command Behavior
 

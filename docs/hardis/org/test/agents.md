@@ -42,6 +42,30 @@ sf hardis:org:test:agents --agent
 In agent mode the command runs fully automatically. There are no interactive prompts; the wait time defaults to `SFDX_TEST_WAIT_MINUTES` (60 minutes) and all agent tests found in the org are run unless `--tests` is provided.
 
 
+## Screenshots
+
+![Pick the agent tests to run](../../../assets/images/commands/org/test/agents-1.webp)
+
+_Pick the agent tests to run_
+
+![Seven test cases of the Helios_Installation_Assistant agent pass, with the report buttons](../../../assets/images/commands/org/test/agents.webp)
+
+_Seven test cases of the Helios_Installation_Assistant agent pass, with the report buttons_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Agent tests results
+
+One row per assertion of the agent tests run, with its result, to find the failing test cases.
+
+Files: `agent-tests-*.csv`, `xls/agent-tests-*.xlsx`
+
+![Agent tests results report in Excel](../../../assets/images/commands/org/test/agents-report-agent-tests.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

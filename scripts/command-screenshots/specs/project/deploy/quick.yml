@@ -1,0 +1,5 @@
+command: hardis:project:deploy:quick
+run: sf hardis:project:deploy:quick --target-org helios-preprod -i 0AfHE00000Q1HelAAA
+mode: replay
+org: none
+caption: "A validated deployment quick deployed to helios-preprod without running the tests again, then the deployment notifications"

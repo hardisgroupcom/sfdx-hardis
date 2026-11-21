@@ -1,3 +1,7 @@
+---
+title: "hardis:project:clean:agents-deployment-actions - Add the deployment actions of Agentforce agents"
+description: "Writes in the Pull Request the deployment actions that deliver Agentforce agents, before the Pull Request jobs run."
+---
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:clean:agents-deployment-actions
 
@@ -34,6 +38,12 @@ sf hardis:project:clean:agents-deployment-actions --agent
 
 The command has no prompt: `--agent` only exists for consistency with the other cleanings.
 
+
+## Screenshots
+
+![No Agentforce agent changed in the User Story, so no publication or activation action is added to its Pull Request](../../../assets/images/commands/project/clean/agents-deployment-actions.webp)
+
+_No Agentforce agent changed in the User Story, so no publication or activation action is added to its Pull Request_
 
 ## Parameters
 

@@ -26,6 +26,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![The metadata files of the Helios project checked for values listed twice, such as a field placed twice in a layout](../../../assets/images/commands/project/metadata/findduplicates.webp)
+
+_The metadata files of the Helios project checked for values listed twice, such as a field placed twice in a layout_
+
 ## Parameters
 
 | Name         |  Type   | Description                                                   | Default | Required | Options |

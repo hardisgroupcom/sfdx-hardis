@@ -76,6 +76,27 @@ sf hardis:org:diagnose:unused-connected-apps --agent --target-org myorg@example.
 
 In agent mode, the command runs fully automatically with no interactive prompts.
 
+## Screenshots
+
+![Connected Apps of the Helios org with no login and no OAuth token, flagged as candidates for removal](../../../assets/images/commands/org/diagnose/unused-connected-apps.webp)
+
+_Connected Apps of the Helios org with no login and no OAuth token, flagged as candidates for removal_
+
+- **(1)** Why the app is considered unused
+- **(2)** Every Connected App, with its last OAuth usage and a severity reason
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Connected apps
+
+One row per Connected App of the org, with its last modification, its last OAuth usage and a severity reason, so you can decide which apps to remove.
+
+Files: `connected-apps-*.csv`, `xls/connected-apps-*.xlsx`
+
+![Connected apps report in Excel](../../../assets/images/commands/org/diagnose/unused-connected-apps-report-connected-apps.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                                                                           | Default | Required | Options |

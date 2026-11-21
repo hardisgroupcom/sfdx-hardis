@@ -1,0 +1,5 @@
+command: hardis:datacloud:extract:agentforce-conversations
+run: sf hardis:datacloud:extract:agentforce-conversations --last-n-days 30
+mode: replay
+org: none
+caption: "The Helios Installation Assistant conversations of the last 30 days are exported with their transcript, feedback and a link to each one"

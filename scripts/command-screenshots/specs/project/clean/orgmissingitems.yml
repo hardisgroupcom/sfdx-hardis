@@ -1,0 +1,9 @@
+command: hardis:project:clean:orgmissingitems
+run: sf hardis:project:clean:orgmissingitems
+org: showcase
+caption: The items that the target org does not have are removed from the project sources
+answers:
+  - q: Please select an org
+    choice: hardis-shots-showcase
+    shot: true
+    caption: Pick the org that the sources are compared with

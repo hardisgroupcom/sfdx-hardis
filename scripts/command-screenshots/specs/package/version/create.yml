@@ -1,0 +1,12 @@
+command: hardis:package:version:create
+run: sf hardis:package:version:create
+mode: replay
+org: none
+caption: "A new version of the Helios Core unlocked package is created, with code coverage computed"
+answers:
+  - q: "Please select a package"
+    choice: "^Helios Core$"
+    shot: true
+    caption: "Pick the package to create a new version of"
+  - q: "password protect your package"
+    value: ""

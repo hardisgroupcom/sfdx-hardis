@@ -39,6 +39,30 @@ In agent mode:
 - `--period` defaults to `daily` (last 24 hours) when not provided.
 - All interactive prompts are skipped.
 
+## Screenshots
+
+![Type how many days back to analyze](../../../assets/images/commands/org/diagnose/deployments-1.webp)
+
+_Type how many days back to analyze_
+
+![Deployments and validations of the last 30 days, with their duration and status](../../../assets/images/commands/org/diagnose/deployments.webp)
+
+_Deployments and validations of the last 30 days, with their duration and status_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Deployments and validations
+
+One row per deployment or validation, with its status, author, dates, pending time and duration in minutes.
+
+Files: `deployments-*.csv`, `xls/deployments-*.xlsx`
+
+![Deployments and validations report in Excel](../../../assets/images/commands/org/diagnose/deployments-report-deployments.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                                                                                 | Default | Required |         Options          |

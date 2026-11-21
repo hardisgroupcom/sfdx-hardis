@@ -148,6 +148,11 @@ await uxLogTableWithReport(this, rows, ["type", "fullName", "status"], {
   `generateCsvFile`, a generated markdown/XLSX file sent with `sendReportFileMessage`), keep `uxLogTable`:
   the requirement is that the full list is reachable, not that it is written twice.
 - `fileNamePrefix` must be unique per table inside a command, otherwise two tables overwrite each other's report.
+- A command that writes a main report and detail reports marks the main one, so VS Code shows it as the first report
+  button whatever the order the files were written in: `mainReport: true` in the `generateCsvFile` /
+  `createXlsxFromCsv` options, or `{ main: true }` as the last argument of `sendReportFileMessage`.
+- `uxLog("error", ...)` turns the command to "Failed" in VS Code. A diagnose command that finds problems has not
+  failed: report its findings with `warning`, and keep `error` for a run that could not complete.
 
 ## A prompt must always be followed by an `uxLog("action", ...)`
 

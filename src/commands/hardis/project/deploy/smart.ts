@@ -29,6 +29,7 @@ import {
 import { CONSTANTS, getConfig, getEnvVar } from '../../../../config/index.js';
 import { commitContainsDeploymentKeyword } from '../../../../common/utils/deploymentKeywordUtils.js';
 import { smartDeploy, removePackageXmlContent, createEmptyPackageXml } from '../../../../common/utils/deployUtils.js';
+import { emitDeploymentStartEvent } from '../../../../common/utils/pluginEventUtils.js';
 import { extendPackageFileWithDependencies, appendPackageModifications } from '../../../../common/utils/deltaUtils.js';
 import { isProductionOrg, promptOrgUsernameDefault, setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { getApexTestClasses, selectTestClassesFromPullRequests } from '../../../../common/utils/classUtils.js';
@@ -44,6 +45,7 @@ import { t } from '../../../../common/utils/i18n.js';
 import { getTargetOrg, isFlagTyped, resolveTargetUsername } from '../../../../common/utils/targetOrgUtils.js';
 import { assertMajorBranchCheckAllowed, enableMajorBranchCheckMode, isMajorBranchCheckMode } from '../../../../common/utils/majorBranchCheckUtils.js';
 import { updateDevOrgsAfterMerge } from '../../../../common/utils/devOrgsRegistry.js';
+import { handlePostDeploymentReleaseVersion, isReleaseVersioningActive, publishProductionRelease } from '../../../../common/utils/releaseVersionUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -463,11 +465,17 @@ sf hardis:project:deploy:smart --check --major-branch-check
 
 The default CI/CD templates hold this job, ready to be scheduled. With \`enableMajorBranchDeploymentCheck: true\` in \`config/.sfdx-hardis.yml\`, the DevOps Pipeline of the VS Code extension colors each major branch with the result of its last check. [More info](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-major-branch-check/)
 
+### Release versioning
+
+When the branch config of the deployed branch declares \`releaseVersioning: true\`, each successful deployment creates a semver tag on the deployed commit, through the API of the git provider. The highest versioned branch of the chain (usually main) gets plain versions (\`v1.5.0\`), the other versioned branches get release candidates (\`v1.5.0-rc.3\`, or the name set by \`releaseVersioningTagFormat\`, like \`v1.5.0-pi2-it4-uat-rc3\`). The Pull Request comment, the notification and the tickets show the version. On the highest versioned branch, the release notes are generated and published as a GitHub or GitLab Release. A failure there never fails the deployment. [More info](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-release-versioning/)
+
 ### Development orgs list
 
 After a deployment that follows a merge, the Pull Requests merged into the branch are listed again for the [development orgs](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-dev-orgs/) that target it, so their owners know when to run a backpromote. When no development org was ever registered, this costs one call to the git provider and nothing else. An error there never fails the deployment.
 
 ### Plugin events
+
+Before the package.xml, the delta and the replacement rules read the local sources, the installed sf plugins that listen to \`sfdx-hardis:validation-start\` (validation) or \`sfdx-hardis:deployment-start\` (deployment) are called, so they can prepare the sources (for example recompose decomposed metadata).
 
 As soon as Salesforce returns the result of each deployment, the installed sf plugins that listen to \`sfdx-hardis:validation-done\` or \`sfdx-hardis:deployment-done\` receive it, with the path of the Apex code coverage file, before the code coverage check. [More info](${CONSTANTS.DOC_URL_ROOT}/sfdx-hardis-plugins/#react-to-sfdx-hardis-events)
 
@@ -687,6 +695,10 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     // computed, because the answer is to fix the CI configuration, not to let the job continue.
     assertPromotionBranchIsNotDeployed(this, this.configInfo, this.checkOnly, currentGitBranch);
 
+    // The plugins can prepare the local sources (ex: recompose decomposed metadata) before the
+    // package.xml, the delta, the replacement rules and the deployment read them
+    await emitDeploymentStartEvent(this, { checkOnly: this.checkOnly, targetUsername: this.targetOrg.getUsername() || targetUsername });
+
     // Promotion branch: inherit the custom behaviors (NO_DELTA, PURGE_FLOW_VERSIONS...) of the
     // Pull Requests it declares, before the delta decision reads them. No-op unless
     // enablePromotionBranches is set and the Pull Request is a promotion one.
@@ -736,9 +748,11 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     }
 
     // smartDeploy normally posts its success comment before returning. Defer it when a post-deploy
-    // Flow deletion still has to succeed.
+    // Flow deletion still has to succeed, or when the comment must show the release version the
+    // deployment is about to tag.
+    const releaseVersioningActive = await isReleaseVersioningActive(currentGitBranch, { checkOnly: this.checkOnly }, this);
     this.smartDeployOptions.deferSuccessPullRequestComment =
-      !this.checkOnly && this.flowDeletion.hasPostDeployDeletions;
+      !this.checkOnly && (this.flowDeletion.hasPostDeployDeletions || releaseVersioningActive);
 
     // Replacement rules use the values of the org the deployment goes to: an explicit --target-branch
     // (which also selects the org through CONFIG_BRANCH), else the target branch of the Pull Request in
@@ -777,12 +791,20 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     // deleted turns the comment section and the notification into a warning, not the command into a failure.
     if (!this.checkOnly) {
       await this.flowDeletion.execute('post');
+      // The branch declares releaseVersioning: tag the deployed commit before the comment and the
+      // notification, which both show the version
+      const releaseVersion = releaseVersioningActive
+        ? await handlePostDeploymentReleaseVersion({ branch: currentGitBranch || '', org: this.targetOrg?.getConnection()?.instanceUrl || null, commandRef: this })
+        : null;
       if (this.smartDeployOptions.deferSuccessPullRequestComment === true) {
         await GitProvider.managePostPullRequestComment(this.checkOnly);
       }
       await handlePostDeploymentNotifications(this.targetOrg, targetUsername, quickDeploy, this.delta, this.debugMode, "", deploymentMetrics, {
         flowsNotDeleted: this.flowDeletion.flowsNotDeleted,
+        releaseVersion: releaseVersion ? { tag: releaseVersion.tag, final: releaseVersion.final } : null,
       });
+      // The highest versioned branch publishes the Release, with the release notes of the version
+      await publishProductionRelease(releaseVersion, this);
       // The development orgs that target this branch now miss what was just merged
       await updateDevOrgsAfterMerge(currentGitBranch || '', this);
     }

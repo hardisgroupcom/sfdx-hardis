@@ -28,6 +28,7 @@ import { generateCsvFile, generateReportPath } from "../../../../common/utils/fi
 import { WebSocketClient } from "../../../../common/websocketClient.js";
 import { listOrgSObjectsFiltered } from "../../../../common/utils/orgUtils.js";
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 // Constants
 const ALLOWED_AUTOMATIONS = ["Flow", "Trigger", "VR"]; // TODO: type and remove hardcoded
@@ -140,6 +141,19 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
       required: false,
     }),
   };
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'project-generate-bypass-generation',
+      title: 'Bypass generation',
+      description: 'One row per sObject and automation type, with the custom permission and permission set generated and the outcome.',
+    },
+    {
+      file: 'project-generate-bypass-implementation',
+      title: 'Bypass implementation',
+      description: 'One row per validation rule, trigger or flow where the bypass was added or skipped, with the outcome and a comment.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

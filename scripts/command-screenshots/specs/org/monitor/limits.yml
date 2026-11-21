@@ -1,0 +1,8 @@
+command: hardis:org:monitor:limits
+run: sf hardis:org:monitor:limits
+org: showcase
+caption: "Limits of the Helios org with their maximum, remaining value and percent used, none close to its maximum"
+pills:
+  - text: "Org Limits"
+    legend: "Every limit of the org, beyond the first rows shown here"
+    button: true

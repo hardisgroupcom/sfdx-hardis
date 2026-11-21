@@ -893,7 +893,7 @@ const orgHomeDashboard = dashboard({
         deltaStat('Updated metadatas', 'UpdatedMetadatas_metric', { thresholds: THRESHOLDS_NONE, links: indicatorLink('BACKUP') }),
         deltaStat('Suspect actions', 'SuspectMetadataUpdates_metric', { links: detailLink('org-security'), description: 'Suspect setup actions from the audit trail. Click for details.' }),
         deltaStat('Legacy API calls', 'LegacyApiCalls_metric', { links: detailLink('org-security') }),
-        deltaStat('Release updates', 'ReleaseUpdates_metric', { links: indicatorLink('RELEASE_UPDATES') }),
+        deltaStat('Release updates', 'ReleaseUpdates_metric', { links: indicatorLink('WHAT_WILL_BREAK') }),
       ],
     },
     {
@@ -1385,7 +1385,7 @@ const securityDashboard = dashboard({
         deltaStat('Suspect setup actions', 'SuspectMetadataUpdates_metric', { gridPos: { w: 6, h: 5 }, links: indicatorLink('AUDIT_TRAIL') }),
         deltaStat('Unsecured Connected Apps', 'UnsecuredConnectedApps_metric', { gridPos: { w: 6, h: 5 }, links: indicatorLink('UNSECURED_CONNECTED_APPS') }),
         deltaStat('High-risk items', 'HighRisk_metric', { gridPos: { w: 6, h: 5 }, links: indicatorLink('ORG_HEALTH_CHECK') }),
-        deltaStat('Legacy API calls', 'LegacyApiCalls_metric', { gridPos: { w: 6, h: 5 }, links: indicatorLink('LEGACY_API') }),
+        deltaStat('Legacy API calls', 'LegacyApiCalls_metric', { gridPos: { w: 6, h: 5 }, links: indicatorLink('WHAT_WILL_BREAK') }),
       ],
     },
     {
@@ -1401,6 +1401,51 @@ const securityDashboard = dashboard({
       ],
     },
     {
+      row: 'What will break (click a number for details)',
+      panels: [
+        deltaStat('SOAP no API Auth', 'SoapLoginUsersMissingPermission_metric', {
+          gridPos: { w: 6, h: 5 },
+          description: `Users calling SOAP login() without the Use Any API Auth permission: they get INSUFFICIENT_ACCESS from December 1, 2026. ${RECENT_CLI_NOTE}`,
+          links: indicatorLink('WHAT_WILL_BREAK'),
+        }),
+        deltaStat('Device flow users', 'DeviceFlowUsers_metric', {
+          gridPos: { w: 6, h: 5 },
+          description: `Users logging in with the OAuth device flow, restricted to local External Client Apps from November 30, 2026. ${RECENT_CLI_NOTE}`,
+          links: indicatorLink('WHAT_WILL_BREAK'),
+        }),
+        deltaStat('Password flow', 'UsernamePasswordFlowUsers_metric', {
+          gridPos: { w: 6, h: 5 },
+          description: `Users logging in with the OAuth username-password flow, retired on February 20, 2027. ${RECENT_CLI_NOTE}`,
+          links: indicatorLink('WHAT_WILL_BREAK'),
+        }),
+        deltaStat('SOAP login users', 'SoapLoginUsers_metric', {
+          gridPos: { w: 6, h: 5 },
+          description: `Users calling SOAP login(), retired in Summer '27: each integration must move to OAuth with an External Client App. ${RECENT_CLI_NOTE}`,
+          links: indicatorLink('WHAT_WILL_BREAK'),
+        }),
+        deltaStat('Idle tokens', 'IdleRefreshTokensExpiringSoon_metric', {
+          gridPos: { w: 6, h: 5 },
+          description: `Refresh tokens of API only users unused for 20 days or more: they expire after 30 days without use. ${RECENT_CLI_NOTE}`,
+          links: indicatorLink('WHAT_WILL_BREAK'),
+        }),
+        deltaStat('Apps to migrate', 'ConnectedAppsToMigrate_metric', {
+          gridPos: { w: 6, h: 5 },
+          description: `Connected Apps of the org still in use, to move to External Client Apps before Summer '27. ${RECENT_CLI_NOTE}`,
+          links: indicatorLink('WHAT_WILL_BREAK'),
+        }),
+        deltaStat('Rare refreshes', 'IntegrationsRefreshingTooRarely_metric', {
+          gridPos: { w: 6, h: 5 },
+          description: `Integrations that went 30 days or more without using their refresh token: a monthly or quarterly sync loses its token between two runs. ${RECENT_CLI_NOTE}`,
+          links: indicatorLink('WHAT_WILL_BREAK'),
+        }),
+        deltaStat('SOAP token needed', 'SoapLoginUsersNeedingToken_metric', {
+          gridPos: { w: 6, h: 5 },
+          description: `SOAP login() callers only covered by a trusted IP range wider than /8: they need the security token from January 31, 2027. ${RECENT_CLI_NOTE}`,
+          links: indicatorLink('WHAT_WILL_BREAK'),
+        }),
+      ],
+    },
+    {
       row: 'Trends',
       panels: [
         timeseriesPanel('Suspect setup actions per day', {
@@ -1411,7 +1456,7 @@ const securityDashboard = dashboard({
         timeseriesPanel('Legacy API calls', {
           gridPos: { w: 12, h: 8 },
           targets: [promTarget(promLast('LegacyApiCalls_metric', 'orgIdentifier="$org"', '1d'), { legendFormat: 'Legacy API calls' })],
-          links: indicatorLink('LEGACY_API'),
+          links: indicatorLink('WHAT_WILL_BREAK'),
         }),
       ],
     },

@@ -1,0 +1,6 @@
+command: hardis:work:refresh
+run: sf hardis:work:refresh
+mode: replay
+org: none
+caption: "The refresh command is deprecated and points to sf hardis:work:backpromote"
+allowedStatuses: [error]

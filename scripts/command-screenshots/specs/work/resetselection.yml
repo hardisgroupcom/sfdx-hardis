@@ -1,0 +1,10 @@
+command: hardis:work:resetselection
+run: sf hardis:work:resetselection
+mode: replay
+org: none
+caption: "The three commits of the User Story reset softly, so the files can be selected and committed again"
+answers:
+  - q: "This command will git reset"
+    choice: "^✅ Yes$"
+    shot: true
+    caption: "Confirm the soft reset of the User Story branch"

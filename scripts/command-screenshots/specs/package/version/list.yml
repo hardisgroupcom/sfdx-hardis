@@ -1,0 +1,5 @@
+command: hardis:package:version:list
+run: sf hardis:package:version:list --target-dev-hub helios-devhub
+mode: replay
+org: none
+caption: The versions of the Helios packages listed from the Dev Hub, with their install ids and aliases

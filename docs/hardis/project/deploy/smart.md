@@ -415,11 +415,17 @@ sf hardis:project:deploy:smart --check --major-branch-check
 
 The default CI/CD templates hold this job, ready to be scheduled. With `enableMajorBranchDeploymentCheck: true` in `config/.sfdx-hardis.yml`, the DevOps Pipeline of the VS Code extension colors each major branch with the result of its last check. [More info](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-major-branch-check/)
 
+### Release versioning
+
+When the branch config of the deployed branch declares `releaseVersioning: true`, each successful deployment creates a semver tag on the deployed commit, through the API of the git provider. The highest versioned branch of the chain (usually main) gets plain versions (`v1.5.0`), the other versioned branches get release candidates (`v1.5.0-rc.3`, or the name set by `releaseVersioningTagFormat`, like `v1.5.0-pi2-it4-uat-rc3`). The Pull Request comment, the notification and the tickets show the version. On the highest versioned branch, the release notes are generated and published as a GitHub or GitLab Release. A failure there never fails the deployment. [More info](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-release-versioning/)
+
 ### Development orgs list
 
 After a deployment that follows a merge, the Pull Requests merged into the branch are listed again for the [development orgs](https://sfdx-hardis.cloudity.com/salesforce-devops-dev-orgs/) that target it, so their owners know when to run a backpromote. When no development org was ever registered, this costs one call to the git provider and nothing else. An error there never fails the deployment.
 
 ### Plugin events
+
+Before the package.xml, the delta and the replacement rules read the local sources, the installed sf plugins that listen to `sfdx-hardis:validation-start` (validation) or `sfdx-hardis:deployment-start` (deployment) are called, so they can prepare the sources (for example recompose decomposed metadata).
 
 As soon as Salesforce returns the result of each deployment, the installed sf plugins that listen to `sfdx-hardis:validation-done` or `sfdx-hardis:deployment-done` receive it, with the path of the Apex code coverage file, before the code coverage check. [More info](https://sfdx-hardis.cloudity.com/sfdx-hardis-plugins/#react-to-sfdx-hardis-events)
 
@@ -462,6 +468,14 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 
 <!-- training-links:end -->
 
+
+## Screenshots
+
+![The Helios sources deployed to a scratch org with their deployment actions, Apex tests and the report of deployed components](../../../assets/images/commands/project/deploy/smart.webp)
+
+_The Helios sources deployed to a scratch org with their deployment actions, Apex tests and the report of deployed components_
+
+- **(1)** The components deployed, in an Excel report
 
 ## Parameters
 

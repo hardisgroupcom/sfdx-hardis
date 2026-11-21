@@ -201,6 +201,9 @@ pipelines:
             #     git remote set-url origin "https://x-token-auth:${CI_SFDX_HARDIS_BITBUCKET_TOKEN}@${ORIGIN_PATH}.git"
             #     echo "[sfdx-hardis] Bitbucket push/PR auth enabled for coding agents"
             #   fi
+            # With release versioning (releaseVersioning: true in a branch config), sfdx-hardis creates the
+            # version tags with CI_SFDX_HARDIS_BITBUCKET_TOKEN: it needs the repository:write scope.
+            # https://sfdx-hardis.cloudity.com/salesforce-ci-cd-release-versioning/
             - sf hardis:auth:login
             - sf hardis:project:deploy:smart
           artifacts:

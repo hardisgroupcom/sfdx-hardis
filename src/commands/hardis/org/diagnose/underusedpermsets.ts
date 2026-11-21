@@ -11,6 +11,7 @@ import { generateCsvFile, generateReportPath } from '../../../../common/utils/fi
 import { CONSTANTS, getEnvVar, getEnvVarList } from '../../../../config/index.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -19,6 +20,14 @@ const DEFAULT_PERMSET_LIMITED_USERS_THRESHOLD = 5;
 
 export default class DiagnoseUnderusedPermsets extends SfCommand<any> {
   public static title = 'Detect underused Permission Sets';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'underused-permission-sets',
+      title: 'Underused permission sets',
+      description: 'One row per permission set or permission set group assigned to no user or to few users, with its user count and severity, as candidates to clean up.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

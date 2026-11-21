@@ -111,6 +111,8 @@ By default, only changed files are used to generate the documentation (diff-only
   - CLOUDFLARE_PROJECT_NAME_FR=cloudity-demo-french
   - CLOUDFLARE_PROJECT_NAME_DE=cloudity-demo-german
 
+A documentation that cannot be generated or published never fails the backup job: the org state is still committed, the other languages are still generated, and a **DOCUMENTATION** warning notification gives the language and the error.
+
 If Flow history doc always display a single state, you probably need to update your workflow configuration:
 
 - on Gitlab: Env variable [`GIT_FETCH_EXTRA_FLAGS: --depth 10000`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/.gitlab-ci.yml#L17)
@@ -132,6 +134,26 @@ In agent mode:
 - The rebuild mode defaults to diff-only (changed files only) unless `--rebuild-full-doc` or `MONITORING_BACKUP_REBUILD_FULL_DOC=true` is set.
 - All other interactive prompts are skipped.
 
+
+## Screenshots
+
+![Metadata of the Helios org retrieved into the monitoring repository, with the files changed since the last backup](../../../assets/images/commands/org/monitor/backup.webp)
+
+_Metadata of the Helios org retrieved into the monitoring repository, with the files changed since the last backup_
+
+- **(1)** One row per file added, modified, renamed or deleted since the previous backup
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Updated metadata
+
+One row per file added, modified, renamed or deleted since the previous backup, with its change type and a readable metadata name.
+
+Files: `backup-updated-files-*.csv`, `xls/backup-updated-files-*.xlsx`
+
+![Updated metadata report in Excel](../../../assets/images/commands/org/monitor/backup-report-backup-updated-files.webp)
 
 ## Parameters
 

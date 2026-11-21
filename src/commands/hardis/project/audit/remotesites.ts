@@ -11,12 +11,21 @@ import * as url from 'url';
 import { catchMatches, generateReports, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class RemoteSites extends SfCommand<any> {
   public static title = 'Audit Remote Sites';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'remote-sites-audit',
+      title: 'Remote Sites',
+      description: 'One row per Remote Site Setting, with its protocol, domain, URL and active flag, to review the external endpoints the org can call.',
+    },
+  ];
 
   public static description: string = `
 ## Command Behavior

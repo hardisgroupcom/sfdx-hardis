@@ -53,6 +53,14 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 
 
+## Screenshots
+
+![Every metadata of the Helios org retrieved, managed items left out, and converted into an SFDX project](../../../../assets/images/commands/org/retrieve/sources/dx.webp)
+
+_Every metadata of the Helios org retrieved, managed items left out, and converted into an SFDX project_
+
+- **(1)** The folder where the SFDX project is written
+
 ## Parameters
 
 | Name                     |  Type   | Description                                                                                                  | Default | Required | Options |

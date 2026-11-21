@@ -4,7 +4,7 @@ import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { uxLog, uxLogTable } from '../../../../common/utils/index.js';
-import { soqlQueryTooling } from '../../../../common/utils/apiUtils.js';
+import { queryReleaseUpdatesToCheck } from '../../../../common/utils/releaseUpdatesUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
@@ -12,6 +12,7 @@ import { dateHelper } from '../../../../common/utils/dateHelper.js';
 import { CONSTANTS } from '../../../../config/index.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -19,7 +20,19 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class DiagnoseReleaseUpdates extends SfCommand<any> {
   public static title = 'Check Release Updates of an org';
 
-  public static description = `Export Release Updates into a CSV file with selected criteria, and highlight Release Updates that should be checked.
+  public static reports: CommandReport[] = [
+    {
+      file: 'release-updates',
+      title: 'Release updates',
+      description: 'One row per upcoming or overdue Release Update of the org, with its title, category, status and due date, so you can plan the ones to activate.',
+    },
+  ];
+
+  public static description = `## DEPRECATED
+
+This command is deprecated: use [hardis:org:diagnose:what-will-break](${CONSTANTS.DOC_URL_ROOT}/hardis/org/diagnose/what-will-break/), which checks the release updates due together with everything else that will break after a dated Salesforce change.
+
+Export Release Updates into a CSV file with selected criteria, and highlight Release Updates that should be checked.
 
 Before publishing **Breaking Changes** ❌, Salesforce announce them in the setup menu [**Release Updates**](https://help.salesforce.com/s/articleView?id=sf.release_updates.htm&type=5)
 
@@ -78,22 +91,17 @@ In agent mode, the command runs fully automatically with no interactive prompts.
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(DiagnoseReleaseUpdates);
+    uxLog("warning", this, c.yellow(t('whatWillBreakDeprecatedCommand', { command: 'sf hardis:org:diagnose:what-will-break' })));
     this.debugMode = flags.debug || false;
     this.outputFile = flags.outputfile || null;
     const conn = flags['target-org'].getConnection();
     uxLog("action", this, c.cyan(t('extractingReleaseUpdatesAndChecksToPerform', { conn: conn.instanceUrl })));
 
     // Fetch ReleaseUpdate records
-    const releaseUpdatesQuery =
-      `SELECT StepStage,Status,Category,Title,DueDate,Description,Release,ReleaseLabel,ReleaseDate,ApiVersion,DurableId,HasNewSteps,IsReleased,SupportsRevoke,DeveloperName ` +
-      `FROM ReleaseUpdate ` +
-      `WHERE StepStage IN ('Upcoming','OverDue') AND Status IN ('Pending','Invocable','Revocable','Nascent','Invoked','Info') AND DueDate >= LAST_N_DAYS:60 ` +
-      `ORDER BY DueDate ASC`;
-    const queryRes = await soqlQueryTooling(releaseUpdatesQuery, conn);
+    const releaseUpdateRecords = await queryReleaseUpdatesToCheck(conn);
     const severityIconWarning = getSeverityIcon('warning');
     const severityIconError = getSeverityIcon('error');
-    this.releaseUpdatesRecords = queryRes.records.map((record) => {
-      delete record.attributes
+    this.releaseUpdatesRecords = releaseUpdateRecords.map((record) => {
       record.severityIcon = record.StepStage === 'OverDue' ? severityIconError : severityIconWarning;
       return record;
     });

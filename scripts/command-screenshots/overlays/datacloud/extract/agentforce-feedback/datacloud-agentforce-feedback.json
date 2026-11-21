@@ -1,0 +1,114 @@
+{
+  "mode": "replace",
+  "title": "DataCloud Agentforce Feedback",
+  "rows": [
+    {
+      "User": "mariia.kowalska@helios-solar.demo",
+      "ConversationDate": "2026-11-16T14:32:08.412Z",
+      "Feedback type": "GOOD",
+      "Feedback message": "Clear checklist, I found the inverter model right away",
+      "Full conversation": "USER: What is the checklist for a roof installation with a hybrid inverter?\n---\nAGENT: Before mounting: check the roof load report, confirm the inverter model on the Installation record and verify that the Panel Batch is approved. Do you want me to open the checklist of INST-0412?\n---\nUSER: Yes please\n---\nAGENT: Opened. 9 of 12 items are done. Remaining: grounding test, meter photo and customer sign-off.",
+      "ConversationId": "c0726e99-c28d-4263-a693-9d5a4bb270d0",
+      "Conversation URL": "https://helios-solar.lightning.force.com/lightning/cmp/runtime_analytics_evf_aie__record?c__id=c0726e99-c28d-4263-a693-9d5a4bb270d0&c__type=2&c__sessionId=019bde04-b640-7c51-9531-206b5881293f&c__timeFilter=30&c__agentApiName=Helios_Installation_Assistant"
+    },
+    {
+      "User": "romain.lefebvre@helios-solar.demo",
+      "ConversationDate": "2026-11-16T09:47:55.120Z",
+      "Feedback type": "BAD",
+      "Feedback message": "The batch was already shipped, the answer sent me to the wrong depot",
+      "Full conversation": "USER: Which Panel Batch should I use for INST-0398?\n---\nAGENT: Panel Batch PB-2026-114 is assigned to INST-0398. Its status is Ready to ship.\n---\nUSER: I am on site and nothing arrived, where is it?\n---\nAGENT: I can only see the status Ready to ship. I cannot confirm the delivery.",
+      "ConversationId": "ad327a74-5ed1-4c49-a8e6-73ff2df5be81",
+      "Conversation URL": "https://helios-solar.lightning.force.com/lightning/cmp/runtime_analytics_evf_aie__record?c__id=ad327a74-5ed1-4c49-a8e6-73ff2df5be81&c__type=2&c__sessionId=019b96c7-f669-7ae0-9b38-8ccfeb78be5e&c__timeFilter=30&c__agentApiName=Helios_Installation_Assistant"
+    },
+    {
+      "User": "lucia.fernandez@helios-solar.demo",
+      "ConversationDate": "2026-11-15T16:05:31.774Z",
+      "Feedback type": "GOOD",
+      "Feedback message": "",
+      "Full conversation": "USER: Reschedule INST-0405 to next Tuesday morning\n---\nAGENT: INST-0405 is now scheduled on Tuesday 24 November at 08:00 with crew Delta. The customer receives a confirmation email.",
+      "ConversationId": "92bb42dd-959c-458e-a476-8d11d1a6ecfc",
+      "Conversation URL": "https://helios-solar.lightning.force.com/lightning/cmp/runtime_analytics_evf_aie__record?c__id=92bb42dd-959c-458e-a476-8d11d1a6ecfc&c__type=2&c__sessionId=019b5eb5-c0bb-7fb3-9f97-0be0d098f553&c__timeFilter=30&c__agentApiName=Helios_Installation_Assistant"
+    },
+    {
+      "User": "amelie.dubois@helios-solar.demo",
+      "ConversationDate": "2026-11-13T13:58:40.331Z",
+      "Feedback type": "BAD",
+      "Feedback message": "It did not understand my question about the crew calendar",
+      "Full conversation": "USER: Show me the calendar of the Delivery Crew for December\n---\nAGENT: I can help with installations, panel batches and checklists. Which installation are you working on?\n---\nUSER: No, the calendar of the whole crew\n---\nAGENT: Sorry, I cannot show crew calendars yet.",
+      "ConversationId": "d136889b-2cb5-4c2c-abaa-388b2b41548b",
+      "Conversation URL": "https://helios-solar.lightning.force.com/lightning/cmp/runtime_analytics_evf_aie__record?c__id=d136889b-2cb5-4c2c-abaa-388b2b41548b&c__type=2&c__sessionId=019b55b1-6ddd-7c8a-976d-2757a60f6936&c__timeFilter=30&c__agentApiName=Helios_Installation_Assistant"
+    },
+    {
+      "User": "victor.martin@helios-solar.demo",
+      "ConversationDate": "2026-11-12T08:14:19.652Z",
+      "Feedback type": "GOOD",
+      "Feedback message": "Saved me a call to the planner",
+      "Full conversation": "USER: Is INST-0388 blocked by something?\n---\nAGENT: Yes. The close check failed: the customer sign-off is missing. The flow Installation_Close_Check will pass once the signed form is attached.",
+      "ConversationId": "aee20484-81c9-4063-a52a-52f4d9998fe2",
+      "Conversation URL": "https://helios-solar.lightning.force.com/lightning/cmp/runtime_analytics_evf_aie__record?c__id=aee20484-81c9-4063-a52a-52f4d9998fe2&c__type=2&c__sessionId=019b4c72-e4dc-781f-99e9-0281f245666d&c__timeFilter=30&c__agentApiName=Helios_Installation_Assistant"
+    },
+    {
+      "User": "romain.lefebvre@helios-solar.demo",
+      "ConversationDate": "2026-11-10T10:02:48.515Z",
+      "Feedback type": "GOOD",
+      "Feedback message": "",
+      "Full conversation": "USER: Which panels are in batch PB-2026-120?\n---\nAGENT: PB-2026-120 holds 24 panels of 410 W, approved on 3 November.",
+      "ConversationId": "ae6fcc05-f491-4be9-ad11-7a790704ee6e",
+      "Conversation URL": "https://helios-solar.lightning.force.com/lightning/cmp/runtime_analytics_evf_aie__record?c__id=ae6fcc05-f491-4be9-ad11-7a790704ee6e&c__type=2&c__sessionId=019b9076-d91c-767d-90ce-005bba5c2cab&c__timeFilter=30&c__agentApiName=Helios_Installation_Assistant"
+    },
+    {
+      "User": "lucia.fernandez@helios-solar.demo",
+      "ConversationDate": "2026-11-09T14:26:33.880Z",
+      "Feedback type": "BAD",
+      "Feedback message": "The answer was too long for a phone screen",
+      "Full conversation": "USER: Explain the full installation process\n---\nAGENT: The installation process has 12 steps. Step 1: site survey and roof load report. Step 2: permit check. Step 3: batch assignment. Step 4: scaffolding. Step 5: mounting rails. Step 6: panels. Step 7: wiring. Step 8: inverter. Step 9: grounding test. Step 10: meter. Step 11: commissioning. Step 12: customer sign-off and handover.",
+      "ConversationId": "17b2ba2d-a21b-4e21-af67-911a96622cd5",
+      "Conversation URL": "https://helios-solar.lightning.force.com/lightning/cmp/runtime_analytics_evf_aie__record?c__id=17b2ba2d-a21b-4e21-af67-911a96622cd5&c__type=2&c__sessionId=019b1485-99d5-7f00-9dd2-2d7eb1d32ace&c__timeFilter=30&c__agentApiName=Helios_Installation_Assistant"
+    },
+    {
+      "User": "tomasz.nowak@helios-solar.demo",
+      "ConversationDate": "2026-11-06T09:33:12.047Z",
+      "Feedback type": "GOOD",
+      "Feedback message": "Good summary of the open installations",
+      "Full conversation": "USER: Summarize the open installations of the Lyon area\n---\nAGENT: 11 open installations in the Lyon area: 6 scheduled, 3 waiting for a Panel Batch, 2 blocked by a missing permit.",
+      "ConversationId": "b9e0806b-93d0-46c5-a9c8-330834124419",
+      "Conversation URL": "https://helios-solar.lightning.force.com/lightning/cmp/runtime_analytics_evf_aie__record?c__id=b9e0806b-93d0-46c5-a9c8-330834124419&c__type=2&c__sessionId=019bc967-c60c-7d15-9f7a-608cb78f2e67&c__timeFilter=30&c__agentApiName=Helios_Installation_Assistant"
+    },
+    {
+      "User": "amelie.dubois@helios-solar.demo",
+      "ConversationDate": "2026-11-05T12:09:26.318Z",
+      "Feedback type": "GOOD",
+      "Feedback message": "Found the right batch in seconds",
+      "Full conversation": "USER: Find the Panel Batch of INST-0377\n---\nAGENT: INST-0377 uses Panel Batch PB-2026-101, delivered on 28 October.",
+      "ConversationId": "e9f6b06b-6008-4217-a0ef-c79263dabf21",
+      "Conversation URL": "https://helios-solar.lightning.force.com/lightning/cmp/runtime_analytics_evf_aie__record?c__id=e9f6b06b-6008-4217-a0ef-c79263dabf21&c__type=2&c__sessionId=019b3264-1fbe-7aad-9c00-17ade0eaff83&c__timeFilter=30&c__agentApiName=Helios_Installation_Assistant"
+    },
+    {
+      "User": "victor.martin@helios-solar.demo",
+      "ConversationDate": "2026-11-04T17:44:50.693Z",
+      "Feedback type": "GOOD",
+      "Feedback message": "",
+      "Full conversation": "USER: Who is the crew lead of INST-0370?\n---\nAGENT: Romain Lefebvre leads the crew assigned to INST-0370.",
+      "ConversationId": "f6edc4f5-79f2-447f-a714-97dd050ae69e",
+      "Conversation URL": "https://helios-solar.lightning.force.com/lightning/cmp/runtime_analytics_evf_aie__record?c__id=f6edc4f5-79f2-447f-a714-97dd050ae69e&c__type=2&c__sessionId=019b0ece-07b0-7739-9aa4-3669c869ab9d&c__timeFilter=30&c__agentApiName=Helios_Installation_Assistant"
+    },
+    {
+      "User": "romain.lefebvre@helios-solar.demo",
+      "ConversationDate": "2026-11-03T08:51:04.127Z",
+      "Feedback type": "BAD",
+      "Feedback message": "It proposed a Panel Batch that failed the quality check",
+      "Full conversation": "USER: Which batch can I take for INST-0366?\n---\nAGENT: PB-2026-098 is available.\n---\nUSER: That batch failed the quality check\n---\nAGENT: I do not have the quality check result of a batch.",
+      "ConversationId": "dc33d7e6-c274-4557-addf-e79be0b1a61d",
+      "Conversation URL": "https://helios-solar.lightning.force.com/lightning/cmp/runtime_analytics_evf_aie__record?c__id=dc33d7e6-c274-4557-addf-e79be0b1a61d&c__type=2&c__sessionId=019bbc3f-2df3-77ee-9e38-07689217a4bc&c__timeFilter=30&c__agentApiName=Helios_Installation_Assistant"
+    },
+    {
+      "User": "lucia.fernandez@helios-solar.demo",
+      "ConversationDate": "2026-11-02T13:15:39.402Z",
+      "Feedback type": "GOOD",
+      "Feedback message": "",
+      "Full conversation": "USER: Create a follow-up task for INST-0361\n---\nAGENT: Task created: Call the customer about the meter appointment, due tomorrow.",
+      "ConversationId": "dfeb3561-a91c-4542-ad18-5e5668b54a1d",
+      "Conversation URL": "https://helios-solar.lightning.force.com/lightning/cmp/runtime_analytics_evf_aie__record?c__id=dfeb3561-a91c-4542-ad18-5e5668b54a1d&c__type=2&c__sessionId=019b03f8-9f1e-7921-9625-d3fa607ddb1d&c__timeFilter=30&c__agentApiName=Helios_Installation_Assistant"
+    }
+  ]
+}

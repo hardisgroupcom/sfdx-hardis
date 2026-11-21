@@ -1,0 +1,245 @@
+{
+  "command": "hardis:org:retrieve:agent",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Listing the agents of org admin@helios-solar.demo.uat..."
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Select the agent to retrieve",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Select the agent to retrieve",
+            "description": "The agent is retrieved with the Flow, Apex and prompt template actions it uses",
+            "choices": [
+              {
+                "title": "Helios_Installation_Assistant",
+                "value": "Helios_Installation_Assistant"
+              },
+              {
+                "title": "Helios_Crew_Briefing_Agent",
+                "value": "Helios_Crew_Briefing_Agent"
+              }
+            ],
+            "optionsPerPage": 9999
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Helios_Installation_Assistant"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Select the version of Helios_Installation_Assistant to retrieve",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Select the version of Helios_Installation_Assistant to retrieve",
+            "description": "The latest version is proposed. An active version is the one users talk to",
+            "choices": [
+              {
+                "title": "3 (Active)",
+                "value": 3
+              },
+              {
+                "title": "2 (Inactive)",
+                "value": 2
+              },
+              {
+                "title": "1 (Inactive)",
+                "value": 1
+              }
+            ],
+            "optionsPerPage": 9999,
+            "initial": 0
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "3 (Active)"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Retrieving agent Helios_Installation_Assistant version 3 with its dependencies..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf project retrieve start --metadata \"AiAgentDefinitionVersion:Helios_Installation_Assistant#3\" --root-type-with-dependencies AiAgentDefinitionVersion --target-org admin@helios-solar.demo.uat --ignore-conflicts --wait 60 --json",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf project retrieve start --metadata \"AiAgentDefinitionVersion:Helios_Installation_Assistant#3\" --root-type-with-dependencies AiAgentDefinitionVersion --target-org admin@helios-solar.demo.uat --ignore-conflicts --wait 60 --json",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Version 3 of agent Helios_Installation_Assistant written as the bundle of the agent in force-app/main/default/aiAuthoringBundles/Helios_Installation_Assistant."
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "table",
+        "message": "[{\"Type\":\"AiAuthoringBundle\",\"Member\":\"Helios_Installation_Assistant\"},{\"Type\":\"ApexClass\",\"Member\":\"InstallationScheduler\"},{\"Type\":\"ApexClass\",\"Member\":\"InstallationSlotFinder\"},{\"Type\":\"ApexClass\",\"Member\":\"PanelBatchStatusAction\"},{\"Type\":\"Flow\",\"Member\":\"Installation_Assign_Crew\"},{\"Type\":\"Flow\",\"Member\":\"Installation_Close_Check\"},{\"Type\":\"Flow\",\"Member\":\"Installation_Get_Status\"},{\"Type\":\"Flow\",\"Member\":\"Panel_Batch_Get_Status\"},{\"Type\":\"GenAiPromptTemplate\",\"Member\":\"Helios_Installation_Summary\"},{\"Type\":\"GenAiPromptTemplate\",\"Member\":\"Helios_Reschedule_Confirmation\"},{\"Type\":\"GenAiFunction\",\"Member\":\"Helios_Find_Available_Slots\"},{\"Type\":\"GenAiFunction\",\"Member\":\"Helios_Create_Escalation_Case\"}]"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/agent-retrieved-components-features__HEL-42-installation-checklist.csv",
+        "title": "Retrieved agent components (CSV)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/xls/agent-retrieved-components-features__HEL-42-installation-checklist.xlsx",
+        "title": "Retrieved agent components (XLSX)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "12 components added to manifest/package.xml."
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "6 components named by the agent are not in the project."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "table",
+        "message": "[{\"Type\":\"CustomField\",\"Name\":\"Installation__c.Roof_Type__c\",\"Referenced by\":\"force-app/main/default/aiAuthoringBundles/Helios_Installation_Assistant_3/Helios_Installation_Assistant_3.agent\"},{\"Type\":\"CustomField\",\"Name\":\"Installation__c.Scheduled_Slot__c\",\"Referenced by\":\"force-app/main/default/aiAuthoringBundles/Helios_Installation_Assistant_3/Helios_Installation_Assistant_3.agent\"},{\"Type\":\"CustomField\",\"Name\":\"Panel_Batch__c.Delivery_Status__c\",\"Referenced by\":\"force-app/main/default/aiAuthoringBundles/Helios_Installation_Assistant_3/Helios_Installation_Assistant_3.agent\"},{\"Type\":\"CustomObject\",\"Name\":\"Installation__c\",\"Referenced by\":\"force-app/main/default/aiAuthoringBundles/Helios_Installation_Assistant_3/Helios_Installation_Assistant_3.agent\"},{\"Type\":\"CustomObject\",\"Name\":\"Panel_Batch__c\",\"Referenced by\":\"force-app/main/default/aiAuthoringBundles/Helios_Installation_Assistant_3/Helios_Installation_Assistant_3.agent\"},{\"Type\":\"CustomObject\",\"Name\":\"Crew_Capacity__c\",\"Referenced by\":\"force-app/main/default/aiAuthoringBundles/Helios_Installation_Assistant_3/Helios_Installation_Assistant_3.agent\"}]"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/agent-missing-dependencies-features__HEL-42-installation-checklist.csv",
+        "title": "Components the agent may need (CSV)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/xls/agent-missing-dependencies-features__HEL-42-installation-checklist.xlsx",
+        "title": "Components the agent may need (XLSX)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "The Salesforce CLI does not retrieve custom objects, custom fields or Data 360 objects with an agent. Retrieve the ones the target org does not have, and add them to package.xml."
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "Agent Helios_Installation_Assistant runs as user helios.agent@helios-solar.demo.uat (force-app/main/default/aiAuthoringBundles/Helios_Installation_Assistant/Helios_Installation_Assistant.agent). This user exists only in the org you retrieved from: before the first deployment, add a replacement rule (botUser, default_agent_user) with the user of each org. https://sfdx-hardis.cloudity.com/salesforce-ci-cd-agentforce-agents/"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Agent Helios_Installation_Assistant version 3 retrieved. Review the files, then commit them."
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

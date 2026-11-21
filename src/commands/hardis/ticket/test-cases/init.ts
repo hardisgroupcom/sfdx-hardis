@@ -18,12 +18,21 @@ import {
 } from '../../../../common/utils/testNotebookUtils.js';
 import { buildTemplateCases, NotebookFormat, writeNotebook } from '../../../../common/utils/testNotebookRender.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class TicketTestCasesInit extends SfCommand<any> {
   public static title = 'Initialize the test cases of a ticket';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'test-cases',
+      title: 'Test cases notebook',
+      description: 'One row per test case of the notebook, with the tester columns left empty to fill in; the file name continues with the ticket number and the kind of notebook.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

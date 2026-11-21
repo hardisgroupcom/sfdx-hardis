@@ -9,6 +9,7 @@ import { diffLines } from 'diff';
 import { isRetrofit } from './orgConfigUtils.js';
 import { isPromotionBranchName } from './promotionBranchUtils.js';
 import { quoteShellArgument } from './stringUtils.js';
+import { getTargetBranchName } from './targetBranchUtils.js';
 
 /** What to deploy for a file whose sandbox version differs from the parent branch version */
 export type BackpromoteDiffChoice = 'git' | 'org' | 'merge';
@@ -195,8 +196,8 @@ export function classifyBackpromoteCurrentBranch(currentBranch: string, majorBra
 
 /**
  * The parent branches a backpromote may come from: the development branch, then the branches of
- * `availableTargetBranches`, in that order and without duplicates. Nothing else, whatever
- * config/branches declares.
+ * `availableTargetBranches` (an entry can be "branch,label": the name only), in that order and without
+ * duplicates. Nothing else, whatever config/branches declares.
  */
 export function listAllowedBackpromoteParentBranches(config: { developmentBranch?: string | null; availableTargetBranches?: string[] | null } | null | undefined): string[] {
   const branches: string[] = [];
@@ -208,7 +209,7 @@ export function listAllowedBackpromoteParentBranches(config: { developmentBranch
   };
   add(config?.developmentBranch);
   for (const branch of config?.availableTargetBranches || []) {
-    add(branch);
+    add(getTargetBranchName(branch));
   }
   return branches;
 }

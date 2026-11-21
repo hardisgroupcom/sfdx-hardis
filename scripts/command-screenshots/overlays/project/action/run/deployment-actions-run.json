@@ -1,0 +1,11 @@
+{
+  "mode": "replace",
+  "title": "Deployment actions run in your org",
+  "columns": ["Action", "Status"],
+  "rows": [
+    { "Action": "Pause the installation reminders", "Status": "success" },
+    { "Action": "Import the Helios reference data", "Status": "success" },
+    { "Action": "Notify the installation crew", "Status": "success" },
+    { "Action": "Check the inverter catalog in Setup", "Status": "manual" }
+  ]
+}

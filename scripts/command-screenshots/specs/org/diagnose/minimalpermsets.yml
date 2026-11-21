@@ -1,0 +1,8 @@
+command: hardis:org:diagnose:minimalpermsets
+run: sf hardis:org:diagnose:minimalpermsets --threshold 16
+org: showcase
+caption: "Permission sets of the Helios project with 16 permissions or fewer, candidates to merge into another one"
+pills:
+  - text: "Minimal Permission Sets"
+    legend: "One row per permission set, with its file and its number of permissions"
+    button: true

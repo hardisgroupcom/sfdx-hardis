@@ -1,0 +1,150 @@
+{
+  "mode": "replace",
+  "title": "DORA Report - Deployment Data",
+  "rows": [
+    {
+      "Branch": "main",
+      "Type": "Deployment",
+      "Status": "succeeded",
+      "Job": "Deploy Salesforce metadata",
+      "TriggeredBy": "victor-martin",
+      "QueuedDate": "2026-11-14T16:02:11Z",
+      "StartDate": "2026-11-14T16:02:56Z",
+      "CompletedDate": "2026-11-14T16:23:56Z",
+      "PullRequest": 129,
+      "Url": "https://github.com/helios-energy/salesforce/actions/runs/9498120411"
+    },
+    {
+      "Branch": "preprod",
+      "Type": "Deployment",
+      "Status": "succeeded",
+      "Job": "Deploy Salesforce metadata",
+      "TriggeredBy": "victor-martin",
+      "QueuedDate": "2026-11-14T09:40:25Z",
+      "StartDate": "2026-11-14T09:41:10Z",
+      "CompletedDate": "2026-11-14T09:58:10Z",
+      "PullRequest": 128,
+      "Url": "https://github.com/helios-energy/salesforce/actions/runs/9496654302"
+    },
+    {
+      "Branch": "uat",
+      "Type": "Validation",
+      "Status": "succeeded",
+      "Job": "Validate Pull Request",
+      "TriggeredBy": "tomasz-nowak",
+      "QueuedDate": "2026-11-13T15:21:07Z",
+      "StartDate": "2026-11-13T15:21:52Z",
+      "CompletedDate": "2026-11-13T15:45:52Z",
+      "PullRequest": 125,
+      "Url": "https://github.com/helios-energy/salesforce/actions/runs/9494871166"
+    },
+    {
+      "Branch": "uat",
+      "Type": "Deployment",
+      "Status": "succeeded",
+      "Job": "Deploy Salesforce metadata",
+      "TriggeredBy": "tomasz-nowak",
+      "QueuedDate": "2026-11-13T10:11:48Z",
+      "StartDate": "2026-11-13T10:12:33Z",
+      "CompletedDate": "2026-11-13T10:26:33Z",
+      "PullRequest": 125,
+      "Url": "https://github.com/helios-energy/salesforce/actions/runs/9491203358"
+    },
+    {
+      "Branch": "integration",
+      "Type": "Deployment",
+      "Status": "failed",
+      "Job": "Deploy Salesforce metadata",
+      "TriggeredBy": "amelie-dubois",
+      "QueuedDate": "2026-11-12T13:50:30Z",
+      "StartDate": "2026-11-12T13:51:15Z",
+      "CompletedDate": "2026-11-12T14:00:15Z",
+      "PullRequest": 124,
+      "Url": "https://github.com/helios-energy/salesforce/actions/runs/9488740021"
+    },
+    {
+      "Branch": "integration",
+      "Type": "Validation",
+      "Status": "failed",
+      "Job": "Validate Pull Request",
+      "TriggeredBy": "amelie-dubois",
+      "QueuedDate": "2026-11-12T13:12:02Z",
+      "StartDate": "2026-11-12T13:12:47Z",
+      "CompletedDate": "2026-11-12T13:20:47Z",
+      "PullRequest": 124,
+      "Url": "https://github.com/helios-energy/salesforce/actions/runs/9488102907"
+    },
+    {
+      "Branch": "integration",
+      "Type": "Deployment",
+      "Status": "succeeded",
+      "Job": "Deploy Salesforce metadata",
+      "TriggeredBy": "lucia-fernandez",
+      "QueuedDate": "2026-11-12T08:47:19Z",
+      "StartDate": "2026-11-12T08:48:04Z",
+      "CompletedDate": "2026-11-12T08:59:04Z",
+      "PullRequest": 126,
+      "Url": "https://github.com/helios-energy/salesforce/actions/runs/9485516640"
+    },
+    {
+      "Branch": "integration",
+      "Type": "Validation",
+      "Status": "succeeded",
+      "Job": "Validate Pull Request",
+      "TriggeredBy": "lucia-fernandez",
+      "QueuedDate": "2026-11-11T16:30:44Z",
+      "StartDate": "2026-11-11T16:31:29Z",
+      "CompletedDate": "2026-11-11T16:43:29Z",
+      "PullRequest": 126,
+      "Url": "https://github.com/helios-energy/salesforce/actions/runs/9482067514"
+    },
+    {
+      "Branch": "uat",
+      "Type": "Deployment",
+      "Status": "succeeded",
+      "Job": "Deploy Salesforce metadata",
+      "TriggeredBy": "mariia-kowalska",
+      "QueuedDate": "2026-11-10T11:05:36Z",
+      "StartDate": "2026-11-10T11:06:21Z",
+      "CompletedDate": "2026-11-10T11:21:21Z",
+      "PullRequest": 118,
+      "Url": "https://github.com/helios-energy/salesforce/actions/runs/9479355890"
+    },
+    {
+      "Branch": "integration",
+      "Type": "Deployment",
+      "Status": "succeeded",
+      "Job": "Deploy Salesforce metadata",
+      "TriggeredBy": "romain-lefebvre",
+      "QueuedDate": "2026-11-09T14:26:51Z",
+      "StartDate": "2026-11-09T14:27:36Z",
+      "CompletedDate": "2026-11-09T14:37:36Z",
+      "PullRequest": 120,
+      "Url": "https://github.com/helios-energy/salesforce/actions/runs/9476218432"
+    },
+    {
+      "Branch": "preprod",
+      "Type": "Deployment",
+      "Status": "canceled",
+      "Job": "Deploy Salesforce metadata",
+      "TriggeredBy": "victor-martin",
+      "QueuedDate": "2026-11-07T10:02:13Z",
+      "StartDate": "2026-11-07T10:02:58Z",
+      "CompletedDate": "2026-11-07T10:05:58Z",
+      "PullRequest": "",
+      "Url": "https://github.com/helios-energy/salesforce/actions/runs/9472840975"
+    },
+    {
+      "Branch": "integration",
+      "Type": "Validation",
+      "Status": "succeeded",
+      "Job": "Validate Pull Request",
+      "TriggeredBy": "mariia-kowalska",
+      "QueuedDate": "2026-11-06T09:18:27Z",
+      "StartDate": "2026-11-06T09:19:12Z",
+      "CompletedDate": "2026-11-06T09:32:12Z",
+      "PullRequest": 118,
+      "Url": "https://github.com/helios-energy/salesforce/actions/runs/9469504128"
+    }
+  ]
+}

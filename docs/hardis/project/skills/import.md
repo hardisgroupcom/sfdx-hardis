@@ -36,6 +36,16 @@ Key functionalities:
 </details>
 
 
+## Screenshots
+
+![Type the URL of the git repository that holds the skills](../../../assets/images/commands/project/skills/import-1.webp)
+
+_Type the URL of the git repository that holds the skills_
+
+![The Helios Energy skills, agents and rules copied into the .claude folder of the project](../../../assets/images/commands/project/skills/import.webp)
+
+_The Helios Energy skills, agents and rules copied into the .claude folder of the project_
+
 ## Parameters
 
 | Name         |  Type   | Description                                                                                                      | Default | Required | Options |

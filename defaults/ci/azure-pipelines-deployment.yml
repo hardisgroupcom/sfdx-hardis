@@ -93,6 +93,9 @@ jobs:
           SFDX_DEPLOY_WAIT_MINUTES: $(SFDX_DEPLOY_WAIT_MINUTES)
           SFDX_AUTH_URL_TECHNICAL_ORG: $(SFDX_AUTH_URL_TECHNICAL_ORG)
           CI: "true"
+          # With release versioning (releaseVersioning: true in a branch config), give the Build Service
+          # the "Create tag" permission on the repository: sfdx-hardis creates the version tags
+          # https://sfdx-hardis.cloudity.com/salesforce-ci-cd-release-versioning/
           SYSTEM_ACCESSTOKEN: $(System.AccessToken)
           CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
           SYSTEM_COLLECTIONURI: $(System.CollectionUri)

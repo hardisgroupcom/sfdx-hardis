@@ -16,12 +16,21 @@ import { PromisePool } from '@supercharge/promise-pool';
 import sortArray from '../../../../common/utils/sortArray.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { t } from '../../../../common/utils/i18n.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 // Main command class for extracting Salesforce org profiles and related metadata
 export default class ProfilesExtract extends SfCommand<void> {
+  public static reports: CommandReport[] = [
+    {
+      file: 'profiles-extract',
+      title: 'Profiles extract',
+      description: 'One workbook with a sheet per extract (objects, fields, field access, record types, applications, permissions, tabs, permission sets, personas), one row per element, to define the access of each persona.',
+    },
+  ];
+
   public static readonly description = `
 ## Command Behavior
 

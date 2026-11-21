@@ -30,6 +30,8 @@ In the XLSX file, the **Metadata Changes** tab lists for each metadata item the 
 
 The command can determine the release scope from git tags (semver), branch names, commit ranges, or date ranges.
 
+With a semver `--release-tag` and no `--previous-tag`, the previous tag follows the rules of [release versioning](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-release-versioning/): a plain version (`v1.5.0`) starts from the previous plain version, never from one of its own release candidates, and a release candidate created by a deployment (`v1.5.0-rc.3`) starts from the previous version of its branch, which is also its target branch.
+
 This command is part of [sfdx-hardis Documentation](https://sfdx-hardis.cloudity.com/salesforce-project-documentation/).
 
 <details markdown="1">
@@ -79,6 +81,14 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 
 <!-- training-links:end -->
 
+
+## Screenshots
+
+![The release notes of what uat will bring to preprod - four Pull Requests, their tickets, the metadata delta and the deployment actions](../../assets/images/commands/doc/release-notes.webp)
+
+_The release notes of what uat will bring to preprod - four Pull Requests, their tickets, the metadata delta and the deployment actions_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
 
 ## Parameters
 

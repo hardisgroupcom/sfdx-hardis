@@ -1,0 +1,122 @@
+{
+  "command": "hardis:org:purge:profile",
+  "exitCode": 0,
+  "events": [
+    { "delay": 0, "message": { "event": "initClient" } },
+    { "delay": 300, "message": { "event": "commandLogLine", "logType": "action", "message": "Starting profile attributes purge process on org: https://helios-solar--uat.sandbox.my.salesforce.com" } },
+    { "delay": 400, "message": { "event": "commandLogLine", "logType": "action", "message": "Loading full org manifest for profile purge..." } },
+    { "delay": 300, "message": { "event": "commandLogLine", "logType": "action", "message": "Generating full org manifest for profile retrieval..." } },
+    {
+      "delay": 300,
+      "message": { "event": "commandSubCommandStart", "data": { "command": "sf hardis:org:generate:packagexmlfull --outputfile hardis-report/org-package-xml-full.xml --target-org admin@helios-solar.demo.uat", "cwd": "." } }
+    },
+    {
+      "delay": 6500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": { "command": "sf hardis:org:generate:packagexmlfull --outputfile hardis-report/org-package-xml-full.xml --target-org admin@helios-solar.demo.uat", "cwd": ".", "success": true, "result": { "status": 0, "stdout": "" } }
+      }
+    },
+    { "delay": 300, "message": { "event": "commandLogLine", "logType": "action", "message": "Retrieving installed packages to list namespaces..." } },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Select the namespaces you want to ignore in the selected profiles that will be processed.",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "multiselect",
+            "name": "namespaces",
+            "message": "🦙 Select the namespaces you want to ignore in the selected profiles that will be processed.",
+            "description": "You will NOT disable access to elements related to namespaces that you will select",
+            "choices": [
+              { "title": "standard", "value": "standard" },
+              { "title": "sfdcInternalInt", "value": "sfdcInternalInt" },
+              { "title": "SBQQ", "value": "SBQQ" }
+            ]
+          }
+        ]
+      }
+    },
+    { "delay": 300, "message": { "event": "commandLogLine", "logType": "action", "message": "Filtering full org manifest to remove unwanted namespaces..." } },
+    { "delay": 400, "message": { "event": "commandLogLine", "logType": "action", "message": "Filtering full org manifest for profile purge..." } },
+    { "delay": 400, "message": { "event": "commandLogLine", "logType": "action", "message": "Retrieving metadatas for profile purge..." } },
+    {
+      "delay": 300,
+      "message": { "event": "commandSubCommandStart", "data": { "command": "sf project retrieve start --manifest \"hardis-report/org-package-xml-filtered-profile-purge.xml\" --target-org admin@helios-solar.demo.uat --ignore-conflicts --json", "cwd": "." } }
+    },
+    {
+      "delay": 9000,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": { "command": "sf project retrieve start --manifest \"hardis-report/org-package-xml-filtered-profile-purge.xml\" --target-org admin@helios-solar.demo.uat --ignore-conflicts --json", "cwd": ".", "success": true, "result": { "status": 0, "stdout": "" } }
+      }
+    },
+    { "delay": 300, "message": { "event": "commandLogLine", "logType": "action", "message": "Muting unwanted profile attributes..." } },
+    { "delay": 300, "message": { "event": "commandLogLine", "logType": "action", "message": "Processing profile: Helios Crew" } },
+    { "delay": 1200, "message": { "event": "commandLogLine", "logType": "success", "message": "Profile Helios Crew processed and unwanted attributes muted." } },
+    {
+      "delay": 300,
+      "message": { "event": "reportFile", "file": "force-app/main/default/profiles/Helios Crew.profile-meta.xml", "title": "See updated Helios Crew profile ", "type": "report" }
+    },
+    {
+      "delay": 300,
+      "message": { "event": "reportFile", "file": "hardis-report/profile-muted-attributes.csv", "title": "Profile muted attributes report (CSV)", "type": "report" }
+    },
+    {
+      "delay": 200,
+      "message": { "event": "reportFile", "file": "hardis-report/xls/profile-muted-attributes.xlsx", "title": "Profile muted attributes report (XLSX)", "type": "report", "main": true }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Do you want to deploy Helios Crew profiles back to the org now?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Do you want to deploy Helios Crew profiles back to the org now?",
+            "description": "All selected profiles will be deployed to the org with muted attributes",
+            "choices": [
+              { "title": "✅ Yes", "value": true },
+              { "title": "❌ No", "value": false }
+            ],
+            "initial": 0
+          }
+        ]
+      }
+    },
+    { "delay": 300, "message": { "event": "commandLogLine", "logType": "action", "message": "Deploying muted profiles back to the org..." } },
+    {
+      "delay": 300,
+      "message": { "event": "commandSubCommandStart", "data": { "command": "sf project deploy start --metadata \"Profile:Helios Crew\" --target-org admin@helios-solar.demo.uat --ignore-conflicts --json", "cwd": "." } }
+    },
+    {
+      "delay": 7000,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": { "command": "sf project deploy start --metadata \"Profile:Helios Crew\" --target-org admin@helios-solar.demo.uat --ignore-conflicts --json", "cwd": ".", "success": true, "result": { "status": 0, "stdout": "" } }
+      }
+    },
+    { "delay": 300, "message": { "event": "commandLogLine", "logType": "action", "message": "Successfully deployed 1" } },
+    { "delay": 200, "message": { "event": "commandLogLine", "logType": "success", "message": "Profiles deployed successfully:\nHelios Crew" } },
+    { "delay": 200, "message": { "event": "closeClient", "status": "success" } }
+  ]
+}

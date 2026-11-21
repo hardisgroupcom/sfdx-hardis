@@ -1,0 +1,21 @@
+command: hardis:org:purge:flow
+run: sf hardis:org:purge:flow
+org: throwaway
+caption: "Draft, inactive and obsolete Flow versions deleted from the Helios test org, with the list before and the result after"
+answers:
+  - q: "Please select the flow you want to clean"
+    choice: "^All flows$"
+  - q: "Please select the status"
+    choice: "^(Draft|Inactive|Obsolete)$"
+    shot: true
+    caption: "Pick the statuses of the Flow versions to delete"
+  - q: "Do you confirm you want to delete these"
+    choice: "Yes$"
+    optional: true
+pills:
+  - text: "Flow Versions to Delete"
+    legend: "The versions selected, to check before confirming"
+    button: true
+  - text: "Flow Versions Deletion Results"
+    legend: "The deletion status of each version"
+    button: true

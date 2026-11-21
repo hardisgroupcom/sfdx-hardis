@@ -1484,6 +1484,13 @@ export function listMetadataTypes() {
         xmlName: 'DiscoveryStory',
       },
       {
+        directoryName: 'docProcDefinitions',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'docProcDefinition',
+        xmlName: 'DocProcDefinition',
+      },
+      {
         directoryName: 'documents',
         inFolder: true,
         metaFile: true,

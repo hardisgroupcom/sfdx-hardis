@@ -1,0 +1,84 @@
+{
+  "mode": "replace",
+  "title": "Apex errors",
+  "columns": [
+    "Source",
+    "Status",
+    "JobType",
+    "Operation",
+    "Exception",
+    "StackTrace",
+    "ErrorStep",
+    "StartTime",
+    "RecordId",
+    "UserName",
+    "UserEmail"
+  ],
+  "rows": [
+    {
+      "Source": "ApexLog",
+      "Status": "System.NullPointerException: Attempt to de-reference a null object",
+      "JobType": "",
+      "Operation": "/apex/InstallationPrintout",
+      "Exception": "",
+      "StackTrace": "",
+      "ErrorStep": "",
+      "StartTime": "2026-11-16T15:42:10.000Z",
+      "RecordId": "07LcU0000HelA01",
+      "UserName": "Mariia Kowalska",
+      "UserEmail": "mariia.kowalska@helios-solar.demo"
+    },
+    {
+      "Source": "AsyncApexJob",
+      "Status": "Failed",
+      "JobType": "BatchApex",
+      "Operation": "CrewAssignmentBatch.execute",
+      "Exception": "First error: Too many SOQL queries: 101",
+      "StackTrace": "",
+      "ErrorStep": "",
+      "StartTime": "2026-11-16T06:02:44.000Z",
+      "RecordId": "707cU0000HelA02",
+      "UserName": "Victor Martin",
+      "UserEmail": "victor.martin@helios-solar.demo"
+    },
+    {
+      "Source": "ApexLog",
+      "Status": "System.DmlException: FIELD_CUSTOM_VALIDATION_EXCEPTION, Crew size must be at least 2",
+      "JobType": "",
+      "Operation": "InstallationTrigger",
+      "Exception": "",
+      "StackTrace": "",
+      "ErrorStep": "",
+      "StartTime": "2026-11-15T10:18:03.000Z",
+      "RecordId": "07LcU0000HelA03",
+      "UserName": "Romain Lefebvre",
+      "UserEmail": "romain.lefebvre@helios-solar.demo"
+    },
+    {
+      "Source": "AsyncApexJob",
+      "Status": "Failed",
+      "JobType": "Queueable",
+      "Operation": "InverterWarrantySync.execute",
+      "Exception": "System.CalloutException: Read timed out",
+      "StackTrace": "",
+      "ErrorStep": "",
+      "StartTime": "2026-11-14T22:30:12.000Z",
+      "RecordId": "707cU0000HelA04",
+      "UserName": "Automated Process",
+      "UserEmail": ""
+    },
+    {
+      "Source": "ApexLog",
+      "Status": "System.LimitException: Apex CPU time limit exceeded",
+      "JobType": "",
+      "Operation": "PanelBatchService.allocate",
+      "Exception": "",
+      "StackTrace": "",
+      "ErrorStep": "",
+      "StartTime": "2026-11-13T09:05:51.000Z",
+      "RecordId": "07LcU0000HelA05",
+      "UserName": "Lucia Fernandez",
+      "UserEmail": "lucia.fernandez@helios-solar.demo"
+    }
+  ]
+}

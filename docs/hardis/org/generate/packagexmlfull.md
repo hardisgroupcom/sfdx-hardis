@@ -47,6 +47,14 @@ In agent mode:
 - `--target-org` is required; an error is thrown if not provided.
 
 
+## Screenshots
+
+![A package.xml listing every metadata of the Helios org, written to hardis-report and opened from its button](../../../assets/images/commands/org/generate/packagexmlfull.webp)
+
+_A package.xml listing every metadata of the Helios org, written to hardis-report and opened from its button_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

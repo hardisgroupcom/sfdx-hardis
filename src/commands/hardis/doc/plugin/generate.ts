@@ -20,6 +20,12 @@ import {
   selectCommands,
 } from '../../../../common/docBuilder/pluginDocUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
+import {
+  COMMAND_SCREENSHOTS_MANIFEST,
+  findCommandScreenshotsEntry,
+  listMissingCommandScreenshots,
+  readCommandScreenshotsManifest,
+} from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -45,6 +51,7 @@ Key functionalities:
 - **Zensical Integration:** Sets up the basic documentation project structure and updates the \`mkdocs.yml\` navigation to include the generated command documentation.
 - **Default File Copying:** Copies the documentation configuration files and GitHub Actions workflows to your project, so continuous documentation deployment works out of the box.
 - **Selected commands only:** With \`--commands\`, only the pages of the commands you name are written. It takes command ids and \`*\` patterns, separated by commas or by repeating the flag, and stops when one of them matches no command. \`index.md\`, \`commands.md\` and the navigation are then rewritten only when a command was added or removed. A new command always gets its page, even when it is not named.
+- **Screenshots and reports:** When the project has a \`docs/assets/command-screenshots.json\` file, each page shows the screenshots of its command running in VS Code, with the legend of their numbered pills, after the description. The reports a command declares are listed before the parameters, each with a screenshot of the file opened in Excel. The command then warns about the commands with no screenshot and the reports with no image. sfdx-hardis builds that file with \`yarn screenshots:commands\`.
 - **Removed commands:** When a command no longer exists, its page is not deleted: it is replaced by a short page saying so, which keeps old links working. That page is left out of the navigation, the lists of commands and the search, and you can edit it, for example to name the command to use instead.
 
 The pages are built from the compiled commands of the plugin: compile it before running this command.
@@ -70,6 +77,8 @@ The command's technical implementation involves:
   - A front matter block: \`title\` is the command id followed by its \`title\`, \`description\` is its \`summary\`, else the first paragraph of prose of its \`description\`, as plain text cut at 300 characters.
   - The command ID as the main heading.
   - The command's \`description\` property.
+  - A Screenshots section, from the entry of the command in \`docs/assets/command-screenshots.json\`: each image, its caption and its pills, as \`**(n)**\` legends.
+  - A Reports section, from the \`reports\` static property of the command (\`file\`, \`title\`, \`description\`), with the image of each report from the same file.
   - A table of parameters (flags), including their name, type, description, default value, required status, and available options. It dynamically extracts this information from the command's \`flags\` property. A default that depends on the machine building the documentation, such as the default org, is left out.
   - Code blocks for each example provided in the command's \`examples\` property.
 - **Table Alignment:** The tables of the generated pages are padded the way \`markdown-table-formatter\` pads them, so a formatter run on the documentation changes nothing.
@@ -178,11 +187,21 @@ In agent mode:
         c.cyan(t('docPluginGeneratingSelectedCommands', { selected: commandIdsToGenerate.length, total: allCommandIds.length }))
       );
     }
+    const screenshots = readCommandScreenshotsManifest(docsRoot);
     const generatedFiles: string[] = [];
     for (const command of config.commands) {
       if (commandIdsToGenerate.includes(command.id)) {
-        generatedFiles.push(await this.writeDocFile(docsRoot, getCommandDocRelativePath(command.id), buildCommandDocMarkdown(command)));
+        generatedFiles.push(
+          await this.writeDocFile(
+            docsRoot,
+            getCommandDocRelativePath(command.id),
+            buildCommandDocMarkdown(command, findCommandScreenshotsEntry(screenshots, command.id, config.commands))
+          )
+        );
       }
+    }
+    if (screenshots) {
+      this.warnMissingScreenshots(docsRoot, screenshots, config.commands.filter((command) => commandIdsToGenerate.includes(command.id)), config.commands);
     }
 
     // Replace the pages of the commands that do not exist anymore
@@ -266,6 +285,21 @@ In agent mode:
       indexRebuilt: rebuildIndex,
       navRebuilt,
     };
+  }
+
+  // One warning for the commands with no screenshot, one for the reports with no image
+  private warnMissingScreenshots(docsRoot: string, screenshots: any, commands: any[], allCommands: any[]): void {
+    const missing = listMissingCommandScreenshots(docsRoot, screenshots, commands, allCommands);
+    if (missing.commands.length > 0) {
+      uxLog(
+        "warning",
+        this,
+        c.yellow(t('docPluginCommandsWithoutScreenshot', { count: missing.commands.length, manifest: `docs/${COMMAND_SCREENSHOTS_MANIFEST}`, commands: missing.commands.join(', ') }))
+      );
+    }
+    if (missing.reports.length > 0) {
+      uxLog("warning", this, c.yellow(t('docPluginReportsWithoutScreenshot', { count: missing.reports.length, reports: missing.reports.join(', ') })));
+    }
   }
 
   // Write a page under the docs folder, and return its path from the project root

@@ -48,6 +48,30 @@ sf hardis:lint:access --agent
 
 In agent mode, the interactive prompt to automatically add missing accesses to Permission Sets is skipped. The report is still generated and notifications are sent.
 
+## Screenshots
+
+![The command offers to add the missing accesses to permission sets](../../assets/images/commands/lint/access-1.webp)
+
+_The command offers to add the missing accesses to permission sets_
+
+![An Apex class that no permission set gives access to, found in the project sources](../../assets/images/commands/lint/access.webp)
+
+_An Apex class that no permission set gives access to, found in the project sources_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Missing access
+
+One row per metadata element (Apex class or custom field) that no permission set or profile gives access to, or that is declared several times in a permission set.
+
+Files: `lint-access-*.csv`, `xls/lint-access-*.xlsx`
+
+![Missing access report in Excel](../../assets/images/commands/lint/access-report-lint-access.webp)
+
 ## Parameters
 
 | Name                   |  Type   | Description                                                       |  Default  | Required | Options |

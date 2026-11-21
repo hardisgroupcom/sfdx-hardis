@@ -1,0 +1,240 @@
+{
+  "command": "hardis:doc:mkdocs-to-salesforce",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Managing Zensical local installation..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "pip install zensical mdx_truly_sane_lists",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "pip install zensical mdx_truly_sane_lists",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Generating HTML pages with Zensical..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "zensical build",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "zensical build",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Creating Static Resource SfdxHardis_MkDocsSite_CICD metadata."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Creating Static Resource SfdxHardis_MkDocsSite_CICD metadata."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Creating Visualforce page SfdxHardis_MkDocsSite_CICD metadata."
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Deploying Static Resource SfdxHardis_MkDocsSite_CICD, Visualforce page SfdxHardis_MkDocsSite_CICD, Custom Tab SfdxHardis_MkDocsSite_CICD, and Permission Set SfdxHardis_MkDocsSite_CICD to org admin@helios-solar.demo."
+      }
+    },
+    {
+      "delay": 250,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[SOQL Query] SELECT IsSandbox FROM Organization LIMIT 1",
+        "query": {
+          "id": "hardis:doc:mkdocs-to-salesforce-q1",
+          "type": "soql",
+          "status": "running"
+        }
+      }
+    },
+    {
+      "delay": 600,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[SOQL Query] Retrieved 1 records",
+        "query": {
+          "id": "hardis:doc:mkdocs-to-salesforce-q1",
+          "type": "soql",
+          "status": "completed",
+          "recordCount": 1,
+          "batchCount": 1
+        }
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf project deploy start -m StaticResource:SfdxHardis_MkDocsSite_CICD -m ApexPage:SfdxHardis_MkDocsSite_CICD -m CustomTab:SfdxHardis_MkDocsSite_CICD -m PermissionSet:SfdxHardis_MkDocsSite_CICD --ignore-conflicts --ignore-warnings --target-org admin@helios-solar.demo --test-level NoTestRun",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf project deploy start -m StaticResource:SfdxHardis_MkDocsSite_CICD -m ApexPage:SfdxHardis_MkDocsSite_CICD -m CustomTab:SfdxHardis_MkDocsSite_CICD -m PermissionSet:SfdxHardis_MkDocsSite_CICD --ignore-conflicts --ignore-warnings --target-org admin@helios-solar.demo --test-level NoTestRun",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "SFDX project documentation uploaded to Salesforce and is available in the Custom Tab SfdxHardis_MkDocsSite_CICD."
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Assigning Permission Sets..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Assigning SfdxHardis_MkDocsSite_CICD to org user admin@helios-solar.demo"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf org assign permset --name \"SfdxHardis_MkDocsSite_CICD\" --target-org admin@helios-solar.demo",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf org assign permset --name \"SfdxHardis_MkDocsSite_CICD\" --target-org admin@helios-solar.demo",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Opening the Custom Tab SfdxHardis_MkDocsSite_CICD in your default browser."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "If you have an access issue, make sure the tab SfdxHardis_MkDocsSite_CICD is not hidden on your profile."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf org open --path lightning/n/SfdxHardis_MkDocsSite_CICD --target-org admin@helios-solar.demo",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf org open --path lightning/n/SfdxHardis_MkDocsSite_CICD --target-org admin@helios-solar.demo",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

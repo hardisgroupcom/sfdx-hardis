@@ -1,0 +1,46 @@
+{
+  "mode": "replace",
+  "title": "Errors summary",
+  "columns": [
+    "Type",
+    "Operation",
+    "Number of errors"
+  ],
+  "rows": [
+    {
+      "Type": "Flow",
+      "Operation": "Installation Crew Warning",
+      "Number of errors": 14
+    },
+    {
+      "Type": "Apex",
+      "Operation": "CrewAssignmentBatch.execute",
+      "Number of errors": 9
+    },
+    {
+      "Type": "Apex",
+      "Operation": "/apex/InstallationPrintout",
+      "Number of errors": 6
+    },
+    {
+      "Type": "Apex",
+      "Operation": "InstallationTrigger",
+      "Number of errors": 4
+    },
+    {
+      "Type": "Flow",
+      "Operation": "Panel Batch Arrival",
+      "Number of errors": 3
+    },
+    {
+      "Type": "Apex",
+      "Operation": "InverterWarrantySync.execute",
+      "Number of errors": 2
+    },
+    {
+      "Type": "Apex",
+      "Operation": "PanelBatchService.allocate",
+      "Number of errors": 1
+    }
+  ]
+}

@@ -6,6 +6,7 @@ import { MetadataUtils } from '../../../common/metadata-utils/index.js';
 import { isCI, uxLog } from '../../../common/utils/index.js';
 import { promptOrgUsernameDefault } from '../../../common/utils/orgUtils.js';
 import { wrapSfdxCoreCommand } from '../../../common/utils/wrapUtils.js';
+import { emitRetrieveEvent } from '../../../common/utils/pluginEventUtils.js';
 import { t } from '../../../common/utils/i18n.js';
 
 export class SourceRetrieve extends SfCommand<any> {
@@ -21,6 +22,7 @@ Key features:
 - **Assisted Metadata Selection:** If no \`sourcepath\`, \`manifest\`, \`metadata\`, or \`packagenames\` flags are specified, an interactive menu will prompt you to select the metadata types you wish to retrieve.
 - **Assisted Org Selection:** If no target org is specified, an interactive menu will guide you to choose an org for the retrieval operation.
 - **Backward Compatibility:** While this command wraps the newer \`sf project retrieve start\`, it maintains compatibility with the older \`sfdx force:source:retrieve\` flags.
+- **Plugin events:** once the retrieve is over, the installed sf plugins that listen to \`sfdx-hardis:retrieve-done\` receive its status and what was asked (manifest, metadata, source paths, packages). [More info](https://sfdx-hardis.cloudity.com/sfdx-hardis-plugins/#react-to-sfdx-hardis-events)
 
 **Important Note:** The underlying Salesforce CLI command \`sfdx force:source:retrieve\` is being deprecated by Salesforce in November 2024. It is recommended to migrate to \`sf project retrieve start\` for future compatibility. See [Salesforce CLI Migration Guide](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_mig_deploy_retrieve.htm) for more information.
 
@@ -33,6 +35,7 @@ This command acts as an intelligent wrapper around the Salesforce CLI's source r
 - **Interactive Prompts:** It leverages \`MetadataUtils.promptMetadataTypes()\` and \`promptOrgUsernameDefault()\` to provide interactive menus for metadata and org selection when the user does not provide them as flags.
 - **Argument Transformation:** It dynamically constructs the command-line arguments for the underlying Salesforce CLI command based on user selections and provided flags.
 - **Error Handling:** It includes basic error handling, such as prompting the user to re-select an org if an issue occurs during org selection.
+- **Plugin events:** after the wrapped command returns, \`emitRetrieveEvent()\` fires the \`sfdx-hardis:retrieve-done\` oclif custom event. The status follows \`process.exitCode\`, set by \`wrapSfdxCoreCommand\`. Nothing is loaded when no plugin listens to it.
 - **Deprecation Warning:** It explicitly logs warnings about the deprecation of \`sfdx force:source:retrieve\` to inform users about upcoming changes.
 </details>
 
@@ -125,23 +128,37 @@ In agent mode, all interactive prompts are skipped and default values are used.
       )
     );
     const args = this.argv;
+    let selectedMetadata: string[] = flags.metadata || [];
     // Manage user selection for metadatas
     if (!isCI && !flags.sourcepath && !flags.manifest && !flags.metadata && !flags.packagenames) {
       const metadatas = await MetadataUtils.promptMetadataTypes();
-      const metadataArg = metadatas.map((metadataType: any) => metadataType.xmlName).join(',');
+      selectedMetadata = metadatas.map((metadataType: any) => metadataType.xmlName);
+      const metadataArg = selectedMetadata.join(',');
       args.push(...['-m', `"${metadataArg}"`]);
     }
+    let targetUsername: string | null = flags['target-org']?.getUsername() || null;
     // Manage user selection for org
     if (!isCI && !flags['target-org']) {
       let orgUsername = (flags['target-org'] as any).getUsername();
       orgUsername = await promptOrgUsernameDefault(this, orgUsername, { devHub: false, setDefault: false });
       if (orgUsername) {
+        targetUsername = orgUsername;
         args.push(...['--target-org', `"${orgUsername}"`]);
       } else {
         throw new SfError(c.yellow('For technical reasons, run again this command and select your org in the list 😊'));
       }
     }
-    return await wrapSfdxCoreCommand('sfdx force:source:retrieve', args, this, flags.debug);
+    const result = await wrapSfdxCoreCommand('sfdx force:source:retrieve', args, this, flags.debug);
+    // The plugins get the result of the retrieve: the wrapped command sets process.exitCode instead of throwing
+    await emitRetrieveEvent(this, {
+      status: (process.exitCode ?? 0) === 0 ? 'success' : 'failed',
+      manifest: flags.manifest || null,
+      metadata: selectedMetadata,
+      sourcePaths: flags.sourcepath || [],
+      packageNames: flags.packagenames || [],
+      targetUsername: targetUsername,
+    });
+    return result;
   }
 }
 /* jscpd:ignore-end */

@@ -80,6 +80,26 @@ sf hardis:ticket:post-comment --id ACME-4567 --file docs/ACME-4567/design.md --m
 The same applies in CI.
 
 
+## Screenshots
+
+![One deployment comment posted on nine Jira tickets, the two already commented ones skipped](../../assets/images/commands/ticket/post-comment.webp)
+
+_One deployment comment posted on nine Jira tickets, the two already commented ones skipped_
+
+- **(1)** The report of the run: the button opens it in Excel, the arrow lists its other files
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Posted comments
+
+One row per ticket, with its provider, whether the comment was created, updated, skipped or failed, and the URL or the error.
+
+Files: `ticket-post-comment-*.csv`, `xls/ticket-post-comment-*.xlsx`
+
+![Posted comments report in Excel](../../assets/images/commands/ticket/post-comment-report-ticket-post-comment.webp)
+
 ## Parameters
 
 | Name             |  Type   | Description                                                                                                                                                                               | Default | Required |                Options                |

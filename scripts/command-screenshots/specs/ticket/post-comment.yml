@@ -1,0 +1,5 @@
+command: hardis:ticket:post-comment
+run: sf hardis:ticket:post-comment --id HEL-42,HEL-45,HEL-48,HEL-52,HEL-57,HEL-58,HEL-61,HEL-63,HEL-66 --message "Deployed to helios-uat" --prefix "Deployment:" --skip-if-marked
+mode: replay
+org: none
+caption: "One deployment comment posted on nine Jira tickets, the two already commented ones skipped"

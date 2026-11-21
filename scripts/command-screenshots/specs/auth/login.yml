@@ -1,0 +1,14 @@
+command: hardis:auth:login
+run: sf hardis:auth:login
+mode: replay
+org: none
+caption: Log in to the Helios UAT sandbox from the browser, then give it the alias helios-uat
+answers:
+  - q: "base URL or domain"
+    choice: "Sandbox or Scratch"
+    shot: true
+    caption: Pick the type of org to log in to
+  - q: "What name do you want to give this org"
+    value: helios-uat
+    shot: true
+    caption: Give the org a short alias

@@ -38,6 +38,12 @@ Required in agent mode:
 </details>
 
 
+## Screenshots
+
+![The draft deployment actions of the branch renamed after the Pull Request #118 they now belong to](../../../assets/images/commands/project/action/link-pull-request.webp)
+
+_The draft deployment actions of the branch renamed after the Pull Request #118 they now belong to_
+
 ## Parameters
 
 | Name         |  Type   | Description                                                                  | Default | Required | Options |

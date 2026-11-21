@@ -1,0 +1,11 @@
+command: hardis:org:diagnose:unusedusers
+run: sf hardis:org:diagnose:unusedusers
+org: showcase
+caption: Active users who did not log in for 6 months, to free their licenses
+answers:
+  - q: select the period to detect users
+    choice: ^6 months
+    shot: true
+    caption: Pick the period without login
+  - q: type of licenses you want to detect
+    choice: ^All license types$

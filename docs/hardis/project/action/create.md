@@ -139,6 +139,20 @@ Use `--include-target-branches` or `--exclude-target-branches` (comma-separated,
 </details>
 
 
+## Screenshots
+
+![Declare the action for every deployment, one branch, or one Pull Request](../../../assets/images/commands/project/action/create-1.webp)
+
+_Declare the action for every deployment, one branch, or one Pull Request_
+
+![Pick the type of action](../../../assets/images/commands/project/action/create-2.webp)
+
+_Pick the type of action_
+
+![A post-deployment action that assigns the crew permission set is added to the project configuration](../../../assets/images/commands/project/action/create.webp)
+
+_A post-deployment action that assigns the crew permission set is added to the project configuration_
+
 ## Parameters
 
 | Name                         |  Type   | Description                                                                                                                                                                                                                                                 | Default | Required |                          Options                          |

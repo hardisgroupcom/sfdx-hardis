@@ -1,0 +1,120 @@
+{
+  "command": "hardis:project:action:set-status",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Reading the status of the deployment actions of 1 Pull Request(s)..."
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[DeploymentActions] Loaded 9 deployment actions state entries from PR #118"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Select the action",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Select the action",
+            "description": "Select the action",
+            "choices": [
+              {
+                "title": "Assign Helios_Delivery_Crew to the installers (failed)",
+                "value": "3f6c2a1e-8b4d-4e7a-9c15-2d7e0b9a4f61"
+              },
+              {
+                "title": "Load the Panel_Batch__c reference data (not run, a previous action failed)",
+                "value": "8a2d47c0-1e95-4b3f-a6d2-5c9e1f07b8a3"
+              },
+              {
+                "title": "Activate the Installation__c assignment rule (waiting for manual execution)",
+                "value": "c51e9b7d-4f20-4a8c-b3e6-91d0a2f6e5c4"
+              }
+            ],
+            "initial": 0,
+            "optionsPerPage": 9999
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Assign Helios_Delivery_Crew to the installers (failed)"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Recording the action of Pull Request #118 as done in uat..."
+      }
+    },
+    {
+      "delay": 1400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Action Assign Helios_Delivery_Crew to the installers recorded as done in uat."
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Failed in CI, then closed by hand by Mariia Kowalska (mariia.kowalska@helios-solar.demo.uat) on 2026-11-17 09:42 UTC. Assigned in Setup once the new licenses were added."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "1 action(s) stopped by the failure are still waiting: run them with sf hardis:project:action:run."
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "refreshPipeline"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

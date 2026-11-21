@@ -23,6 +23,7 @@
         "DANGEROUS_PERMISSIONS",
         "DEPLOYMENT",
         "DEPLOYMENTS",
+        "DOCUMENTATION",
         "DORA_REPORT",
         "FLOW_ERROR",
         "LEGACY_API",
@@ -48,7 +49,8 @@
         "UNUSED_USERS",
         "UNUSED_USERS_CRM_6_MONTHS",
         "UNUSED_USERS_EXPERIENCE_6_MONTHS",
-        "USAGE_ENTITLEMENTS"
+        "USAGE_ENTITLEMENTS",
+        "WHAT_WILL_BREAK"
       ],
       "enumNames": [
         "Active Users",
@@ -69,6 +71,7 @@
         "Dangerous Permissions",
         "Deployment",
         "Deployments",
+        "Documentation",
         "DORA Report",
         "Flow Error",
         "Legacy API",
@@ -94,7 +97,8 @@
         "Unused Users",
         "Unused Users CRM (6 months)",
         "Unused Users Experience (6 months)",
-        "Usage-Based Entitlements"
+        "Usage-Based Entitlements",
+        "What Will Break"
       ],
       "type": "string"
     },
@@ -131,7 +135,8 @@
         "UNUSED_USERS",
         "UNUSED_USERS_CRM_6_MONTHS",
         "UNUSED_USERS_EXPERIENCE_6_MONTHS",
-        "USAGE_ENTITLEMENTS"
+        "USAGE_ENTITLEMENTS",
+        "WHAT_WILL_BREAK"
       ],
       "enumNames": [
         "Active Users CRM (weekly)",
@@ -146,7 +151,7 @@
         "Consumption Alerts",
         "Dangerous Permissions",
         "Deployments",
-        "Legacy API",
+        "Legacy API (deprecated)",
         "Licenses",
         "Lint Access",
         "Metadata Status",
@@ -156,7 +161,7 @@
         "Org Health Check",
         "Org Info",
         "Org Limits",
-        "Release Updates",
+        "Release Updates (deprecated)",
         "Underused Permission Sets",
         "Unsecured Connected Apps",
         "Unused Apex Classes",
@@ -165,7 +170,8 @@
         "Unused Users",
         "Unused Users CRM (6 months)",
         "Unused Users Experience (6 months)",
-        "Usage-Based Entitlements"
+        "Usage-Based Entitlements",
+        "What Will Break"
       ],
       "type": "string"
     },
@@ -3284,6 +3290,21 @@
       "title": "Monitoring commands",
       "type": "array"
     },
+    "monitoringWhatWillBreakIgnoreUsers": {
+      "$id": "#/properties/monitoringWhatWillBreakIgnoreUsers",
+      "description": "List of usernames skipped by [hardis:org:diagnose:what-will-break](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/what-will-break/), for example an integration already being moved to another authentication method. Can also be set with env var MONITORING_WHAT_WILL_BREAK_IGNORE_USERS (comma-separated).",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-monitoring-what-will-break/",
+      "examples": [
+        [
+          "integration@mycompany.com"
+        ]
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Users ignored by What will break monitoring",
+      "type": "array"
+    },
     "notificationConfig": {
       "$id": "#/properties/notificationConfig",
       "description": "Per-notification-type routing configuration. User entries are merged by 'key' onto the built-in defaults declared in `notificationTypesDefault` (src/common/notifProvider/types.ts): provide only the channels you want to override.",
@@ -3825,6 +3846,95 @@
         "AppleIWatch"
       ],
       "title": "Project Name",
+      "type": "string"
+    },
+    "releaseVersioning": {
+      "$id": "#/properties/releaseVersioning",
+      "description": "Branch config (config/branches/.sfdx-hardis.<branch>.yml). Each successful deployment on this major branch creates a semver tag on the deployed commit: release candidates (v1.5.0-rc.3) on every versioned branch but the highest one of the chain, plain versions (v1.5.0) on the highest one, which also publishes the release notes as a GitHub or GitLab Release. The Pull Request comment, the notification, the tickets and the DevOps Pipeline of VS Code show the version.",
+      "default": false,
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-release-versioning/",
+      "examples": [
+        true,
+        false
+      ],
+      "title": "Handle release versioning",
+      "type": "boolean"
+    },
+    "releaseVersioningInitialVersion": {
+      "$id": "#/properties/releaseVersioningInitialVersion",
+      "description": "Version of the first release when the repository has no semver tag yet. A repository that already has semver tags (v1.3.0 or 1.3.0) carries on from the highest one.",
+      "default": "1.0.0",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-release-versioning/",
+      "examples": [
+        "1.0.0",
+        "0.1.0"
+      ],
+      "pattern": "^v?\\d+\\.\\d+\\.\\d+$",
+      "title": "Release versioning: first version",
+      "type": "string"
+    },
+    "releaseVersioningMinimumVersion": {
+      "$id": "#/properties/releaseVersioningMinimumVersion",
+      "description": "Lowest version the next release may get: set it to 2.0.0 to start a major version. A computed version below it is raised to it. Once that version exists, the setting has no more effect and does not need to be removed.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-release-versioning/",
+      "examples": [
+        "2.0.0"
+      ],
+      "pattern": "^v?\\d+\\.\\d+\\.\\d+$",
+      "title": "Release versioning: minimum version",
+      "type": "string"
+    },
+    "releaseVersioningMinimumVariables": {
+      "$id": "#/properties/releaseVersioningMinimumVariables",
+      "description": "Values of the custom variables of releaseVersioningTagFormat ({PI}, {IT}...). A tag takes the values of the previous tags: they only change when this setting goes above them, and the next tag then takes the new values. Variables compare together in the order of the tag format, like a semver: PI 3 / IT 1 is above PI 2 / IT 5. Lowering it later has no effect. Project config, a branch config can override some values, and so can the CI/CD variables `SFDX_HARDIS_RELEASE_VERSIONING_VAR_<NAME>` (every branch) and `SFDX_HARDIS_RELEASE_VERSIONING_VAR_<BRANCH>_<NAME>` (one branch), with the branch and variable names in uppercase and other characters than letters and digits written `_` (`SFDX_HARDIS_RELEASE_VERSIONING_VAR_RELEASE_UAT_PI` for release/uat). Variable names: letters and digits only, so that `..._VAR_UAT_PI` can only mean {PI} of the branch uat. Values: only letters, digits, `.`, `_` and `-`.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-release-versioning/",
+      "examples": [
+        {
+          "PI": 3,
+          "IT": 1
+        }
+      ],
+      "additionalProperties": {
+        "type": [
+          "string",
+          "integer"
+        ],
+        "pattern": "^[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)*$"
+      },
+      "propertyNames": {
+        "pattern": "^[A-Za-z][A-Za-z0-9]*$"
+      },
+      "title": "Release versioning: values of the tag format variables",
+      "type": "object"
+    },
+    "releaseVersioningTagFormat": {
+      "$id": "#/properties/releaseVersioningTagFormat",
+      "description": "Name of the release candidate tags. Placeholders: {MAJ}, {MIN}, {PATCH} and {RC} (required, once each), {BRANCH} (git branch name, `/` and other characters a tag cannot hold written `-`) and custom variables such as {PI} or {IT} (letters and digits only), whose values come from releaseVersioningMinimumVariables. Only letters, digits, `.`, `_` and `-` around them, and two placeholders cannot touch. Each text around {RC} has its own release candidate counter. Set it in the project config for every branch, in a branch config for that branch, or with the CI/CD variable `SFDX_HARDIS_RELEASE_VERSIONING_TAG_FORMAT` over both. Ignored on the highest versioned branch, which always gets plain versions (v1.5.0). An invalid format is a warning and the default one is used.",
+      "default": "v{MAJ}.{MIN}.{PATCH}-rc.{RC}",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-release-versioning/",
+      "examples": [
+        "v{MAJ}.{MIN}.{PATCH}-pi{PI}-it{IT}-{BRANCH}-rc{RC}",
+        "v{MAJ}.{MIN}.{PATCH}-{BRANCH}-rc{RC}"
+      ],
+      "pattern": "^[A-Za-z0-9._{}-]+$",
+      "title": "Release versioning: tag format of release candidates",
+      "type": "string"
+    },
+    "releaseVersioningTicketVersions": {
+      "$id": "#/properties/releaseVersioningTicketVersions",
+      "description": "With release versioning, writes the versions on the tickets of the deployed Pull Requests: a JIRA fix version (created when missing, marked released at the final version), a label or tag on the other ticketing systems. none (default): nothing is written on tickets. allCandidates: every release candidate, then the final version. finalOnly: the final version only, which keeps the release list of a JIRA project short.",
+      "default": "none",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-release-versioning/",
+      "enum": [
+        "none",
+        "allCandidates",
+        "finalOnly"
+      ],
+      "examples": [
+        "finalOnly",
+        "allCandidates"
+      ],
+      "title": "Release versioning: versions written on tickets",
       "type": "string"
     },
     "replacementRules": {

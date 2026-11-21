@@ -444,10 +444,10 @@
     hashery "^1.5.1"
     keyv "^5.6.0"
 
-"@cfworker/json-schema@^4.0.2":
-  version "4.1.1"
-  resolved "https://registry.yarnpkg.com/@cfworker/json-schema/-/json-schema-4.1.1.tgz#4a2a3947ee9fa7b7c24be981422831b8674c3be6"
-  integrity sha512-gAmrUZSGtKc3AiBL71iNWxDsyUC5uMaKKGdvzYsBoTW/xi42JQHl7eKV2OYzCUqvc+D2RCcf7EXY2iCyFIk6og==
+"@cfworker/json-schema@^4.1.4":
+  version "4.1.6"
+  resolved "https://registry.yarnpkg.com/@cfworker/json-schema/-/json-schema-4.1.6.tgz#4ae859f7536206c8716b3c44f8e644f00edf97c7"
+  integrity sha512-YzVGTHXf4bzlyAL5KAvHYCdNbbt6zM5cYkAgxqxQPDQM6aZ4ShIIN5yJ+6q7YeonnevxT8k/LmD2tJi/jOiKkg==
 
 "@commitlint/cli@^17.1.2":
   version "17.8.1"
@@ -1350,20 +1350,107 @@
     undici "^8.11.0"
     xml2js "^0.6.2"
 
+"@jsonjoy.com/base64@17.67.0":
+  version "17.67.0"
+  resolved "https://registry.yarnpkg.com/@jsonjoy.com/base64/-/base64-17.67.0.tgz#7eeda3cb41138d77a90408fd2e42b2aba10576d7"
+  integrity sha512-5SEsJGsm15aP8TQGkDfJvz9axgPwAEm98S5DxOuYe8e1EbfajcDmgeXXzccEjh+mLnjqEKrkBdjHWS5vFNwDdw==
+
 "@jsonjoy.com/base64@^1.1.2":
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/@jsonjoy.com/base64/-/base64-1.1.2.tgz#cf8ea9dcb849b81c95f14fc0aaa151c6b54d2578"
   integrity sha512-q6XAnWQDIMA3+FTiOYajoYqySkO+JSat0ytXGSuRdq9uXE7o92gzuQwQM14xaCRlBLGq3v5miDGC4vkVTn54xA==
+
+"@jsonjoy.com/buffers@17.67.0", "@jsonjoy.com/buffers@^17.65.0":
+  version "17.67.0"
+  resolved "https://registry.yarnpkg.com/@jsonjoy.com/buffers/-/buffers-17.67.0.tgz#5c58dbcdeea8824ce296bd1cfce006c2eb167b3d"
+  integrity sha512-tfExRpYxBvi32vPs9ZHaTjSP4fHAfzSmcahOfNxtvGHcyJel+aibkPlGeBB+7AoC6hL7lXIE++8okecBxx7lcw==
 
 "@jsonjoy.com/buffers@^1.0.0", "@jsonjoy.com/buffers@^1.2.0":
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/@jsonjoy.com/buffers/-/buffers-1.2.1.tgz#8d99c7f67eaf724d3428dfd9826c6455266a5c83"
   integrity sha512-12cdlDwX4RUM3QxmUbVJWqZ/mrK6dFQH4Zxq6+r1YXKXYBNgZXndx2qbCJwh3+WWkCSn67IjnlG3XYTvmvYtgA==
 
+"@jsonjoy.com/codegen@17.67.0":
+  version "17.67.0"
+  resolved "https://registry.yarnpkg.com/@jsonjoy.com/codegen/-/codegen-17.67.0.tgz#3635fd8769d77e19b75dc5574bc9756019b2e591"
+  integrity sha512-idnkUplROpdBOV0HMcwhsCUS5TRUi9poagdGs70A6S4ux9+/aPuKbh8+UYRTLYQHtXvAdNfQWXDqZEx5k4Dj2Q==
+
 "@jsonjoy.com/codegen@^1.0.0":
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/@jsonjoy.com/codegen/-/codegen-1.0.0.tgz#5c23f796c47675f166d23b948cdb889184b93207"
   integrity sha512-E8Oy+08cmCf0EK/NMxpaJZmOxPqM+6iSe2S4nlSBrPZOORoDJILxtbSUEDKQyTamm/BVAhIGllOBNU79/dwf0g==
+
+"@jsonjoy.com/fs-core@4.80.0":
+  version "4.80.0"
+  resolved "https://registry.yarnpkg.com/@jsonjoy.com/fs-core/-/fs-core-4.80.0.tgz#6dc91c945dcc25657b9a9839580ac243a4405fef"
+  integrity sha512-qMKWshnyjbyhm+NbzqGE3w5y1mckFFEMj0aDPU2/JBNh1BzIjVy9esq9lBmRnNVmhMEkxwDzLZ8Gqh5G1P5Dag==
+  dependencies:
+    "@jsonjoy.com/fs-node-builtins" "4.80.0"
+    "@jsonjoy.com/fs-node-utils" "4.80.0"
+    thingies "^2.5.0"
+
+"@jsonjoy.com/fs-fsa@4.80.0":
+  version "4.80.0"
+  resolved "https://registry.yarnpkg.com/@jsonjoy.com/fs-fsa/-/fs-fsa-4.80.0.tgz#f22b948d3fd2fb199b2fd4b9c22c60fd7f9b0fe4"
+  integrity sha512-ZBEKl7J6dbkRCfmrFV48Re211A/FHqniTUhsWCsaRteNSOqMgkX3qF1UreVgwB9oSPm81JLAwhIi6Lb/NH/PoA==
+  dependencies:
+    "@jsonjoy.com/fs-core" "4.80.0"
+    "@jsonjoy.com/fs-node-builtins" "4.80.0"
+    "@jsonjoy.com/fs-node-utils" "4.80.0"
+    thingies "^2.5.0"
+
+"@jsonjoy.com/fs-node-builtins@4.80.0":
+  version "4.80.0"
+  resolved "https://registry.yarnpkg.com/@jsonjoy.com/fs-node-builtins/-/fs-node-builtins-4.80.0.tgz#cfcffaae4acae2c1219b42bf222b2f1876141d1b"
+  integrity sha512-OIOIhqaWiwUySFMny4epIAoviXsyMaQQ63PTc3zH+5HEOvarl5hpUmZIhp2m5+OfyKAh5ylxXnQIgew1OgJDVw==
+
+"@jsonjoy.com/fs-node-to-fsa@4.80.0":
+  version "4.80.0"
+  resolved "https://registry.yarnpkg.com/@jsonjoy.com/fs-node-to-fsa/-/fs-node-to-fsa-4.80.0.tgz#4c8278a06de7e3c4f1fe626ef351474a6e3cd142"
+  integrity sha512-ljeaR5xwtX1EyRmB0wvXANUMQZ3mjKcm7z8s2N8D8SLQ04CcAGtUhHFRZQXFb9mhgFyEVMydQGQtSOFS7pcrFQ==
+  dependencies:
+    "@jsonjoy.com/fs-fsa" "4.80.0"
+    "@jsonjoy.com/fs-node-builtins" "4.80.0"
+    "@jsonjoy.com/fs-node-utils" "4.80.0"
+
+"@jsonjoy.com/fs-node-utils@4.80.0":
+  version "4.80.0"
+  resolved "https://registry.yarnpkg.com/@jsonjoy.com/fs-node-utils/-/fs-node-utils-4.80.0.tgz#4e9d978a172227201ed06723444c9c1658c1df34"
+  integrity sha512-xwHeVVi3f+Khg/Fmb8i5qoYVmQ08QznE5TWhQokUmIZjz4KBPzU+zt/+bahBI6G1ghtqajt27lWuAciIxApuzA==
+  dependencies:
+    "@jsonjoy.com/fs-node-builtins" "4.80.0"
+    glob-to-regex.js "^1.3.1"
+
+"@jsonjoy.com/fs-node@4.80.0":
+  version "4.80.0"
+  resolved "https://registry.yarnpkg.com/@jsonjoy.com/fs-node/-/fs-node-4.80.0.tgz#916f29ce9377d1bf2c7ac5a0747f704ab117dbf7"
+  integrity sha512-yiBlUfkMMRFFGy8CD/h2zd5rPnrM6bjlF+nx2LRAxNV6hOSiuObQIUEE7m7y2VTMisjxCRtzINH94bFGySWL7g==
+  dependencies:
+    "@jsonjoy.com/fs-core" "4.80.0"
+    "@jsonjoy.com/fs-node-builtins" "4.80.0"
+    "@jsonjoy.com/fs-node-utils" "4.80.0"
+    "@jsonjoy.com/fs-print" "4.80.0"
+    "@jsonjoy.com/fs-snapshot" "4.80.0"
+    glob-to-regex.js "^1.3.1"
+    thingies "^2.5.0"
+
+"@jsonjoy.com/fs-print@4.80.0":
+  version "4.80.0"
+  resolved "https://registry.yarnpkg.com/@jsonjoy.com/fs-print/-/fs-print-4.80.0.tgz#5668fa62a84a0c9383b3d3adcd0379702725ef79"
+  integrity sha512-1ocZLJw/m/xlq0moaIHO7HV9nHRVBUvdc2zMzhsJGkFOrqfwWvexfCv5cYCPPLRhP+9p3yunoi4Ep5YhRORC9Q==
+  dependencies:
+    "@jsonjoy.com/fs-node-utils" "4.80.0"
+    tree-dump "^1.1.0"
+
+"@jsonjoy.com/fs-snapshot@4.80.0":
+  version "4.80.0"
+  resolved "https://registry.yarnpkg.com/@jsonjoy.com/fs-snapshot/-/fs-snapshot-4.80.0.tgz#a7ab1eea3addd6c1e23b247100819fd19a92d3c7"
+  integrity sha512-3AV23Q1H228KTtJKTUE0nNq8FCtxSvtENOLrEat80wkAJCKHuqQEv8yjhpS8Bei2OEFJAnluGXp9Ri2SWBlROw==
+  dependencies:
+    "@jsonjoy.com/buffers" "^17.65.0"
+    "@jsonjoy.com/fs-node-utils" "4.80.0"
+    "@jsonjoy.com/json-pack" "^17.65.0"
+    "@jsonjoy.com/util" "^17.65.0"
 
 "@jsonjoy.com/json-pack@^1.11.0":
   version "1.21.0"
@@ -1379,6 +1466,27 @@
     thingies "^2.5.0"
     tree-dump "^1.1.0"
 
+"@jsonjoy.com/json-pack@^17.65.0":
+  version "17.67.0"
+  resolved "https://registry.yarnpkg.com/@jsonjoy.com/json-pack/-/json-pack-17.67.0.tgz#8dd8ff65dd999c5d4d26df46c63915c7bdec093a"
+  integrity sha512-t0ejURcGaZsn1ClbJ/3kFqSOjlryd92eQY465IYrezsXmPcfHPE/av4twRSxf6WE+TkZgLY+71vCZbiIiFKA/w==
+  dependencies:
+    "@jsonjoy.com/base64" "17.67.0"
+    "@jsonjoy.com/buffers" "17.67.0"
+    "@jsonjoy.com/codegen" "17.67.0"
+    "@jsonjoy.com/json-pointer" "17.67.0"
+    "@jsonjoy.com/util" "17.67.0"
+    hyperdyperid "^1.2.0"
+    thingies "^2.5.0"
+    tree-dump "^1.1.0"
+
+"@jsonjoy.com/json-pointer@17.67.0":
+  version "17.67.0"
+  resolved "https://registry.yarnpkg.com/@jsonjoy.com/json-pointer/-/json-pointer-17.67.0.tgz#74439573dc046e0c9a3a552fb94b391bc75313b8"
+  integrity sha512-+iqOFInH+QZGmSuaybBUNdh7yvNrXvqR+h3wjXm0N/3JK1EyyFAeGJvqnmQL61d1ARLlk/wJdFKSL+LHJ1eaUA==
+  dependencies:
+    "@jsonjoy.com/util" "17.67.0"
+
 "@jsonjoy.com/json-pointer@^1.0.2":
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/@jsonjoy.com/json-pointer/-/json-pointer-1.0.2.tgz#049cb530ac24e84cba08590c5e36b431c4843408"
@@ -1386,6 +1494,14 @@
   dependencies:
     "@jsonjoy.com/codegen" "^1.0.0"
     "@jsonjoy.com/util" "^1.9.0"
+
+"@jsonjoy.com/util@17.67.0", "@jsonjoy.com/util@^17.65.0":
+  version "17.67.0"
+  resolved "https://registry.yarnpkg.com/@jsonjoy.com/util/-/util-17.67.0.tgz#7c4288fc3808233e55c7610101e7bb4590cddd3f"
+  integrity sha512-6+8xBaz1rLSohlGh68D1pdw3AwDi9xydm8QNlAFkvnavCJYSze+pxoW2VKP8p308jtlMRLs5NTHfPlZLd4w7ew==
+  dependencies:
+    "@jsonjoy.com/buffers" "17.67.0"
+    "@jsonjoy.com/codegen" "17.67.0"
 
 "@jsonjoy.com/util@^1.9.0":
   version "1.9.0"
@@ -1428,12 +1544,12 @@
     "@anthropic-ai/sdk" "^0.129.0"
     zod "^3.25.76 || ^4"
 
-"@langchain/core@1.3.4":
-  version "1.3.4"
-  resolved "https://registry.yarnpkg.com/@langchain/core/-/core-1.3.4.tgz#3cf27b5a7b146dc1dd38decc385bd13fcb8b330d"
-  integrity sha512-4LnkVpxOzA4BuMPuAQKDDf4SujSzd4WahKk51eyUJzSEsQjyGpbyAgDRWPYr3wzgtAJ59UXewemsyIxRKTXFrA==
+"@langchain/core@1.3.5":
+  version "1.3.5"
+  resolved "https://registry.yarnpkg.com/@langchain/core/-/core-1.3.5.tgz#df9015ac3cd4f1230338b05496b5784efd2526c2"
+  integrity sha512-7mk6lrHhD9vGZ+HnUhbHJzWTuJVktV+XSgDFmDlFu6qOHuNao4iuu5wqOgFNyx3Khjv7PydgbWOwcYeRXZ/ygA==
   dependencies:
-    "@cfworker/json-schema" "^4.0.2"
+    "@cfworker/json-schema" "^4.1.4"
     "@standard-schema/spec" "^1.1.0"
     js-tiktoken "^1.0.12"
     langsmith ">=0.11.0 <1.0.0"
@@ -1602,14 +1718,14 @@
   resolved "https://registry.yarnpkg.com/@rtsao/scc/-/scc-1.1.0.tgz#927dd2fae9bc3361403ac2c7a00c32ddce9ad7e8"
   integrity sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==
 
-"@salesforce/cli-plugins-testkit@5.3.81":
-  version "5.3.81"
-  resolved "https://registry.yarnpkg.com/@salesforce/cli-plugins-testkit/-/cli-plugins-testkit-5.3.81.tgz#fae34335cfca440b16304cadde4cf94d6f7d9846"
-  integrity sha512-f7qAQ6mgqRuH2ET9WgXdSEfJ97EGBqhhG2xIiEDFoCcd6NQzCjifTWqPqiCXDln/95InyggnR2deaA9ZwXYJ8Q==
+"@salesforce/cli-plugins-testkit@5.3.90":
+  version "5.3.90"
+  resolved "https://registry.yarnpkg.com/@salesforce/cli-plugins-testkit/-/cli-plugins-testkit-5.3.90.tgz#45bc035b804a80082c83cf55024688a0b49b081a"
+  integrity sha512-NzPMxSmM/1d6N97xf2nTGNf/DtitEp+9RWEG8tEQZF6kvx/2dAUHF11sHvdTCgmzB1L5evAUDoNHRq6gZTjBgw==
   dependencies:
-    "@salesforce/core" "^9.4.0"
-    "@salesforce/kit" "^4.0.1"
-    "@salesforce/ts-types" "^3.2.2"
+    "@salesforce/core" "^9.4.1"
+    "@salesforce/kit" "^4.0.8"
+    "@salesforce/ts-types" "^3.2.3"
     "@types/shelljs" "^0.10.0"
     debug "^4.4.3"
     jszip "^3.10.2"
@@ -1643,10 +1759,10 @@
     ts-retry-promise "^0.8.1"
     zod "^4.1.12"
 
-"@salesforce/core@^9.4.0":
-  version "9.4.4"
-  resolved "https://registry.yarnpkg.com/@salesforce/core/-/core-9.4.4.tgz#4c0a08a9d08401f0c3780386b96804e56a3a3be1"
-  integrity sha512-o7J/121I756oVf9+ZHLvZ06x8d3keK+Ix3Dln3k/UQzmhkp3gk1zp7PdDBq1CR87DFbQMYtftvIccYZHbO7jmg==
+"@salesforce/core@^9.4.1":
+  version "9.6.0"
+  resolved "https://registry.yarnpkg.com/@salesforce/core/-/core-9.6.0.tgz#7b5427beb5693c5555dbbdd900df332db9f94bd5"
+  integrity sha512-zaKpx/G5ECPPTAD/V9qHsYEXA7Q74KmuUHUyKNMDZts5L6j4SwcJOIjSkOSQQNstQQt0sbaVuY8vEUne+xYjKw==
   dependencies:
     "@jsforce/jsforce-node" "^3.12.0"
     "@salesforce/kit" "^4.0.0"
@@ -1659,14 +1775,14 @@
     js2xmlparser "^4.0.1"
     jsonwebtoken "9.0.3"
     jszip "3.10.1"
-    memfs "4.38.1"
+    memfs "4.80.0"
     pino "^9.7.0"
     pino-abstract-transport "^1.2.0"
     pino-pretty "^11.3.0"
     proper-lockfile "^4.1.2"
     semver "^7.8.0"
     ts-retry-promise "^0.8.1"
-    zod "^4.1.12"
+    zod "^4.6.6"
 
 "@salesforce/dev-config@4.3.3", "@salesforce/dev-config@^4.3.1":
   version "4.3.3"
@@ -1712,12 +1828,12 @@
   dependencies:
     "@salesforce/ts-types" "^2.0.12"
 
-"@salesforce/kit@^4.0.0", "@salesforce/kit@^4.0.1":
-  version "4.0.1"
-  resolved "https://registry.yarnpkg.com/@salesforce/kit/-/kit-4.0.1.tgz#436cf4b3ecdc97b4654cc8266e6484e8805e57ed"
-  integrity sha512-gEqWxNsouii5bFRpmLGOO93ndiL0Ds3UOuu2JLTfyZGgezQxg8wEUnnYzV2trZsrlptvarj94AfiQvWI5WkjAw==
+"@salesforce/kit@^4.0.0", "@salesforce/kit@^4.0.8":
+  version "4.0.10"
+  resolved "https://registry.yarnpkg.com/@salesforce/kit/-/kit-4.0.10.tgz#1d85a4d6733f1e2edc0b7aa158117716dab92a5f"
+  integrity sha512-LXCswafab7AYmpaEvjHmpI3Ueg4dk9c/vFfHSEenVyx/dF1ABlxmf8kpVyox6iRBBh3RvM5/LkQMtXUv7iSd7w==
   dependencies:
-    "@salesforce/ts-types" "^3.2.0"
+    "@salesforce/ts-types" "^3.2.4"
 
 "@salesforce/prettier-config@^0.0.3":
   version "0.0.3"
@@ -1767,10 +1883,10 @@
   resolved "https://registry.yarnpkg.com/@salesforce/ts-types/-/ts-types-2.0.12.tgz#60420622812a7ec7e46d220667bc29b42dc247ff"
   integrity sha512-BIJyduJC18Kc8z+arUm5AZ9VkPRyw1KKAm+Tk+9LT99eOzhNilyfKzhZ4t+tG2lIGgnJpmytZfVDZ0e2kFul8g==
 
-"@salesforce/ts-types@^3.2.0", "@salesforce/ts-types@^3.2.2":
-  version "3.2.3"
-  resolved "https://registry.yarnpkg.com/@salesforce/ts-types/-/ts-types-3.2.3.tgz#ba7055b4f3fbcf546bd7b9b9288f95c3640d1ea6"
-  integrity sha512-re+ceqPAgBXdgml1bTPoetNb6UfDwh54Gi6USRvPLK6/iV5P9rrLp4d7Ee2UDs/rw80V3nCjfASacpARRDaLRw==
+"@salesforce/ts-types@^3.2.0", "@salesforce/ts-types@^3.2.3", "@salesforce/ts-types@^3.2.4":
+  version "3.2.4"
+  resolved "https://registry.yarnpkg.com/@salesforce/ts-types/-/ts-types-3.2.4.tgz#783db051f0f95a23647934efc521cf1ad31dcdbd"
+  integrity sha512-kTzgXQbOdon0gJFwdHQ+A+UvMR/E3zzlj6O1Wyl5//waq7OSNjspB49y9LrZefIyqHV+ACfB9/aWBJ9aSKMrvQ==
 
 "@salesforce/types@^1.6.0":
   version "1.6.0"
@@ -3309,10 +3425,10 @@ chownr@^3.0.0:
   resolved "https://registry.yarnpkg.com/chownr/-/chownr-3.0.0.tgz#9855e64ecd240a9cc4267ce8a4aa5d24a1da15e4"
   integrity sha512-+IxzY9BZOQd/XuYPRmrvEVjF/nqj5kgT4kEq7VofrDoM1MxoRjEWkrCC3EtLi59TVawxTAn+orJwFQcrqEN1+g==
 
-chrome-launcher@1.2.2:
-  version "1.2.2"
-  resolved "https://registry.yarnpkg.com/chrome-launcher/-/chrome-launcher-1.2.2.tgz#714c56cedd8ee8466fa70328944b44def5e56a74"
-  integrity sha512-sI90u5qf3854bTrWsQMMdsQfSjjMbeSn7QtxVb9zrikf+QgMfHQ71KepHW7ZfixQKrDlAFKb+qnVlSR+xepBzw==
+chrome-launcher@1.2.3:
+  version "1.2.3"
+  resolved "https://registry.yarnpkg.com/chrome-launcher/-/chrome-launcher-1.2.3.tgz#2144a12f4a79500ac7a32fb0d72f9461324c797c"
+  integrity sha512-IpQuNUYnpXXq3VBRJInM7zTZDiAp/cu+zy0X74NjyQtFcZIQBbI64i0PYQO25wNwgmgw2cPBYitVmFz53N11Rg==
   dependencies:
     "@types/node" "*"
     escape-string-regexp "^4.0.0"
@@ -5005,12 +5121,17 @@ glob-to-regex.js@^1.0.1:
   resolved "https://registry.yarnpkg.com/glob-to-regex.js/-/glob-to-regex.js-1.2.0.tgz#2b323728271d133830850e32311f40766c5f6413"
   integrity sha512-QMwlOQKU/IzqMUOAZWubUOT8Qft+Y0KQWnX9nK3ch0CJg0tTp4TvGZsTfudYKv2NzoQSyPcnA6TYeIQ3jGichQ==
 
-glob@14.0.3:
-  version "14.0.3"
-  resolved "https://registry.yarnpkg.com/glob/-/glob-14.0.3.tgz#71e124649b3e28fdb09bdb07ef478b10c68fd6e1"
-  integrity sha512-A1vjIwC3qpdCso45Iw127gnp7sPhqgY8lUQhDrArIs+GbmfaaVPFuoyy7WyLT9EPZCRZ7j7aLdwUhQmHWesEow==
+glob-to-regex.js@^1.3.1:
+  version "1.3.1"
+  resolved "https://registry.yarnpkg.com/glob-to-regex.js/-/glob-to-regex.js-1.3.1.tgz#2f9fe8821218b18e6dcced9bcb4413932162db4b"
+  integrity sha512-zhWhMRsgnOym+1txhUmYJGD6eUsbUdrZv55gCYKuJX8t2p3+M8My23PD09bEIsreGUs5pnSa/idmcfp2/IlqGg==
+
+glob@14.0.4:
+  version "14.0.4"
+  resolved "https://registry.yarnpkg.com/glob/-/glob-14.0.4.tgz#008a99c94b6e617b5f13fe9784adef2a78af977e"
+  integrity sha512-mMiwNKoJZ4HAIRVJxotO6LsNRReA30gQwP9E2/p94tfLv+jygCNpKDjhhSL6OLY6LE371EZm5EAf7RpYuUqlsw==
   dependencies:
-    minimatch "^11.0.2"
+    minimatch "^11.0.5"
     minipass "^7.1.3"
     path-scurry "^3.0.0"
 
@@ -6589,6 +6710,26 @@ memfs@4.38.1:
     tree-dump "^1.0.3"
     tslib "^2.0.0"
 
+memfs@4.80.0:
+  version "4.80.0"
+  resolved "https://registry.yarnpkg.com/memfs/-/memfs-4.80.0.tgz#aff9c653b1de1a5f21cfc35a420d2b90fb507ae1"
+  integrity sha512-N70W2isi44XdGn7uPo9NJ4zRukcdkwSFHlnYx42SWOH/+hzqNc8P7+tVoA2up4z7faHvNi1RSNCFjxoYQ71VPQ==
+  dependencies:
+    "@jsonjoy.com/fs-core" "4.80.0"
+    "@jsonjoy.com/fs-fsa" "4.80.0"
+    "@jsonjoy.com/fs-node" "4.80.0"
+    "@jsonjoy.com/fs-node-builtins" "4.80.0"
+    "@jsonjoy.com/fs-node-to-fsa" "4.80.0"
+    "@jsonjoy.com/fs-node-utils" "4.80.0"
+    "@jsonjoy.com/fs-print" "4.80.0"
+    "@jsonjoy.com/fs-snapshot" "4.80.0"
+    "@jsonjoy.com/json-pack" "^1.11.0"
+    "@jsonjoy.com/util" "^1.9.0"
+    glob-to-regex.js "^1.3.1"
+    thingies "^2.5.0"
+    tree-dump "^1.0.3"
+    tslib "^2.0.0"
+
 meow@^13.0.0:
   version "13.2.0"
   resolved "https://registry.yarnpkg.com/meow/-/meow-13.2.0.tgz#6b7d63f913f984063b3cc261b6e8800c4cd3474f"
@@ -6727,10 +6868,10 @@ minimatch@^10.0.1, minimatch@^10.2.2, minimatch@^10.2.4, minimatch@^10.2.5, mini
   dependencies:
     brace-expansion "^5.0.8"
 
-minimatch@^11.0.2:
-  version "11.0.5"
-  resolved "https://registry.yarnpkg.com/minimatch/-/minimatch-11.0.5.tgz#29589e94fc4d84193b2a31b082b0ec67b5ea1d42"
-  integrity sha512-snPlVppFcYWfLLFQGhDxUyBcHNtMlWmn3jtj7pEaO+DP8pqL0IvAzXhMYmn1z9ASNtgmwLBdFxSf4tMUB0OTKA==
+minimatch@^11.0.5:
+  version "11.0.9"
+  resolved "https://registry.yarnpkg.com/minimatch/-/minimatch-11.0.9.tgz#00d0088671fa0d872ba1e2578f5abf3be0fe878e"
+  integrity sha512-KCFkfyjqerNlSstjlhIGNXIKZGA/6O4V4RlhZ+Dsr621SPPw0mzlypE9D9ZOoPiVefHID+j7/XuMMlqfD/F60Q==
   dependencies:
     "@isaacs/nonrecursive-glob-match" "^1.1.0"
     brace-expansion "^5.0.12"
@@ -8990,10 +9131,10 @@ undici-types@~7.16.0:
   resolved "https://registry.yarnpkg.com/undici-types/-/undici-types-7.16.0.tgz#ffccdff36aea4884cbfce9a750a0580224f58a46"
   integrity sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==
 
-undici@8.12.3, undici@^8.11.0, undici@^8.5.0:
-  version "8.12.3"
-  resolved "https://registry.yarnpkg.com/undici/-/undici-8.12.3.tgz#e76a91feee9c275ad0f43bfc0eb632b6124d3bb6"
-  integrity sha512-+fdndUTwBP86cVjihTp21hZHo7d6oj1c/47XPA3lL8mM0XHs+C4EkcjmgRsFnFk2f/UONGDy9ItBItmXsLOQHw==
+undici@8.12.4, undici@^8.11.0, undici@^8.5.0:
+  version "8.12.4"
+  resolved "https://registry.yarnpkg.com/undici/-/undici-8.12.4.tgz#0c0cabeafd9a9c3139f9ace62ee9436c0d355c72"
+  integrity sha512-8Mx+uNKKER2bA4AdtedkqRbwUCIJFr2nJckXRe5yrDqzePqwLP7VNcctN8/XdmDSbF7mS+jJKIszlL+vbam1VA==
 
 unicorn-magic@^0.3.0:
   version "0.3.0"
@@ -9478,7 +9619,7 @@ zip-stream@^4.1.0:
     compress-commons "^4.1.2"
     readable-stream "^3.6.0"
 
-"zod@^3.25.76 || ^4", zod@^4.1.12, zod@^4.4.3, zod@^4.6.5:
+"zod@^3.25.76 || ^4", zod@^4.1.12, zod@^4.4.3, zod@^4.6.5, zod@^4.6.6:
   version "4.6.7"
   resolved "https://registry.yarnpkg.com/zod/-/zod-4.6.7.tgz#e806cf64a7f4e37635ce9f2f52c04c3766f75e5b"
   integrity sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==

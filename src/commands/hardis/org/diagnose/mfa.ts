@@ -15,12 +15,21 @@ import {
 } from '../../../../common/utils/mfaDiagnoseUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
 import { SENSITIVE_VALUES_KEY } from '../../../../common/utils/anonymizeUtils.js';
+import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class DiagnoseMfa extends SfCommand<any> {
   public static title = 'Diagnose MFA configuration';
+
+  public static reports: CommandReport[] = [
+    {
+      file: 'mfa-config',
+      title: 'MFA configuration',
+      description: 'One row per finding of the six MFA checks, with its severity, details and recommendation, so you can see which gaps to close.',
+    },
+  ];
 
   public static description = `
 ## Command Behavior

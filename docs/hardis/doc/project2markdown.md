@@ -114,6 +114,12 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 <!-- training-links:end -->
 
 
+## Screenshots
+
+![Markdown pages of the Helios project, one per package.xml, flow and object, here the content of package-no-overwrite.xml](../../assets/images/commands/doc/project2markdown.webp)
+
+_Markdown pages of the Helios project, one per package.xml, flow and object, here the content of package-no-overwrite.xml_
+
 ## Parameters
 
 | Name                     |  Type   | Description                                                                                                     | Default | Required | Options |

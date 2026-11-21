@@ -1,0 +1,12 @@
+command: hardis:project:dev-org:register
+run: sf hardis:project:dev-org:register --target-org helios-dev --target-branch integration
+mode: replay
+org: none
+caption: The sandbox victordev registered in the development orgs list for the integration branch
+answers:
+  - q: "Who owns this org"
+    value: "__INITIAL__"
+    shot: true
+    caption: Name the owner, who is told when the org needs a backpromote
+  - q: "Who else works in this org"
+    value: "Mariia Kowalska <mariia.kowalska@helios-solar.demo>, Romain Lefebvre <romain.lefebvre@helios-solar.demo>"

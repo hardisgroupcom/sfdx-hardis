@@ -1,0 +1,5 @@
+command: hardis:git:artifacts:download
+run: sf hardis:git:artifacts:download --job-url https://github.com/helios-energy/salesforce/actions/runs/9412758031
+mode: replay
+org: none
+caption: "The files of a deployment job downloaded from GitHub Actions, listed with their size"

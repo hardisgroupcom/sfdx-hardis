@@ -42,6 +42,8 @@ import { resetExecutedDeploymentActions } from './deploymentActionsRegistry.js';
 import { finalizeDeploymentComponentsReport, recordDeployResult, recordNoOverwriteFiltering, resetDeploymentComponentsReport } from './deploymentComponentsReport.js';
 import { t } from './i18n.js';
 import { autoFixDeployErrors } from './deployErrorAutoFix.js';
+import { startDeployJobIdWatcher } from './deployCancelUtils.js';
+import { isJenkins } from '../gitProvider/utils/jenkinsUtils.js';
 import { emitSalesforceRunEvent, getDeployRunEventName } from './pluginEventUtils.js';
 import { countDeployComponentChanges, isComponentChangeDetailComplete, logDeployResultSummary, summarizeDeployErrorMessage, writeDeployResultReportFile } from './deployResultSummary.js';
 
@@ -703,6 +705,9 @@ export async function smartDeploy(
           ` --json`;
         let deployRes;
         const deployCommandStartTime = Date.now();
+        // In CI, record the job id of the simulation so a cancelled CI job can cancel it in the org (sf hardis:project:deploy:cancel).
+        // Jenkins does not set CI in its default template, so it is detected on its own.
+        const deployJobIdWatcher = check && (isCI || isJenkins()) ? startDeployJobIdWatcher(options.targetUsername, true) : null;
         try {
           deployRes = await execCommand(deployCommand, commandThis, {
             output: false,
@@ -710,7 +715,10 @@ export async function smartDeploy(
             fail: true,
             retry: deployment.retry || null,
           });
+          await deployJobIdWatcher?.stop();
         } catch (e: any) {
+          // Keep the job id file: this failure can be the cancellation of the CI job, whose hook needs it
+          await deployJobIdWatcher?.stop({ removeFile: false });
           await generateApexCoverageOutputFile();
 
           // Special handling for "nothing to deploy" error with destructive changes

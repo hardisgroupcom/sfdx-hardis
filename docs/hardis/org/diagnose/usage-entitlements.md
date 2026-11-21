@@ -56,6 +56,27 @@ sf hardis:org:diagnose:usage-entitlements --agent --target-org myorg@example.com
 
 In agent mode, the command runs fully automatically with no interactive prompts.
 
+## Screenshots
+
+![Usage-based entitlements of the Helios org with their allowance, consumption and period, none close to its limit](../../../assets/images/commands/org/diagnose/usage-entitlements.webp)
+
+_Usage-based entitlements of the Helios org with their allowance, consumption and period, none close to its limit_
+
+- **(1)** The verdict: no entitlement is consumed faster than its period allows
+- **(2)** One row per entitlement, with its allowance and consumption
+
+## Reports
+
+The command writes these reports in the `hardis-report` folder of the project: a CSV file, and its Excel copy (XLSX) in the `xls` sub-folder.
+
+### Usage entitlements
+
+One row per usage-based entitlement of the org, with its allowance, consumption, forecast and severity, so you can see which ones are over or on track to exceed their allowance.
+
+Files: `usage-entitlements-*.csv`, `xls/usage-entitlements-*.xlsx`
+
+![Usage entitlements report in Excel](../../../assets/images/commands/org/diagnose/usage-entitlements-report-usage-entitlements.webp)
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                  | Default | Required | Options |

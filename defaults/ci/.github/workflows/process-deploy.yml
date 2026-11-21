@@ -20,15 +20,12 @@ on:
 
 name: Process Deployment (sfdx-hardis)
 permissions: read-all
+# Deployments of the same branch run one after the other, and a new merge never cancels the running deployment:
+# its metadata would be caught up by the next deployment, but not its pre/post-deployment actions.
+# Note: GitHub keeps only one pending run per group, so with several quick merges the intermediate pending runs are skipped.
 concurrency:
   group: ${{ github.ref }}-${{ github.workflow }}
-  cancel-in-progress: true
-  # With Quick Deploy or delta deployments after merge, a cancelled deployment job (running or pending)
-  # is a merge whose metadata may never reach the org: the next job only deploys its own Pull Request.
-  # To deploy every merge, one at a time and in order, replace "cancel-in-progress: true" above by the
-  # two lines below (queue: max keeps up to 100 pending runs instead of cancelling the pending one).
-  # cancel-in-progress: false
-  # queue: max
+  cancel-in-progress: false
 
 jobs:
   process_deployment:
@@ -48,6 +45,9 @@ jobs:
       contents: read
       # To allow coding agents to push auto-fix branches and create Pull Requests,
       # replace "contents: read" above by "contents: write"
+      # With release versioning (releaseVersioning: true in a branch config), sfdx-hardis creates the
+      # version tags and the GitHub Releases: replace "contents: read" above by "contents: write"
+      # https://sfdx-hardis.cloudity.com/salesforce-ci-cd-release-versioning/
     steps:
       # Git Checkout
       - name: Checkout Code
@@ -77,6 +77,9 @@ jobs:
           SFDX_AUTH_URL_TECHNICAL_ORG: ${{ secrets.SFDX_AUTH_URL_TECHNICAL_ORG }}
           SFDX_DEPLOY_WAIT_MINUTES: ${{ vars.SFDX_DEPLOY_WAIT_MINUTES || '120' }}
           SFDX_TEST_WAIT_MINUTES: ${{ vars.SFDX_TEST_WAIT_MINUTES || '120' }}
+          # Release versioning: the repository variables that override the tag format and its variables
+          # SFDX_HARDIS_RELEASE_VERSIONING_TAG_FORMAT: ${{ vars.SFDX_HARDIS_RELEASE_VERSIONING_TAG_FORMAT }}
+          # SFDX_HARDIS_RELEASE_VERSIONING_VAR_PI: ${{ vars.SFDX_HARDIS_RELEASE_VERSIONING_VAR_PI }}
           CI_COMMIT_REF_NAME: ${{ env.BRANCH }} # Defines the target branch of the PR
           ORG_ALIAS: ${{ env.BRANCH }} # Defines the target branch of the PR
           CONFIG_BRANCH: ${{ env.BRANCH }} # Defines the target branch of the PR

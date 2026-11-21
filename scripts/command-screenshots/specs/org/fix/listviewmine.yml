@@ -1,0 +1,4 @@
+command: hardis:org:fix:listviewmine
+run: sf hardis:org:fix:listviewmine --listviews Installation__c:All_Installations,Panel_Batch__c:All_Panel_Batches
+org: throwaway
+caption: The Helios list views set back to the scope Mine in the org through a headless browser, after a deployment switched them to Everything

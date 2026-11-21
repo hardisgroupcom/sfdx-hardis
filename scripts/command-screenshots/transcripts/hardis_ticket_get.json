@@ -1,0 +1,59 @@
+{
+  "command": "hardis:ticket:get",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "[TicketProvider] Fetching JIRA ticket HEL-42"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[JiraProvider] Using JIRA_EMAIL and JIRA_TOKEN for authentication"
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "[TicketGet] HEL-42 - Installation checklist"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Status In Progress | Type Story | 4 comment(s) | 2 attachment(s) | 1 linked item(s)"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "[TicketGet] 1 line(s) of the ticket mention an operation that deployable metadata will not carry. Consider registering each one as an sfdx-hardis deployment action."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+command: hardis:project:action:test-class:remove
+run: sf hardis:project:action:test-class:remove --scope project --class-name InstallationSchedulerTest
+org: none
+caption: The InstallationSchedulerTest class no longer runs with every deployment of the project
+answers:
+  - q: Select the Apex test classes to remove
+    choice: ^InstallationSchedulerTest$
+    optional: true

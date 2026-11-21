@@ -1,0 +1,4 @@
+command: hardis:project:clean:agents-deployment-actions
+run: sf hardis:project:clean:agents-deployment-actions
+org: none
+caption: No Agentforce agent changed in the User Story, so no publication or activation action is added to its Pull Request

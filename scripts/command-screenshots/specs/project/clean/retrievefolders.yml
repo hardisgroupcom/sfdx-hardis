@@ -1,0 +1,4 @@
+command: hardis:project:clean:retrievefolders
+run: sf hardis:project:clean:retrievefolders
+org: showcase
+caption: The report, dashboard, document and email template folders of the Helios sources retrieved again from the org

@@ -1,0 +1,10 @@
+command: hardis:package:version:promote
+run: sf hardis:package:version:promote
+mode: replay
+org: none
+caption: "Version 1.4.0-1 of Helios Core is promoted and can now be installed in production orgs"
+answers:
+  - q: "Please select a package"
+    choice: "Helios Core@1\\.4\\.0-1"
+    shot: true
+    caption: "Pick the package version to promote"

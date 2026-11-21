@@ -336,7 +336,7 @@ _glci_wait_pipeline() {
 
 # Wait for a job to end, keep its trace without colors nor section markers
 _glci_wait_job() {
-  local id="$1" label="$2" status="" waited=0
+  local id="$1" label="$2" attempt="${3:-1}" status="" waited=0 new
   echo "$id" >"$LOGS/$label.job"
   while [ "$waited" -lt "$CI_WAIT_JOB_SECONDS" ]; do
     status=$(gl_api GET "projects/$PROJECT_ID/jobs/$id" | _glci_json 'd.status')
@@ -346,6 +346,18 @@ _glci_wait_job() {
   done
   gl_api GET "projects/$PROJECT_ID/jobs/$id/trace" |
     sed -E 's/\x1b\[[0-9;]*[A-Za-z]//g; s/section_(start|end):[0-9]+:[A-Za-z0-9_.-]+(\[[^]]*\])?//g; s/\r//g' >"$LOGS/$label.log"
+  # A runner whose disk is full fails the job before sfdx-hardis starts (2026-10-14 and 2026-11-19:
+  # hsfdc1gruplv002, ENOSPC in yarn install). The group dispatches jobs at random between its runners:
+  # retry the job, which says nothing about the branch under test
+  if [ "$status" = "failed" ] && [ "$attempt" -lt 3 ] && grep -aqF "ENOSPC: no space left on device" "$LOGS/$label.log"; then
+    new=$(gl_api POST "projects/$PROJECT_ID/jobs/$id/retry" | _glci_json 'd.id')
+    if [[ "$new" =~ ^[0-9]+$ ]]; then
+      cp "$LOGS/$label.log" "$LOGS/$label-enospc-$id.log"
+      echo "[$(date +%T)] $label: job $id failed on a runner with a full disk (ENOSPC), retried as job $new"
+      _glci_wait_job "$new" "$label" $((attempt + 1))
+      return
+    fi
+  fi
   case "$status" in
   success) echo 0 >"$LOGS/$label.code" ;;
   failed | canceled | skipped | manual) echo 1 >"$LOGS/$label.code" ;;

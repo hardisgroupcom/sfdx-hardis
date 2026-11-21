@@ -1,0 +1,700 @@
+{
+  "command": "hardis:org:refresh:after-refresh",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "This command will restore information after the refresh of org https://helios-solar--uat.sandbox.my.salesforce.com\n  Certificates\n  Other metadata\n  SAML SSO Config\n  Custom Settings\n  Records\n  Connected Apps \n External Client Apps"
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Select the project path where the sandbox info has been saved",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Select the project path where the sandbox info has been saved",
+            "description": "This is the path where the metadatas were saved before the org refresh",
+            "choices": [
+              {
+                "title": "helios-solar--uatsandbox",
+                "value": "C:/helios/salesforce/scripts/sandbox-refresh/helios-solar--uatsandbox",
+                "description": ""
+              }
+            ],
+            "optionsPerPage": 9999,
+            "initial": 0
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "helios-solar--uatsandbox"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Restoring certificates saved before the sandbox refresh..."
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Select certificates to restore",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "multiselect",
+            "name": "value",
+            "message": "🦙 Select certificates to restore",
+            "description": "Select the certificates you want to restore from the backup",
+            "choices": [
+              {
+                "title": "Helios_Installer_Signing",
+                "value": "Helios_Installer_Signing",
+                "selected": true
+              },
+              {
+                "title": "Helios_SSO_Request",
+                "value": "Helios_SSO_Request",
+                "selected": true
+              }
+            ],
+            "optionsPerPage": 9999,
+            "initial": [
+              "Helios_Installer_Signing",
+              "Helios_SSO_Request"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "- Helios_Installer_Signing\n- Helios_SSO_Request"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Do you confirm you want to restore 2 certificate(s) ?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Do you confirm you want to restore 2 certificate(s) ?",
+            "description": "This will deploy all certificate files and definitions saved before the refresh.",
+            "choices": [
+              {
+                "title": "✅ Yes",
+                "value": true
+              },
+              {
+                "title": "❌ No",
+                "value": false
+              }
+            ],
+            "optionsPerPage": 9999,
+            "initial": 0
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "✅ Yes"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Deploying certificates in org https://helios-solar--uat.sandbox.my.salesforce.com using Metadata API (Source Api does not support it)..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf project deploy start --metadata-dir \"C:/helios/salesforce/scripts/sandbox-refresh/helios-solar--uatsandbox/mdapi_certs_restore\" --target-org admin@helios-solar.demo.uat",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf project deploy start --metadata-dir \"C:/helios/salesforce/scripts/sandbox-refresh/helios-solar--uatsandbox/mdapi_certs_restore\" --target-org admin@helios-solar.demo.uat",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Certificates restored successfully in org https://helios-solar--uat.sandbox.my.salesforce.com"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Restoring other metadata saved before the sandbox refresh..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "reportFile",
+        "file": "C:/helios/salesforce/scripts/sandbox-refresh/helios-solar--uatsandbox/manifest/package-metadata-to-restore.xml",
+        "title": "Restore Metadatas package.xml",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Now handling the restore of other metadata from C:/helios/salesforce/scripts/sandbox-refresh/helios-solar--uatsandbox/manifest/package-metadata-to-restore.xml..."
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "Confirm it's content, or remove/comment part of it if you don't want some metadata to be restored\nExternalCredential(1), RemoteSiteSetting(1)"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Please double check package-metadata-to-restore.xml. Do you confirm you want to restore all these metadatas ?\nExternalCredential(1), RemoteSiteSetting(1)",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Please double check package-metadata-to-restore.xml. Do you confirm you want to restore all these metadatas ?\nExternalCredential(1), RemoteSiteSetting(1)",
+            "description": "WARNING: Check and validate/update the file BEFORE it is deployed!",
+            "choices": [
+              {
+                "title": "✅ Yes",
+                "value": true
+              },
+              {
+                "title": "❌ No",
+                "value": false
+              }
+            ],
+            "optionsPerPage": 9999,
+            "initial": 0
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "✅ Yes"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Deploying other metadatas to org..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf project deploy start --manifest \"C:/helios/salesforce/scripts/sandbox-refresh/helios-solar--uatsandbox/manifest/package-metadata-to-restore.xml\" --target-org admin@helios-solar.demo.uat --json",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf project deploy start --manifest \"C:/helios/salesforce/scripts/sandbox-refresh/helios-solar--uatsandbox/manifest/package-metadata-to-restore.xml\" --target-org admin@helios-solar.demo.uat --json",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Other metadata restored successfully in org https://helios-solar--uat.sandbox.my.salesforce.com"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Restoring Custom Settings saved before the sandbox refresh..."
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Select custom settings to restore",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "multiselect",
+            "name": "value",
+            "message": "🦙 Select custom settings to restore",
+            "description": "Select the custom settings you want to restore from the backup",
+            "choices": [
+              {
+                "title": "Helios_Settings__c",
+                "value": "Helios_Settings__c",
+                "selected": true
+              },
+              {
+                "title": "Installation_Config__c",
+                "value": "Installation_Config__c",
+                "selected": true
+              }
+            ],
+            "optionsPerPage": 9999,
+            "initial": [
+              "Helios_Settings__c",
+              "Installation_Config__c"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "- Helios_Settings__c\n- Installation_Config__c"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Do you confirm you want to restore 2 Custom Settings values from backup?",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "select",
+            "name": "value",
+            "message": "🦙 Do you confirm you want to restore 2 Custom Settings values from backup?",
+            "description": "This will import all custom settings data saved before the refresh.",
+            "choices": [
+              {
+                "title": "✅ Yes",
+                "value": true
+              },
+              {
+                "title": "❌ No",
+                "value": false
+              }
+            ],
+            "optionsPerPage": 9999,
+            "initial": 0
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "✅ Yes"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Restoring 2 Custom Settings..."
+      }
+    },
+    {
+      "delay": 900,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Custom setting Helios_Settings__c restored."
+      }
+    },
+    {
+      "delay": 700,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "Custom setting Installation_Config__c restored."
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Custom settings restore complete (2 successful, 0 failed)"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Restoring External Client Apps saved before the sandbox refresh..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "Found 3 External Client App(s) in the org"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "🦙 Select the External Client Apps you want to restore after the sandbox refresh",
+        "isQuestion": true
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "prompts",
+        "prompts": [
+          {
+            "type": "multiselect",
+            "name": "value",
+            "message": "🦙 Select the External Client Apps you want to restore after the sandbox refresh",
+            "description": "Only the selected apps will be restored. All apps are selected by default.",
+            "choices": [
+              {
+                "title": "Helios_Crew_Scheduler_Sync",
+                "value": "Helios_Crew_Scheduler_Sync",
+                "selected": true
+              },
+              {
+                "title": "Helios_Installer_Mobile",
+                "value": "Helios_Installer_Mobile",
+                "selected": true
+              },
+              {
+                "title": "Helios_Panel_Telemetry",
+                "value": "Helios_Panel_Telemetry",
+                "selected": true
+              }
+            ],
+            "optionsPerPage": 9999,
+            "initial": [
+              "Helios_Crew_Scheduler_Sync",
+              "Helios_Installer_Mobile",
+              "Helios_Panel_Telemetry"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "delay": 100,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "- Helios_Crew_Scheduler_Sync\n- Helios_Installer_Mobile\n- Helios_Panel_Telemetry"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Restoring External Client Application definitions to org (step 1/2)..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf project deploy start --manifest \"C:/helios/salesforce/scripts/sandbox-refresh/helios-solar--uatsandbox/manifest/package-eca-phase1.xml\" --target-org admin@helios-solar.demo.uat --ignore-conflicts --json",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf project deploy start --manifest \"C:/helios/salesforce/scripts/sandbox-refresh/helios-solar--uatsandbox/manifest/package-eca-phase1.xml\" --target-org admin@helios-solar.demo.uat --ignore-conflicts --json",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Restoring External Client App satellite metadata (OAuth settings, policies) to org (step 2/2)..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandSubCommandStart",
+        "data": {
+          "command": "sf project deploy start --manifest \"C:/helios/salesforce/scripts/sandbox-refresh/helios-solar--uatsandbox/manifest/package-eca-phase2.xml\" --target-org admin@helios-solar.demo.uat --ignore-conflicts --json",
+          "cwd": "."
+        }
+      }
+    },
+    {
+      "delay": 1500,
+      "message": {
+        "event": "commandSubCommandEnd",
+        "data": {
+          "command": "sf project deploy start --manifest \"C:/helios/salesforce/scripts/sandbox-refresh/helios-solar--uatsandbox/manifest/package-eca-phase2.xml\" --target-org admin@helios-solar.demo.uat --ignore-conflicts --json",
+          "cwd": ".",
+          "success": true
+        }
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "success",
+        "message": "External Client Apps have been restored successfully to the org https://helios-solar--uat.sandbox.my.salesforce.com"
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Restoring Connected Apps saved before the sandbox refresh..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "No Connected Apps found in the backup folder. Skipping Connected Apps restore."
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Checking manual actions that cannot be restored automatically..."
+      }
+    },
+    {
+      "delay": 300,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "1 external OAuth authentication(s) must be re-authorized manually: log in again to the sandbox from each external tool (\"Log in with Salesforce\").\n- Helios Installer Mobile Sync, users: victor.martin@helios-solar.demo.uat, mariia.kowalska@helios-solar.demo.uat, last used: 2026-11-12"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "1 Auth Provider(s) must have their Consumer Secret re-entered manually:\n- Helios_SSO_Azure (OpenIdConnect)"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "1 Named Credential(s) must be checked: passwords and tokens are not restored with metadata.\n- Helios_Panel_Supplier_API (SecuredEndpoint)"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "2 scheduled job(s) were active before the refresh. A sandbox refresh deactivates scheduled jobs and flows: re-schedule the ones you need.\n- Installation Scheduler Nightly (Scheduled Apex, 0 0 2 * * ?, owner: victor.martin@helios-solar.demo.uat)\n- Panel Batch Reconciliation (Scheduled Apex, 0 30 5 * * ?, owner: romain.lefebvre@helios-solar.demo.uat)"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "reportFile",
+        "file": "C:/helios/salesforce/scripts/sandbox-refresh/helios-solar--uatsandbox/manual-restore-inventory.json",
+        "title": "Sandbox refresh manual actions inventory (JSON)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "reportFile",
+        "file": "C:/helios/salesforce/scripts/sandbox-refresh/helios-solar--uatsandbox/manual-restore-inventory.csv",
+        "title": "Sandbox refresh manual actions inventory (CSV)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "reportFile",
+        "file": "C:/helios/salesforce/scripts/sandbox-refresh/helios-solar--uatsandbox/xls/manual-restore-inventory.xlsx",
+        "title": "Sandbox refresh manual actions inventory (XLSX)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "warning",
+        "message": "Also check these org settings, which are reset by a sandbox refresh:\n- Email deliverability is reset to \"System Email Only\" (Setup > Deliverability)\n- User emails are suffixed with .invalid and must be fixed for active users\n- Saved endpoints (Remote Site Settings, Named Credentials) may still point to the old sandbox domain\n- Experience Cloud sites and custom domains may need to be reactivated or republished\n- If Shield Platform Encryption is used, rotate the tenant secret copied from production"
+      }
+    },
+    {
+      "delay": 400,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "Generating sandbox refresh actions report..."
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/sandbox-refresh-after-actions-helios-solar--uatsandbox-features__HEL-42-installation-checklist.csv",
+        "title": "Sandbox Refresh Actions Report (CSV)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 50,
+      "message": {
+        "event": "reportFile",
+        "file": "hardis-report/xls/sandbox-refresh-after-actions-helios-solar--uatsandbox-features__HEL-42-installation-checklist.xlsx",
+        "title": "Sandbox Refresh Actions Report (XLSX)",
+        "type": "report"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+command: hardis:mdapi:upsert
+run: sf hardis:mdapi:upsert --metadata PermissionSet
+org: throwaway
+caption: The two Helios permission sets overwritten whole in the org with CRUD upserts, with the list of components sent
+answers:
+  - q: Overwrite \d+ component\(s\) whole via CRUD upsert\?
+    choice: ^✅ Yes$
+    shot: true
+    caption: Confirm before the components replace their versions in the org

@@ -19,6 +19,7 @@ import { buildDoraPeriod, collectDoraBranchInputs, pipelineTracedFrom, resolveDo
 import { DORA_LEVEL_EMOJIS, buildDoraMarkdownReport, buildMetricSummaries, expandDetailsSectionsForPdf } from "../../../common/utils/doraMarkdownUtils.js";
 import { CONSTANTS } from "../../../config/index.js";
 import { prepareOrgNotificationContext } from "../../../common/utils/orgNotificationContext.js";
+import type { CommandReport } from "../../../common/docBuilder/commandScreenshots.js";
 import { WebSocketClient } from "../../../common/websocketClient.js";
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -28,6 +29,14 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 
 export default class DoraReport extends SfCommand<any> {
   public static title = "DORA Metrics Report";
+
+  public static reports: CommandReport[] = [
+    {
+      file: "dora-report-data",
+      title: "Deployment data",
+      description: "One row per deployment or validation job of the period, with its branch, status, dates, author, pull request and job URL, behind the DORA numbers.",
+    },
+  ];
 
   public static description = `Generates a DORA (DevOps Research and Assessment) metrics report for a Salesforce project, for each of its major orgs.
 
@@ -268,7 +277,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
       await fs.copy(mdOutputFile, docsDoraOutputFile, { overwrite: true });
       uxLog("log", this, c.grey(`[DORA] ${t("copied")} ${docsDoraOutputFile}`));
     }
-    WebSocketClient.sendReportFileMessage(docsDoraOutputFile || mdOutputFile, t("doraReportTitle"), "report");
+    WebSocketClient.sendReportFileMessage(docsDoraOutputFile || mdOutputFile, t("doraReportTitle"), "report", undefined, { main: true });
 
     // 5. CSV of the jobs behind the numbers
     uxLog("action", this, c.cyan(t("doraReportGeneratingCsv")));
