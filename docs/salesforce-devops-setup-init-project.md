@@ -64,7 +64,7 @@ When a new commit is pushed on a Pull Request, the Git provider cancels the prev
 
 The GitLab, GitHub and Azure workflow files call [hardis:project:deploy:cancel](hardis/project/deploy/cancel.md) when a deployment simulation job is cancelled, so the simulation is cancelled in the org too. Only the simulation of the cancelled job is cancelled, never the one of another Pull Request, and never a real deployment.
 
-Real deployments, after a merge, are not cancelled by the next merge: they run one after the other, so the pre-deployment and post-deployment actions of each merged Pull Request are run.
+This holds when each CI job runs in its own container, as in the default templates. When several jobs run at the same time on the same host without a container (GitLab shell executor, self-hosted GitHub or Azure runners) and share the same home folder, a cancelled job can cancel the simulation of another Pull Request.
 
 | Git provider | Cancellation hook                                 | Requirement                                        |
 |--------------|---------------------------------------------------|----------------------------------------------------|
@@ -73,6 +73,20 @@ Real deployments, after a merge, are not cancelled by the next merge: they run o
 | Azure        | step with `condition: canceled()`                 | -                                                  |
 
 On GitLab, a new commit only cancels the previous pipeline while none of its non-interruptible jobs has started. To cancel its interruptible jobs in any case, uncomment the `workflow: auto_cancel: on_new_commit: interruptible` block at the beginning of `.gitlab-ci.yml` (GitLab 16.10 or later).
+
+Real deployments, after a merge, are not cancelled by the next merge: they run one after the other.
+
+**GitLab**: the `deploy_to_org` jobs of a branch share a resource group. GitLab runs the waiting jobs of a resource group in any order by default, so an older merge could be deployed after a newer one. Set the resource group to run them in pipeline order, once per major branch (`integration`, `uat`, `preprod`, `main`...):
+
+```shell
+curl --request PUT --header "PRIVATE-TOKEN: <your_access_token>" \
+  --data "process_mode=oldest_first" \
+  "https://gitlab.example.com/api/v4/projects/<project_id>/resource_groups/deploy-<branch>"
+```
+
+The resource group exists once a first `deploy_to_org` job of the branch has run.
+
+**GitHub**: a workflow keeps only one waiting run per branch. When a third merge arrives while a deployment runs and a second one waits, the waiting run is cancelled before it starts. Its metadata is deployed by the newer run, but its pre-deployment and post-deployment actions are not run: run them by hand, or merge the Pull Requests one at a time.
 
 If your project was created with an older version of sfdx-hardis, bring these parts into your workflow files: see [Upgrade the CI/CD files](#upgrade-the-cicd-files).
 

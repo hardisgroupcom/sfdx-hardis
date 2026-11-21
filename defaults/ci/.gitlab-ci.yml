@@ -374,7 +374,9 @@ deploy_to_org:
   # A new merge never cancels the deployment of the previous one: its metadata would be caught up by the next
   # deployment, but not its pre/post-deployment actions, which only cover the merged Merge Request
   interruptible: false
-  # Deployments of the same branch run one after the other
+  # Deployments of the same branch run one after the other.
+  # Set the resource group process mode to oldest_first, so they run in merge order (GitLab default is unordered):
+  # https://sfdx-hardis.cloudity.com/salesforce-devops-setup-init-project/#cancelled-pipelines
   resource_group: deploy-$CI_COMMIT_REF_NAME
   script:
     - |

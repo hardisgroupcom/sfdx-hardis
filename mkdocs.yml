@@ -463,6 +463,7 @@ nav:
           - configure auth: hardis/project/configure/auth.md
           - convert profilestopermsets: hardis/project/convert/profilestopermsets.md
           - create: hardis/project/create.md
+          - deploy cancel: hardis/project/deploy/cancel.md
           - deploy notify: hardis/project/deploy/notify.md
           - deploy quick: hardis/project/deploy/quick.md
           - deploy simulate: hardis/project/deploy/simulate.md

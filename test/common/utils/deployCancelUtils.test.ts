@@ -129,6 +129,8 @@ describe('deployment simulation job id file', () => {
     expect(res.status).to.equal('canceled');
     expect(command).to.contain('sf project deploy cancel --job-id 0AfNEW');
     expect(command).to.contain(`--target-org ${ORG}`);
+    // A workspace kept between runs must never cancel this job id again
+    expect(fs.existsSync(outputFile)).to.equal(false);
   });
 
   // Ex: the simulation was already completed when the CI job was cancelled
@@ -140,5 +142,6 @@ describe('deployment simulation job id file', () => {
     });
     expect(res.status).to.equal('failed');
     expect(res.message).to.contain('already completed');
+    expect(fs.existsSync(outputFile)).to.equal(false);
   });
 });

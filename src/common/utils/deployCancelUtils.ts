@@ -9,7 +9,7 @@ import { t } from './i18n.js';
 // the cancellation hook (after_script) runs in a new container where the home folder of the job is lost
 export const RUNNING_DEPLOYMENT_SIMULATION_FILE = path.join('.cache', 'sfdx-hardis', 'running-deployment-simulation.json');
 
-const DEPLOY_JOB_ID_POLL_INTERVAL_MS = 3000;
+const DEPLOY_JOB_ID_POLL_INTERVAL_MS = 1000;
 
 export interface RunningDeploymentSimulation {
   jobId: string;
@@ -25,58 +25,6 @@ export interface CancelDeploymentSimulationResult {
   jobId?: string;
   targetUsername?: string;
   message?: string;
-}
-
-// Salesforce CLI keeps one entry per deployment it started, keyed by job id, written as soon as the deployment is accepted by the org
-export function getSfDeployCacheFile(): string {
-  return path.join(Global.SF_DIR, 'deploy-cache.json');
-}
-
-export function readSfDeployCache(cacheFile: string = getSfDeployCacheFile()): Record<string, any> {
-  try {
-    if (!fs.existsSync(cacheFile)) {
-      return {};
-    }
-    const content = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
-    return content && typeof content === 'object' && !Array.isArray(content) ? content : {};
-  } catch {
-    // File being written by the Salesforce CLI, or format changed: next poll will try again
-    return {};
-  }
-}
-
-// Returns the id of the deployment that appeared in the Salesforce CLI deploy cache since the "before" snapshot
-export function findNewDeployJobId(
-  before: Record<string, any>,
-  after: Record<string, any>,
-  targetUsername: string | undefined,
-  dryRun: boolean
-): string | null {
-  const newEntries = Object.entries(after).filter(
-    ([jobId, entry]) =>
-      !(jobId in before) && entry && typeof entry === 'object' && (entry['dry-run'] === true) === dryRun
-  );
-  if (newEntries.length === 0) {
-    return null;
-  }
-  // Prefer the entries on the target org. If none matches (the org was given as an alias), keep them all:
-  // the cache only contains the deployments started from this job container
-  const sameOrgEntries = newEntries.filter(([, entry]) => targetUsername && entry['target-org'] === targetUsername);
-  const candidates = sameOrgEntries.length > 0 ? sameOrgEntries : newEntries;
-  candidates.sort(([, a], [, b]) => String(b?.timestamp || '').localeCompare(String(a?.timestamp || '')));
-  return candidates[0][0];
-}
-
-export function readRunningDeploymentSimulation(file: string = RUNNING_DEPLOYMENT_SIMULATION_FILE): RunningDeploymentSimulation | null {
-  try {
-    if (!fs.existsSync(file)) {
-      return null;
-    }
-    const content = JSON.parse(fs.readFileSync(file, 'utf8'));
-    return content?.jobId ? (content as RunningDeploymentSimulation) : null;
-  } catch {
-    return null;
-  }
 }
 
 // Records the job id of the deployment simulation as soon as the Salesforce CLI knows it, so a cancelled CI job
@@ -138,6 +86,9 @@ export async function cancelRunningDeploymentSimulation(
     uxLog('action', commandThis, c.cyan(t('noRunningDeploymentSimulationToCancel')));
     return { status: 'nothing-to-cancel' };
   }
+  // The job was killed before the watcher could delete the file: delete it now, so a workspace kept
+  // between runs (self-hosted agents) never cancels the job id of an older run
+  await removeRunningDeploymentSimulationFile(options.file);
   const { jobId, targetUsername } = running;
   if (running.dryRun !== true) {
     uxLog('warning', commandThis, c.yellow(t('deploymentIsNotASimulationNotCancelled', { jobId })));
@@ -165,4 +116,65 @@ export async function cancelRunningDeploymentSimulation(
   // Most frequent reason: the deployment was already completed when the job was cancelled
   uxLog('warning', commandThis, c.yellow(t('unableToCancelDeploymentSimulation', { jobId, message })));
   return { status: 'failed', jobId, targetUsername, message };
+}
+
+// Salesforce CLI keeps one entry per deployment it started, keyed by job id, written as soon as the deployment is accepted by the org
+export function getSfDeployCacheFile(): string {
+  return path.join(Global.SF_DIR, 'deploy-cache.json');
+}
+
+export function readSfDeployCache(cacheFile: string = getSfDeployCacheFile()): Record<string, any> {
+  try {
+    if (!fs.existsSync(cacheFile)) {
+      return {};
+    }
+    const content = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
+    return content && typeof content === 'object' && !Array.isArray(content) ? content : {};
+  } catch {
+    // File being written by the Salesforce CLI, or format changed: next poll will try again
+    return {};
+  }
+}
+
+// Returns the id of the deployment that appeared in the Salesforce CLI deploy cache since the "before" snapshot
+export function findNewDeployJobId(
+  before: Record<string, any>,
+  after: Record<string, any>,
+  targetUsername: string | undefined,
+  dryRun: boolean
+): string | null {
+  const newEntries = Object.entries(after).filter(
+    ([jobId, entry]) =>
+      !(jobId in before) && entry && typeof entry === 'object' && (entry['dry-run'] === true) === dryRun
+  );
+  if (newEntries.length === 0) {
+    return null;
+  }
+  // Prefer the entries on the target org. If none matches (the org was given as an alias), keep them all:
+  // the cache only contains the deployments started from this job container. Jobs run without a container
+  // on a shared host (GitLab shell executor, self-hosted runners) share it: see the command documentation
+  const sameOrgEntries = newEntries.filter(([, entry]) => targetUsername && entry['target-org'] === targetUsername);
+  const candidates = sameOrgEntries.length > 0 ? sameOrgEntries : newEntries;
+  candidates.sort(([, a], [, b]) => String(b?.timestamp || '').localeCompare(String(a?.timestamp || '')));
+  return candidates[0][0];
+}
+
+export function readRunningDeploymentSimulation(file: string = RUNNING_DEPLOYMENT_SIMULATION_FILE): RunningDeploymentSimulation | null {
+  try {
+    if (!fs.existsSync(file)) {
+      return null;
+    }
+    const content = JSON.parse(fs.readFileSync(file, 'utf8'));
+    return content?.jobId ? (content as RunningDeploymentSimulation) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function removeRunningDeploymentSimulationFile(file: string = RUNNING_DEPLOYMENT_SIMULATION_FILE): Promise<void> {
+  try {
+    await fs.remove(file);
+  } catch {
+    // Nothing to clean
+  }
 }
