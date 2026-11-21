@@ -20,9 +20,12 @@ on:
 
 name: Process Deployment (sfdx-hardis)
 permissions: read-all
+# Deployments of the same branch run one after the other, and a new merge never cancels the running deployment:
+# its metadata would be caught up by the next deployment, but not its pre/post-deployment actions.
+# Note: GitHub keeps only one pending run per group, so with several quick merges the intermediate pending runs are skipped.
 concurrency:
   group: ${{ github.ref }}-${{ github.workflow }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   process_deployment:

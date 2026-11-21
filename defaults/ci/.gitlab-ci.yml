@@ -16,6 +16,29 @@
 include:
   - local: ".gitlab-ci-config.yml"
 
+# Uncomment so a new commit cancels the interruptible jobs of the previous pipeline, even when a job that is not
+# interruptible has already started (by default, GitLab cancels nothing once such a job started).
+# Requires GitLab 16.10 or later: older versions reject the whole file.
+# workflow:
+#   auto_cancel:
+#     on_new_commit: interruptible
+
+# When a deployment simulation job is cancelled or reaches its timeout, also cancel its deployment simulation in the Salesforce org:
+# killing the job does not stop it in the org, where the next simulations would wait for it.
+# Requires GitLab 17.0 or later and GitLab Runner 16.11 or later (after_script runs for cancelled jobs)
+# Login again first: with the Docker executor, after_script runs in a new container without the job authentication.
+# GitLab runs no after_script once the job timeout is reached: RUNNER_SCRIPT_TIMEOUT stops the script 5 minutes before.
+# Keep it 5 minutes below the timeout of the jobs that extend this template.
+.cancel_deployment_simulation_on_job_cancel:
+  variables:
+    RUNNER_SCRIPT_TIMEOUT: 145m
+  after_script:
+    - |
+      if [ "$CI_JOB_STATUS" != "success" ] && [ -f .cache/sfdx-hardis/running-deployment-simulation.json ]; then
+        sf hardis:auth:login || true
+        sf hardis:project:deploy:cancel || true
+      fi
+
 # Pipeline stages
 stages:
   - build # Check code quality (+ create testing scratch org if necessary)
@@ -77,9 +100,11 @@ check_quality:
 # Check deployment in target branch org.
 # If auth not configure yet, check this doc: https://sfdx-hardis.cloudity.com/salesforce-devops-setup-auth/
 check_deploy_to_target_branch_org:
+  extends: .cancel_deployment_simulation_on_job_cancel
   stage: build
   # Deployments can be long: raise this value if a job is killed before the deployment ends.
   # It cannot exceed the maximum job timeout of the runner, raise that one too if needed.
+  # Raise RUNNER_SCRIPT_TIMEOUT of .cancel_deployment_simulation_on_job_cancel with it.
   timeout: 150 minutes
   tags:
     # Change or even remove tags if standard runners
@@ -298,8 +323,9 @@ clean:
 # Define enableMajorBranchDeploymentCheck: true in config/.sfdx-hardis.yml to see the result in VS Code DevOps Pipeline
 # More info at https://sfdx-hardis.cloudity.com/salesforce-devops-setup-major-branch-check/
 check_deploy_to_current_branch_org:
+  extends: .cancel_deployment_simulation_on_job_cancel
   stage: check_deploy
-  timeout: 150 minutes # Raise it if the job is killed before the deployment ends
+  timeout: 150 minutes # Raise it, and RUNNER_SCRIPT_TIMEOUT of the template, if the job is killed before the deployment ends
   tags:
     # Change or even remove tags if standard runners
     - ubuntu
@@ -350,7 +376,13 @@ deploy_to_org:
     variables:
       - $CI_COMMIT_REF_NAME !~ $DEPLOY_BRANCHES
       - $SCRATCH_ORG_POOL == "true"
-  interruptible: true
+  # A new merge never cancels the deployment of the previous one: its metadata would be caught up by the next
+  # deployment, but not its pre/post-deployment actions, which only cover the merged Merge Request
+  interruptible: false
+  # Deployments of the same branch run one after the other.
+  # Set the resource group process mode to oldest_first, so they run in merge order (GitLab default is unordered):
+  # https://sfdx-hardis.cloudity.com/salesforce-devops-setup-init-project/#cancelled-pipelines
+  resource_group: deploy-$CI_COMMIT_REF_NAME
   script:
     - |
       if [ "${CI_COMMIT_REF_NAME#auto-fix/}" != "$CI_COMMIT_REF_NAME" ]; then

@@ -55,6 +55,13 @@
  *   left out (build minutes), and so is its scratch org tests step (no Dev Hub in this test). The
  *   logins and the token are repository variables, set by ci-provider-bitbucket.sh.
  *
+ * SFDX_HARDIS_REPO (default https://github.com/hardisgroupcom/sfdx-hardis.git) is the repository the jobs
+ * clone the branch from: the fork of a contributor, to test the branch of their Pull Request.
+ *
+ * GitLab: the jobs that extend .cancel_deployment_simulation_on_job_cancel keep the build in the builds volume
+ * ($CI_BUILDS_DIR), and the after_script of that template prints CI_JOB_STATUS and links the build again: the
+ * Docker executor runs it in a new container, where /tmp/sfdx-hardis and the link are gone.
+ *
  * With SFDX_HARDIS_IMAGE set (ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:beta for instance), the jobs
  * run in that image instead of `:latest`, and the branch argument may be `-`: no link step, the jobs
  * run the release the image holds. A step prints `sf plugins` so the version can be asserted.
@@ -66,19 +73,24 @@ const fs = require('fs');
 const path = require('path');
 const env = require('./env-lib.cjs');
 
-env.loadEnv(['GITLAB_RUNNER_TAG', 'AZURE_E2E_CI_TOKEN', 'SFDX_HARDIS_IMAGE', 'E2E_BROWSERFORCE_REPO', 'E2E_BROWSERFORCE_BRANCH']);
+env.loadEnv(['GITLAB_RUNNER_TAG', 'AZURE_E2E_CI_TOKEN', 'SFDX_HARDIS_IMAGE', 'SFDX_HARDIS_REPO', 'E2E_BROWSERFORCE_REPO', 'E2E_BROWSERFORCE_BRANCH']);
 // Browserforce built from a branch, linked after sfdx-hardis: a browser deployment action needs
 // features of a Browserforce release that may not be published yet. Both unset: the image's one.
 const BROWSERFORCE_REPO = process.env.E2E_BROWSERFORCE_REPO || 'https://github.com/amtrack/sfdx-browserforce-plugin.git';
 const BROWSERFORCE_BRANCH = process.env.E2E_BROWSERFORCE_BRANCH || '';
 const MAJOR_BRANCHES = ['INTEGRATION', 'UAT', 'PREPROD', 'MAIN'];
-const SFDX_HARDIS_REPO = 'https://github.com/hardisgroupcom/sfdx-hardis.git';
+// The repository the jobs clone the branch under test from: a fork for a Pull Request of a contributor
+const SFDX_HARDIS_REPO = process.env.SFDX_HARDIS_REPO || 'https://github.com/hardisgroupcom/sfdx-hardis.git';
 const BITBUCKET_SCHEMA_URL = 'https://api.bitbucket.org/schemas/pipelines-configuration';
 const LINK_MARKER = 'sf plugins link /tmp/sfdx-hardis';
 // The major branch deployment check of each provider (GitLab: a job of .gitlab-ci.yml)
 const GITHUB_MAJOR_CHECK = 'check-major-branch-deploy.yml';
 const AZURE_MAJOR_CHECK = 'azure-pipelines-major-branch-check.yml';
 const BITBUCKET_MAJOR_CHECK = 'check-major-branch-deployment';
+// GitLab: the template the check jobs extend to cancel their simulation in the after_script of a
+// cancelled job, and where those jobs keep the build of the branch under test for it
+const GITLAB_CANCEL_TEMPLATE = '.cancel_deployment_simulation_on_job_cancel';
+const GITLAB_PERSISTED_BUILD = '$CI_BUILDS_DIR/.e2e-sfdx-hardis-$CI_JOB_ID';
 // An Azure Pipelines container job runs its steps as a user the agent creates, not as root, and the
 // image keeps the plugins in a folder of root (SF_DATA_DIR=/usr/local/lib): the link needs sudo,
 // which the image ships for that agent. HOME is root's for that command: with the HOME of the step
@@ -222,6 +234,17 @@ function writeGitLab(sfdxHardisRoot, repositoryRoot, sfdxHardisBranch) {
       ? [`# E2E ONLY: sfdx-hardis of the image ${image}`, 'sf plugins']
       : [`# E2E ONLY: sfdx-hardis built from its branch ${sfdxHardisBranch}`, ...linkCommands(sfdxHardisBranch, '$CI_PROJECT_DIR')];
   const beforeScript = ['  before_script:', ...commands.map((l) => (l.startsWith('#') ? `    ${l}` : `    - ${yamlScalar(l)}`))];
+  // A job that extends the cancellation template runs sf hardis:project:deploy:cancel in its after_script,
+  // which the Docker executor runs in a NEW container: /tmp/sfdx-hardis and the link are gone there, and the
+  // image release may not hold the command yet. The build goes to the builds volume, which that container
+  // sees, and the after_script links it again (see gitLabCancelAfterScript)
+  const persistedBeforeScript = [
+    '  before_script:',
+    `    # E2E ONLY: the build is kept in the builds volume, the after_script of a cancelled job links it again`,
+    `    - ${yamlScalar(`rm -rf /tmp/sfdx-hardis "${GITLAB_PERSISTED_BUILD}" && mkdir -p "${GITLAB_PERSISTED_BUILD}" && ln -s "${GITLAB_PERSISTED_BUILD}" /tmp/sfdx-hardis`)}`,
+    ...commands.map((l) => (l.startsWith('#') ? `    ${l}` : `    - ${yamlScalar(l)}`)),
+  ];
+  const cancelTemplateStart = main.findIndex((l) => l === `${GITLAB_CANCEL_TEMPLATE}:`);
 
   for (const job of sfdxHardisJobs) {
     const start = main.findIndex((l) => l === `${job}:`);
@@ -249,7 +272,11 @@ function writeGitLab(sfdxHardisRoot, repositoryRoot, sfdxHardisBranch) {
     }
     // right after the stage line: the job keeps every key of the template
     const stageIndex = body.findIndex((l) => /^ {2}stage:/.test(l));
-    main.splice(start + (stageIndex < 0 ? 1 : stageIndex + 1), 0, ...beforeScript);
+    const extendsCancel = sfdxHardisBranch !== '-' && body.some((l) => l.trim() === `extends: ${GITLAB_CANCEL_TEMPLATE}`);
+    main.splice(start + (stageIndex < 0 ? 1 : stageIndex + 1), 0, ...(extendsCancel ? persistedBeforeScript : beforeScript));
+  }
+  if (cancelTemplateStart >= 0 && sfdxHardisBranch !== '-') {
+    gitLabCancelAfterScript(main);
   }
   if (image) {
     const imageIndex = main.findIndex((l) => /^image: /.test(l));
@@ -293,6 +320,36 @@ function writeGitLab(sfdxHardisRoot, repositoryRoot, sfdxHardisBranch) {
     },
     { file: configFile, check: () => {} },
   ];
+}
+
+// The after_script of the cancellation template: first a line that prints the status of the job (the
+// deploy-cancel scenario reads it, a timeout shows there), then the build linked again in the new container
+// of a job the template's hook acts on, then the template's own script, then the build removed from the builds volume
+function gitLabCancelAfterScript(main) {
+  const start = main.findIndex((l) => l === `${GITLAB_CANCEL_TEMPLATE}:`);
+  const afterIndex = main.findIndex((l, i) => i > start && /^ {2}after_script:\s*$/.test(l));
+  if (afterIndex < 0) {
+    fail(`.gitlab-ci.yml: ${GITLAB_CANCEL_TEMPLATE} has no after_script`);
+  }
+  let end = afterIndex + 1;
+  while (end < main.length && (/^ {4}/.test(main[end]) || main[end].trim() === '')) {
+    end++;
+  }
+  while (end > afterIndex + 1 && main[end - 1].trim() === '') {
+    end--;
+  }
+  const relink =
+    `if [ "$CI_JOB_STATUS" != "success" ] && [ -f .cache/sfdx-hardis/running-deployment-simulation.json ]; then if [ -d "${GITLAB_PERSISTED_BUILD}/lib" ]; then rm -rf /tmp/sfdx-hardis && ` +
+    `ln -s "${GITLAB_PERSISTED_BUILD}" /tmp/sfdx-hardis && sf plugins link /tmp/sfdx-hardis --no-install && sf plugins; ` +
+    `else echo "E2E after_script: no build in ${GITLAB_PERSISTED_BUILD}"; fi; fi`;
+  main.splice(end, 0, `    - ${yamlScalar(`rm -rf "${GITLAB_PERSISTED_BUILD}"`)}`);
+  main.splice(
+    afterIndex + 1,
+    0,
+    '    # E2E ONLY: the status the after_script sees, and the build of the branch under test linked again',
+    `    - ${yamlScalar('echo "E2E after_script CI_JOB_STATUS=$CI_JOB_STATUS"')}`,
+    `    - ${yamlScalar(relink)}`,
+  );
 }
 
 // One document for the CI lint API: the include removed, the variables of the config file added to
@@ -370,6 +427,9 @@ function writeAzure(sfdxHardisRoot, repositoryRoot, sfdxHardisBranch) {
     if (name === 'azure-pipelines-checks.yml') {
       removeAzureJob(lines, name, 'ScratchOrgTests', 'the scratch org tests job of the template is left out (no Dev Hub in this test)');
       removeAzureJob(lines, name, 'MegaLinter', 'the MegaLinter job of the template is left out (one free parallel job, 1800 minutes a month)');
+    }
+    if (name === 'azure-pipelines-deployment.yml' && lines.some((l) => /^ {2}- job: ScratchOrgSnapshotRefresh\s*$/.test(l))) {
+      removeAzureJob(lines, name, 'ScratchOrgSnapshotRefresh', 'the scratch org snapshot refresh job of the template is left out (no Dev Hub in this test)');
     }
     if (image) {
       const containerIndex = lines.findIndex((l) => /^ {4}container: /.test(l));

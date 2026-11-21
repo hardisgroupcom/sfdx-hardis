@@ -58,4 +58,44 @@ The CI/CD files are copied once, when the project is created: a new version of s
 
 To upgrade a file, by hand or with a coding agent, compare it with the latest version of its template and bring in the changes, keeping what is specific to your project: branch names, secrets, runner tags, image, custom jobs. `.gitlab-ci-config.yml` holds the values of your project: only add its new keys. The [changelog](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/CHANGELOG.md) says what changed between versions.
 
+## Cancelled pipelines
+
+When a new commit is pushed on a Pull Request, the Git provider cancels the previous pipeline. Cancelling it does not stop its deployment simulation in the Salesforce org: Salesforce keeps it running, and the next simulations on the same org wait for it.
+
+The GitLab, GitHub, Azure and Jenkins workflow files call [hardis:project:deploy:cancel](hardis/project/deploy/cancel.md) when a deployment simulation job is cancelled, so the simulation is cancelled in the org too. Only the simulation of the cancelled job is cancelled, never the one of another Pull Request, and never a real deployment.
+
+This holds when each CI job runs in its own container, as in the default templates. When several jobs run at the same time on the same host without a container (GitLab shell executor, self-hosted GitHub or Azure runners) and share the same home folder, a cancelled job can cancel the simulation of another Pull Request.
+
+| Git provider | Cancellation hook                                 | Requirement                                          |
+|--------------|---------------------------------------------------|------------------------------------------------------|
+| GitLab       | `after_script` of a job that did not succeed      | GitLab 17.0 or later, GitLab Runner 16.11 or later   |
+| GitHub       | step with `if: cancelled()`                       | -                                                    |
+| Azure        | step with `condition: canceled()`                 | -                                                    |
+| Jenkins      | `post { unsuccessful }` of the Validation stage   | Pipeline: Job plugin 2.42 or later (`abortPrevious`) |
+| Bitbucket    | Not available                                     | -                                                    |
+
+Bitbucket runs no script when a step is stopped or times out (`after-script` only runs after a success or a failure), and a `final` step starts in a new container that cannot see the job id recorded by the stopped step. A simulation of a stopped Bitbucket step keeps running in the org until it ends.
+
+On Jenkins, a new commit on a Pull Request aborts the build of the previous commit (`disableConcurrentBuilds(abortPrevious: env.CHANGE_ID != null)`), while the builds of the other branches wait for each other.
+
+On GitLab, a new commit only cancels the previous pipeline while none of its non-interruptible jobs has started. To cancel its interruptible jobs in any case, uncomment the `workflow: auto_cancel: on_new_commit: interruptible` block at the beginning of `.gitlab-ci.yml` (GitLab 16.10 or later).
+
+On GitLab, a job that reaches its timeout runs no `after_script`. The template stops the script 5 minutes before (`RUNNER_SCRIPT_TIMEOUT: 145m` for a job timeout of 150 minutes), so the hook can still cancel the simulation. If you raise the `timeout` of a job, raise `RUNNER_SCRIPT_TIMEOUT` too, or the job stops at 145 minutes.
+
+Real deployments, after a merge, are not cancelled by the next merge: they run one after the other.
+
+**GitLab**: the `deploy_to_org` jobs of a branch share a resource group. GitLab runs the waiting jobs of a resource group in any order by default, so an older merge could be deployed after a newer one. Set the resource group to run them in pipeline order, once per major branch (`integration`, `uat`, `preprod`, `main`...):
+
+```shell
+curl --request PUT --header "PRIVATE-TOKEN: <your_access_token>" \
+  --data "process_mode=oldest_first" \
+  "https://gitlab.example.com/api/v4/projects/<project_id>/resource_groups/deploy-<branch>"
+```
+
+The resource group exists once a first `deploy_to_org` job of the branch has run.
+
+**GitHub**: a workflow keeps only one waiting run per branch. When a third merge arrives while a deployment runs and a second one waits, the waiting run is cancelled before it starts. Its metadata is deployed by the newer run, but its pre-deployment and post-deployment actions are not run: run them by hand, or merge the Pull Requests one at a time.
+
+If your project was created with an older version of sfdx-hardis, bring these parts into your workflow files: see [Upgrade the CI/CD files](#upgrade-the-cicd-files).
+
 You can now go to step [4. Configure CI authentication](salesforce-devops-setup-auth.md).
