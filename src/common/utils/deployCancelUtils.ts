@@ -18,7 +18,14 @@ export interface RunningDeploymentSimulation {
   startedAt: string;
 }
 
-export type CancelDeploymentSimulationStatus = 'canceled' | 'nothing-to-cancel' | 'skipped-not-simulation' | 'failed';
+export type CancelDeploymentSimulationStatus =
+  | 'canceled'
+  | 'nothing-to-cancel'
+  | 'already-completed'
+  | 'skipped-not-simulation'
+  | 'failed';
+
+const COMPLETED_DEPLOYMENT_STATUSES = ['Succeeded', 'SucceededPartial', 'Failed', 'Canceled'];
 
 export interface CancelDeploymentSimulationResult {
   status: CancelDeploymentSimulationStatus;
@@ -29,11 +36,13 @@ export interface CancelDeploymentSimulationResult {
 
 // Records the job id of the deployment simulation as soon as the Salesforce CLI knows it, so a cancelled CI job
 // can cancel it in the org with sf hardis:project:deploy:cancel. Call stop() once the deploy command is over.
+// After a failed deploy command, call stop({ removeFile: false }): when the CI job is cancelled, some runners (GitLab)
+// kill the deploy command before sfdx-hardis, so a failure can be the cancellation itself, and its hook needs the file.
 export function startDeployJobIdWatcher(
   targetUsername: string | undefined,
   dryRun: boolean,
   options: { cacheFile?: string; outputFile?: string; intervalMs?: number } = {}
-): { stop: () => Promise<void> } {
+): { stop: (stopOptions?: { removeFile?: boolean }) => Promise<void> } {
   const cacheFile = options.cacheFile || getSfDeployCacheFile();
   const outputFile = options.outputFile || RUNNING_DEPLOYMENT_SIMULATION_FILE;
   const before = readSfDeployCache(cacheFile);
@@ -64,8 +73,11 @@ export function startDeployJobIdWatcher(
   timer.unref?.();
 
   return {
-    stop: async () => {
+    stop: async (stopOptions: { removeFile?: boolean } = {}) => {
       clearInterval(timer);
+      if (stopOptions.removeFile === false) {
+        return;
+      }
       try {
         await fs.remove(outputFile);
       } catch {
@@ -113,7 +125,12 @@ export async function cancelRunningDeploymentSimulation(
   } catch (e) {
     message = (e as Error).message;
   }
-  // Most frequent reason: the deployment was already completed when the job was cancelled
+  // Most frequent reason: the simulation was already completed (the file is kept after a failed simulation)
+  const completedStatus = await getCompletedDeploymentStatus(jobId, targetUsername, commandThis, execFn, options.debug === true);
+  if (completedStatus) {
+    uxLog('action', commandThis, c.cyan(t('deploymentSimulationAlreadyCompleted', { jobId, status: completedStatus })));
+    return { status: 'already-completed', jobId, targetUsername, message: completedStatus };
+  }
   uxLog('warning', commandThis, c.yellow(t('unableToCancelDeploymentSimulation', { jobId, message })));
   return { status: 'failed', jobId, targetUsername, message };
 }
@@ -166,6 +183,24 @@ export function readRunningDeploymentSimulation(file: string = RUNNING_DEPLOYMEN
     }
     const content = JSON.parse(fs.readFileSync(file, 'utf8'));
     return content?.jobId ? (content as RunningDeploymentSimulation) : null;
+  } catch {
+    return null;
+  }
+}
+
+// Returns the final status of the deployment when it is already completed, null when it still runs or is unknown
+async function getCompletedDeploymentStatus(
+  jobId: string,
+  targetUsername: string | undefined,
+  commandThis: any,
+  execFn: typeof execSfdxJson,
+  debug: boolean
+): Promise<string | null> {
+  const reportCommand = `sf project deploy report --job-id ${jobId}` + (targetUsername ? ` --target-org ${targetUsername}` : '');
+  try {
+    const reportRes = await execFn(reportCommand, commandThis, { fail: false, output: false, debug });
+    const status = reportRes?.result?.status || reportRes?.data?.status || null;
+    return status && COMPLETED_DEPLOYMENT_STATUSES.includes(status) ? status : null;
   } catch {
     return null;
   }

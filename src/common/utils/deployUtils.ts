@@ -717,7 +717,8 @@ export async function smartDeploy(
           });
           await deployJobIdWatcher?.stop();
         } catch (e: any) {
-          await deployJobIdWatcher?.stop();
+          // Keep the job id file: this failure can be the cancellation of the CI job, whose hook needs it
+          await deployJobIdWatcher?.stop({ removeFile: false });
           await generateApexCoverageOutputFile();
 
           // Special handling for "nothing to deploy" error with destructive changes

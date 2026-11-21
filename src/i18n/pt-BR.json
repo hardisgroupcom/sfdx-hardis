@@ -1165,6 +1165,7 @@
   "deploymentRepositoryRemoved": "deploymentRepository removido de .sfdx-hardis.yml",
   "deploymentRepositorySaved": "Repositório de implantação {{deploymentRepository}} salvo como deploymentRepository em .sfdx-hardis.yml",
   "deploymentRepositorySkipped": "Sem repositório de implantação: você pode definir deploymentRepository em .sfdx-hardis.yml mais tarde",
+  "deploymentSimulationAlreadyCompleted": "A simulação de implantação {{jobId}} já foi concluída ({{status}}): nada a cancelar.",
   "deploymentSimulationCancelled": "Simulação de implantação {{jobId}} cancelada na org {{username}}.",
   "deployProfilesDescription": "Fazer deploy de perfis com atributos silenciados? Revise as alterações antes de confirmar.",
   "deployResultJsonReportTitle": "JSON do resultado do deploy",

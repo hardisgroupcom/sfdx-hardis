@@ -1243,6 +1243,7 @@
   "deploymentRepositoryRemoved": ".sfdx-hardis.yml から deploymentRepository を削除しました",
   "deploymentRepositorySaved": "デプロイリポジトリ {{deploymentRepository}} を .sfdx-hardis.yml の deploymentRepository に保存しました",
   "deploymentRepositorySkipped": "デプロイリポジトリはありません。後で .sfdx-hardis.yml に deploymentRepository を設定できます",
+  "deploymentSimulationAlreadyCompleted": "デプロイシミュレーション {{jobId}} は既に完了しています ({{status}})。キャンセルするものはありません。",
   "deploymentSimulationCancelled": "組織 {{username}} のデプロイシミュレーション {{jobId}} をキャンセルしました。",
   "deploymentsStats": "デプロイ: 合計 {{total}} 件（成功 {{succeeded}} 件、失敗 {{failed}} 件）| 成功率: {{successRate}}% | 平均所要時間: {{avgDuration}} 分 | 平均待機時間: {{avgPending}} 分",
   "descAzureDevopsPat": "API 認証用の Azure DevOps Personal Access Token を入力してください（永続的には保存されません）",

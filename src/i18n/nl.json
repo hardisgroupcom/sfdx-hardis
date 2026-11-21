@@ -1245,6 +1245,7 @@
   "deploymentRepositoryRemoved": "deploymentRepository verwijderd uit .sfdx-hardis.yml",
   "deploymentRepositorySaved": "Deployment-repository {{deploymentRepository}} opgeslagen als deploymentRepository in .sfdx-hardis.yml",
   "deploymentRepositorySkipped": "Geen deployment-repository: je kunt deploymentRepository later instellen in .sfdx-hardis.yml",
+  "deploymentSimulationAlreadyCompleted": "Implementatiesimulatie {{jobId}} is al voltooid ({{status}}): er is niets te annuleren.",
   "deploymentSimulationCancelled": "Implementatiesimulatie {{jobId}} in org {{username}} geannuleerd.",
   "deploymentsStats": "Deployments: {{total}} in totaal ({{succeeded}} geslaagd, {{failed}} mislukt) | Slagingspercentage: {{successRate}}% | Gem. duur: {{avgDuration}} min | Gem. wachttijd: {{avgPending}} min",
   "descAzureDevopsPat": "Voer je Azure DevOps Personal Access Token in voor API-authenticatie (wordt niet permanent opgeslagen)",

@@ -1245,6 +1245,7 @@
   "deploymentRepositoryRemoved": "Usunięto deploymentRepository z .sfdx-hardis.yml",
   "deploymentRepositorySaved": "Repozytorium wdrożeń {{deploymentRepository}} zapisano jako deploymentRepository w .sfdx-hardis.yml",
   "deploymentRepositorySkipped": "Brak repozytorium wdrożeń: deploymentRepository można ustawić później w .sfdx-hardis.yml",
+  "deploymentSimulationAlreadyCompleted": "Symulacja wdrożenia {{jobId}} jest już zakończona ({{status}}): brak elementów do anulowania.",
   "deploymentSimulationCancelled": "Symulacja wdrożenia {{jobId}} anulowana w org {{username}}.",
   "deploymentsStats": "Wdrożenia: łącznie {{total}} ({{succeeded}} zakończonych sukcesem, {{failed}} zakończonych błędem) | Wskaźnik sukcesu: {{successRate}}% | Śr. czas trwania: {{avgDuration}} min | Śr. czas oczekiwania: {{avgPending}} min",
   "descAzureDevopsPat": "Wprowadź swój Personal Access Token Azure DevOps do uwierzytelniania API (nie będzie trwale przechowywany)",

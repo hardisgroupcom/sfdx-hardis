@@ -1244,6 +1244,7 @@
   "deploymentRepositoryRemoved": "deploymentRepository aus .sfdx-hardis.yml entfernt",
   "deploymentRepositorySaved": "Deployment-Repository {{deploymentRepository}} als deploymentRepository in .sfdx-hardis.yml gespeichert",
   "deploymentRepositorySkipped": "Kein Deployment-Repository: Sie können deploymentRepository später in .sfdx-hardis.yml festlegen",
+  "deploymentSimulationAlreadyCompleted": "Deployment-Simulation {{jobId}} ist bereits abgeschlossen ({{status}}): Es gibt nichts abzubrechen.",
   "deploymentSimulationCancelled": "Deployment-Simulation {{jobId}} in Org {{username}} abgebrochen.",
   "deploymentsStats": "Deployments: {{total}} gesamt ({{succeeded}} erfolgreich, {{failed}} fehlgeschlagen) | Erfolgsquote: {{successRate}}% | Durchschn. Dauer: {{avgDuration}} Min. | Durchschn. Wartezeit: {{avgPending}} Min.",
   "descAzureDevopsPat": "Geben Sie Ihr Azure DevOps Personal Access Token für die API-Authentifizierung ein (wird nicht dauerhaft gespeichert)",

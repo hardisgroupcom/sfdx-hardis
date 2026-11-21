@@ -48,10 +48,10 @@ This command has no interactive prompt: \`--agent\` changes nothing, it is accep
 <details markdown="1">
 <summary>Technical explanations</summary>
 
-- **Job id recording:** in CI, while \`sf hardis:project:deploy:smart --check\` runs \`sf project deploy start --dry-run\`, it watches the Salesforce CLI deploy cache (\`~/.sf/deploy-cache.json\`) and writes the job id of the new simulation in \`.cache/sfdx-hardis/running-deployment-simulation.json\`, in the working tree. The file is deleted when the deploy command ends, and by this command once it has used it.
+- **Job id recording:** in CI, while \`sf hardis:project:deploy:smart --check\` runs \`sf project deploy start --dry-run\`, it watches the Salesforce CLI deploy cache (\`~/.sf/deploy-cache.json\`) and writes the job id of the new simulation in \`.cache/sfdx-hardis/running-deployment-simulation.json\`, in the working tree. The file is deleted when the deploy command succeeds, and by this command once it has used it. It is kept after a failed deploy command: when a CI job is cancelled, some runners (GitLab) kill the deploy command first, so the failure can be the cancellation itself. If the simulation is already completed, this command logs it and does nothing.
 - **Why the working tree:** with some CI executors (GitLab Docker executor), the cancellation hook runs in a new container where the home folder of the job, and its Salesforce CLI cache, are lost. The working tree is kept.
 - **Cancellation:** runs \`sf project deploy cancel --job-id <id> --target-org <username> --async\`. On GitLab Docker executor, run \`sf hardis:auth:login\` before, as the authentication of the job is lost too.
-- **Result:** returns \`status\` (\`canceled\`, \`nothing-to-cancel\`, \`skipped-not-simulation\` or \`failed\`), \`jobId\` and \`targetUsername\`.
+- **Result:** returns \`status\` (\`canceled\`, \`nothing-to-cancel\`, \`already-completed\`, \`skipped-not-simulation\` or \`failed\`), \`jobId\` and \`targetUsername\`.
 </details>
 `;
 

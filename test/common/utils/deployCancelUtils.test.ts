@@ -92,6 +92,19 @@ describe('deployment simulation job id file', () => {
     expect(fs.existsSync(outputFile)).to.equal(false);
   });
 
+  // GitLab kills the deploy command before sfdx-hardis when the CI job is cancelled: the failure is the cancellation
+  it('keeps the file when stopped after a failed deploy command, for the cancellation hook', async () => {
+    fs.writeFileSync(cacheFile, JSON.stringify({}));
+    const watcher = startDeployJobIdWatcher(ORG, true, { cacheFile, outputFile, intervalMs: 10 });
+    fs.writeFileSync(
+      cacheFile,
+      JSON.stringify({ '0AfKILLED': { 'dry-run': true, 'target-org': ORG, timestamp: new Date().toISOString() } })
+    );
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    await watcher.stop({ removeFile: false });
+    expect(readRunningDeploymentSimulation(outputFile)?.jobId).to.equal('0AfKILLED');
+  });
+
   it('has nothing to cancel when no simulation was recorded', async () => {
     const res = await cancelRunningDeploymentSimulation(null, {
       file: outputFile,
@@ -133,15 +146,36 @@ describe('deployment simulation job id file', () => {
     expect(fs.existsSync(outputFile)).to.equal(false);
   });
 
-  // Ex: the simulation was already completed when the CI job was cancelled
-  it('reports a failure without throwing when the cancel command fails', async () => {
+  // Ex: the simulation failed, so its file was kept, and the job was cancelled afterwards
+  it('reports an already completed simulation without a warning', async () => {
     fs.writeFileSync(outputFile, JSON.stringify({ jobId: '0AfDONE', targetUsername: ORG, dryRun: true }));
+    const commands: string[] = [];
     const res = await cancelRunningDeploymentSimulation(null, {
       file: outputFile,
-      execSfdxJsonFn: async () => ({ status: 1, message: 'The deployment is already completed' }),
+      execSfdxJsonFn: async (cmd: string) => {
+        commands.push(cmd);
+        return cmd.includes('deploy cancel')
+          ? { status: 1, message: 'The deployment is already completed' }
+          : { status: 0, result: { status: 'Failed' } };
+      },
+    });
+    expect(res.status).to.equal('already-completed');
+    expect(res.message).to.equal('Failed');
+    expect(commands[1]).to.contain('sf project deploy report --job-id 0AfDONE');
+    expect(fs.existsSync(outputFile)).to.equal(false);
+  });
+
+  it('reports a failure without throwing when the cancel command fails on a running simulation', async () => {
+    fs.writeFileSync(outputFile, JSON.stringify({ jobId: '0AfRUN', targetUsername: ORG, dryRun: true }));
+    const res = await cancelRunningDeploymentSimulation(null, {
+      file: outputFile,
+      execSfdxJsonFn: async (cmd: string) =>
+        cmd.includes('deploy cancel')
+          ? { status: 1, message: 'INVALID_CROSS_REFERENCE_KEY' }
+          : { status: 0, result: { status: 'InProgress' } },
     });
     expect(res.status).to.equal('failed');
-    expect(res.message).to.contain('already completed');
+    expect(res.message).to.contain('INVALID_CROSS_REFERENCE_KEY');
     expect(fs.existsSync(outputFile)).to.equal(false);
   });
 });
