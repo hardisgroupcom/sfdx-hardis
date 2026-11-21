@@ -66,13 +66,13 @@ The GitLab, GitHub, Azure and Jenkins workflow files call [hardis:project:deploy
 
 This holds when each CI job runs in its own container, as in the default templates. When several jobs run at the same time on the same host without a container (GitLab shell executor, self-hosted GitHub or Azure runners) and share the same home folder, a cancelled job can cancel the simulation of another Pull Request.
 
-| Git provider | Cancellation hook                                 | Requirement                                          |
-|--------------|---------------------------------------------------|------------------------------------------------------|
-| GitLab       | `after_script` of a job that did not succeed      | GitLab 17.0 or later, GitLab Runner 16.11 or later   |
-| GitHub       | step with `if: cancelled()`                       | -                                                    |
-| Azure        | step with `condition: canceled()`                 | -                                                    |
-| Jenkins      | `post { unsuccessful }` of the Validation stage   | Pipeline: Job plugin 2.42 or later (`abortPrevious`) |
-| Bitbucket    | Not available                                     | -                                                    |
+| Git provider | Cancellation hook                               | Requirement                                          |
+|--------------|-------------------------------------------------|------------------------------------------------------|
+| GitLab       | `after_script` of a job that did not succeed    | GitLab 17.0 or later, GitLab Runner 16.11 or later   |
+| GitHub       | step with `if: cancelled()`                     | -                                                    |
+| Azure        | step with `condition: canceled()`               | -                                                    |
+| Jenkins      | `post { unsuccessful }` of the Validation stage | Pipeline: Job plugin 2.42 or later (`abortPrevious`) |
+| Bitbucket    | Not available                                   | -                                                    |
 
 Bitbucket runs no script when a step is stopped or times out (`after-script` only runs after a success or a failure), and a `final` step starts in a new container that cannot see the job id recorded by the stopped step. A simulation of a stopped Bitbucket step keeps running in the org until it ends.
 
