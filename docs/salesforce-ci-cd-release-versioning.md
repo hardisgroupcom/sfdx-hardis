@@ -198,7 +198,7 @@ Off by default. With `releaseVersioningTicketVersions`, the tickets referenced b
 - **Pull Request comment** of the deployment: `Release version: v1.5.0-rc.3`, linked to the tag.
 - **Deployment notification** (Slack, Teams, email...): the same line, for every versioned deployment, release candidates included.
 - **Release notes notification**: for each production version, with the release notes files and a link to the Release.
-- **VS Code DevOps Pipeline**: the version deployed under each versioned branch and org, the version each promotion will create under its Pull Request, a **Versions** button to hide them, and a **Releases** tab listing the versions. A click on the version of a branch opens its history and its release notes.
+- **VS Code DevOps Pipeline**: a **Versions** button, off by default and remembered in the extension settings, shows the version deployed under each versioned branch and org and the version each promotion will create under its Pull Request. A **Releases** tab lists the versions. They are read only when you turn the button on or open a tab that shows them, so they never slow down the pipeline. A click on the version of a branch opens its history and its release notes.
 - **Command line**: [hardis:project:version:list](hardis/project/version/list.md) lists the version of each branch, the version each promotion would create, and the history of the version tags.
 
 ```sh
