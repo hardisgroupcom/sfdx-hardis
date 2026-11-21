@@ -23,14 +23,18 @@ include:
 #   auto_cancel:
 #     on_new_commit: interruptible
 
-# When a deployment simulation job is cancelled, also cancel its deployment simulation in the Salesforce org:
+# When a deployment simulation job is cancelled or reaches its timeout, also cancel its deployment simulation in the Salesforce org:
 # killing the job does not stop it in the org, where the next simulations would wait for it.
 # Requires GitLab 17.0 or later and GitLab Runner 16.11 or later (after_script runs for cancelled jobs)
 # Login again first: with the Docker executor, after_script runs in a new container without the job authentication.
+# GitLab runs no after_script once the job timeout is reached: RUNNER_SCRIPT_TIMEOUT stops the script 5 minutes before.
+# Keep it 5 minutes below the timeout of the jobs that extend this template.
 .cancel_deployment_simulation_on_job_cancel:
+  variables:
+    RUNNER_SCRIPT_TIMEOUT: 145m
   after_script:
     - |
-      if [ "$CI_JOB_STATUS" = "canceled" ]; then
+      if [ "$CI_JOB_STATUS" != "success" ] && [ -f .cache/sfdx-hardis/running-deployment-simulation.json ]; then
         sf hardis:auth:login || true
         sf hardis:project:deploy:cancel || true
       fi
@@ -100,6 +104,7 @@ check_deploy_to_target_branch_org:
   stage: build
   # Deployments can be long: raise this value if a job is killed before the deployment ends.
   # It cannot exceed the maximum job timeout of the runner, raise that one too if needed.
+  # Raise RUNNER_SCRIPT_TIMEOUT of .cancel_deployment_simulation_on_job_cancel with it.
   timeout: 150 minutes
   tags:
     # Change or even remove tags if standard runners
@@ -320,7 +325,7 @@ clean:
 check_deploy_to_current_branch_org:
   extends: .cancel_deployment_simulation_on_job_cancel
   stage: check_deploy
-  timeout: 150 minutes # Raise it if the job is killed before the deployment ends
+  timeout: 150 minutes # Raise it, and RUNNER_SCRIPT_TIMEOUT of the template, if the job is killed before the deployment ends
   tags:
     # Change or even remove tags if standard runners
     - ubuntu

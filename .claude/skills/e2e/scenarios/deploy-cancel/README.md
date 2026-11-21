@@ -21,6 +21,8 @@ What it proves:
   cancelled, both deploy one after the other in merge order, and both run their pre and
   post-deployment commands. On GitLab the resource group is set to `oldest_first` through the API,
   as the documentation says.
+- A simulation that fails keeps its job id file, and a later cancel logs that it is already
+  completed.
 - A check job killed by its timeout: what happens to its simulation, per provider. This is
   recorded as found, OK when the simulation is cancelled, FAIL otherwise (a GitLab job killed by
   its timeout may end `failed`, not `canceled`).
@@ -37,7 +39,7 @@ covered (no Jenkins in the shared harness), and Bitbucket runs no script when a 
 
 | File                          | Use                                                                                                                                                                                                  |
 |-------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `scripts/dc-e2e.sh`           | The run: steps `org repo new-commit other-pr deploy-order timeout report`, one assertion per line of `$LOGS/results.tsv`, the report in `$LOGS/report.md`, the DeployRequest records of each step. |
+| `scripts/dc-e2e.sh`           | The run: steps `org repo new-commit other-pr deploy-order deploy-order-check timeout failed-sim report`, one assertion per line of `$LOGS/results.tsv`, the report in `$LOGS/report.md`, the DeployRequest records of each step. |
 | `scripts/dc-build-project.sh` | The sample project: 8 Apex test classes of 8 methods burning about 7 seconds of CPU each (about 7 minutes of tests per simulation), `testLevel: RunLocalTests`, a pre and a post-deployment marker. |
 | `reports/`                    | One report per run and provider (copy `$LOGS/report.md` there, named `<date>-<run>.md`).                                                                                                           |
 
@@ -82,7 +84,9 @@ Run one provider at a time, in the background, and watch the `[FAIL]` lines. Set
 | `new-commit`   | A story opened into integration; once its simulation X0 runs in the org, a second commit is pushed. The provider cancels the first job (`NC-PROVIDER-CANCEL`), whose log shows the cancel of X0 (`NC-HOOK`, GitLab `NC-GITLAB-AFTER-SCRIPT`), X0 is `Canceled` in the org, and the simulation X1 of the new commit succeeds, started right after X0 ended, X0 having run far less than X1 (`NC-NO-WAIT`). It also measures when a job starts its simulation. |
 | `other-pr`     | Story A's simulation XA runs; story B's simulation XB waits behind it in the same org. A's check job is cancelled through the provider API: its log cancels XA and never names XB, XA is `Canceled`, XB then runs and is `Succeeded`, B's job succeeds. Azure: XB is started from the workstation (one free parallel job, B's job would only start after A's).                                                                                       |
 | `deploy-order` | Two stories merged into integration about 20 seconds apart. Both deployment jobs succeed, are never cancelled and print the pre and post-deployment markers; the second starts once the first ended; the org holds two deployments `Succeeded`, none `Canceled`. GitLab: `DO-RESOURCE-GROUP` sets `deploy-integration` to `oldest_first`.                                                                                                            |
+| `deploy-order-check` | The second deployment job started once the first ended (job times, not run times: a GitHub run waiting for its concurrency group gets its start time when it is created), and the org holds two deployments `Succeeded`, none `Canceled`. Apart from `deploy-order`, so it can be replayed without merging again. |
 | `timeout`      | The check job of a story gets a timeout a little after the moment its simulation starts (`new-commit` measured it). The job is killed while the simulation runs; the result says how the job ended, whether the hook ran, what the GitLab `after_script` saw, and the final status of the simulation.                                                                                                                                                   |
+| `failed-sim`   | From the workstation (`bin/dev.js`, `CI=true`): a check-only `deploy:smart` of a class that does not compile fails, its job id stays in `.cache/sfdx-hardis/running-deployment-simulation.json` (a failure can be the cancellation of the job, whose hook needs it), the DeployRequest is `Failed`, and a later `deploy:cancel` logs "already completed (Failed): nothing to cancel" and deletes the file. Provider independent: a CI job would need a step of its own after a failed simulation.                                                       |
 | `report`       | `$LOGS/report.md`, with the CI jobs and the DeployRequest records of each step.                                                                                                                                                                                                                                                                                                                                                                         |
 
 A check that cannot run says SKIP with the reason, never OK.
@@ -134,6 +138,14 @@ A check that cannot run says SKIP with the reason, never OK.
 - GitHub reads the check job timeout from the repository variable `CI_JOB_TIMEOUT_MINUTES`: the
   `timeout` step sets it, then deletes it. GitLab and Azure: the timeout is edited in the CI file of
   the story branch only.
+- The timeout of the `timeout` step comes from the delay between the start of the first check job
+  and the `CreatedDate` of its simulation, measured by `new-commit`. Never its `StartDate`: a
+  deployment started on the org by something else holds the simulation `Pending`, the delay read
+  624 seconds instead of 166, the timeout became 12 minutes and the simulation ended before it.
+- GitLab runs no `after_script` once the job timeout is reached (proved by jobs 1047558 and
+  1047573: the simulation kept running). The template sets `RUNNER_SCRIPT_TIMEOUT` 5 minutes below
+  the job timeout, and its hook runs on any status but `success` when the job id file exists. The
+  `timeout` step sets the script timeout to the computed minutes and the job timeout 5 minutes above.
 - `deploy-order` cancels the check jobs of its two Pull Requests right after the merges, or they
   would keep the org busy and delay the deployments. A check job cancelled before its simulation
   logs that there is nothing to cancel.

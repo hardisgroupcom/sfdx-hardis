@@ -9,7 +9,7 @@
 #   PROVIDER=github bash dc-e2e.sh                       # the whole run (github, gitlab, azure)
 #   PROVIDER=github RUN=<run> STEPS="timeout report" bash dc-e2e.sh   # replay steps of a run
 #
-# Steps, in order: org repo new-commit other-pr deploy-order deploy-order-check timeout report
+# Steps, in order: org repo new-commit other-pr deploy-order deploy-order-check timeout failed-sim report
 #
 # Settings (environment, then the .env of the sfdx-hardis working copy):
 #   PROVIDER            github (default), gitlab or azure
@@ -45,7 +45,7 @@ export WORK="${DC_WORK:-$E2E_TMP/$RUN}"
 export LOGS="${DC_LOGS:-$E2E_TMP/$RUN-logs}"
 SFDX_HARDIS_BRANCH="${SFDX_HARDIS_BRANCH:-$(git -C "$ROOT" branch --show-current)}"
 export SFDX_HARDIS_REPO="${SFDX_HARDIS_REPO:-https://github.com/hardisgroupcom/sfdx-hardis.git}"
-STEPS="${STEPS:-org repo new-commit other-pr deploy-order deploy-order-check timeout report}"
+STEPS="${STEPS:-org repo new-commit other-pr deploy-order deploy-order-check timeout failed-sim report}"
 DC_PROVIDER_CANCEL_SECONDS="${DC_PROVIDER_CANCEL_SECONDS:-300}"
 mkdir -p "$LOGS/bodies"
 export RESULTS="$LOGS/results.tsv"
@@ -320,7 +320,7 @@ dc_cancel_pr_checks() {
     done
     ;;
   gitlab)
-    for id in $(gl_api GET "projects/$PROJECT_ID/merge_requests/$pr/pipelines" | _glci_json "d.filter(p=>['created','pending','running','waiting_for_resource','preparing'].includes(p.status)).map(p=>p.id).join(' ')"); do
+    for id in $(gl_api GET "projects/$PROJECT_ID/merge_requests/$pr/pipelines" | _glci_json "(Array.isArray(d)?d:[]).filter(p=>['created','pending','running','waiting_for_resource','preparing'].includes(p.status)).map(p=>p.id).join(' ')"); do
       gl_api POST "projects/$PROJECT_ID/pipelines/$id/cancel" >/dev/null && say "pipeline $id of !$pr cancelled"
     done
     ;;
@@ -404,7 +404,9 @@ dc_set_timeout() {
 const fs=require('fs');const f=process.argv[1];const l=fs.readFileSync(f,'utf8').split('\n');
 const s=l.indexOf('check_deploy_to_target_branch_org:');let e=l.findIndex((x,i)=>i>s&&/^\S/.test(x));if(e<0)e=l.length;
 const t=l.findIndex((x,i)=>i>s&&i<e&&/^  timeout:/.test(x));if(t<0){console.error('no timeout line');process.exit(1)}
-l[t]='  timeout: '+process.argv[2]+' minutes # E2E ONLY: the timeout step of deploy-cancel';fs.writeFileSync(f,l.join('\n'))" "$(native "$WORK/.gitlab-ci.yml")" "$minutes"
+l[t]='  timeout: '+(Number(process.argv[2])+5)+' minutes # E2E ONLY: the timeout step of deploy-cancel, the script stops 5 minutes before';
+const v=l.findIndex((x,i)=>i>s&&i<e&&/^  variables:/.test(x));if(v<0){console.error('no variables block');process.exit(1)}
+l.splice(v+1,0,'    RUNNER_SCRIPT_TIMEOUT: '+process.argv[2]+'m # E2E ONLY: the timeout step of deploy-cancel');fs.writeFileSync(f,l.join('\n'))" "$(native "$WORK/.gitlab-ci.yml")" "$minutes"
     ;;
   azure)
     node -e "
@@ -513,7 +515,9 @@ if step new-commit; then
     exit 1
   fi
   save J1_STARTED "$(dc_started_at "$J1")"
-  save X0_STARTED "$(dr_field "$X0" StartDate)"
+  # CreatedDate, not StartDate: a deployment of someone else on the org delays StartDate, and the
+  # timeout step would then wait for the end of the simulation
+  save X0_STARTED "$(dr_field "$X0" CreatedDate)"
   save DC_SIM_OFFSET "$(secs "$J1_STARTED" "$X0_STARTED")"
   sleep 30
   story_amend feature/dc-new-commit "second commit" NewCommit >>"$LOGS/build.log" 2>&1
@@ -756,6 +760,7 @@ if step timeout; then
   dc_reset_timeout
   conclusion=$(dc_conclusion "$JT")
   seen=$(grep -aoE "E2E after_script CI_JOB_STATUS=[a-z]+" "$LOGS/to-job.log" | head -1)
+  [ "$PROVIDER" = "gitlab" ] && [ -z "$seen" ] && seen="the after_script printed no CI_JOB_STATUS: it did not run"
   hook="hook not run"
   grep -aqF "$MSG_CANCELLING" "$LOGS/to-job.log" && hook="hook ran"
   if [ -n "${XT:-}" ]; then
@@ -769,6 +774,49 @@ if step timeout; then
     fi
   fi
   dr_dump "$T0" timeout
+fi
+
+# ------------------------------------------------------------------ failed-sim: a failed simulation keeps its job id, a later cancel says it is completed
+# From the workstation, sfdx-hardis of the working copy (bin/dev.js), CI=true as in a job: provider
+# independent, and a CI job would need a step of its own after a failed simulation
+if step failed-sim; then
+  say "failed-sim: a simulation that fails (a class that does not compile), then a cancel on its job id"
+  reset_step
+  fdir="$LOGS/failed-sim-project"
+  rm -rf "$fdir"
+  WORK="$fdir" API="$API" DC_TEST_CLASSES=1 DC_TEST_METHODS=1 bash "$HERE/dc-build-project.sh" >>"$LOGS/build.log" 2>&1
+  (
+    cd "$fdir" || exit 1
+    printf 'targetUsername: %s\n' "$ORG_USERNAME" >>config/branches/.sfdx-hardis.integration.yml
+    printf 'public class DCBroken {\n    public static Integer broken() {\n        return notDeclared;\n    }\n}\n' >force-app/main/default/classes/DCBroken.cls
+    cp force-app/main/default/classes/DCSlowTest1.cls-meta.xml force-app/main/default/classes/DCBroken.cls-meta.xml
+    git add -A && git commit -qm "feat: a class that does not compile" && git checkout -q -b integration
+    env -u NODE_OPTIONS CI=true CONFIG_BRANCH=integration ORG_ALIAS=integration node "$DEV" hardis:project:deploy:smart --check --target-org "$ORG" --agent >"$LOGS/fs-check.log" 2>&1
+    echo $? >"$LOGS/fs-check.code"
+  )
+  FS_FILE="$fdir/.cache/sfdx-hardis/running-deployment-simulation.json"
+  XF=$(json_of "j.jobId" <"$FS_FILE" 2>/dev/null)
+  if [ "$(cat "$LOGS/fs-check.code")" != "0" ] && grep -aq "Variable does not exist" "$LOGS/fs-check.log" && [ -n "$XF" ]; then
+    record FS-FILE-KEPT OK "the simulation failed (DCBroken does not compile) and its job id $XF stays in .cache/sfdx-hardis/running-deployment-simulation.json"
+  else
+    record FS-FILE-KEPT FAIL "exit $(cat "$LOGS/fs-check.code"), job id file: ${XF:-missing} (see fs-check.log)"
+  fi
+  if [ -n "$XF" ]; then
+    status=$(dr_wait_final "$XF" 120)
+    if [ "$status" = "Failed" ]; then
+      record FS-ORG OK "DeployRequest $XF is Failed in the org"
+    else
+      record FS-ORG FAIL "DeployRequest $XF is $status"
+    fi
+    (cd "$fdir" && env -u NODE_OPTIONS CI=true node "$DEV" hardis:project:deploy:cancel --agent >"$LOGS/fs-cancel.log" 2>&1)
+    if grep -aqF "Deployment simulation $XF is already completed (Failed): nothing to cancel." "$LOGS/fs-cancel.log" && [ ! -f "$FS_FILE" ]; then
+      record FS-CANCEL OK "a later cancel logs that $XF is already completed (Failed), and deletes the job id file"
+    else
+      record FS-CANCEL FAIL "the cancel after the failed simulation: $(grep -a "sfdx-hardis\]" "$LOGS/fs-cancel.log" | tail -2 | tr '\n' ' '); file $([ -f "$FS_FILE" ] && echo kept || echo deleted)"
+    fi
+  else
+    record FS-CANCEL SKIP "no job id recorded by the failed simulation"
+  fi
 fi
 
 # ------------------------------------------------------------------ report

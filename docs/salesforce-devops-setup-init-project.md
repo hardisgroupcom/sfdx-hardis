@@ -68,7 +68,7 @@ This holds when each CI job runs in its own container, as in the default templat
 
 | Git provider | Cancellation hook                                 | Requirement                                          |
 |--------------|---------------------------------------------------|------------------------------------------------------|
-| GitLab       | `after_script` when `CI_JOB_STATUS` is `canceled` | GitLab 17.0 or later, GitLab Runner 16.11 or later   |
+| GitLab       | `after_script` of a job that did not succeed      | GitLab 17.0 or later, GitLab Runner 16.11 or later   |
 | GitHub       | step with `if: cancelled()`                       | -                                                    |
 | Azure        | step with `condition: canceled()`                 | -                                                    |
 | Jenkins      | `post { unsuccessful }` of the Validation stage   | Pipeline: Job plugin 2.42 or later (`abortPrevious`) |
@@ -79,6 +79,8 @@ Bitbucket runs no script when a step is stopped or times out (`after-script` onl
 On Jenkins, a new commit on a Pull Request aborts the build of the previous commit (`disableConcurrentBuilds(abortPrevious: env.CHANGE_ID != null)`), while the builds of the other branches wait for each other.
 
 On GitLab, a new commit only cancels the previous pipeline while none of its non-interruptible jobs has started. To cancel its interruptible jobs in any case, uncomment the `workflow: auto_cancel: on_new_commit: interruptible` block at the beginning of `.gitlab-ci.yml` (GitLab 16.10 or later).
+
+On GitLab, a job that reaches its timeout runs no `after_script`. The template stops the script 5 minutes before (`RUNNER_SCRIPT_TIMEOUT: 145m` for a job timeout of 150 minutes), so the hook can still cancel the simulation. If you raise the `timeout` of a job, raise `RUNNER_SCRIPT_TIMEOUT` too, or the job stops at 145 minutes.
 
 Real deployments, after a merge, are not cancelled by the next merge: they run one after the other.
 

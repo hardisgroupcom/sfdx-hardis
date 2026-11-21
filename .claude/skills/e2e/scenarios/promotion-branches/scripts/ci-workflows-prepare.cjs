@@ -324,7 +324,7 @@ function writeGitLab(sfdxHardisRoot, repositoryRoot, sfdxHardisBranch) {
 
 // The after_script of the cancellation template: first a line that prints the status of the job (the
 // deploy-cancel scenario reads it, a timeout shows there), then the build linked again in the new container
-// of a cancelled job, then the template's own script, then the build removed from the builds volume
+// of a job the template's hook acts on, then the template's own script, then the build removed from the builds volume
 function gitLabCancelAfterScript(main) {
   const start = main.findIndex((l) => l === `${GITLAB_CANCEL_TEMPLATE}:`);
   const afterIndex = main.findIndex((l, i) => i > start && /^ {2}after_script:\s*$/.test(l));
@@ -339,7 +339,7 @@ function gitLabCancelAfterScript(main) {
     end--;
   }
   const relink =
-    `if [ "$CI_JOB_STATUS" = "canceled" ]; then if [ -d "${GITLAB_PERSISTED_BUILD}/lib" ]; then rm -rf /tmp/sfdx-hardis && ` +
+    `if [ "$CI_JOB_STATUS" != "success" ] && [ -f .cache/sfdx-hardis/running-deployment-simulation.json ]; then if [ -d "${GITLAB_PERSISTED_BUILD}/lib" ]; then rm -rf /tmp/sfdx-hardis && ` +
     `ln -s "${GITLAB_PERSISTED_BUILD}" /tmp/sfdx-hardis && sf plugins link /tmp/sfdx-hardis --no-install && sf plugins; ` +
     `else echo "E2E after_script: no build in ${GITLAB_PERSISTED_BUILD}"; fi; fi`;
   main.splice(end, 0, `    - ${yamlScalar(`rm -rf "${GITLAB_PERSISTED_BUILD}"`)}`);

@@ -20,7 +20,7 @@ When a CI job running [hardis:project:deploy:smart](${CONSTANTS.DOC_URL_ROOT}/ha
 
 Call this command from the cancellation hook of your CI job, after the job has been cancelled:
 
-- GitLab: \`after_script\`, when \`CI_JOB_STATUS\` is \`canceled\`
+- GitLab: \`after_script\`, when the job did not succeed and its job id file exists
 - GitHub Actions: a step with \`if: cancelled()\`
 - Azure Pipelines: a step with \`condition: canceled()\`
 - Jenkins: \`post { unsuccessful }\` of the stage that runs the simulation
@@ -51,6 +51,7 @@ This command has no interactive prompt: \`--agent\` changes nothing, it is accep
 - **Job id recording:** in CI, while \`sf hardis:project:deploy:smart --check\` runs \`sf project deploy start --dry-run\`, it watches the Salesforce CLI deploy cache (\`~/.sf/deploy-cache.json\`) and writes the job id of the new simulation in \`.cache/sfdx-hardis/running-deployment-simulation.json\`, in the working tree. The file is deleted when the deploy command succeeds, and by this command once it has used it. It is kept after a failed deploy command: when a CI job is cancelled, some runners (GitLab) kill the deploy command first, so the failure can be the cancellation itself. If the simulation is already completed, this command logs it and does nothing.
 - **Why the working tree:** with some CI executors (GitLab Docker executor), the cancellation hook runs in a new container where the home folder of the job, and its Salesforce CLI cache, are lost. The working tree is kept.
 - **Cancellation:** runs \`sf project deploy cancel --job-id <id> --target-org <username> --async\`. On GitLab Docker executor, run \`sf hardis:auth:login\` before, as the authentication of the job is lost too.
+- **GitLab timeout:** GitLab runs no \`after_script\` once a job reaches its timeout. The default template sets \`RUNNER_SCRIPT_TIMEOUT\` 5 minutes below the job timeout, so the hook still runs. Raise both together.
 - **Result:** returns \`status\` (\`canceled\`, \`nothing-to-cancel\`, \`already-completed\`, \`skipped-not-simulation\` or \`failed\`), \`jobId\` and \`targetUsername\`.
 </details>
 `;
