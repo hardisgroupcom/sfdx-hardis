@@ -85,7 +85,8 @@ variables on GitLab. The run removes them at its start and at its end.
   deployment comment of the Pull Request names the tag.
 - The deployments of integration create no tag. The validation of the first promotion creates none.
 - On production (a05, a07, c06, c12): the GitHub / GitLab Release exists with the PDF and the XLSX.
-- The DevOps Pipeline, run headless on the clone, shows the current tag of each versioned branch
+- The DevOps Pipeline, run headless on the clone with its Versions button turned on (it is off by
+  default and the versions are listed on demand), shows the current tag of each versioned branch
   before it is captured (`<step>-pipeline.png`), plus the Releases tab and the Release version tab
   of a branch where the table says so. The last step (a10, c12) also captures each view of the
   switch (Major branches, Feature branches, Dev orgs) and the diagram with the Versions button off,

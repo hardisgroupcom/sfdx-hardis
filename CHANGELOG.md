@@ -6,6 +6,7 @@
   - Release candidates such as v1.5.0-rc.3 come from UAT, and the plain version such as v1.5.0 comes from production, with a GitHub or GitLab Release holding its release notes.
   - Each branch can name its release candidates its own way, such as v1.5.0-pi2-it4-uat-rc1, with variables you raise in the config or with CI/CD variables.
   - The version shows in the Pull Request comment and the notification, and can optionally be written on tickets.
+  - The VS Code DevOps Pipeline shows the versions on demand, with a **Versions** button that is off by default.
   - New [hardis:project:version:list](https://sfdx-hardis.cloudity.com/hardis/project/version/list/): lists the version of each versioned branch, the version each promotion would create, and the history of the version tags.
   - [hardis:doc:release-notes](https://sfdx-hardis.cloudity.com/hardis/doc/release-notes/): with a plain version tag, the release notes start from the previous plain version instead of one of its release candidates.
 - Target branches configured with a label (`preprod,HOTFIX tickets`) are accepted by [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/) and [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/) in agent mode, and by backpromote ([#2505](https://github.com/hardisgroupcom/sfdx-hardis/issues/2505)).
