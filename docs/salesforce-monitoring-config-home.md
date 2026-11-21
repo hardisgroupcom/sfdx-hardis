@@ -143,6 +143,8 @@ NOTIF_API_SKIP_LOGS=all
 NOTIF_API_SKIP_METRICS=METADATA_STATUS,UNUSED_METADATAS
 ```
 
+In **NOTIF_API_SKIP_LOGS**, `UNUSED_USERS` also covers the other checks that send user rows: `UNUSED_USERS_CRM_6_MONTHS`, `UNUSED_USERS_EXPERIENCE_6_MONTHS`, `ACTIVE_USERS`, `ACTIVE_USERS_CRM_WEEKLY` and `ACTIVE_USERS_EXPERIENCE_MONTHLY`. Their metrics are still sent.
+
 ## Monitoring commands
 
 You can fine-tune which monitoring commands run, how often, and how their notifications are routed via the **monitoringCommands** property in `.sfdx-hardis.yml`. User entries are **merged by `key`** onto the built-in defaults, so you only need to declare the fields you want to override; new keys are appended as custom commands.

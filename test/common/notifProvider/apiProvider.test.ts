@@ -1,9 +1,36 @@
 import { expect } from 'chai';
 // Load the provider registry first: importing apiProvider alone hits a circular import
 import '../../../src/common/notifProvider/index.js';
-import { fitLokiLogData } from '../../../src/common/notifProvider/apiProvider.js';
+import { fitLokiLogData, isNotifTypeInSkipLogs } from '../../../src/common/notifProvider/apiProvider.js';
 
 const bytes = (value: string) => new TextEncoder().encode(value).length;
+
+describe('isNotifTypeInSkipLogs', () => {
+  const userTypes = [
+    'UNUSED_USERS',
+    'UNUSED_USERS_CRM_6_MONTHS',
+    'UNUSED_USERS_EXPERIENCE_6_MONTHS',
+    'ACTIVE_USERS',
+    'ACTIVE_USERS_CRM_WEEKLY',
+    'ACTIVE_USERS_EXPERIENCE_MONTHLY',
+  ] as const;
+
+  for (const type of userTypes) {
+    it(`UNUSED_USERS covers ${type}`, () => {
+      expect(isNotifTypeInSkipLogs('METADATA_STATUS,UNUSED_USERS', type)).to.equal(true);
+    });
+  }
+
+  it('does not skip another type when UNUSED_USERS is listed', () => {
+    expect(isNotifTypeInSkipLogs('UNUSED_USERS', 'METADATA_STATUS')).to.equal(false);
+  });
+
+  it('skips only the listed user type when UNUSED_USERS is not listed', () => {
+    expect(isNotifTypeInSkipLogs('UNUSED_USERS_CRM_6_MONTHS', 'UNUSED_USERS_CRM_6_MONTHS')).to.equal(true);
+    expect(isNotifTypeInSkipLogs('UNUSED_USERS_CRM_6_MONTHS', 'UNUSED_USERS')).to.equal(false);
+    expect(isNotifTypeInSkipLogs('ACTIVE_USERS_CRM_WEEKLY', 'UNUSED_USERS_CRM_6_MONTHS')).to.equal(false);
+  });
+});
 
 // One Apex error row with a long stack trace, like the rows that made Loki refuse whole entries
 const errorRow = (index: number) => ({ Operation: `Class${index}`, StackTrace: 'x'.repeat(1000) });
