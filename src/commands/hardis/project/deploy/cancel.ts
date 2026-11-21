@@ -23,6 +23,9 @@ Call this command from the cancellation hook of your CI job, after the job has b
 - GitLab: \`after_script\`, when \`CI_JOB_STATUS\` is \`canceled\`
 - GitHub Actions: a step with \`if: cancelled()\`
 - Azure Pipelines: a step with \`condition: canceled()\`
+- Jenkins: \`post { unsuccessful }\` of the stage that runs the simulation
+
+Bitbucket Pipelines runs no script when a step is stopped or times out, so a stopped simulation cannot be cancelled there.
 
 The default sfdx-hardis CI/CD templates already do it.
 

@@ -55,7 +55,10 @@ pipeline {
     options {
         // Deployments can be long: raise this value if the build is aborted before the deployment ends
         timeout(time: 150, unit: 'MINUTES')
-        disableConcurrentBuilds()
+        // A new commit on a Pull Request aborts the running build of the previous commit (its deployment simulation is
+        // then cancelled in the org by the Validation stage). Builds of the other branches never abort each other:
+        // a new merge waits for the running deployment, whose pre/post-deployment actions only cover the merged Pull Request.
+        disableConcurrentBuilds(abortPrevious: env.CHANGE_ID != null)
         // Keep build logs for 30 days
         buildDiscarder(logRotator(daysToKeepStr: '30'))
     }
@@ -183,6 +186,12 @@ pipeline {
                         }
                     }
                     post {
+                        // When the build is aborted (new commit on the Pull Request, abort by hand, timeout), also cancel its
+                        // deployment simulation in the Salesforce org: aborting the build does not stop it in the org,
+                        // where the next simulations would wait for it. After a failed simulation there is nothing to cancel.
+                        unsuccessful {
+                            sh 'sf hardis:project:deploy:cancel || true'
+                        }
                         always {
                             archiveArtifacts allowEmptyArchive: true, artifacts: 'hardis-report/**', defaultExcludes: false, followSymlinks: false
                         }
