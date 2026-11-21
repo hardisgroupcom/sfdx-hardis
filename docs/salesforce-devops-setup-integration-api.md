@@ -111,7 +111,7 @@ See [Monitoring configuration](salesforce-monitoring-config-home.md#fine-grained
 
 You can skip sending logs or metrics to the API based on notification type by defining the following CI/CD variables:
 
-- **NOTIF_API_SKIP_LOGS**: Comma-separated list of notification types to skip for logs, or `all` to skip all logs
+- **NOTIF_API_SKIP_LOGS**: Comma-separated list of notification types to skip for logs, or `all` to skip all logs. `UNUSED_USERS` also covers the active and inactive user checks that send the same rows
 - **NOTIF_API_SKIP_METRICS**: Comma-separated list of notification types to skip for metrics, or `all` to skip all metrics
 
 Examples of configuration:

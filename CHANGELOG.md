@@ -12,6 +12,7 @@
 - New [hardis:project:deploy:cancel](https://sfdx-hardis.cloudity.com/hardis/project/deploy/cancel/): when a CI job is cancelled, its deployment simulation is now cancelled in the Salesforce org too, and a deployment after a merge is no longer cancelled by the next merge ([update your workflow files](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-init-project/#cancelled-pipelines)).
 - CI/CD templates: settings to uncomment and documentation to deploy every merge of a major branch, for projects using Quick Deploy or delta deployments.
 - Target branches configured with a label (`preprod,HOTFIX tickets`) are accepted by [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/) and [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/) in agent mode, and by backpromote ([#2505](https://github.com/hardisgroupcom/sfdx-hardis/issues/2505)).
+- [Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-home/): `NOTIF_API_SKIP_LOGS=UNUSED_USERS` now also keeps the user rows of the other active and inactive user checks out of the logs.
 
 ## [8.26.0] 2026-11-19
 

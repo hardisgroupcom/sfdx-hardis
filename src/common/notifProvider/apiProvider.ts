@@ -63,6 +63,22 @@ export function fitLokiLogData(
   return { json, initialBytes, finalBytes: bytes, logElementsKept: kept };
 }
 
+// hardis:org:diagnose:unusedusers sends the same user rows under each of these types, so someone
+// who opts out of UNUSED_USERS to keep those rows out of the logs is opting out of all of them
+const USER_ROWS_NOTIF_TYPES: NotifMessage["type"][] = [
+  "UNUSED_USERS",
+  "UNUSED_USERS_CRM_6_MONTHS",
+  "UNUSED_USERS_EXPERIENCE_6_MONTHS",
+  "ACTIVE_USERS",
+  "ACTIVE_USERS_CRM_WEEKLY",
+  "ACTIVE_USERS_EXPERIENCE_MONTHLY",
+];
+
+export function isNotifTypeInSkipLogs(skipLogs: string, type: NotifMessage["type"]): boolean {
+  const skippedTypes = skipLogs.split(",");
+  return skippedTypes.includes(type) || (skippedTypes.includes("UNUSED_USERS") && USER_ROWS_NOTIF_TYPES.includes(type));
+}
+
 export class ApiProvider extends NotifProviderRoot {
   protected apiUrl: string | null;
   public payload: ApiNotifMessage;
@@ -117,7 +133,7 @@ export class ApiProvider extends NotifProviderRoot {
       uxLog("log", this, `[ApiProvider] Skipped posting logs to API and JSON file as NOTIF_API_SKIP_LOGS is set to 'all'`);
       return;
     }
-    else if (notifApiSkipLogs && notifApiSkipLogs?.split(",").includes(notifMessage.type)) {
+    else if (notifApiSkipLogs && isNotifTypeInSkipLogs(notifApiSkipLogs, notifMessage.type)) {
       uxLog("log", this, `[ApiProvider] Skipped posting logs to API and JSON file for notification type '${notifMessage.type}' as NOTIF_API_SKIP_LOGS includes it`);
       return;
     }
