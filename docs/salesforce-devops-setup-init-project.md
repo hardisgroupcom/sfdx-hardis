@@ -82,7 +82,9 @@ On GitLab, a new commit only cancels the previous pipeline while none of its non
 
 On GitLab, a job that reaches its timeout runs no `after_script`. The template stops the script 5 minutes before (`RUNNER_SCRIPT_TIMEOUT: 145m` for a job timeout of 150 minutes), so the hook can still cancel the simulation. If you raise the `timeout` of a job, raise `RUNNER_SCRIPT_TIMEOUT` too, or the job stops at 145 minutes.
 
-Real deployments, after a merge, are not cancelled by the next merge: they run one after the other.
+Real deployments, after a merge, are not cancelled by the next merge. On GitLab, GitHub and Jenkins they run one after the other. On Azure and Bitbucket, two merges close together can deploy at the same time unless you apply the settings below.
+
+With Quick Deploy or delta deployments after merge, every merge must run its own deployment: the next one only deploys its own Pull Request, so the metadata of a skipped merge may never reach the org.
 
 **GitLab**: the `deploy_to_org` jobs of a branch share a resource group. GitLab runs the waiting jobs of a resource group in any order by default, so an older merge could be deployed after a newer one. Set the resource group to run them in pipeline order, once per major branch (`integration`, `uat`, `preprod`, `main`...):
 
@@ -94,7 +96,13 @@ curl --request PUT --header "PRIVATE-TOKEN: <your_access_token>" \
 
 The resource group exists once a first `deploy_to_org` job of the branch has run.
 
-**GitHub**: a workflow keeps only one waiting run per branch. When a third merge arrives while a deployment runs and a second one waits, the waiting run is cancelled before it starts. Its metadata is deployed by the newer run, but its pre-deployment and post-deployment actions are not run: run them by hand, or merge the Pull Requests one at a time.
+**GitHub**: a workflow keeps only one waiting run per branch. When a third merge arrives while a deployment runs and a second one waits, the waiting run is cancelled before it starts. Its pre-deployment and post-deployment actions are not run and, with Quick Deploy or delta deployments, its metadata may never reach the org. To deploy every merge, uncomment `queue: max` in `process-deploy.yml`: up to 100 runs wait for their turn.
+
+**Azure**: do not tick **Batch changes while a build is in progress** in the triggers of the pipeline, as a batched run only deploys the last merge. To run the deployments one at a time, add an [Exclusive lock](https://learn.microsoft.com/en-us/azure/devops/pipelines/process/approvals#exclusive-lock) check on a resource the pipeline uses, such as a variable group, and set `lockBehavior: sequential` at the top of `azure-pipelines-deployment.yml`.
+
+**Bitbucket**: to run the deployments one at a time, first in, first out, uncomment `concurrency-group` in the deployment step of `bitbucket-pipelines.yml`.
+
+**Jenkins**: queued builds of a branch can be folded into one build of its latest commit. With Quick Deploy or delta deployments, check that no merge was skipped, or deploy in full.
 
 If your project was created with an older version of sfdx-hardis, bring these parts into your workflow files: see [Upgrade the CI/CD files](#upgrade-the-cicd-files).
 

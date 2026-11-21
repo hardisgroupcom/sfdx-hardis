@@ -25,8 +25,8 @@
 #   - "Include" all your major branches
 #   - With Quick Deploy or delta deployments after merge, every merge must run its own deployment:
 #     do not tick "Batch changes while a build is in progress", as a batched run only deploys the last merge.
-#     To also run them one at a time and in order, protect the target environment with an
-#     Exclusive Lock check and use lockBehavior: sequential
+#     To also run them one at a time and in order, add an Exclusive Lock check on a resource this
+#     pipeline uses (a variable group for example), and set lockBehavior: sequential at the top of this file
 #     (https://learn.microsoft.com/en-us/azure/devops/pipelines/process/approvals#exclusive-lock)
 
 name: Deploy to org

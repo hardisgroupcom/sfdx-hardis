@@ -10,6 +10,7 @@
   - New [hardis:project:version:list](https://sfdx-hardis.cloudity.com/hardis/project/version/list/): lists the version of each versioned branch, the version each promotion would create, and the history of the version tags.
   - [hardis:doc:release-notes](https://sfdx-hardis.cloudity.com/hardis/doc/release-notes/): with a plain version tag, the release notes start from the previous plain version instead of one of its release candidates.
 - New [hardis:project:deploy:cancel](https://sfdx-hardis.cloudity.com/hardis/project/deploy/cancel/): when a CI job is cancelled, its deployment simulation is now cancelled in the Salesforce org too, and a deployment after a merge is no longer cancelled by the next merge ([update your workflow files](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-init-project/#cancelled-pipelines)).
+- CI/CD templates: settings to uncomment and documentation to deploy every merge of a major branch, for projects using Quick Deploy or delta deployments.
 - Target branches configured with a label (`preprod,HOTFIX tickets`) are accepted by [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/) and [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/) in agent mode, and by backpromote ([#2505](https://github.com/hardisgroupcom/sfdx-hardis/issues/2505)).
 
 ## [8.26.0] 2026-11-19
