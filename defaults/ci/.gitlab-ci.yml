@@ -376,8 +376,8 @@ deploy_to_org:
     variables:
       - $CI_COMMIT_REF_NAME !~ $DEPLOY_BRANCHES
       - $SCRATCH_ORG_POOL == "true"
-  # A new merge never cancels the deployment of the previous one: its metadata would be caught up by the next
-  # deployment, but not its pre/post-deployment actions, which only cover the merged Merge Request
+  # A new merge never cancels the deployment of the previous one: its pre/post-deployment actions only cover the
+  # merged Merge Request and, with Quick Deploy or delta deployments, its metadata may never reach the org
   interruptible: false
   # Deployments of the same branch run one after the other.
   # Set the resource group process mode to oldest_first, so they run in merge order (GitLab default is unordered):

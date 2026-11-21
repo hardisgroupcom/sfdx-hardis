@@ -59,6 +59,9 @@ pipeline {
         // then cancelled in the org by the Validation stage). Builds of the other branches never abort each other:
         // a new merge waits for the running deployment, whose pre/post-deployment actions only cover the merged Pull Request.
         disableConcurrentBuilds(abortPrevious: env.CHANGE_ID != null)
+        // With Quick Deploy or delta deployments after merge, every merge must run its own deployment.
+        // Jenkins may fold the queued builds of a branch into a single build of its latest commit, and the
+        // merges in between would never reach the org: check that no merge was skipped, or deploy in full.
         // Keep build logs for 30 days
         buildDiscarder(logRotator(daysToKeepStr: '30'))
     }
