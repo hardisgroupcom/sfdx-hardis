@@ -29,7 +29,7 @@ import {
 import { CONSTANTS, getConfig, getEnvVar } from '../../../../config/index.js';
 import { commitContainsDeploymentKeyword } from '../../../../common/utils/deploymentKeywordUtils.js';
 import { smartDeploy, removePackageXmlContent, createEmptyPackageXml } from '../../../../common/utils/deployUtils.js';
-import { emitDeploymentStartEvent } from '../../../../common/utils/pluginEventUtils.js';
+import { emitDeploymentStartEvent, emitTestSelectionEvent } from '../../../../common/utils/pluginEventUtils.js';
 import { extendPackageFileWithDependencies, appendPackageModifications } from '../../../../common/utils/deltaUtils.js';
 import { isProductionOrg, promptOrgUsernameDefault, setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { getApexTestClasses, selectTestClassesFromPullRequests } from '../../../../common/utils/classUtils.js';
@@ -613,6 +613,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     destructiveChangesAfterDeployment?: boolean;
     extraCommands?: any[];
     deferSuccessPullRequestComment?: boolean;
+    testSelectionPlugin?: string;
     replacementRules?: { targetBranch: string | null } | false;
   };
   protected packageXmlFile: string;
@@ -742,6 +743,9 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     // Set smart deploy options
     await this.setAdditionalOptions(targetUsername);
 
+    // The package.xml to deploy is final: a plugin can now choose the Apex tests to run
+    await this.applyPluginTestSelection(targetUsername);
+
     // Pre-destructive Flows must be gone before the constructive metadata is deployed
     if (!this.checkOnly) {
       await this.flowDeletion.execute('pre');
@@ -854,6 +858,36 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
           uxLog("warning", this, c.yellow('[SmartDeploy] ' + t('smartDeployDestructiveChangesNoPostFile')));
         }
       }
+    }
+  }
+
+  // Ask the plugins listening to sfdx-hardis:test-selection which Apex tests to run, for example
+  // apextestlist that reads the tests mapped to the Apex classes of the package.xml. NoTestRun is
+  // kept: when sfdx-hardis decided that no test is needed, a plugin can not make the job run tests.
+  private async applyPluginTestSelection(targetUsername: string) {
+    const selection = await emitTestSelectionEvent(this, {
+      checkOnly: this.checkOnly,
+      packageXmlFile: this.packageXmlFile,
+      delta: this.delta === true,
+      testLevel: this.testLevel,
+      testClasses: (this.testClasses || '').split(' ').filter((testClass: string) => testClass !== ''),
+      targetUsername: this.targetOrg.getUsername() || targetUsername,
+    });
+    if (!selection) {
+      return;
+    }
+    const plugin = selection.plugin || '?';
+    if (this.testLevel === 'NoTestRun') {
+      uxLog("warning", this, c.yellow('[SmartDeploy] ' + t('pluginTestSelectionNoTestRunKept', { plugin })));
+      return;
+    }
+    this.testLevel = selection.testLevel;
+    this.testClasses = (selection.testClasses || []).join(' ');
+    this.smartDeployOptions.testClasses = this.testClasses;
+    this.smartDeployOptions.testSelectionPlugin = plugin;
+    uxLog("action", this, c.cyan('[SmartDeploy] ' + t('pluginTestSelectionApplied', { plugin, testLevel: c.bold(this.testLevel) })));
+    if (this.testClasses !== '') {
+      uxLog("log", this, c.grey(' - ' + this.testClasses.split(' ').join('\n - ')));
     }
   }
 

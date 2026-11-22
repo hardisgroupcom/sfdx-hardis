@@ -406,6 +406,8 @@ export async function smartDeploy(
     destructiveChangesAfterDeployment?: boolean;
     extraCommands?: any[];
     deferSuccessPullRequestComment?: boolean;
+    // Plugin whose test selection is applied, to say so in the logs when its tests do not run
+    testSelectionPlugin?: string;
     // Target of the replacement rules: a major branch, null for a dev sandbox or scratch org
     // (the default), false to skip them
     replacementRules?: { targetBranch: string | null } | false;
@@ -589,6 +591,9 @@ export async function smartDeploy(
             });
             if (quickDeployRes.status === 0) {
               uxLog("success", commandThis, c.green(t('successfullyProcessedQuickdeployForDeploymentid', { deploymentCheckId })));
+              if (options.testSelectionPlugin) {
+                uxLog("warning", commandThis, c.yellow(t('pluginTestSelectionNotRun', { plugin: options.testSelectionPlugin, mode: 'Quick Deploy' })));
+              }
               uxLog(
                 "warning",
                 commandThis,
@@ -671,6 +676,10 @@ export async function smartDeploy(
               );
             }
           }
+        }
+        // A plugin selection never starts as NoTestRun: reaching it here means the tests were dropped above
+        if (options.testSelectionPlugin && testlevel === 'NoTestRun') {
+          uxLog("warning", commandThis, c.yellow(t('pluginTestSelectionNotRun', { plugin: options.testSelectionPlugin, mode: 'NoTestRun' })));
         }
         // No QuickDeploy Available, or QuickDeploy failing : try full deploy
         const reportDir = await getReportDirectory();

@@ -9,6 +9,10 @@
  * its own data. Events are sent before a validation or a deployment reads the sources, as soon as
  * Salesforce returns the result of a validation, a deployment, an Apex test run, and after a metadata
  * retrieve; other events will use the same envelope.
+ *
+ * The plugins never answer through the hook result. The only event that reads something back is
+ * sfdx-hardis:test-selection: the plugin writes a JSON file at data.selectionFile, and the command
+ * checks it before using it.
  */
 import c from 'chalk';
 import * as path from 'path';
@@ -86,6 +90,49 @@ export type DeploymentStartEventData = {
 export type SfdxHardisDeploymentStartEvent = SfdxHardisEvent<SfdxHardisDeploymentStartEventName, DeploymentStartEventData>;
 
 // ---------------------------------------------------------------------------
+// Test selection event: sent once the package.xml to deploy is final, before the deployment starts
+// ---------------------------------------------------------------------------
+
+export type SfdxHardisTestSelectionEventName = 'sfdx-hardis:test-selection';
+
+export type TestSelectionEventData = {
+  // True for a validation
+  checkOnly: boolean;
+  // Absolute path of the package.xml that will be deployed (the delta one in a delta deployment)
+  packageXmlFile: string;
+  // True when packageXmlFile only contains the delta of the Pull Request
+  delta: boolean;
+  // Test level sfdx-hardis selected so far, from the flags, the config and Smart Deployment Tests
+  testLevel: string;
+  // Test classes sfdx-hardis selected so far (RunSpecifiedTests only)
+  testClasses: string[];
+  // Absolute path where the plugin can write its selection. Deleted before the event is sent.
+  selectionFile: string;
+};
+
+export type SfdxHardisTestSelectionEvent = SfdxHardisEvent<SfdxHardisTestSelectionEventName, TestSelectionEventData>;
+
+// What a plugin writes in data.selectionFile
+export type PluginTestSelection = {
+  // RunSpecifiedTests, RunLocalTests or RunAllTestsInOrg. NoTestRun is refused: skipping the tests
+  // stays a decision of sfdx-hardis (Smart Deployment Tests)
+  testLevel: string;
+  // Required with RunSpecifiedTests: Apex class names only, without namespace or method name
+  testClasses?: string[];
+  // Name of the plugin, shown in the logs
+  plugin?: string;
+};
+
+export type TestSelectionEventInput = {
+  checkOnly: boolean;
+  packageXmlFile: string;
+  delta: boolean;
+  testLevel: string;
+  testClasses: string[];
+  targetUsername?: string | null;
+};
+
+// ---------------------------------------------------------------------------
 // Retrieve event: metadata retrieved from an org into the local project
 // ---------------------------------------------------------------------------
 
@@ -123,6 +170,7 @@ export type SfdxHardisEventDataMap = {
   'sfdx-hardis:validation-start': DeploymentStartEventData;
   'sfdx-hardis:deployment-start': DeploymentStartEventData;
   'sfdx-hardis:retrieve-done': RetrieveEventData;
+  'sfdx-hardis:test-selection': TestSelectionEventData;
 };
 
 export type SfdxHardisEventName = keyof SfdxHardisEventDataMap;
@@ -138,6 +186,10 @@ export type SalesforceRunEventInput = {
 };
 
 const COVERAGE_RESULTS_FILE_NAME = 'apex-coverage-results.json';
+const TEST_SELECTION_FILE_NAME = 'plugin-test-selection.json';
+const PLUGIN_TEST_LEVELS = ['RunSpecifiedTests', 'RunLocalTests', 'RunAllTestsInOrg'];
+// ClassName only: a dotted name would be read by Salesforce as namespace.ClassName
+const APEX_TEST_NAME_REGEX = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
 /**
  * Event of hardis:project:deploy:start, validate and quick, sent right after the wrapped sf command
@@ -186,6 +238,39 @@ export async function emitRetrieveEvent(commandThis: any, input: RetrieveEventIn
   await emitPluginEvent(commandThis, 'sfdx-hardis:retrieve-done', () => buildRetrieveEventData(input), {
     targetUsername: input.targetUsername,
   });
+}
+
+/**
+ * Let the plugins choose the Apex tests of a validation or a deployment, once the package.xml to
+ * deploy is final. Returns the selection a plugin wrote in data.selectionFile, or null when no plugin
+ * wrote a valid one: the command then keeps its own selection. Never throws.
+ */
+export async function emitTestSelectionEvent(
+  commandThis: any,
+  input: TestSelectionEventInput
+): Promise<PluginTestSelection | null> {
+  try {
+    const selectionFile = path.resolve(path.join(await getReportDirectory(), TEST_SELECTION_FILE_NAME));
+    // A file left by an earlier run must never be read as the answer of this one
+    await fs.remove(selectionFile);
+    await emitPluginEvent(
+      commandThis,
+      'sfdx-hardis:test-selection',
+      () => ({
+        checkOnly: input.checkOnly,
+        packageXmlFile: path.resolve(input.packageXmlFile),
+        delta: input.delta,
+        testLevel: input.testLevel,
+        testClasses: [...input.testClasses],
+        selectionFile,
+      }),
+      { targetUsername: input.targetUsername }
+    );
+    return await readPluginTestSelection(commandThis, selectionFile);
+  } catch (e) {
+    logPluginFailure(commandThis, 'sfdx-hardis:test-selection', null, e);
+    return null;
+  }
 }
 
 /**
@@ -275,6 +360,31 @@ export async function buildSalesforceRunEventData(input: SalesforceRunEventInput
   };
 }
 
+// The selection a plugin wrote, or null when there is none or when it is not valid (with a warning)
+export async function readPluginTestSelection(commandThis: any, selectionFile: string): Promise<PluginTestSelection | null> {
+  if (!fs.existsSync(selectionFile)) {
+    return null;
+  }
+  let content: any;
+  try {
+    content = await fs.readJson(selectionFile);
+  } catch (e: any) {
+    uxLog("warning", commandThis, c.yellow(t('pluginTestSelectionIgnored', { reason: e?.message || String(e) })));
+    return null;
+  }
+  const problem = findTestSelectionProblem(content);
+  if (problem) {
+    uxLog("warning", commandThis, c.yellow(t('pluginTestSelectionIgnored', { reason: problem })));
+    return null;
+  }
+  const testClasses: string[] = content.testLevel === 'RunSpecifiedTests' ? [...new Set<string>(content.testClasses)] : [];
+  return {
+    testLevel: content.testLevel,
+    testClasses,
+    plugin: typeof content.plugin === 'string' && content.plugin ? content.plugin : undefined,
+  };
+}
+
 export function buildRetrieveEventData(input: RetrieveEventInput): RetrieveEventData {
   return {
     status: input.status,
@@ -302,6 +412,27 @@ async function findPullRequest(): Promise<SfdxHardisEventPullRequest | null> {
   } catch {
     return null;
   }
+}
+
+// Why a selection written by a plugin can not be used, or null when it can
+function findTestSelectionProblem(content: any): string | null {
+  if (!content || typeof content !== 'object' || Array.isArray(content)) {
+    return t('pluginTestSelectionNotAnObject');
+  }
+  if (!PLUGIN_TEST_LEVELS.includes(content.testLevel)) {
+    return t('pluginTestSelectionInvalidTestLevel', { levels: PLUGIN_TEST_LEVELS.join(', '), value: JSON.stringify(content.testLevel) });
+  }
+  if (content.testLevel !== 'RunSpecifiedTests') {
+    return null;
+  }
+  if (!Array.isArray(content.testClasses) || content.testClasses.length === 0) {
+    return t('pluginTestSelectionNoTestClasses');
+  }
+  const invalidNames = content.testClasses.filter((name: any) => typeof name !== 'string' || !APEX_TEST_NAME_REGEX.test(name));
+  if (invalidNames.length > 0) {
+    return t('pluginTestSelectionInvalidTestClasses', { names: invalidNames.map((name: any) => JSON.stringify(name)).join(', ') });
+  }
+  return null;
 }
 
 function logPluginFailure(commandThis: any, event: string, pluginName: string | null | undefined, error: any): void {

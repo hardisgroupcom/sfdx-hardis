@@ -168,6 +168,7 @@ flowchart TD
 
 - **Custom Apex Test Classes**: When `enableDeploymentApexTestClasses: true`, collects test classes declared in config and across all PR descriptions in scope, and overrides the test level to `RunSpecifiedTests` with the collected class list.
 - **Smart Deployment Tests**: When enabled, automatically downgrades the test level to `NoTestRun` if only non-impacting metadata types are present in the delta and the target is not a production org (see [Delta Processing](#delta-processing)).
+- **Test selection by a plugin**: Once the package.xml to deploy is final, an installed sf plugin can replace the test level and the test classes through the [`sfdx-hardis:test-selection` event](sfdx-hardis-plugins.md#choose-the-apex-tests). `NoTestRun` is never replaced.
 
 ### Package Installation
 
