@@ -378,7 +378,7 @@ Write a JSON file at `data.selectionFile`:
 | Property      | Required                    | Description                                                                                         |
 |---------------|-----------------------------|-----------------------------------------------------------------------------------------------------|
 | `testLevel`   | Yes                         | `RunSpecifiedTests`, `RunLocalTests` or `RunAllTestsInOrg`                                          |
-| `testClasses` | With `RunSpecifiedTests`    | Not empty. `ClassName`, `namespace.ClassName` or `ClassName.methodName`. Ignored with other levels  |
+| `testClasses` | With `RunSpecifiedTests`    | Not empty. Apex class names only, without namespace or method name. Ignored with other levels       |
 | `plugin`      | No                          | Name of your plugin, shown in the logs                                                              |
 
 ```typescript
@@ -410,6 +410,8 @@ What sfdx-hardis does with the file:
 - **A file that is not valid is ignored** with a warning, and the selection of sfdx-hardis is used.
 - **One selection per command.** With a deployment plan, the same tests run for every package. When several plugins write the file, the last one wins.
 - The Salesforce rules still apply: with `RunSpecifiedTests`, each Apex class and trigger deployed needs 75% code coverage from the tests that run.
+- **sfdx-hardis also checks the total coverage of the test run.** It must reach `apexTestsMinCoverageOrgWide` (75% by default), or the job fails unless `testCoverageNotBlocking` is `true`. A selected test that also runs poorly covered classes lowers this total, even when every deployed class is above 75%.
+- **Your tests do not always run.** A Quick Deploy reuses the validation, and some deployments to a non-production org switch to `NoTestRun`. The job log says so when it happens.
 
 ### Need another extension point?
 

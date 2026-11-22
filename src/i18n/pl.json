@@ -3345,6 +3345,7 @@
   "pluginTestSelectionNoTestClasses": "RunSpecifiedTests wymaga niepustej tablicy testClasses",
   "pluginTestSelectionNoTestRunKept": "To wdrożenie nie wymaga uruchamiania testów: wybór testów pluginu {{plugin}} jest ignorowany",
   "pluginTestSelectionNotAnObject": "plik musi zawierać obiekt JSON",
+  "pluginTestSelectionNotRun": "Testy wybrane przez plugin {{plugin}} nie są uruchamiane: to wdrożenie używa {{mode}}",
   "poolConfig": "Konfiguracja puli: ",
   "poolConfiguringStorage": "Konfigurowanie pool scratch orgów: magazyn {{storageService}}, maksymalnie {{max}} scratch orgów",
   "poolCreatedScratchOrgs": "Utworzono {{numberCreated}} Scratch Org ({{numberFailed}} tworzenie(a) nie powiodło się)",

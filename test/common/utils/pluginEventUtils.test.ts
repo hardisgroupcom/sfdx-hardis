@@ -316,13 +316,13 @@ describe('Plugin events', () => {
       const { config } = selectingPlugin(JSON.stringify({
         plugin: 'apextestlist',
         testLevel: 'RunSpecifiedTests',
-        testClasses: ['AccountServiceTest', 'ns.OrderTest', 'AccountServiceTest', 'CaseTest.testClose'],
+        testClasses: ['AccountServiceTest', 'OrderTest', 'AccountServiceTest'],
       }));
       const selection = await emitTestSelectionEvent({ config }, SELECTION_INPUT);
       expect(selection).to.deep.equal({
         plugin: 'apextestlist',
         testLevel: 'RunSpecifiedTests',
-        testClasses: ['AccountServiceTest', 'ns.OrderTest', 'CaseTest.testClose'],
+        testClasses: ['AccountServiceTest', 'OrderTest'],
       });
     });
 
@@ -342,6 +342,8 @@ describe('Plugin events', () => {
         JSON.stringify({ testLevel: 'RunSpecifiedTests', testClasses: [] }),
         JSON.stringify({ testLevel: 'RunSpecifiedTests', testClasses: ['GoodTest', 'Bad Test; rm -rf'] }),
         JSON.stringify({ testLevel: 'RunSpecifiedTests', testClasses: ['GoodTest', 42] }),
+        JSON.stringify({ testLevel: 'RunSpecifiedTests', testClasses: ['GoodTest', 'CaseTest.testClose'] }),
+        JSON.stringify({ testLevel: 'RunSpecifiedTests', testClasses: ['GoodTest', 'ns.OrderTest'] }),
       ];
       for (const content of invalidContents) {
         const { config } = selectingPlugin(content);

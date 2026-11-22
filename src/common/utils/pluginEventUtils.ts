@@ -117,7 +117,7 @@ export type PluginTestSelection = {
   // RunSpecifiedTests, RunLocalTests or RunAllTestsInOrg. NoTestRun is refused: skipping the tests
   // stays a decision of sfdx-hardis (Smart Deployment Tests)
   testLevel: string;
-  // Required with RunSpecifiedTests: ClassName, namespace.ClassName or ClassName.methodName
+  // Required with RunSpecifiedTests: Apex class names only, without namespace or method name
   testClasses?: string[];
   // Name of the plugin, shown in the logs
   plugin?: string;
@@ -188,8 +188,8 @@ export type SalesforceRunEventInput = {
 const COVERAGE_RESULTS_FILE_NAME = 'apex-coverage-results.json';
 const TEST_SELECTION_FILE_NAME = 'plugin-test-selection.json';
 const PLUGIN_TEST_LEVELS = ['RunSpecifiedTests', 'RunLocalTests', 'RunAllTestsInOrg'];
-// ClassName, namespace.ClassName, ClassName.methodName or namespace.ClassName.methodName
-const APEX_TEST_NAME_REGEX = /^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*){0,2}$/;
+// ClassName only: a dotted name would be read by Salesforce as namespace.ClassName
+const APEX_TEST_NAME_REGEX = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
 /**
  * Event of hardis:project:deploy:start, validate and quick, sent right after the wrapped sf command

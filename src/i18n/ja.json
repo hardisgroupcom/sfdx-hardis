@@ -3343,6 +3343,7 @@
   "pluginTestSelectionNoTestClasses": "RunSpecifiedTests には空でない testClasses 配列が必要です",
   "pluginTestSelectionNoTestRunKept": "このデプロイでは実行が必要なテストはありません: プラグイン {{plugin}} のテスト選択は無視されます",
   "pluginTestSelectionNotAnObject": "ファイルには JSON オブジェクトが含まれている必要があります",
+  "pluginTestSelectionNotRun": "プラグイン {{plugin}} が選択したテストは実行されません: このデプロイでは {{mode}} を使用します",
   "poolConfig": "プール設定：",
   "poolConfiguringStorage": "スクラッチ組織の pool を設定しています: ストレージ {{storageService}}、最大 {{max}} 個のスクラッチ組織",
   "poolCreatedScratchOrgs": "{{numberCreated}} 個のスクラッチ組織を作成しました（{{numberFailed}} 件の作成が失敗しました）",

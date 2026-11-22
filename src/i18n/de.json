@@ -3344,6 +3344,7 @@
   "pluginTestSelectionNoTestClasses": "RunSpecifiedTests benötigt ein nicht leeres testClasses-Array",
   "pluginTestSelectionNoTestRunKept": "Für dieses Deployment muss kein Test laufen: Die Testauswahl des Plugins {{plugin}} wird ignoriert",
   "pluginTestSelectionNotAnObject": "die Datei muss ein JSON-Objekt enthalten",
+  "pluginTestSelectionNotRun": "Die vom Plugin {{plugin}} ausgewählten Tests werden nicht ausgeführt: Dieses Deployment verwendet {{mode}}",
   "poolConfig": "Pool-Konfiguration: ",
   "poolConfiguringStorage": "Scratch-org-Pool wird konfiguriert: Speicher {{storageService}}, höchstens {{max}} Scratch Orgs",
   "poolCreatedScratchOrgs": "{{numberCreated}} Scratch Orgs erstellt ({{numberFailed}} Erstellung(en) fehlgeschlagen)",

@@ -3313,6 +3313,7 @@
   "pluginTestSelectionNoTestClasses": "RunSpecifiedTests precisa de um array testClasses não vazio",
   "pluginTestSelectionNoTestRunKept": "Nenhum teste precisa ser executado neste deployment: a seleção de testes do plugin {{plugin}} foi ignorada",
   "pluginTestSelectionNotAnObject": "o arquivo deve conter um objeto JSON",
+  "pluginTestSelectionNotRun": "Os testes selecionados pelo plugin {{plugin}} não são executados: este deployment usa {{mode}}",
   "poolConfig": "Configuração do pool: ",
   "poolConfiguringStorage": "Configurando o pool de scratch orgs: armazenamento {{storageService}}, no máximo {{max}} scratch orgs",
   "poolCreatedScratchOrgs": "{{numberCreated}} scratch orgs criadas ({{numberFailed}} criação(ões) com falha)",

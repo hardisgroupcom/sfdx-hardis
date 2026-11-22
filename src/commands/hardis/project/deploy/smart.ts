@@ -613,6 +613,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     destructiveChangesAfterDeployment?: boolean;
     extraCommands?: any[];
     deferSuccessPullRequestComment?: boolean;
+    testSelectionPlugin?: string;
     replacementRules?: { targetBranch: string | null } | false;
   };
   protected packageXmlFile: string;
@@ -883,6 +884,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     this.testLevel = selection.testLevel;
     this.testClasses = (selection.testClasses || []).join(' ');
     this.smartDeployOptions.testClasses = this.testClasses;
+    this.smartDeployOptions.testSelectionPlugin = plugin;
     uxLog("action", this, c.cyan('[SmartDeploy] ' + t('pluginTestSelectionApplied', { plugin, testLevel: c.bold(this.testLevel) })));
     if (this.testClasses !== '') {
       uxLog("log", this, c.grey(' - ' + this.testClasses.split(' ').join('\n - ')));
