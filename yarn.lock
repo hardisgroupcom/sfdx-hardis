@@ -1557,10 +1557,10 @@
     p-queue "^6.6.2"
     zod "^3.25.76 || ^4"
 
-"@langchain/google-genai@2.3.4":
-  version "2.3.4"
-  resolved "https://registry.yarnpkg.com/@langchain/google-genai/-/google-genai-2.3.4.tgz#a257ea029c5749583607419376dde0322fc174f7"
-  integrity sha512-Hq7lEtiQd5KiPquGjwKwzGg/JgbqSQia7CINLjJKoQ4FtolRuxj/mYDql0XZIMTAZJD93eeOk9wo3klEgueMYQ==
+"@langchain/google-genai@2.3.5":
+  version "2.3.5"
+  resolved "https://registry.yarnpkg.com/@langchain/google-genai/-/google-genai-2.3.5.tgz#25536ba187ff09117908dbd48dc362361f7cb7d4"
+  integrity sha512-SVHDUsTqeOmNWcS8644EKI1WCLYwqARQRh/+k4svDNKa+tnJt7XHvJWXXYSgHGIfafRTTzGjuwiRssCZZhooMA==
   dependencies:
     "@google/generative-ai" "^0.24.1"
 
