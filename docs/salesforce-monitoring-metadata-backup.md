@@ -29,6 +29,27 @@ When a component is deleted from the org, the next backup deletes its files, so 
 - The first backup that runs with this behavior deletes the files of everything deleted in the org since the monitoring started. It is not a change made in your org that day.
 - To keep the files of deleted components, set `monitoringBackupSkipDeletions: true` in the `.sfdx-hardis.yml` of the monitoring branch, or the variable `MONITORING_BACKUP_SKIP_DELETIONS=true`.
 
+### Too many files to retrieve
+
+Salesforce refuses to retrieve more than 10000 files at once (`LIMIT_EXCEEDED: Too many files in retrieve call, limit is: 10000`). A file is not a metadata item: an Apex class is 2 files, a Lightning Web Component several, while a field lives inside the file of its object. An org with many reports, email templates or documents reaches the limit first.
+
+When the org refuses the retrieve, the backup does not fail at once:
+
+1. It retrieves again without the types that matter least in a backup: `Report`, `Dashboard`, `Document`, `EmailTemplate`, `ContentAsset`, `StaticResource`, the translation types (`Translations`, `CustomObjectTranslation`, `StandardValueSetTranslation`, `GlobalValueSetTranslation`), the `Wave*` types, and their folders. All of them are left out together, even when fewer would have been enough.
+2. If the org refuses it again, it also leaves out `ExperienceBundle`.
+3. If the org still refuses it, the backup fails with the error.
+
+When a retry works, the backup is committed and the `BACKUP` notification has the **warning** severity, with the types left out and a **How to fix** button that leads here. The items left out are listed in `manifest/package-backup-truncated-items.xml`, and their files keep the state of the last backup that retrieved them: their changes are not tracked anymore.
+
+This is a workaround, not a normal state: the warning comes back at each backup until you fix the filters. Decide what you do not need to back up, then:
+
+- For one monitored org: add it to `manifest/package-skip-items.xml` in the branch of this org, then commit and push. You can edit this file from the Org Monitoring panel of the [VS Code extension](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis). It accepts full types (`<members>*</members>`), named items (`<members>Account.Name</members>`) and partial wildcards (`<members>pi__*</members>`, `<members>*__dlm</members>`, `<members>prefix*suffix</members>`).
+- For every monitored org: add the types to the CI/CD variable `MONITORING_BACKUP_SKIP_METADATA_TYPES`, for example `MONITORING_BACKUP_SKIP_METADATA_TYPES=Report,Dashboard,EmailTemplate`.
+
+`manifest/package-backup-truncated-items.xml` is a good starting point: copy into `manifest/package-skip-items.xml` the types or items you can do without. Leaving out a whole type is often enough, for example the reports of an org that has thousands of them. The next backup that fits in one retrieve sends no warning and deletes `manifest/package-backup-truncated-items.xml`.
+
+When the backup still fails after leaving out `ExperienceBundle`, the remaining types alone are over the limit: skip some of them in the same way. To find which ones are the largest, run `sf hardis:org:monitor:backup --full --exclude-namespaces --full-apply-filters --max-by-chunk 500`, which retrieves in small chunks and lists the content of each one.
+
 ### Ask questions with a coding agent
 
 Each backup also writes an `AGENTS.md` file at the root of the monitoring repository (and a `CLAUDE.md` that imports it, when there is none). It tells a coding agent (Claude Code, Codex, Gemini, Copilot...) how the monitoring works, what each file and folder holds, what the backup skips and which monitoring checks run on the branch.

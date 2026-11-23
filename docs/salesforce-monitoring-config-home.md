@@ -191,11 +191,11 @@ monitoringCommands:
 
 ## Troubleshooting
 
-You might want to customize which metadata types are backed up, because you can't monitor more than 10000 items.
+You might want to customize which metadata types are backed up, because Salesforce can't retrieve more than 10000 files at once.
 
-If there are more than 10000 items, your monitoring job will crash.
+When the org has more files than that, the backup leaves out the metadata types that matter least (reports, dashboards, email templates, documents, translations...), and sends a **warning** notification until you fix the filters. See [Too many files to retrieve](salesforce-monitoring-metadata-backup.md#too-many-files-to-retrieve).
 
-In that case, you can:
+To choose what is backed up, you can:
 
 - Single branch scope: manually update the file `manifest/package-skip-items.xml` in the branch corresponding to an org, then commit and push. It works with:
   - Full wildcard (`<members>*</members>`)
