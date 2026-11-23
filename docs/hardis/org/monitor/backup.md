@@ -68,7 +68,7 @@ The org refuses a retrieve of more than 10000 files (`LIMIT_EXCEEDED: Too many f
 
 The items left out are written in `manifest/package-backup-truncated-items.xml`, and the `BACKUP` notification has the `warning` severity with the list of the types left out. Their files keep the state of the last backup that retrieved them: their changes are not tracked, but a component deleted in the org still has its files deleted, as for a skipped type (see Deleted components).
 
-It is a workaround: the warning comes back at each backup until the filters are fixed. Add what you do not need to `manifest/package-skip-items.xml` or to `MONITORING_BACKUP_SKIP_METADATA_TYPES`, as explained in the [documentation](https://sfdx-hardis.cloudity.com/salesforce-monitoring-metadata-backup/#too-many-files-to-retrieve).
+It is a workaround: the warning comes back at each backup until the filters are fixed. Add what you do not need to `manifest/package-skip-items.xml` or to `MONITORING_BACKUP_SKIP_METADATA_TYPES`, as explained in the [documentation](https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-home/#too-many-files-to-retrieve).
 
 This only applies to the default mode: the full mode already splits the retrieve in chunks.
 

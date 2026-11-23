@@ -8,7 +8,7 @@ import { CONSTANTS } from '../../config/index.js';
 // The org refuses a retrieve of more than 10000 files. The backup then retries without the types
 // that matter least in a backup. It is a workaround: the warning it sends asks to fix the filters.
 export const BACKUP_TRUNCATED_ITEMS_FILE = 'manifest/package-backup-truncated-items.xml';
-export const BACKUP_TRUNCATION_DOC_URL = `${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-metadata-backup/#too-many-files-to-retrieve`;
+export const BACKUP_TRUNCATION_DOC_URL = `${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-config-home/#too-many-files-to-retrieve`;
 
 export interface BackupTruncationStep {
   types: string[];
