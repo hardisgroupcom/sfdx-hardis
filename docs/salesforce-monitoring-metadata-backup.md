@@ -48,6 +48,17 @@ This is a workaround, not a normal state: the warning comes back at each backup 
 
 `manifest/package-backup-truncated-items.xml` is a good starting point: copy into `manifest/package-skip-items.xml` the types or items you can do without. Leaving out a whole type is often enough, for example the reports of an org that has thousands of them. The next backup that fits in one retrieve sends no warning and deletes `manifest/package-backup-truncated-items.xml`.
 
+If you need to back up everything, you can switch to the [full mode](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/#full-mode) instead: it splits the retrieve in several calls of at most 3000 items (`--max-by-chunk`), so it never leaves anything out (if a chunk is still refused for too many files, add a smaller `--max-by-chunk`). It is not the recommended way: several retrieves make the backup much slower, and the translations of each call only cover the components of the same call. To use it, update the CI/CD workflow file of the monitoring repository and add the arguments to the backup command:
+
+```sh
+sf hardis:org:monitor:backup --full --exclude-namespaces --full-apply-filters
+```
+
+- `--exclude-namespaces` and `--full-apply-filters` keep the filters of the default mode (installed packages, `manifest/package-skip-items.xml`, `MONITORING_BACKUP_SKIP_METADATA_TYPES`). Without them, the full mode retrieves everything, managed packages included.
+- The line to change is `sf hardis:org:monitor:backup` in `.github/workflows/org-monitoring.yml`, `.gitlab-ci.yml`, `azure-pipelines.yml`, `bitbucket-pipelines.yml` or `Jenkinsfile`.
+- On GitHub, the workflow lives on the default branch and runs every monitoring branch: the change applies to all your monitored orgs.
+- Instead of `--full`, you can set the variable `MONITORING_BACKUP_MODE_FULL=true`, if your CI/CD platform passes it to the backup job.
+
 When the backup still fails after leaving out `ExperienceBundle`, the remaining types alone are over the limit: skip some of them in the same way. To find which ones are the largest, run `sf hardis:org:monitor:backup --full --exclude-namespaces --full-apply-filters --max-by-chunk 500`, which retrieves in small chunks and lists the content of each one.
 
 ### Ask questions with a coding agent
