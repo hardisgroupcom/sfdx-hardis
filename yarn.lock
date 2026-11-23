@@ -2,11 +2,12 @@
 # yarn lockfile v1
 
 
-"@anthropic-ai/sdk@^0.129.0":
-  version "0.129.0"
-  resolved "https://registry.yarnpkg.com/@anthropic-ai/sdk/-/sdk-0.129.0.tgz#6cdc34cd804dc0bf7cfb7cb0ff0c802670658150"
-  integrity sha512-MH7LB20kNpGLUpPTe2OG5XvL/KhX8HUO9XyBaFjgFk6TLS4Xjt0VPIuMKywe7POKKPslX+QxSlVok9e+8kG5Nw==
+"@anthropic-ai/sdk@^1.3.0":
+  version "1.12.0"
+  resolved "https://registry.yarnpkg.com/@anthropic-ai/sdk/-/sdk-1.12.0.tgz#6707039bf551b86b2af29beb08370edf9e76773a"
+  integrity sha512-0j9zwiQdkvr90LoiiBDUh7kae1lsNW2EqeE0vGceYne4BrmMDdDVoQ4KGOieUee0zWZbVJKsf/06JY8U5i63Xg==
   dependencies:
+    "@opentelemetry/api" "^1.4.1"
     json-schema-to-ts "^3.1.1"
     standardwebhooks "^1.0.0"
 
@@ -1536,12 +1537,12 @@
   resolved "https://registry.yarnpkg.com/@kwsites/promise-deferred/-/promise-deferred-1.1.1.tgz#8ace5259254426ccef57f3175bc64ed7095ed919"
   integrity sha512-GaHYm+c0O9MjZRu0ongGBRbinu8gVAMd2UZjji6jVmqKtZluZnptXGWhz1E8j8D2HJ3f/yMxKAUC0b+57wncIw==
 
-"@langchain/anthropic@1.6.0":
-  version "1.6.0"
-  resolved "https://registry.yarnpkg.com/@langchain/anthropic/-/anthropic-1.6.0.tgz#2a880947b2f2ac92dc5fa55acaeb88a0016ad926"
-  integrity sha512-owIpaDngKj2LsR7TZMcfiL1bCZqGikE+YnMEijaeBoYTL9KWLUawg0GYfMupgvDBsQDqw3NNcKVDzX/g4NOl3g==
+"@langchain/anthropic@1.6.1":
+  version "1.6.1"
+  resolved "https://registry.yarnpkg.com/@langchain/anthropic/-/anthropic-1.6.1.tgz#90e8eea7d52f8062b496d0bfc42926f4b3c6035d"
+  integrity sha512-EICo/LZmmKIf2pWXyjLI0Lxl5kFvStdYpua0zMDp5U8zO/kyue68tADr3rcV6Yrw7zGdHBNuAEgbj/dvqjS9lg==
   dependencies:
-    "@anthropic-ai/sdk" "^0.129.0"
+    "@anthropic-ai/sdk" "^1.3.0"
     zod "^3.25.76 || ^4"
 
 "@langchain/core@1.3.5":
@@ -1673,6 +1674,11 @@
     http-call "^5.2.2"
     lodash "^4.18.1"
     registry-auth-token "^5.1.1"
+
+"@opentelemetry/api@^1.4.1":
+  version "1.10.0"
+  resolved "https://registry.yarnpkg.com/@opentelemetry/api/-/api-1.10.0.tgz#31d2e3d36ffc6cdd5ce165251e7fa13bbad0fd8a"
+  integrity sha512-lMkyes8iHrG+mk6WH7X70MdCLI2RS0FwNBY1PyQ8UemaijE2m5mv5A0Niy3HtbYTFrgkUEQjFMXmSAk2hQDuPQ==
 
 "@pinojs/redact@^0.4.0":
   version "0.4.0"
