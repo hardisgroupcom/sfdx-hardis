@@ -544,7 +544,7 @@
   "backupProfilesReadFailed": "{{count}} Profil(s) n'ont pas pu être lus avec la CRUD Metadata API : {{profiles}}. Première erreur : {{error}}. Pour exclure un Profil de la sauvegarde, ajoutez-le à manifest/package-skip-items.xml",
   "backupReadingCompleteProfiles": "Lecture de {{count}} Profils avec la CRUD Metadata API : le retrieve basé sur les fichiers les renvoie incomplets",
   "backupRetrieveTooManyFilesRetrying": "L'org a refusé de récupérer plus de 10000 fichiers. Nouvelle tentative sans ces types de métadonnées : {{types}}",
-  "backupTruncationNoTypeLeftToDrop": "L'org refuse toujours de récupérer autant de fichiers, et il ne reste aucun type de métadonnées à exclure : le backup échoue.",
+  "backupTruncationNoTypeLeftToDrop": "L'org refuse de récupérer autant de fichiers, et il ne reste aucun type de métadonnées à exclure : le backup échoue.",
   "backupedAndReplaced": "Sauvegardé et remplacé ",
   "badWordsDetectorDescription": "Peut détecter une liste de mots indésirables dans les enregistrements",
   "badWordsDetectorTitle": "Détecteur de mots indésirables",

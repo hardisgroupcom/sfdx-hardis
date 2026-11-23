@@ -35,11 +35,11 @@ Salesforce refuses to retrieve more than 10000 files at once (`LIMIT_EXCEEDED: T
 
 When the org refuses the retrieve, the backup does not fail at once:
 
-1. It retrieves again without the types that matter least in a backup: `Report`, `Dashboard`, `Document`, `EmailTemplate`, `ContentAsset`, `StaticResource`, the translation types (`Translations`, `CustomObjectTranslation`, `StandardValueSetTranslation`, `GlobalValueSetTranslation`), the `Wave*` types, and their folders. All of them are left out together, even when fewer would have been enough.
+1. It retrieves again without the types that matter least in a backup: `Report`, `Dashboard`, `Document`, `EmailTemplate` and their folder types (`ReportFolder`, `DashboardFolder`, `DocumentFolder`, `EmailFolder`, `EmailTemplateFolder`), `ContentAsset`, `StaticResource`, the translation types (`Translations`, `CustomObjectTranslation`, `CustomFieldTranslation`, `StandardValueSetTranslation`, `GlobalValueSetTranslation`) and every `Wave*` type. All of them are left out together, even when fewer would have been enough.
 2. If the org refuses it again, it also leaves out `ExperienceBundle`.
 3. If the org still refuses it, the backup fails with the error.
 
-When a retry works, the backup is committed and the `BACKUP` notification has the **warning** severity, with the types left out and a **How to fix** button that leads here. The items left out are listed in `manifest/package-backup-truncated-items.xml`, and their files keep the state of the last backup that retrieved them: their changes are not tracked anymore.
+When a retry works, the backup is committed and the `BACKUP` notification has the **warning** severity, with the types left out and a **How to fix** button that leads here. The items left out are listed in `manifest/package-backup-truncated-items.xml`, and their files keep the state of the last backup that retrieved them: their changes are not tracked anymore. Deletions still are: when one of them is deleted in the org, the next backup deletes its files, as for a type you skip (see [Deleted components](#deleted-components)).
 
 This is a workaround, not a normal state: the warning comes back at each backup until you fix the filters. Decide what you do not need to back up, then:
 

@@ -544,7 +544,7 @@
   "backupProfilesReadFailed": "Nie udało się odczytać Profile (liczba: {{count}}) za pomocą CRUD Metadata API: {{profiles}}. Pierwszy błąd: {{error}}. Aby pominąć Profile w kopii zapasowej, należy dodać go do manifest/package-skip-items.xml",
   "backupReadingCompleteProfiles": "Odczyt Profiles ({{count}}) za pomocą CRUD Metadata API: retrieve oparty na plikach zwraca je w niepełnej postaci",
   "backupRetrieveTooManyFilesRetrying": "Org odmówił pobrania więcej niż 10000 plików. Ponowna próba bez tych typów metadanych: {{types}}",
-  "backupTruncationNoTypeLeftToDrop": "Org nadal odmawia pobrania tak wielu plików, a nie pozostał już żaden typ metadanych do pominięcia: backup kończy się niepowodzeniem.",
+  "backupTruncationNoTypeLeftToDrop": "Org odmawia pobrania tak wielu plików, a nie pozostał już żaden typ metadanych do pominięcia: backup kończy się niepowodzeniem.",
   "backupedAndReplaced": "Zarchiwizowano i zastąpiono ",
   "badWordsDetectorDescription": "Może wykrywać listę zabronionych słów w rekordach",
   "badWordsDetectorTitle": "Detektor zabronionych słów",

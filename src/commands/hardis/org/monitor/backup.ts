@@ -130,11 +130,11 @@ To keep the files of deleted components, use config property \`monitoringBackupS
 
 The org refuses a retrieve of more than 10000 files (\`LIMIT_EXCEEDED: Too many files in retrieve call\`). When it happens, the backup does not fail at once:
 
-- It retrieves again without the types that matter least in a backup: \`Report\`, \`Dashboard\`, \`Document\`, \`EmailTemplate\`, \`ContentAsset\`, \`StaticResource\`, the translation types (\`Translations\`, \`CustomObjectTranslation\`, \`StandardValueSetTranslation\`, \`GlobalValueSetTranslation\`), the \`Wave*\` types, and their folders.
+- It retrieves again without the types that matter least in a backup: \`Report\`, \`Dashboard\`, \`Document\`, \`EmailTemplate\` and their folder types (\`ReportFolder\`, \`DashboardFolder\`, \`DocumentFolder\`, \`EmailFolder\`, \`EmailTemplateFolder\`), \`ContentAsset\`, \`StaticResource\`, the translation types (\`Translations\`, \`CustomObjectTranslation\`, \`CustomFieldTranslation\`, \`StandardValueSetTranslation\`, \`GlobalValueSetTranslation\`) and every \`Wave*\` type.
 - If the org refuses it again, it also leaves out \`ExperienceBundle\`.
 - If the org still refuses it, the backup fails.
 
-The items left out are written in \`manifest/package-backup-truncated-items.xml\`, and the \`BACKUP\` notification has the \`warning\` severity with the list of the types left out. Their files keep the state of the last backup that retrieved them.
+The items left out are written in \`manifest/package-backup-truncated-items.xml\`, and the \`BACKUP\` notification has the \`warning\` severity with the list of the types left out. Their files keep the state of the last backup that retrieved them: their changes are not tracked, but a component deleted in the org still has its files deleted, as for a skipped type (see Deleted components).
 
 It is a workaround: the warning comes back at each backup until the filters are fixed. Add what you do not need to \`manifest/package-skip-items.xml\` or to \`MONITORING_BACKUP_SKIP_METADATA_TYPES\`, as explained in the [documentation](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-metadata-backup/#too-many-files-to-retrieve).
 
@@ -518,7 +518,8 @@ In agent mode:
         .map((type) => ({ type, count: this.truncatedItems[type].length }));
       if (truncatedTypes.length > 0) {
         notifSeverity = 'warning';
-        notifText = `Metadata backup of ${orgMarkdown} is incomplete: too many files to retrieve`;
+        // Keeps whether updates were detected: the title is all that some channels show
+        notifText = `${notifText}. Backup incomplete: too many files to retrieve`;
         notifAttachments = [
           {
             text:

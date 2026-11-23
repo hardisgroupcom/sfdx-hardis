@@ -544,7 +544,7 @@
   "backupProfilesReadFailed": "{{count}} Profil(e) konnten nicht mit der CRUD Metadata API gelesen werden: {{profiles}}. Erster Fehler: {{error}}. Um ein Profil vom Backup auszuschließen, fügen Sie es zu manifest/package-skip-items.xml hinzu",
   "backupReadingCompleteProfiles": "{{count}} Profile werden mit der CRUD Metadata API gelesen: Der dateibasierte retrieve liefert sie unvollständig",
   "backupRetrieveTooManyFilesRetrying": "Die Org hat den Abruf von mehr als 10000 Dateien abgelehnt. Neuer Versuch ohne diese Metadatentypen: {{types}}",
-  "backupTruncationNoTypeLeftToDrop": "Die Org lehnt den Abruf dieser Dateimenge weiterhin ab, und es ist kein Metadatentyp mehr übrig, der ausgelassen werden kann: Das Backup schlägt fehl.",
+  "backupTruncationNoTypeLeftToDrop": "Die Org lehnt den Abruf dieser Dateimenge ab, und es ist kein Metadatentyp mehr übrig, der ausgelassen werden kann: Das Backup schlägt fehl.",
   "backupedAndReplaced": "Gesichert und ersetzt ",
   "badWordsDetectorDescription": "Kann eine Liste von unerwünschten Wörtern in Datensätzen erkennen",
   "badWordsDetectorTitle": "Unerwünschte-Wörter-Erkennung",

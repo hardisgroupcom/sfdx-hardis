@@ -127,11 +127,12 @@ export function describeDroppedTypes(dropped: PackageXmlContent): string {
     .join(', ');
 }
 
-// "LIMIT_EXCEEDED: Too many files in retrieve call, limit is: 10000". Other LIMIT_EXCEEDED errors
-// (REQUEST_LIMIT_EXCEEDED of the API calls...) would be refused again with fewer types.
+// "LIMIT_EXCEEDED: Too many files in retrieve call, limit is: 10000", or the status code alone when
+// the retrieve result has no message. REQUEST_LIMIT_EXCEEDED (the API calls of the day) is another
+// limit, that a retrieve with fewer types would not get under.
 export function isRetrieveFileLimitError(error: any): boolean {
   const message = String(error?.message || error || '');
-  return /Too many files in retrieve call/i.test(message);
+  return /(?<![A-Z_])LIMIT_EXCEEDED|Too many files in retrieve call/.test(message);
 }
 
 export function countDroppedItems(dropped: PackageXmlContent): number {

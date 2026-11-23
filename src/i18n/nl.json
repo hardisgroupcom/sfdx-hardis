@@ -544,7 +544,7 @@
   "backupProfilesReadFailed": "{{count}} Profile(s) konden niet worden gelezen met de CRUD Metadata API: {{profiles}}. Eerste fout: {{error}}. Om een Profile uit de back-up te laten, voeg je het toe aan manifest/package-skip-items.xml",
   "backupReadingCompleteProfiles": "{{count}} Profiles worden gelezen met de CRUD Metadata API: de bestandsgebaseerde retrieve geeft ze onvolledig terug",
   "backupRetrieveTooManyFilesRetrying": "De org weigerde meer dan 10000 bestanden op te halen. Opnieuw proberen zonder deze metadatatypen: {{types}}",
-  "backupTruncationNoTypeLeftToDrop": "De org weigert nog steeds zoveel bestanden op te halen en er is geen metadatatype meer over om weg te laten: de backup mislukt.",
+  "backupTruncationNoTypeLeftToDrop": "De org weigert zoveel bestanden op te halen en er is geen metadatatype meer over om weg te laten: de backup mislukt.",
   "backupedAndReplaced": "Back-up gemaakt en vervangen ",
   "badWordsDetectorDescription": "Kan een lijst met ongepaste woorden in records detecteren",
   "badWordsDetectorTitle": "Detector voor ongepaste woorden",

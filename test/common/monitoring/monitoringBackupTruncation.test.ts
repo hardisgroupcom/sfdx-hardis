@@ -64,6 +64,8 @@ describe('monitoringBackupTruncation', () => {
     it('recognizes the error of a retrieve with too many files', () => {
       expect(isRetrieveFileLimitError(new Error(FILE_LIMIT_ERROR))).to.be.true;
       expect(isRetrieveFileLimitError(FILE_LIMIT_ERROR)).to.be.true;
+      // A retrieve result with a status code and no message
+      expect(isRetrieveFileLimitError(new Error('LIMIT_EXCEEDED'))).to.be.true;
     });
 
     it('does not take another limit for it', () => {
