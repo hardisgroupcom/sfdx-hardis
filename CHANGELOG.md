@@ -2,7 +2,9 @@
 
 ## [beta] (main)
 
-## [8.27.0] 2026-11-29
+- [Org monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-home/): the lists of notification types skipped from the logs and metrics sent to Grafana now accept spaces after the commas.
+
+## [8.27.0] 2026-11-23
 
 - **Release versioning** ([doc](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-release-versioning/)): each successful deployment gets a semver tag, from release candidates in UAT to the plain version in production.
   - Release candidates such as v1.5.0-rc.3 come from UAT, and the plain version such as v1.5.0 comes from production, with a GitHub or GitLab Release holding its release notes.
