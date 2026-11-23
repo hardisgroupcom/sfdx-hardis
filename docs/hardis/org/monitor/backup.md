@@ -58,6 +58,20 @@ A retrieve never deletes a local file. After the retrieve, the backup deletes th
 
 To keep the files of deleted components, use config property `monitoringBackupSkipDeletions: true` or environment variable `MONITORING_BACKUP_SKIP_DELETIONS=true`.
 
+## Too many files to retrieve
+
+The org refuses a retrieve of more than 10000 files (`LIMIT_EXCEEDED: Too many files in retrieve call`). When it happens, the backup does not fail at once:
+
+- It retrieves again without the types that matter least in a backup: `Report`, `Dashboard`, `Document`, `EmailTemplate` and their folder types (`ReportFolder`, `DashboardFolder`, `DocumentFolder`, `EmailFolder`, `EmailTemplateFolder`), `ContentAsset`, `StaticResource`, the translation types (`Translations`, `CustomObjectTranslation`, `CustomFieldTranslation`, `StandardValueSetTranslation`, `GlobalValueSetTranslation`) and every `Wave*` type.
+- If the org refuses it again, it also leaves out `ExperienceBundle`.
+- If the org still refuses it, the backup fails.
+
+The items left out are written in `manifest/package-backup-truncated-items.xml`, and the `BACKUP` notification has the `warning` severity with the list of the types left out. Their files keep the state of the last backup that retrieved them: their changes are not tracked, but a component deleted in the org still has its files deleted, as for a skipped type (see Deleted components).
+
+It is a workaround: the warning comes back at each backup until the filters are fixed. Add what you do not need to `manifest/package-skip-items.xml` or to `MONITORING_BACKUP_SKIP_METADATA_TYPES`, as explained in the [documentation](https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-home/#too-many-files-to-retrieve).
+
+This only applies to the default mode: the full mode already splits the retrieve in chunks.
+
 ## Full mode
 
 Activate it with **--full** parameter, or variable MONITORING_BACKUP_MODE_FULL=true
@@ -73,7 +87,7 @@ _With those both options, it's like if you are not using --full, but with chunke
 
 ## In CI/CD
 
-This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-metadata-backup/) and can output Grafana, Slack and MsTeams Notifications. When the backup fails, it sends a `BACKUP` notification with the `error` severity and the error message, then exits with that error.
+This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-metadata-backup/) and can output Grafana, Slack and MsTeams Notifications. When some types were left out because the org refused to retrieve that many files, the `BACKUP` notification has the `warning` severity. When the backup fails, it sends a `BACKUP` notification with the `error` severity and the error message, then exits with that error.
 
 ## Coding agents
 

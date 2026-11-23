@@ -36,6 +36,17 @@ import {
   retrieveFailureMessage,
   retrieveJsonErrorMessage,
 } from '../../../../common/monitoring/monitoringBackupDeletions.js';
+import {
+  BACKUP_TRUNCATED_ITEMS_FILE,
+  BACKUP_TRUNCATION_DOC_URL,
+  countDroppedItems,
+  describeDroppedTypes,
+  isRetrieveFileLimitError,
+  PackageXmlContent,
+  removeTruncatedItemsManifest,
+  retrieveWithTruncation,
+  writeTruncatedItemsManifest,
+} from '../../../../common/monitoring/monitoringBackupTruncation.js';
 import type { CommandReport } from '../../../../common/docBuilder/commandScreenshots.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -115,6 +126,20 @@ A retrieve never deletes a local file. After the retrieve, the backup deletes th
 
 To keep the files of deleted components, use config property \`monitoringBackupSkipDeletions: true\` or environment variable \`MONITORING_BACKUP_SKIP_DELETIONS=true\`.
 
+## Too many files to retrieve
+
+The org refuses a retrieve of more than 10000 files (\`LIMIT_EXCEEDED: Too many files in retrieve call\`). When it happens, the backup does not fail at once:
+
+- It retrieves again without the types that matter least in a backup: \`Report\`, \`Dashboard\`, \`Document\`, \`EmailTemplate\` and their folder types (\`ReportFolder\`, \`DashboardFolder\`, \`DocumentFolder\`, \`EmailFolder\`, \`EmailTemplateFolder\`), \`ContentAsset\`, \`StaticResource\`, the translation types (\`Translations\`, \`CustomObjectTranslation\`, \`CustomFieldTranslation\`, \`StandardValueSetTranslation\`, \`GlobalValueSetTranslation\`) and every \`Wave*\` type.
+- If the org refuses it again, it also leaves out \`ExperienceBundle\`.
+- If the org still refuses it, the backup fails.
+
+The items left out are written in \`manifest/package-backup-truncated-items.xml\`, and the \`BACKUP\` notification has the \`warning\` severity with the list of the types left out. Their files keep the state of the last backup that retrieved them: their changes are not tracked, but a component deleted in the org still has its files deleted, as for a skipped type (see Deleted components).
+
+It is a workaround: the warning comes back at each backup until the filters are fixed. Add what you do not need to \`manifest/package-skip-items.xml\` or to \`MONITORING_BACKUP_SKIP_METADATA_TYPES\`, as explained in the [documentation](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-config-home/#too-many-files-to-retrieve).
+
+This only applies to the default mode: the full mode already splits the retrieve in chunks.
+
 ## Full mode
 
 Activate it with **--full** parameter, or variable MONITORING_BACKUP_MODE_FULL=true
@@ -130,7 +155,7 @@ _With those both options, it's like if you are not using --full, but with chunke
 
 ## In CI/CD
 
-This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-metadata-backup/) and can output Grafana, Slack and MsTeams Notifications. When the backup fails, it sends a \`BACKUP\` notification with the \`error\` severity and the error message, then exits with that error.
+This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-metadata-backup/) and can output Grafana, Slack and MsTeams Notifications. When some types were left out because the org refused to retrieve that many files, the \`BACKUP\` notification has the \`warning\` severity. When the backup fails, it sends a \`BACKUP\` notification with the \`error\` severity and the error message, then exits with that error.
 
 ## Coding agents
 
@@ -275,6 +300,8 @@ In agent mode:
 
   protected profileNames = new Set<string>();
   protected retrievedFiles = new RetrievedFilesCollector();
+  // Items left out because the org refused to retrieve more than 10000 files
+  protected truncatedItems: PackageXmlContent = {};
 
   protected namespaces: string[];
   protected installedPackages: any[];
@@ -388,6 +415,9 @@ In agent mode:
       // Create force-app/main/default if not exists
       await fs.ensureDir(path.join(process.cwd(), 'force-app', 'main', 'default'));
 
+      // Written again only when this run has to leave items out
+      await removeTruncatedItemsManifest();
+
       // Check if we have package-skip_items.xml
       if (this.full) {
         await this.extractMetadatasFull(packageXmlFullFile, flags);
@@ -482,6 +512,24 @@ In agent mode:
       } else {
         uxLog("log", this, c.grey(t('noUpdatedMetadataForBackup')));
       }
+      // A workaround, not a normal state: the warning comes back at each backup until the filters are fixed
+      const truncatedTypes = Object.keys(this.truncatedItems)
+        .sort()
+        .map((type) => ({ type, count: this.truncatedItems[type].length }));
+      if (truncatedTypes.length > 0) {
+        notifSeverity = 'warning';
+        // Keeps whether updates were detected: the title is all that some channels show
+        notifText = `${notifText}. Backup incomplete: too many files to retrieve`;
+        notifAttachments = [
+          {
+            text:
+              `Not backed up: ${describeDroppedTypes(this.truncatedItems)}.\n` +
+              `The org refuses to retrieve more than 10000 files at once. Skip what you do not need with \`manifest/package-skip-items.xml\` or \`MONITORING_BACKUP_SKIP_METADATA_TYPES\`, so that the backup fits in one retrieve again.`,
+          },
+          ...notifAttachments,
+        ];
+        notifButtons.push({ text: 'How to fix', url: BACKUP_TRUNCATION_DOC_URL });
+      }
 
       // Post notifications
       backupDone = true;
@@ -498,6 +546,7 @@ In agent mode:
         data: {
           metric: this.diffFilesSimplified.length,
           installedPackages: installedPackagesLog,
+          ...(truncatedTypes.length > 0 ? { truncatedTypes } : {}),
         },
         metrics: {
           UpdatedMetadatas: this.diffFilesSimplified.length,
@@ -805,8 +854,29 @@ In agent mode:
       updateApiVersion: getApiVersion(),
     });
 
-    // Retrieve sfdx sources in local git repo
-    await this.retrievePackageXml(packageXmlBackUpItemsFile, flags);
+    // Retrieve sfdx sources in local git repo. When the org refuses to retrieve that many files,
+    // retry without the types that matter least in a backup.
+    const { dropped } = await retrieveWithTruncation({
+      manifestFile: packageXmlBackUpItemsFile,
+      retrieve: (manifestFile, lastAttempt) => this.retrievePackageXml(manifestFile, flags, { quietOnFileLimit: !lastAttempt }),
+      commandThis: this,
+    });
+    this.truncatedItems = dropped;
+    if (Object.keys(dropped).length > 0) {
+      await writeTruncatedItemsManifest(dropped);
+      uxLog(
+        "warning",
+        this,
+        c.yellow(
+          t('backupIncompleteTooManyFiles', {
+            count: String(countDroppedItems(dropped)),
+            types: describeDroppedTypes(dropped),
+            file: BACKUP_TRUNCATED_ITEMS_FILE,
+            docUrl: BACKUP_TRUNCATION_DOC_URL,
+          })
+        )
+      );
+    }
 
     // Retrieve Data Cloud objects/fields (__dlm / __dll) in a separate call
     await this.handleDataCloudRetrieve(packageXmlFullFile, null, flags);
@@ -969,7 +1039,8 @@ In agent mode:
     await this.retrievePackageXml(dataCloudPackageXmlFile, flags);
   }
 
-  private async retrievePackageXml(packageXmlBackUpItemsFile: string, flags: any) {
+  // quietOnFileLimit: the caller retries a retrieve refused for too many files, it is not a failure yet
+  private async retrievePackageXml(packageXmlBackUpItemsFile: string, flags: any, options: { quietOnFileLimit?: boolean } = {}) {
     const nbRetrievedItems = await countPackageXmlItems(packageXmlBackUpItemsFile);
     const packageXml = await parsePackageXmlFile(packageXmlBackUpItemsFile);
     uxLog("action", this, c.cyan(t('runTheRetrieveCommandForContainingItems', { path: path.basename(packageXmlBackUpItemsFile), nbRetrievedItems })));
@@ -998,6 +1069,9 @@ In agent mode:
       const jsonErrorMessage = retrieveJsonErrorMessage(e);
       if (jsonErrorMessage) {
         e.message = jsonErrorMessage;
+      }
+      if (options.quietOnFileLimit && isRetrieveFileLimitError(e)) {
+        throw e;
       }
       const failedPackageXmlContent = await fs.readFile(packageXmlBackUpItemsFile, 'utf8');
       uxLog("warning", this, c.yellow(t('backupPackageXmlThatFailedToBe') + c.grey(failedPackageXmlContent)));
