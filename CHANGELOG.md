@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- Doc: new [Community plugins](https://sfdx-hardis.cloudity.com/sfdx-hardis-plugins/#community-plugins) list on the plugins page, with [apex-code-coverage-transformer](https://github.com/mcarvin8/apex-code-coverage-transformer) and [apex-test-list](https://github.com/wisefoxme/apex-test-list).
+
 ## [8.27.0] 2026-11-29
 
 - **Release versioning** ([doc](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-release-versioning/)): each successful deployment gets a semver tag, from release candidates in UAT to the plain version in production.

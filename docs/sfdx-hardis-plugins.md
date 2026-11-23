@@ -15,6 +15,17 @@ Your plugin can also [react to sfdx-hardis events](#react-to-sfdx-hardis-events)
 
 See demo repository: <https://github.com/hardisgroupcom/sf-plugin-hardis-demo>
 
+## Community plugins
+
+These sf plugins are built and maintained by the community. Install them next to sfdx-hardis with `sf plugins install <package>`: they react to [sfdx-hardis events](#react-to-sfdx-hardis-events) with no change to your sfdx-hardis config.
+
+| Plugin                                                                                       | Author                                    | npm package                                                                                    | What it does with sfdx-hardis                                                                                                                                                                                                                                                                                          |
+|----------------------------------------------------------------------------------------------|-------------------------------------------|------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [apex-code-coverage-transformer](https://github.com/mcarvin8/apex-code-coverage-transformer) | [mcarvin8](https://github.com/mcarvin8)   | [apex-code-coverage-transformer](https://www.npmjs.com/package/apex-code-coverage-transformer) | Converts the Apex code coverage of validations, deployments and Apex test runs into the formats of SonarQube, Codecov, GitHub, GitLab, Azure DevOps, Bitbucket and other tools, and posts a coverage summary as a Pull Request comment. Listens to `validation-done`, `deployment-done` and `apex-tests-done`          |
+| [apex-test-list](https://github.com/wisefoxme/apex-test-list)                                | [wisefoxme](https://github.com/wisefoxme) | [apextestlist](https://www.npmjs.com/package/apextestlist)                                     | Lists the Apex tests of the Apex classes and triggers of the package.xml, from their `@Tests:` and `@TestSuites:` comments, `@isTest` classes or a `.test-dependencies.yml` file, and runs them with `RunSpecifiedTests` in [hardis:project:deploy:smart](hardis/project/deploy/smart.md). Listens to `test-selection` |
+
+Built a plugin for sfdx-hardis? [Open a Pull Request](https://github.com/hardisgroupcom/sfdx-hardis/edit/main/docs/sfdx-hardis-plugins.md) to add it to this list.
+
 ## How it works
 
 When sfdx-hardis runs inside VS Code (via the extension), it initializes a WebSocket connection during its `init` hook. This connection lives in the Node.js process globals, so any plugin loaded into the same CLI process can reuse it.
@@ -363,7 +374,7 @@ The types are exported by `sfdx-hardis/plugin-api`: `SfdxHardisEvent`, `SfdxHard
 
 ### Choose the Apex tests
 
-With `sfdx-hardis:test-selection`, a plugin chooses the Apex tests of a [hardis:project:deploy:smart](hardis/project/deploy/smart.md) validation or deployment, for example from the Apex classes and triggers of the package.xml. To keep the selection of sfdx-hardis, write nothing.
+With `sfdx-hardis:test-selection`, a plugin chooses the Apex tests of a [hardis:project:deploy:smart](hardis/project/deploy/smart.md) validation or deployment, for example from the Apex classes and triggers of the package.xml. To keep the selection of sfdx-hardis, write nothing. The [apex-test-list](#community-plugins) community plugin works this way.
 
 Write a JSON file at `data.selectionFile`:
 
