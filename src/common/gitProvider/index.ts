@@ -10,6 +10,7 @@ import {
   getProviderTokenInfo,
   isProviderCliAuthEnabled,
   isProviderTokenCheckEnabled,
+  joinDetailSentences,
   ProviderCliTokenResult,
   ProviderConnectionStatus,
   recordProviderCliFailure,
@@ -174,8 +175,10 @@ export abstract class GitProvider {
     status.tokenSource = tokenInfo?.source || null;
     const cliFailure = getProviderCliFailure(providerType);
     if (instance == null || !tokenInfo) {
-      status.detail = [t('connectionCheckNoToken', { provider: providerClass.providerLabel, variables: providerClass.tokenVariableNames.join(", ") }), cliFailure]
-        .filter(Boolean).join(" ");
+      status.detail = joinDetailSentences([
+        t('connectionCheckNoToken', { provider: providerClass.providerLabel, variables: providerClass.tokenVariableNames.join(", ") }),
+        cliFailure,
+      ]);
       return status;
     }
     const check = await instance.checkConnection();
@@ -187,7 +190,7 @@ export abstract class GitProvider {
         : check.reason === "notVisible"
           ? t('connectionCheckRepositoryNotVisible', { source, repository: redactUrlCredentials(remoteUrl) })
           : t('connectionCheckUnreachable', { provider: providerClass.providerLabel, message: check.message || check.reason || "-" });
-      status.detail = redactSecrets([checkDetail, cliFailure].filter(Boolean).join(" "));
+      status.detail = redactSecrets(joinDetailSentences([checkDetail, cliFailure]));
     }
     return status;
   }

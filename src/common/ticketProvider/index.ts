@@ -14,7 +14,7 @@ import { AhaProvider } from "./ahaProvider.js";
 import { TicketDetails, TicketDetailsOptions } from "./utils/ticketDetails.js";
 import { PostCommentOptions, PostCommentResult, assertValidMarker } from "./utils/ticketComment.js";
 import { TICKET_ERROR } from "./utils/ticketOperations.js";
-import { getProviderCliFailure, getProviderTokenInfo, ProviderConnectionStatus } from "../utils/providerCliAuthUtils.js";
+import { getProviderCliFailure, getProviderTokenInfo, joinDetailSentences, ProviderConnectionStatus } from "../utils/providerCliAuthUtils.js";
 import { redactSecrets } from "../utils/secretMaskingUtils.js";
 
 export type TicketProviderKey = "jira" | "azure" | "servicenow" | "aha" | "generic";
@@ -374,7 +374,7 @@ export abstract class TicketProvider {
     // A token read from a CLI is in a variable too: only the CLI failure says more than the help
     const cliFailure = getProviderCliFailure(key);
     if (!providerClass.isAvailable(config)) {
-      status.detail = [providerClass.getConnectionHelp(), cliFailure].filter(Boolean).join(" ");
+      status.detail = joinDetailSentences([providerClass.getConnectionHelp(), cliFailure]);
       return status;
     }
     status.tokenSource = getProviderTokenInfo(key)?.source || "env";
@@ -386,11 +386,11 @@ export abstract class TicketProvider {
       await new providerClass(config).whoAmI();
       status.connected = true;
     } catch (e) {
-      status.detail = redactSecrets([
+      status.detail = redactSecrets(joinDetailSentences([
         t('connectionCheckTicketingRefused', { provider: providerClass.providerLabel, message: (e as Error).message }),
         providerClass.getConnectionHelp(),
         cliFailure,
-      ].filter(Boolean).join(" "));
+      ]));
     }
     return status;
   }

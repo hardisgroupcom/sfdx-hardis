@@ -158,6 +158,15 @@ export function describeCliTokenFailure(result: ProviderCliTokenResult): string 
   }
 }
 
+/** Joins the parts of a connection detail as sentences: an error message often has no final period */
+export function joinDetailSentences(parts: Array<string | null | undefined>): string {
+  return parts
+    .map((part) => (part || '').trim())
+    .filter(Boolean)
+    .map((part) => (/[.!?:]$/.test(part) ? part : `${part}.`))
+    .join(' ');
+}
+
 /** For tests only */
 export function resetProviderCliAuthState(): void {
   cliPaths.clear();

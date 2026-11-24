@@ -186,7 +186,8 @@ export class GitlabProvider extends GitProviderRoot {
 
   /** The token of the "Token found: <token>" line of glab auth status --show-token, null without it */
   public static parseGlabStatusToken(output: string): string | null {
-    const match = /Token found:\s*(\S+)/i.exec(output || "");
+    // "Token found: <token>", or "Token found in operating system keyring: <token>" (glab 1.116)
+    const match = /Token found[^:\r\n]*:\s*(\S+)/i.exec(output || "");
     // Without --show-token, or with an older glab, the token is masked with stars
     if (!match || /^\*+$/.test(match[1])) {
       return null;

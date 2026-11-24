@@ -110,10 +110,11 @@ sf hardis:project:connection:check --type git --agent --json
     const { flags } = await this.parse(ProjectConnectionCheck);
     const types = (flags.type as ConnectionCheckType[] | undefined) || CONNECTION_CHECK_TYPES;
     const result = await checkProviderConnections(types);
-    uxLogTable(this, connectionStatusRows(result.providers), ['type', 'provider', 'connected', 'tokenSource', 'detail']);
     const connectedCount = result.providers.filter((provider) => provider.connected).length;
     const summary = t('connectionCheckSummary', { connected: connectedCount, total: result.providers.length });
+    // The summary opens the section the table is shown in
     uxLog('action', this, result.connected ? c.green(summary) : c.yellow(summary));
+    uxLogTable(this, connectionStatusRows(result.providers), ['type', 'provider', 'connected', 'tokenSource', 'detail']);
     return result as unknown as AnyJson;
   }
 }

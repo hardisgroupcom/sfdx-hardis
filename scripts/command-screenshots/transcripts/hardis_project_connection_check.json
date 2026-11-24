@@ -28,16 +28,16 @@
       "delay": 500,
       "message": {
         "event": "commandLogLine",
-        "logType": "table",
-        "message": "[{\"type\":\"git\",\"provider\":\"GitHub\",\"connected\":\"yes\",\"tokenSource\":\"gh\",\"detail\":\"\"},{\"type\":\"ticketing\",\"provider\":\"JIRA\",\"connected\":\"yes\",\"tokenSource\":\"env\",\"detail\":\"\"}]"
+        "logType": "action",
+        "message": "2 of 2 providers connected"
       }
     },
     {
       "delay": 200,
       "message": {
         "event": "commandLogLine",
-        "logType": "action",
-        "message": "2 of 2 providers connected"
+        "logType": "table",
+        "message": "[{\"type\":\"git\",\"provider\":\"GitHub\",\"connected\":\"yes\",\"tokenSource\":\"gh\",\"detail\":\"\"},{\"type\":\"ticketing\",\"provider\":\"JIRA\",\"connected\":\"yes\",\"tokenSource\":\"env\",\"detail\":\"\"}]"
       }
     },
     {

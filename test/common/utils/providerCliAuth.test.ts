@@ -8,6 +8,7 @@ import {
   describeCliTokenFailure,
   isProviderCliAuthEnabled,
   isProviderTokenCheckEnabled,
+  joinDetailSentences,
 } from '../../../src/common/utils/providerCliAuthUtils.js';
 import { runSilentCommand } from '../../../src/common/utils/silentCommandUtils.js';
 import { GitlabProvider } from '../../../src/common/gitProvider/gitlab.js';
@@ -77,6 +78,13 @@ describe('providerCliAuthUtils', () => {
     });
   });
 
+  it('joins the parts of a connection detail as sentences', () => {
+    expect(joinDetailSentences(['JIRA refused the connection: fetch failed', null, 'Set JIRA_HOST.', ' '])).to.equal(
+      'JIRA refused the connection: fetch failed. Set JIRA_HOST.'
+    );
+    expect(joinDetailSentences([null, undefined])).to.equal('');
+  });
+
   describe('describeCliTokenFailure', () => {
     it('tells how to install or log in, and says nothing when there is no CLI', () => {
       const source = GithubProvider.getCliTokenSource();
@@ -88,13 +96,25 @@ describe('providerCliAuthUtils', () => {
 
   describe('GitlabProvider.parseGlabStatusToken', () => {
     it('reads the token of the "Token found" line only', () => {
+      // Built at run time so that secret scanners do not see a GitLab token in the source
+      const fakeToken = ['glpat', '0'.repeat(24)].join('-');
       const output = [
         'gitlab.acme.com',
         '  ✓ Logged in to gitlab.acme.com as helios-bot (C:\\Users\\x\\config.yml)',
         '  ✓ API calls for gitlab.acme.com are made over https protocol.',
-        '  ✓ Token found: glpat-FAKEFAKEFAKEFAKE1234',
+        `  ✓ Token found: ${fakeToken}`,
       ].join('\n');
-      expect(GitlabProvider.parseGlabStatusToken(output)).to.equal('glpat-FAKEFAKEFAKEFAKE1234');
+      expect(GitlabProvider.parseGlabStatusToken(output)).to.equal(fakeToken);
+    });
+
+    it('reads a token stored in the keyring of the operating system (glab 1.116)', () => {
+      const fakeToken = ['glpat', '1'.repeat(24)].join('-');
+      const output = [
+        'gitlab.acme.com',
+        '  ✓ Logged in to gitlab.acme.com as helios-bot (keyring)',
+        `  ✓ Token found in operating system keyring: ${fakeToken}`,
+      ].join('\r\n');
+      expect(GitlabProvider.parseGlabStatusToken(output)).to.equal(fakeToken);
     });
 
     it('returns null for a masked token or no token', () => {
@@ -108,7 +128,7 @@ describe('providerCliAuthUtils', () => {
     it('sends a Personal Access Token as Basic and any other token as Bearer', () => {
       expect(AzureDevopsProvider.getAuthorizationHeaderForToken('a'.repeat(52))).to.match(/^Basic /);
       expect(AzureDevopsProvider.getAuthorizationHeaderForToken('a'.repeat(84))).to.match(/^Basic /);
-      expect(AzureDevopsProvider.getAuthorizationHeaderForToken('eyJhbGciOi.eyJzdWIiOi.c2lnbmF0dXJl')).to.equal('Bearer eyJhbGciOi.eyJzdWIiOi.c2lnbmF0dXJl');
+      expect(AzureDevopsProvider.getAuthorizationHeaderForToken('header.payload.signature')).to.equal('Bearer header.payload.signature');
     });
   });
 

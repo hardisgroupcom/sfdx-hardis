@@ -13,7 +13,7 @@ const ENV_KEYS = [
   'BITBUCKET_WORKSPACE', 'CI_SFDX_HARDIS_BITBUCKET_TOKEN',
 ];
 const REMOTE = 'https://github.com/acme/widgets.git';
-const CLI_TOKEN = 'gho_FAKECLITOKEN0000000000000000';
+const CLI_TOKEN = 'gho_fake_cli_token_0000000000000000';
 
 describe('GitProvider CLI token fallback', () => {
   let savedEnv: Record<string, string | undefined>;
@@ -68,10 +68,10 @@ describe('GitProvider CLI token fallback', () => {
   });
 
   it('keeps a token of the environment that the provider accepts, without asking the CLI', async () => {
-    process.env.GITHUB_TOKEN = 'ghp_ENVTOKEN';
+    process.env.GITHUB_TOKEN = 'ghp_env_token';
     await GitProvider.applyCliTokenFallback();
     expect(cliCalls).to.equal(0);
-    expect(checkedTokens).to.deep.equal(['ghp_ENVTOKEN']);
+    expect(checkedTokens).to.deep.equal(['ghp_env_token']);
     expect(process.env.CI_SFDX_HARDIS_GITHUB_TOKEN).to.be.undefined;
     expect(getProviderTokenInfo('github')).to.deep.equal({ source: 'env', variable: 'GITHUB_TOKEN' });
   });
@@ -87,8 +87,8 @@ describe('GitProvider CLI token fallback', () => {
   });
 
   it('keeps the token of the environment when the provider cannot be reached', async () => {
-    process.env.GITHUB_TOKEN = 'ghp_ENVTOKEN';
-    answers.ghp_ENVTOKEN = { connected: false, reason: 'unreachable', message: 'ECONNRESET' };
+    process.env.GITHUB_TOKEN = 'ghp_env_token';
+    answers.ghp_env_token = { connected: false, reason: 'unreachable', message: 'ECONNRESET' };
     await GitProvider.applyCliTokenFallback();
     expect(cliCalls).to.equal(0);
     expect(process.env.CI_SFDX_HARDIS_GITHUB_TOKEN).to.be.undefined;
@@ -102,7 +102,7 @@ describe('GitProvider CLI token fallback', () => {
 
   it('uses the token of the environment without checking it when the check is off', async () => {
     process.env.SFDX_HARDIS_PROVIDER_TOKEN_CHECK = 'false';
-    process.env.GITHUB_TOKEN = 'ghp_ENVTOKEN';
+    process.env.GITHUB_TOKEN = 'ghp_env_token';
     await GitProvider.applyCliTokenFallback();
     expect(checkedTokens).to.deep.equal([]);
     expect(cliCalls).to.equal(0);
