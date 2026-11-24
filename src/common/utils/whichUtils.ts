@@ -11,6 +11,11 @@ export interface WhichOptions {
   pathExt?: string;
   /** Override the platform check (mainly for tests). */
   windows?: boolean;
+  /**
+   * Do not look in the current directory first, as Windows does: a repository could otherwise
+   * ship an executable that runs in place of the real one. For commands that handle secrets.
+   */
+  skipCurrentDirectory?: boolean;
 }
 
 function candidateNames(command: string, pathExt: string, windows: boolean): string[] {
@@ -55,7 +60,7 @@ export function whichSync(command: string, options: WhichOptions = {}): string |
   const hasSeparator = /[\\/]/.test(command);
   // An explicit path (containing a separator) is only checked as given
   const directories = hasSeparator ? [''] : pathEnv.split(path.delimiter).filter((dir) => dir.length > 0);
-  if (windows && !hasSeparator) {
+  if (windows && !hasSeparator && !options.skipCurrentDirectory) {
     directories.unshift(process.cwd());
   }
   for (const directory of directories) {

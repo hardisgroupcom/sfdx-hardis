@@ -1,4 +1,5 @@
-import { buildPrCreateUrl, CiRunFilters, CiRunStatus, CommonCiRun, CreateVersionTagRequest, CreateVersionTagResult, DashboardComment, DashboardFormat, DashboardRef, GitProviderRepositorySettings, GitProviderRoot, JobArtifact, JobArtifactsListing, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
+import { cliHostFromServerUrl, cliTokenFound, ProviderCliTokenResult, ProviderCliTokenSource, runProviderCli } from "../utils/providerCliAuthUtils.js";
+import { buildPrCreateUrl, CiRunFilters, CiRunStatus, CommonCiRun, CreateVersionTagRequest, CreateVersionTagResult, DashboardComment, DashboardFormat, DashboardRef, GitProviderConnectionCheck, GitProviderRepositorySettings, GitProviderRoot, JobArtifact, JobArtifactsListing, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
 import { POOL_DASHBOARD_TITLE } from "../utils/poolDashboardUtils.js";
 import { CiRunCandidate, classifyJobKind, selectCiRuns } from "./utils/jobKindUtils.js";
 import { Build, BuildQueryOrder, BuildReason, BuildResult, BuildStatus, TaskResult } from "azure-devops-node-api/interfaces/BuildInterfaces.js";
@@ -23,11 +24,17 @@ import { pipeline } from "stream/promises";
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobName, getJenkinsJobUrl } from "./utils/jenkinsUtils.js";
 import { getCachedPullRequestDescription, repositoryKeyFromRemoteUrl, setCachedPullRequestDescription } from "../cache/pullRequestDescriptionCache.js";
 
+// Application id of Azure DevOps in Microsoft Entra ID, the resource an Entra token is asked for
+const AZURE_DEVOPS_RESOURCE_ID = "499b84ac-1321-427f-aa17-267ca6975798";
 // A dashboard work item is replaced above this number of revisions (the limit of Azure DevOps is 10,000)
 const DASHBOARD_MAX_REVISIONS = 8000;
 const DASHBOARD_COMMENT_ATTEMPTS = 4;
 
 export class AzureDevopsProvider extends GitProviderRoot {
+  public static readonly providerLabel = "Azure DevOps";
+  // AZURE_DEVOPS_EXT_PAT comes last: it is the variable the Azure CLI uses, so a developer machine
+  // usually already has it
+  public static readonly tokenVariableNames = ["CI_SFDX_HARDIS_AZURE_TOKEN", "SYSTEM_ACCESSTOKEN", "AZURE_DEVOPS_EXT_PAT"];
   private azureApi: InstanceType<typeof azdev.WebApi>;
   public serverUrl: string;
   public token: string;
@@ -56,9 +63,8 @@ export class AzureDevopsProvider extends GitProviderRoot {
     }
     // Azure server url must be provided in SYSTEM_COLLECTIONURI. ex: https:/dev.azure.com/mycompany
     this.serverUrl = process.env.SYSTEM_COLLECTIONURI || "";
-    // a Personal Access Token must be defined. AZURE_DEVOPS_EXT_PAT comes last: it is the variable
-    // the Azure CLI uses, so a developer machine usually already has it.
-    this.token = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.SYSTEM_ACCESSTOKEN || process.env.AZURE_DEVOPS_EXT_PAT || "";
+    // A Personal Access Token, the token of a pipeline, or a Microsoft Entra ID token of the Azure CLI
+    this.token = AzureDevopsProvider.getEnvironmentToken();
     const authHandler = azdev.getHandlerFromToken(this.token);
     this.azureApi = new azdev.WebApi(this.serverUrl, authHandler);
   }
@@ -71,8 +77,8 @@ export class AzureDevopsProvider extends GitProviderRoot {
         return;
       }
       // Map CI_SFDX_HARDIS_AZURE_TOKEN or AZURE_DEVOPS_EXT_PAT to SYSTEM_ACCESSTOKEN if needed
-      if (!process.env.SYSTEM_ACCESSTOKEN && (process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.AZURE_DEVOPS_EXT_PAT)) {
-        process.env.SYSTEM_ACCESSTOKEN = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.AZURE_DEVOPS_EXT_PAT;
+      if (!process.env.SYSTEM_ACCESSTOKEN && AzureDevopsProvider.getEnvironmentToken()) {
+        process.env.SYSTEM_ACCESSTOKEN = AzureDevopsProvider.getEnvironmentToken();
       }
       // Parse git remote URL to extract collection URI, team project, and repository ID
       if (!process.env.SYSTEM_COLLECTIONURI) {
@@ -149,6 +155,73 @@ export class AzureDevopsProvider extends GitProviderRoot {
     }
   }
 
+  /** The token of the environment, in the order of tokenVariableNames, "" when none is set */
+  public static getEnvironmentToken(): string {
+    const name = AzureDevopsProvider.tokenVariableNames.find((variable) => process.env[variable]);
+    return name ? process.env[name] || "" : "";
+  }
+
+  public static getCliTokenSource(): ProviderCliTokenSource {
+    return {
+      cli: "az",
+      installUrl: "https://learn.microsoft.com/cli/azure/install-azure-cli",
+      loginCommand: () => "az login",
+      // The token is for the tenant az is logged in to, which may not be the one of the organization
+      refusedHint: (remoteUrl) => AzureDevopsProvider.getCliTokenRefusedHint(remoteUrl),
+    };
+  }
+
+  /** Why the organization of remoteUrl may refuse the token of az, from the tenant it belongs to */
+  public static async getCliTokenRefusedHint(remoteUrl: string): Promise<string> {
+    const collectionUri = AzureDevopsProvider.parseAzureRepoUrl(remoteUrl)?.collectionUri;
+    const tenant = collectionUri ? await AzureDevopsProvider.readOrganizationTenant(collectionUri) : null;
+    return AzureDevopsProvider.describeOrganizationTenant(tenant);
+  }
+
+  /**
+   * An organization backed by Microsoft accounts (tenant all zeros) accepts no Microsoft Entra ID
+   * token at all: only a Personal Access Token works there
+   */
+  public static describeOrganizationTenant(tenant: string | null): string {
+    if (tenant && /^0{8}-0{4}-0{4}-0{4}-0{12}$/.test(tenant)) {
+      return t('providerCliAzureOrgWithoutEntra', { variable: AzureDevopsProvider.tokenVariableNames[0] });
+    }
+    if (tenant && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tenant)) {
+      return t('providerCliAzureTenantLogin', { tenant });
+    }
+    return t('providerCliAzureTenantHint');
+  }
+
+  // A Microsoft Entra ID token for the Azure DevOps resource, valid about one hour. It works for
+  // any organization of the tenant az is logged in to: there is no host to pass.
+  // https://learn.microsoft.com/azure/devops/cli/entra-tokens
+  public static async readCliToken(remoteUrl: string): Promise<ProviderCliTokenResult> {
+    const source = AzureDevopsProvider.getCliTokenSource();
+    const host = cliHostFromServerUrl(AzureDevopsProvider.parseAzureRepoUrl(remoteUrl)?.collectionUri, "https://") || "dev.azure.com";
+    const result = await runProviderCli("az", ["account", "get-access-token", "--resource", AZURE_DEVOPS_RESOURCE_ID, "--query", "accessToken", "-o", "tsv"], {
+      extraEnv: { AZURE_CORE_ONLY_SHOW_ERRORS: "true", AZURE_CORE_NO_COLOR: "true" },
+    });
+    if (result == null) {
+      return { token: null, source, host, reason: "notInstalled" };
+    }
+    const token = result.stdout.trim();
+    if (result.status === 0 && token && !/\s/.test(token)) {
+      return cliTokenFound(token, source, host);
+    }
+    return { token: null, source, host, reason: /az login/i.test(result.stderr) ? "notLoggedIn" : "failed", exitCode: result.status };
+  }
+
+  /**
+   * Same scheme as azdev.getHandlerFromToken: a Personal Access Token (52 or 84 characters) is sent
+   * as Basic auth, the token of a pipeline or a Microsoft Entra ID token as a Bearer
+   */
+  public static getAuthorizationHeaderForToken(token: string): string {
+    if (token.length === 52 || token.length === 84) {
+      return "Basic " + Buffer.from(`:${token}`).toString("base64");
+    }
+    return `Bearer ${token}`;
+  }
+
   public static async handleLocalIdentification() {
     if (!isGitRepo()) {
       uxLog("warning", this, c.yellow('[Azure Integration] ' + t('azureIntegrationNotGitRepo')));
@@ -176,7 +249,8 @@ export class AzureDevopsProvider extends GitProviderRoot {
         name: "token",
         message: t('pleaseInputAnAzurePersonalAccessToken'),
         description: t('enterYourAzureDevopsPersonalAccessToken'),
-        type: "text"
+        type: "text",
+        sensitive: true,
       });
       process.env.SYSTEM_ACCESSTOKEN = accessTokenResp.token;
     }
@@ -207,6 +281,25 @@ export class AzureDevopsProvider extends GitProviderRoot {
 
   public getLabel(): string {
     return "sfdx-hardis Azure Devops connector";
+  }
+
+  // The client returns null for a repository it cannot find, and throws with statusCode otherwise.
+  // A token Azure DevOps does not accept can also come back as its sign-in page (HTTP 203), which
+  // the client fails to parse as JSON.
+  public async checkConnection(): Promise<GitProviderConnectionCheck> {
+    const repositoryId = this.otherRepository?.repositoryName || process.env.BUILD_REPOSITORY_ID || "";
+    const teamProject = this.otherRepository?.teamProject || process.env.SYSTEM_TEAMPROJECT || "";
+    if (!repositoryId || !teamProject) {
+      return { connected: false, reason: "notVisible", message: "No Azure DevOps repository found in the git remote" };
+    }
+    try {
+      const azureGitApi = await this.azureApi.getGitApi();
+      const repository = await azureGitApi.getRepository(repositoryId, teamProject);
+      return repository ? { connected: true } : { connected: false, reason: "notVisible", httpStatus: 404 };
+    } catch (e: any) {
+      const status = e?.statusCode ?? (e instanceof SyntaxError ? 203 : undefined);
+      return AzureDevopsProvider.connectionCheckFromStatus(status, (e as Error).message);
+    }
   }
 
   public getSafeDirectoryCommand(): string {
@@ -541,13 +634,8 @@ ${this.getPipelineVariablesConfig()}
     );
   }
 
-  // Same scheme as azdev.getHandlerFromToken: a Personal Access Token (52 or 84 characters) is
-  // sent as Basic auth, the token of a pipeline as a Bearer
   private getAuthorizationHeader(): string {
-    if (this.token.length === 52 || this.token.length === 84) {
-      return "Basic " + Buffer.from(`:${this.token}`).toString("base64");
-    }
-    return `Bearer ${this.token}`;
+    return AzureDevopsProvider.getAuthorizationHeaderForToken(this.token);
   }
 
   private dashboardTeamProject(): string {
@@ -2030,6 +2118,17 @@ ${getBannerMarkdownAndLink()}
       return null;
     }
     return `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT)}/_git/${encodeURIComponent(repositoryName)}`;
+  }
+
+  // Azure DevOps names the tenant of an organization to an anonymous request, in the redirection to
+  // its sign-in page: no token is sent. Null when the organization does not answer.
+  private static async readOrganizationTenant(collectionUri: string): Promise<string | null> {
+    try {
+      const response = await fetch(collectionUri, { redirect: "manual", signal: AbortSignal.timeout(10000) });
+      return response.headers.get("X-VSS-ResourceTenant");
+    } catch {
+      return null;
+    }
   }
 }
 

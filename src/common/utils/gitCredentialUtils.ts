@@ -1,6 +1,6 @@
-import { spawn } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
+import { runSilentCommand, SilentCommandResult } from './silentCommandUtils.js';
 
 /*
 Git credentials kept by git itself.
@@ -294,38 +294,13 @@ function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-// git, for the credential commands only. It does not go through git() or execCommand() of
-// index.ts, which cannot do what these commands need: feed their standard input (where the
-// token goes, never on a command line), display nothing of the command or of its output (git
-// credential fill prints the password), and keep git from asking anything by itself (a helper
-// left to itself opens a window or waits on a terminal). Never blocks the event loop: a command
-// panel waiting on the WebSocket keeps being answered while a helper works.
-function runGitCredentialCommand(args: string[], cwd: string, input?: string): Promise<{ status: number; stdout: string; stderr: string }> {
+// git, for the credential commands only: the token goes on the standard input, never on a
+// command line, and nothing of the command or of its output is displayed (git credential fill
+// prints the password). A helper left to itself opens a window or waits on a terminal: the
+// variables below keep git from asking anything.
+function runGitCredentialCommand(args: string[], cwd: string, input?: string): Promise<SilentCommandResult> {
   const env: NodeJS.ProcessEnv = { ...process.env, GIT_TERMINAL_PROMPT: '0', GCM_INTERACTIVE: 'never' };
   delete env.GIT_ASKPASS;
   delete env.SSH_ASKPASS;
-  return new Promise((resolve) => {
-    let stdout = '';
-    let stderr = '';
-    let settled = false;
-    const settle = (status: number) => {
-      if (!settled) {
-        settled = true;
-        clearTimeout(timer);
-        resolve({ status, stdout, stderr });
-      }
-    };
-    const child = spawn('git', args, { cwd, env, windowsHide: true });
-    const timer = setTimeout(() => {
-      child.kill();
-      settle(1);
-    }, GIT_CREDENTIAL_TIMEOUT_MS);
-    child.stdout.on('data', (data) => (stdout += data));
-    child.stderr.on('data', (data) => (stderr += data));
-    child.on('error', () => settle(1));
-    child.on('close', (code) => settle(code ?? 1));
-    // A git that exits before reading its input must not crash the process
-    child.stdin.on('error', () => undefined);
-    child.stdin.end(input || '');
-  });
+  return runSilentCommand('git', args, { cwd, env, input, timeoutMs: GIT_CREDENTIAL_TIMEOUT_MS });
 }

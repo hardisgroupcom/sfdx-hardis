@@ -34,6 +34,18 @@ describe('whichUtils', () => {
     expect(found).to.equal(path.join(binDir, 'mytool.cmd'));
   });
 
+  it('looks in the current directory first on Windows, unless told not to', () => {
+    const cwd = process.cwd();
+    process.chdir(binDir);
+    try {
+      // process.cwd() can spell the folder differently than os.tmpdir() (8.3 names on Windows)
+      expect(whichSync('mytool', { path: otherDir, pathExt: '.cmd', windows: true, nothrow: true })).to.equal(path.join(process.cwd(), 'mytool.cmd'));
+      expect(whichSync('mytool', { path: otherDir, pathExt: '.cmd', windows: true, nothrow: true, skipCurrentDirectory: true })).to.equal(null);
+    } finally {
+      process.chdir(cwd);
+    }
+  });
+
   it('finds a command given with its extension on Windows', () => {
     const found = whichSync('mytool.cmd', { path: binDir, pathExt: '.EXE;.CMD', windows: true });
     expect(found).to.equal(path.join(binDir, 'mytool.cmd'));

@@ -1,8 +1,9 @@
 import c from "chalk";
-import { buildPrCreateUrl, CiRunFilters, CiRunStatus, CommonCiRun, CreateReleaseRequest, CreateReleaseResult, CreateVersionTagRequest, CreateVersionTagResult, DashboardComment, DashboardRef, encodePrUrlPathBranch, GitProviderRepositorySettings, GitProviderRoot, JobArtifact, JobArtifactsListing, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
+import { buildPrCreateUrl, CiRunFilters, CiRunStatus, CommonCiRun, CreateReleaseRequest, CreateReleaseResult, CreateVersionTagRequest, CreateVersionTagResult, DashboardComment, DashboardRef, encodePrUrlPathBranch, GitProviderConnectionCheck, GitProviderRepositorySettings, GitProviderRoot, JobArtifact, JobArtifactsListing, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
+import { cliHostFromServerUrl, cliTokenFound, ProviderCliTokenResult, ProviderCliTokenSource, runProviderCli } from "../utils/providerCliAuthUtils.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestCommitInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
-import { GITHUB_DEFAULT_API_URL, GITHUB_DEFAULT_GRAPHQL_URL, GITHUB_DEFAULT_SERVER_URL, GithubApiClient, getGithubActionsContext } from "./utils/githubApiClient.js";
+import { GITHUB_DEFAULT_API_URL, GITHUB_DEFAULT_GRAPHQL_URL, GITHUB_DEFAULT_SERVER_URL, GithubApiClient, GithubApiError, getGithubActionsContext } from "./utils/githubApiClient.js";
 import { getBannerMarkdownAndLink } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
 import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
@@ -17,6 +18,12 @@ import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNum
 const DASHBOARD_SEARCH_MAX_PAGES = 50;
 
 export class GithubProvider extends GitProviderRoot {
+  public static readonly providerLabel = "GitHub";
+  // PAT is the variable of the first CI templates: read in CI only. On a workstation, many other
+  // tools set a variable with that name.
+  public static get tokenVariableNames(): string[] {
+    return process.env.CI != null ? ["CI_SFDX_HARDIS_GITHUB_TOKEN", "PAT", "GITHUB_TOKEN"] : ["CI_SFDX_HARDIS_GITHUB_TOKEN", "GITHUB_TOKEN"];
+  }
   private api: GithubApiClient;
   private repoOwner: string | null;
   private repoName: string | null;
@@ -48,8 +55,8 @@ export class GithubProvider extends GitProviderRoot {
       this.runId = null;
       return;
     }
-    const tokenName = process.env.CI_SFDX_HARDIS_GITHUB_TOKEN ? "CI_SFDX_HARDIS_GITHUB_TOKEN" : process.env.PAT ? "PAT" : "GITHUB_TOKEN";
-    const token = process.env[tokenName];
+    const tokenName = GithubProvider.tokenVariableNames.find((name) => process.env[name]);
+    const token = tokenName ? process.env[tokenName] : "";
     const context = getGithubActionsContext();
     this.api = new GithubApiClient(token || "", { apiUrl: context.apiUrl, graphqlUrl: context.graphqlUrl });
     this.repoOwner = context.repo?.owner || process.env.GITHUB_REPOSITORY_OWNER || null;
@@ -134,6 +141,36 @@ export class GithubProvider extends GitProviderRoot {
     }
   }
 
+  public static getCliTokenSource(): ProviderCliTokenSource {
+    return {
+      cli: "gh",
+      installUrl: "https://cli.github.com/",
+      loginCommand: (host: string) => `gh auth login --hostname ${host || "github.com"}`,
+    };
+  }
+
+  // gh auth token prints the token stored for the host, refreshed when it is about to expire. The
+  // variables gh reads first are removed: gh would otherwise answer with the refused token itself.
+  public static async readCliToken(remoteUrl: string): Promise<ProviderCliTokenResult> {
+    const source = GithubProvider.getCliTokenSource();
+    const host = cliHostFromServerUrl(GithubProvider.parseGithubRepoUrl(remoteUrl)?.serverUrl, remoteUrl);
+    if (!host) {
+      return { token: null, source, host, reason: "failed" };
+    }
+    const result = await runProviderCli("gh", ["auth", "token", "--hostname", host], {
+      removeEnvVars: ["GH_TOKEN", "GITHUB_TOKEN", "GH_ENTERPRISE_TOKEN", "GITHUB_ENTERPRISE_TOKEN", "GH_HOST"],
+      extraEnv: { GH_PROMPT_DISABLED: "1" },
+    });
+    if (result == null) {
+      return { token: null, source, host, reason: "notInstalled" };
+    }
+    const token = result.stdout.trim();
+    if (result.status === 0 && token && !/\s/.test(token)) {
+      return cliTokenFound(token, source, host);
+    }
+    return { token: null, source, host, reason: /not logged|gh auth login/i.test(result.stderr) ? "notLoggedIn" : "failed", exitCode: result.status };
+  }
+
   public static parseGithubRepoUrl(remoteUrl: string): { serverUrl: string; owner: string; repo: string } | null {
     // HTTPS: https://github.com/owner/repo.git
     if (remoteUrl.startsWith("https://") || remoteUrl.startsWith("http://")) {
@@ -183,6 +220,21 @@ export class GithubProvider extends GitProviderRoot {
 
   public getLabel(): string {
     return "sfdx-hardis GitHub connector";
+  }
+
+  // A rate limit also answers 403: it says nothing about the token
+  public async checkConnection(): Promise<GitProviderConnectionCheck> {
+    if (!this.repoOwner || !this.repoName) {
+      return { connected: false, reason: "notVisible", message: "No GitHub repository found in the git remote" };
+    }
+    try {
+      await this.api.get(`/repos/${this.repoOwner}/${this.repoName}`);
+      return { connected: true };
+    } catch (e) {
+      const error = e as GithubApiError;
+      const rateLimited = error.status === 403 && String((error.response as any)?.headers?.["x-ratelimit-remaining"] ?? "") === "0";
+      return GithubProvider.connectionCheckFromStatus(rateLimited ? 429 : error.status, error.message);
+    }
   }
 
   public getSafeDirectoryCommand(): string {

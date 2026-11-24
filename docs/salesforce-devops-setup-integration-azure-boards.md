@@ -36,3 +36,12 @@ This integration uses the following variables, which must be available from the 
 - SYSTEM_ACCESSTOKEN
 - SYSTEM_TEAMPROJECT
 - BUILD_REPOSITORY_ID
+
+## Coding agents on a workstation
+
+When a coding agent runs sfdx-hardis commands with `--agent` on a developer machine and no Azure DevOps token variable is set, sfdx-hardis uses a Microsoft Entra ID token of the [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) (`az login`) to read and update the work items, for the running command only. See [Azure DevOps: coding agents on a workstation](salesforce-devops-setup-integration-azure.md#coding-agents-on-a-workstation).
+
+```sh
+az login
+sf hardis:project:connection:check --type ticketing --agent --json
+```

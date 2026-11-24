@@ -461,6 +461,7 @@ nav:
           - clean systemdebug: hardis/project/clean/systemdebug.md
           - clean xml: hardis/project/clean/xml.md
           - configure auth: hardis/project/configure/auth.md
+          - connection check: hardis/project/connection/check.md
           - convert profilestopermsets: hardis/project/convert/profilestopermsets.md
           - create: hardis/project/create.md
           - deploy cancel: hardis/project/deploy/cancel.md

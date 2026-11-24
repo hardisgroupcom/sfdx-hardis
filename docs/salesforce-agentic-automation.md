@@ -45,6 +45,7 @@ In agent mode:
 - All interactive `prompts()` calls are **disabled**.
 - Required inputs must be provided as **CLI flags**: the command fails with a clear error if they are missing.
 - Optional inputs apply **sensible defaults** (documented per command).
+- On a workstation, a missing or refused GitHub, GitLab or Azure DevOps token is read from the `gh`, `glab` or `az` CLI the developer is logged in with, for the running command only. Run [hardis:project:connection:check](hardis/project/connection/check.md) first to know whether the git provider and the ticketing system are connected.
 
 ---
 
@@ -171,6 +172,7 @@ The table below lists every sfdx-hardis command that supports `--agent`. Click t
 | [**hardis:project:dev-org:register**](hardis/project/dev-org/register.md)                   | Register a development org or change its target branch, owner and users, with `--target-org` or `--org-id`, `--target-branch`, `--owner`, `--users`                                                                                                           |
 | [**hardis:project:dev-org:remove**](hardis/project/dev-org/remove.md)                       | Remove a development org from the list. Required: `--org-id` or `--target-org`                                                                                                                                                                                |
 | [**hardis:project:pipeline:describe**](hardis/project/pipeline/describe.md)                 | Describe the major branches of the project and the steps between them, read-only, with `--json`. Call it before choosing a branch instead of assuming the pipeline                                                                                            |
+| [**hardis:project:connection:check**](hardis/project/connection/check.md)                   | Check whether the git provider and the ticketing systems accept their credentials, with `--json`: `connected` per provider, and what to do when it is not                                                                                                     |
 | [**hardis:project:promotion:list-candidates**](hardis/project/promotion/list-candidates.md) | List the User Stories that could be promoted from a major branch, read-only, with `--source-branch` and `--json`. Creates and closes nothing (Beta)                                                                                                           |
 | [**hardis:project:promotion:create**](hardis/project/promotion/create.md)                   | Assemble a promotion branch carrying only the chosen User Stories, and open its Pull Request, with `--agent --source-branch --pull-requests` (Beta)                                                                                                           |
 | [**hardis:project:action:list**](hardis/project/action/list.md)                             | List the deployment actions of a scope with `--scope --when`, or read their status in each org with `--with-status --pr-ids`, and what the next promotion will do with `--forecast`                                                                           |

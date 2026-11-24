@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- New [hardis:project:connection:check](https://sfdx-hardis.cloudity.com/hardis/project/connection/check/): tell a coding agent whether the git provider and the ticketing system are connected, and how to fix it when they are not. In agent mode, a missing or refused GitHub, GitLab or Azure DevOps token is now read from `gh`, `glab` or `az`. Outside CI, the generic `PAT` and `ACCESS_TOKEN` variables are no longer read as GitHub or GitLab tokens.
 - [Org monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-home/): the lists of notification types skipped from the logs and metrics sent to Grafana now accept spaces after the commas.
 - Upgrade **i18next** to 26.7.2, which fixes a denial of service through recursive object merging (CVE-2026-63402).
 - Docker images: keep TypeScript 6, as the TypeScript 7 compiler binary ships a vulnerable golang.org/x/text (CVE-2026-56851, CVE-2026-56852).
