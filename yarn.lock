@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@anthropic-ai/sdk@^1.3.0":
-  version "1.12.0"
-  resolved "https://registry.yarnpkg.com/@anthropic-ai/sdk/-/sdk-1.12.0.tgz#6707039bf551b86b2af29beb08370edf9e76773a"
-  integrity sha512-0j9zwiQdkvr90LoiiBDUh7kae1lsNW2EqeE0vGceYne4BrmMDdDVoQ4KGOieUee0zWZbVJKsf/06JY8U5i63Xg==
+"@anthropic-ai/sdk@^1.7.0":
+  version "1.14.0"
+  resolved "https://registry.yarnpkg.com/@anthropic-ai/sdk/-/sdk-1.14.0.tgz#78ce155cb1fdf1cc60893d83b588d8d15dc89e0d"
+  integrity sha512-nADYXUd5fn9Zgw2nHi1iKyt/kb1UUt1cN3RbdxEI6XjTDTxbx4LLG4GnMrxWyS9GgXQllFOyAKSiFM3joDNK9A==
   dependencies:
     "@opentelemetry/api" "^1.4.1"
     json-schema-to-ts "^3.1.1"
@@ -1537,12 +1537,12 @@
   resolved "https://registry.yarnpkg.com/@kwsites/promise-deferred/-/promise-deferred-1.1.1.tgz#8ace5259254426ccef57f3175bc64ed7095ed919"
   integrity sha512-GaHYm+c0O9MjZRu0ongGBRbinu8gVAMd2UZjji6jVmqKtZluZnptXGWhz1E8j8D2HJ3f/yMxKAUC0b+57wncIw==
 
-"@langchain/anthropic@1.6.1":
-  version "1.6.1"
-  resolved "https://registry.yarnpkg.com/@langchain/anthropic/-/anthropic-1.6.1.tgz#90e8eea7d52f8062b496d0bfc42926f4b3c6035d"
-  integrity sha512-EICo/LZmmKIf2pWXyjLI0Lxl5kFvStdYpua0zMDp5U8zO/kyue68tADr3rcV6Yrw7zGdHBNuAEgbj/dvqjS9lg==
+"@langchain/anthropic@1.6.3":
+  version "1.6.3"
+  resolved "https://registry.yarnpkg.com/@langchain/anthropic/-/anthropic-1.6.3.tgz#5dead0466f21abc4317dedbf99a48f7ea46e4022"
+  integrity sha512-pcrUOqg3asUW10//9pAsD6sn1dwtcuCftMmn0weqSwSWIGVxetDb9gexErvkbei9GlkY/gTzAfcEct7F8xNMfA==
   dependencies:
-    "@anthropic-ai/sdk" "^1.3.0"
+    "@anthropic-ai/sdk" "^1.7.0"
     zod "^3.25.76 || ^4"
 
 "@langchain/core@1.3.7":
