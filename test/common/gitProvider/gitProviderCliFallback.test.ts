@@ -173,6 +173,31 @@ describe('GitProvider CLI token fallback', () => {
     expect(checkedTokens).to.deep.equal(['ghp_env_token', 'ghp_env_token']);
   });
 
+  it('never reads PAT on a workstation', async () => {
+    process.env.SFDX_HARDIS_PROVIDER_CLI_AUTH = 'false';
+    process.env.GITHUB_REPOSITORY = 'acme/widgets';
+    process.env.PAT = 'some_pat';
+    expect(GithubProvider.tokenVariableNames).to.not.include('PAT');
+    expect(await GitProvider.getInstance(false)).to.not.be.instanceOf(GithubProvider);
+
+    GitProvider.resetInstance();
+    process.env.GITHUB_TOKEN = 'ghp_env_token';
+    const instance: any = await GitProvider.getInstance(false);
+    expect(instance.api['headers'].Authorization).to.equal('token ghp_env_token');
+  });
+
+  it('prefers PAT to GITHUB_TOKEN in CI, as it always did, but PAT alone selects no provider', async () => {
+    process.env.CI = 'true';
+    process.env.GITHUB_REPOSITORY = 'acme/widgets';
+    process.env.PAT = 'some_pat';
+    expect(await GitProvider.getInstance(false)).to.not.be.instanceOf(GithubProvider);
+
+    GitProvider.resetInstance();
+    process.env.GITHUB_TOKEN = 'ghp_env_token';
+    const instance: any = await GitProvider.getInstance(false);
+    expect(instance.api['headers'].Authorization).to.equal('token some_pat');
+  });
+
   it('says what to do when there is no token at all', async () => {
     GithubProvider.readCliToken = async () => ({ token: null, source: GithubProvider.getCliTokenSource(), host: 'github.com', reason: 'notLoggedIn' });
     const status = await GitProvider.checkConnection();

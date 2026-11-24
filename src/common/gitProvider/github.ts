@@ -19,7 +19,11 @@ const DASHBOARD_SEARCH_MAX_PAGES = 50;
 
 export class GithubProvider extends GitProviderRoot {
   public static readonly providerLabel = "GitHub";
-  public static readonly tokenVariableNames = ["CI_SFDX_HARDIS_GITHUB_TOKEN", "PAT", "GITHUB_TOKEN"];
+  // PAT is the variable of the first CI templates: read in CI only. On a workstation, many other
+  // tools set a variable with that name.
+  public static get tokenVariableNames(): string[] {
+    return process.env.CI != null ? ["CI_SFDX_HARDIS_GITHUB_TOKEN", "PAT", "GITHUB_TOKEN"] : ["CI_SFDX_HARDIS_GITHUB_TOKEN", "GITHUB_TOKEN"];
+  }
   private api: GithubApiClient;
   private repoOwner: string | null;
   private repoName: string | null;

@@ -265,8 +265,9 @@ export abstract class GitProvider {
         }
         return new GitlabProvider();
       }
-      // Github - detect from CI_SFDX_HARDIS_GITHUB_TOKEN, PAT or GITHUB_TOKEN
-      else if (GitProvider.getEnvironmentToken(GithubProvider)) {
+      // Github - detect from CI_SFDX_HARDIS_GITHUB_TOKEN or GITHUB_TOKEN. PAT alone never selects
+      // GitHub: in CI it is only preferred to GITHUB_TOKEN, as it always was (tokenVariableNames)
+      else if (process.env.CI_SFDX_HARDIS_GITHUB_TOKEN || process.env.GITHUB_TOKEN) {
         // Auto-detect missing CI variables from git remote URL
         if (!process.env.GITHUB_REPOSITORY) {
           await GithubProvider.autoDetectSettings();
