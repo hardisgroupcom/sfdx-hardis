@@ -49,16 +49,6 @@ reason = "image-size 1.2.1 is a transitive dependency of pptxgenjs 4.0.1; no pat
 id = "CVE-2026-85063"
 reason = "csv-parse 5.6.0 is transitive through @salesforce/core -> @jsforce/jsforce-node, which declares csv-parse ^5.5.2 and uses it to parse Bulk API results returned by the user's own org, not untrusted input. The fix is two majors past the declared range (5.x -> 7.x) with changed parser and record semantics, so it belongs upstream in jsforce-node."
 
-# https://github.com/advisories/GHSA-gcqx-w48m-w2h4 (CVE-2026-93753)
-# deepmerge 4.3.1: mergeObject() does not filter __proto__ keys, so a crafted source object can poison
-# the prototype of the merged result. No fixed release exists: 4.3.1 is the latest version.
-# It reaches us only through bitbucket 2.12.0 (latest), which uses it to merge its endpoint defaults
-# with the request options sfdx-hardis builds itself, restricted to plain objects (is-plain-object).
-# API responses never go through it. Remove once deepmerge ships a fix. Added 2026-10-28.
-[[IgnoredVulns]]
-id = "GHSA-gcqx-w48m-w2h4"
-reason = "deepmerge 4.3.1 (latest, no fix) is transitive through bitbucket 2.12.0, which only merges its endpoint defaults with request options built by sfdx-hardis, never API responses."
-
 # https://github.com/advisories/GHSA-g3hv-75wg-m249 (CVE-2026-118764)
 # minimatch < 11.0.1: a crafted glob pattern matched with optimizationLevel >= 2 makes the preprocessing
 # grow and burn CPU and memory. Availability only, fixed in 11.0.1 with no backport to 3.x / 5.x / 9.x / 10.x.
@@ -77,19 +67,3 @@ reason = "minimatch DoS needs an attacker-supplied pattern; sfdx-hardis matches 
 [[IgnoredVulns]]
 id = "GHSA-3g3m-2fjr-6pw4"
 reason = "glob walk not stopped on abort: sfdx-hardis never aborts a glob walk. The fix is glob 14, whose matching changes need their own upgrade."
-
-# https://github.com/advisories/GHSA-fc5q-39xc-vjpf (CVE-2026-112366)
-# picomatch: a single-branch repeated extglob pattern such as +(*) or +(*a) skips the repeated
-# extglob analysis of lib/parse.js, and the regex it compiles backtracks exponentially on short
-# crafted strings (ReDoS, availability only). The attacker has to supply the glob pattern.
-# No patched release exists: OSV marks every version up to and including 4.0.7 as affected, and
-# 4.0.7 is the current latest on npm (upstream fix proposed in micromatch/picomatch#194).
-# sfdx-hardis calls picomatch directly only in src/common/replacementRules/engine/ruleEngine.ts,
-# on the `files` globs of the built-in replacement rules and of the rules the project commits in
-# its own config. The other copies come through micromatch, anymatch, readdirp and tinyglobby,
-# with globs written in code. No glob ever comes from untrusted input.
-# Remove once picomatch ships a fix (bump the picomatch pin in dependencies and resolutions). Added 2026-11-17.
-# OSV reports this finding under its GHSA id, with CVE-2026-112366 as an alias.
-[[IgnoredVulns]]
-id = "GHSA-fc5q-39xc-vjpf"
-reason = "picomatch 4.0.7 is the latest release and still affected, no fix exists. The ReDoS needs an attacker-supplied extglob pattern; sfdx-hardis only compiles globs from its own code, its built-in replacement rules and the project's own committed config."

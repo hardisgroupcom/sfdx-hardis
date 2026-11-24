@@ -3,6 +3,7 @@
 ## [beta] (main)
 
 - [Org monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-home/): the lists of notification types skipped from the logs and metrics sent to Grafana now accept spaces after the commas.
+- Upgrade **i18next** to 26.7.2, which fixes a denial of service through recursive object merging (CVE-2026-63402).
 
 ## [8.27.0] 2026-11-23
 
