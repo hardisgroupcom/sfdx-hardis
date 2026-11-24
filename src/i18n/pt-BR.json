@@ -446,6 +446,7 @@
   "backpromoteDeploySuccess": "{{count}} item(ns) de metadados implantado(s) no sandbox",
   "backpromoteDeploying": "Implantando {{count}} item(ns) de metadados no sandbox...",
   "backpromoteDestructiveChangesSkipped": "Alteracoes destrutivas ignoradas pelo usuario",
+  "backpromoteDetachedHead": "Seu checkout está no commit {{commit}}, não em uma branch, então o backpromote não teria nenhuma branch para onde levar você de volta. Faça primeiro o checkout de uma branch (a da sua User Story, ou {{parentBranch}}) e depois execute o backpromote de novo.",
   "backpromoteDiffDecisionKeepOrg": "Manter a versão do {{sandboxName}} (o item não é implantado e será oferecido novamente na próxima vez)",
   "backpromoteDiffDecisionKeepOrgAll": "Manter a versão do {{sandboxName}} para este arquivo e todos os restantes",
   "backpromoteDiffDecisionMerge": "Mesclar as duas versões manualmente (o arquivo é gravado com marcadores de conflito, um prompt para agente de código é salvo)",

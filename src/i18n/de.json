@@ -448,6 +448,7 @@
   "backpromoteDeploySuccess": "{{count}} Metadaten-Element(e) erfolgreich in die Sandbox deployt",
   "backpromoteDeploying": "{{count}} Metadaten-Element(e) werden in die Sandbox deployt...",
   "backpromoteDestructiveChangesSkipped": "Destruktive Aenderungen vom Benutzer uebersprungen",
+  "backpromoteDetachedHead": "Ihr Checkout steht auf dem Commit {{commit}}, nicht auf einer Branch: Der Backpromote hätte keine Branch, zu der er Sie zurückbringen könnte. Checken Sie zuerst eine Branch aus (die Branch Ihrer User Story oder {{parentBranch}}) und starten Sie den Backpromote dann erneut.",
   "backpromoteDiffDecisionKeepOrg": "Die {{sandboxName}}-Version behalten (das Element wird nicht deployt und beim nächsten Mal erneut angeboten)",
   "backpromoteDiffDecisionKeepOrgAll": "Die {{sandboxName}}-Version für diese und alle verbleibenden Dateien behalten",
   "backpromoteDiffDecisionMerge": "Beide Versionen von Hand mergen (die Datei wird mit Konfliktmarkierungen geschrieben, ein Coding-Agent-Prompt wird gespeichert)",

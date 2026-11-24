@@ -448,6 +448,7 @@
   "backpromoteDeploySuccess": "{{count}} metadata-item(s) geïmplementeerd in de sandbox",
   "backpromoteDeploying": "{{count}} metadata-item(s) implementeren in de sandbox...",
   "backpromoteDestructiveChangesSkipped": "Destructieve wijzigingen overgeslagen door gebruiker",
+  "backpromoteDetachedHead": "Je checkout staat op commit {{commit}} en niet op een branch, dus de backpromote heeft geen branch om je naar terug te brengen. Check eerst een branch uit (die van je User Story, of {{parentBranch}}) en voer de backpromote daarna opnieuw uit.",
   "backpromoteDiffDecisionKeepOrg": "De {{sandboxName}}-versie behouden (het item wordt niet geïmplementeerd en wordt de volgende keer opnieuw aangeboden)",
   "backpromoteDiffDecisionKeepOrgAll": "De {{sandboxName}}-versie behouden voor dit bestand en alle overige",
   "backpromoteDiffDecisionMerge": "Beide versies handmatig samenvoegen (het bestand wordt geschreven met conflictmarkeringen, een prompt voor een coding agent wordt opgeslagen)",

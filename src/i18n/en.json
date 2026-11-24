@@ -448,6 +448,7 @@
   "backpromoteDeploySuccess": "{{count}} metadata item(s) deployed to the sandbox",
   "backpromoteDeploying": "Deploying {{count}} metadata item(s) to the sandbox...",
   "backpromoteDestructiveChangesSkipped": "Destructive changes skipped by user",
+  "backpromoteDetachedHead": "Your checkout is on commit {{commit}}, not on a branch, so the backpromote would have no branch to bring you back to. Check out a branch first (your User Story branch, or {{parentBranch}}), then run the backpromote again.",
   "backpromoteDiffDecisionKeepOrg": "Keep the {{sandboxName}} version (the item is not deployed and is offered again next time)",
   "backpromoteDiffDecisionKeepOrgAll": "Keep the {{sandboxName}} version for this file and every remaining one",
   "backpromoteDiffDecisionMerge": "Merge both versions by hand (the file is written with conflict markers, a coding agent prompt is saved)",
