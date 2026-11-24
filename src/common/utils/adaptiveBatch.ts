@@ -259,16 +259,24 @@ async function runAdaptiveBatches<T, R>(
  */
 export async function retryOnThrottling<R>(
   call: () => Promise<R>,
-  options: { attempts?: number; maxWaitMs?: number; sleep?: (ms: number) => Promise<void>; onRetry?: (error: unknown, waitMs: number, attempt: number) => void } = {},
+  options: {
+    attempts?: number;
+    maxWaitMs?: number;
+    sleep?: (ms: number) => Promise<void>;
+    onRetry?: (error: unknown, waitMs: number, attempt: number) => void;
+    /** Whether an error is worth another try (default isThrottlingError) */
+    shouldRetry?: (error: unknown) => boolean;
+  } = {},
 ): Promise<R> {
   const attempts = Math.max(1, options.attempts ?? 3);
+  const shouldRetry = options.shouldRetry || isThrottlingError;
   const sleep = options.sleep || ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
   const maxWaitMs = options.maxWaitMs ?? DEFAULT_MAX_WAIT_MS;
   for (let attempt = 1; ; attempt++) {
     try {
       return await call();
     } catch (error) {
-      if (attempt >= attempts || !isThrottlingError(error)) {
+      if (attempt >= attempts || !shouldRetry(error)) {
         throw error;
       }
       const waitMs = Math.min(Math.max(retryAfterMs(error) ?? attempt * 1000, 0), maxWaitMs);

@@ -1,5 +1,5 @@
 import { HttpError, httpPost } from "../../utils/httpUtils.js";
-import { retryOnThrottling } from "../../utils/adaptiveBatch.js";
+import { httpStatusOf, isThrottlingError, retryOnThrottling } from "../../utils/adaptiveBatch.js";
 
 /** The LLM APIs sfdx-hardis can call */
 export type LlmProviderType = "ollama" | "openai" | "anthropic" | "google-genai";
@@ -82,7 +82,7 @@ export abstract class AbstractLlmClient implements LlmClient {
           timeout: this.config.timeout ?? DEFAULT_LLM_TIMEOUT_MS,
           responseType: "json",
         }),
-        { attempts: Math.max(0, maxRetries) + 1 },
+        { attempts: Math.max(0, maxRetries) + 1, shouldRetry: isRetryableLlmError },
       );
       return response.data;
     } catch (error) {
@@ -105,6 +105,19 @@ export abstract class AbstractLlmClient implements LlmClient {
     }
     return error as Error;
   }
+}
+
+// A throttling, any server error (500 included), a request timeout, or a call that ran past the
+// timeout: what the former SDKs tried again
+function isRetryableLlmError(error: unknown): boolean {
+  if (isThrottlingError(error)) {
+    return true;
+  }
+  const status = httpStatusOf(error);
+  if (status !== null) {
+    return status >= 500 || status === 408;
+  }
+  return (error as any)?.name === "TimeoutError";
 }
 
 // The error formats of the APIs: { error: { message } } (OpenAI, Anthropic, Gemini), { error: "..." } (Ollama)

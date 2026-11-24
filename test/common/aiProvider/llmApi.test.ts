@@ -174,6 +174,25 @@ describe('LLM API clients', () => {
     expect(calls).to.have.length(2);
   });
 
+  it('retries after a server error', async () => {
+    const calls = recordCalls([
+      () => jsonResponse({ error: { message: 'The server had an error' } }, 500, { 'retry-after': '0' }),
+      () => jsonResponse({ choices: [{ message: { content: 'ok' } }] }),
+    ]);
+    const client = new OpenAiClient({ modelName: 'gpt-4o', apiKey: 'sk-1', maxRetries: 1 });
+    const result = await client.complete('Q');
+    expect(result.text).to.equal('ok');
+    expect(calls).to.have.length(2);
+  });
+
+  it('sends Claude 3 models a max_tokens they accept', async () => {
+    const calls = recordCalls([() => jsonResponse({ content: [{ type: 'text', text: 'A' }] })]);
+    await new AnthropicClient({ modelName: 'claude-3-5-haiku-latest', apiKey: 'ak' }).complete('Q');
+    await new AnthropicClient({ modelName: 'claude-3-haiku-20240307', apiKey: 'ak' }).complete('Q');
+    await new AnthropicClient({ modelName: 'claude-3-7-sonnet-latest', apiKey: 'ak' }).complete('Q');
+    expect(calls.map((call) => call.body.max_tokens)).to.deep.equal([8192, 4096, 16384]);
+  });
+
   it('checks the credentials each provider needs', () => {
     expect(() => createLlmClient('anthropic', { modelName: 'm' })).to.throw('AI_LLM_API_KEY');
     expect(() => createLlmClient('google-genai', { modelName: 'm' })).to.throw('AI_LLM_API_KEY');

@@ -87,7 +87,7 @@ sfdx-hardis calls the API of the provider you choose directly, over HTTPS (proxi
 | AI_LLM_MODEL           | The model to use with the selected provider (e.g. `gpt-4o`, `claude-sonnet-4-5`, `qwen2.5-coder:14b`)               |                                  |
 | AI_LLM_API_KEY         | API key of the selected provider (required for OpenAI, Anthropic and Gemini, unless gateway headers are used)       |                                  |
 | AI_LLM_TEMPERATURE     | Controls randomness (0-1)                                                                                           |                                  |
-| AI_LLM_MAX_TOKENS      | Maximum number of tokens to generate                                                                                | Anthropic: `16384`               |
+| AI_LLM_MAX_TOKENS      | Maximum number of tokens to generate (Anthropic: `8192` for Claude 3.5 models, `4096` for Claude 3 models)          | Anthropic: `16384`               |
 | AI_LLM_MAX_RETRIES     | Number of retries after a rate limit or a temporary error                                                           | `6`                              |
 | AI_LLM_TIMEOUT         | Timeout of one call, in milliseconds                                                                                | `600000`                         |
 | AI_LLM_BASE_URL        | Base URL of the API (Ollama, corporate gateways)                                                                    | Ollama: `http://localhost:11434` |
@@ -163,7 +163,7 @@ Only values that are safe to commit (model, provider, tuning) are loaded from th
 
 #### Renamed settings
 
-These settings used to be named after LangChain, the library sfdx-hardis used to call LLM APIs. The former names still work, and sfdx-hardis logs a warning naming the new one. When both are set, the new name wins.
+These settings used to be named after LangChain, the library sfdx-hardis used to call LLM APIs. The former names still work, and sfdx-hardis logs a warning naming the new one. When both are set, the new name wins, and an environment variable always wins over a `.sfdx-hardis.yml` key, whichever its name: a former `LANGCHAIN_LLM_MODEL` variable still overrides a new `aiLlmModel` key.
 
 | Former name                                             | New name                                  |
 |---------------------------------------------------------|-------------------------------------------|
