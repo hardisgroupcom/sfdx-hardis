@@ -3,7 +3,7 @@
 // Dashboard definitions are fetched at runtime from the sfdx-hardis GitHub repository, so the
 // npm package does not need to embed them and users always get the dashboards matching --ref.
 import { createHttpClient, httpGet, HttpClient } from '../utils/httpUtils.js';
-import yaml from 'js-yaml';
+import { parseYaml } from '../utils/yamlUtils.js';
 
 export const GRAFANA_V2_FOLDER_UID = 'sfdx-hardis-v2';
 export const GRAFANA_V2_FOLDER_TITLE = 'Org Monitoring by sfdx-hardis';
@@ -132,7 +132,7 @@ export function buildAlertRuleGroups(
     .join(promUid)
     .split('${DS_LOKI}')
     .join(lokiUid);
-  const parsed: any = yaml.load(substituted);
+  const parsed: any = parseYaml(substituted);
   const groups = parsed?.groups || [];
   if (groups.length === 0 || groups.every((group: any) => !(group.rules?.length > 0))) {
     throw new Error('No alert rule group found in the alert pack YAML');

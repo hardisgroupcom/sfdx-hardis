@@ -5,7 +5,7 @@
  */
 import fs from "fs";
 import path from "path";
-import yaml from "js-yaml";
+import YAML from "yaml";
 
 export const ORG_KINDS = ["showcase", "devhub", "throwaway", "none"];
 export const MODES = ["live", "replay"];
@@ -14,7 +14,7 @@ export const MODES = ["live", "replay"];
 export function loadSpecs(specsDir) {
   const specs = [];
   for (const file of listYamlFiles(specsDir)) {
-    const spec = yaml.load(fs.readFileSync(file, "utf8")) || {};
+    const spec = YAML.parse(fs.readFileSync(file, "utf8")) || {};
     spec.file = file;
     specs.push(spec);
   }

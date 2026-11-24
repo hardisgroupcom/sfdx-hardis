@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import fs from '../../../src/common/utils/fsUtils.js';
 import * as path from 'path';
-import * as yaml from 'js-yaml';
+import { dumpYaml } from '../../../src/common/utils/yamlUtils.js';
 import { CustomFunctionAction, createMaskedLineStreamer, maskOutputValues, maskSecrets } from '../../../src/common/actionsProvider/customFunctionAction.js';
 import { PrePostCommand } from '../../../src/common/actionsProvider/actionsProvider.js';
 import { CustomFunctionDefinition } from '../../../src/common/utils/customFunctionUtils.js';
@@ -21,7 +21,7 @@ describe('CustomFunctionAction', () => {
     await fs.ensureDir(path.dirname(definition.script));
     await fs.writeFile(definition.script, scriptBody);
     await fs.ensureDir('config');
-    await fs.writeFile(path.join('config', '.sfdx-hardis.yml'), yaml.dump({ customFunctions: [definition] }));
+    await fs.writeFile(path.join('config', '.sfdx-hardis.yml'), dumpYaml({ customFunctions: [definition] }));
   }
 
   function buildCommand(type: string, parameters: Record<string, any> = {}): PrePostCommand {
@@ -146,7 +146,7 @@ describe('CustomFunctionAction', () => {
 
   it('fails when the function is not declared', async () => {
     await fs.ensureDir('config');
-    await fs.writeFile(path.join('config', '.sfdx-hardis.yml'), yaml.dump({ customFunctions: [] }));
+    await fs.writeFile(path.join('config', '.sfdx-hardis.yml'), dumpYaml({ customFunctions: [] }));
     const result = await new CustomFunctionAction().run(buildCommand('missingFunction'));
     expect(result.statusCode).to.equal('failed');
     expect(result.skippedReason).to.match(/missingFunction/);
@@ -154,7 +154,7 @@ describe('CustomFunctionAction', () => {
 
   it('fails when the script file is gone', async () => {
     await fs.ensureDir('config');
-    await fs.writeFile(path.join('config', '.sfdx-hardis.yml'), yaml.dump({
+    await fs.writeFile(path.join('config', '.sfdx-hardis.yml'), dumpYaml({
       customFunctions: [{ id: 'gone', label: 'Gone', runtime: 'node', script: 'scripts/functions/gone.js' }],
     }));
     const result = await new CustomFunctionAction().run(buildCommand('gone'));

@@ -1,7 +1,7 @@
 import * as crypto from 'crypto';
 import * as os from 'os';
 import * as path from 'path';
-import * as yaml from 'js-yaml';
+import { parseYaml } from './yamlUtils.js';
 import c from 'chalk';
 import { SfError } from '@salesforce/core';
 import fs from './fsUtils.js';
@@ -188,7 +188,7 @@ export async function collectDoraBranchInputs(
 
 async function readMonitoringDeploymentBranch(): Promise<string | null> {
   try {
-    const config: any = yaml.load(await fs.readFile(MONITORING_CONFIG_FILE, 'utf8'));
+    const config: any = parseYaml(await fs.readFile(MONITORING_CONFIG_FILE, 'utf8'));
     const value = config?.deploymentBranch;
     return typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
   } catch {

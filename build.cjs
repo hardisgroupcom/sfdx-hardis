@@ -2,7 +2,7 @@
 /* eslint-disable */
 const fs = require("fs");
 const https = require("https");
-const yaml = require("js-yaml");
+const YAML = require("yaml");
 
 const SDR_METADATA_REGISTRY_URL =
   "https://raw.githubusercontent.com/forcedotcom/source-deploy-retrieve/refs/heads/main/src/registry/metadataRegistry.json";
@@ -507,7 +507,7 @@ class SfdxHardisBuilder {
     console.log("Generating docs/llms.txt...");
     // The python tags of mkdocs.yml mean nothing here
     const mkdocsText = fs.readFileSync("./mkdocs.yml", "utf-8").replace(/!!python\/name:\S+/g, '""');
-    const mkdocs = yaml.load(mkdocsText);
+    const mkdocs = YAML.parse(mkdocsText);
     const listed = new Set();
     const pageLine = (label, target) => {
       if (/^https?:\/\//.test(target)) {
@@ -589,7 +589,7 @@ class SfdxHardisBuilder {
     }
     const content = fs.readFileSync(file, "utf-8");
     const frontMatterMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n/);
-    const frontMatter = frontMatterMatch ? yaml.load(frontMatterMatch[1]) || {} : {};
+    const frontMatter = frontMatterMatch ? YAML.parse(frontMatterMatch[1]) || {} : {};
     const body = content
       .substring(frontMatterMatch ? frontMatterMatch[0].length : 0)
       .replace(/<!--[\s\S]*?-->/g, "")

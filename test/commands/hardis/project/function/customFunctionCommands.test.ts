@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import fs from '../../../../../src/common/utils/fsUtils.js';
 import * as path from 'path';
-import * as yaml from 'js-yaml';
+import { parseYaml } from '../../../../../src/common/utils/yamlUtils.js';
 import {
   CustomFunctionDefinition,
   findActionsUsingCustomFunction,
@@ -218,7 +218,7 @@ describe('hardis:project:function - unit logic', () => {
       await writeActions('project', 'post-deploy', [
         buildAction({ id: 'a1', label: 'Notify', type: 'notifySlack' }),
       ]);
-      const doc: any = yaml.load(fs.readFileSync(path.join('config', '.sfdx-hardis.yml'), 'utf-8'));
+      const doc: any = parseYaml(fs.readFileSync(path.join('config', '.sfdx-hardis.yml'), 'utf-8'));
       expect(doc.customFunctions).to.have.length(1);
       expect(doc.commandsPostDeploy).to.have.length(1);
     });

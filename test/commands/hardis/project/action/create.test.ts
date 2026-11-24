@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import fs from '../../../../../src/common/utils/fsUtils.js';
-import * as yaml from 'js-yaml';
+import { parseYaml } from '../../../../../src/common/utils/yamlUtils.js';
 import { readActions, writeActions } from '../../../../../src/common/utils/actionUtils.js';
 import { buildAction } from '../../../../../src/common/utils/actionUtils.js';
 import { randomUUID } from 'crypto';
@@ -23,7 +23,7 @@ describe('hardis:project:action:create - unit logic', () => {
     actions.push(action);
     const configFile = await writeActions('project', 'pre-deploy', actions);
 
-    const doc: any = yaml.load(fs.readFileSync(configFile, 'utf-8'));
+    const doc: any = parseYaml(fs.readFileSync(configFile, 'utf-8'));
     expect(doc.commandsPreDeploy).to.have.lengthOf(1);
     expect(doc.commandsPreDeploy[0].label).to.equal('Disable triggers');
     expect(doc.commandsPreDeploy[0].type).to.equal('command');
@@ -43,7 +43,7 @@ describe('hardis:project:action:create - unit logic', () => {
     actions.push(action);
     const configFile = await writeActions('project', 'post-deploy', actions);
 
-    const doc: any = yaml.load(fs.readFileSync(configFile, 'utf-8'));
+    const doc: any = parseYaml(fs.readFileSync(configFile, 'utf-8'));
     expect(doc.commandsPostDeploy).to.have.lengthOf(1);
     expect(doc.commandsPostDeploy[0].type).to.equal('data');
     expect(doc.commandsPostDeploy[0].parameters.sfdmuProject).to.equal('TestData');
@@ -122,7 +122,7 @@ describe('hardis:project:action:create - unit logic', () => {
     actions.push(action);
     const configFile = await writeActions('project', 'post-deploy', actions);
 
-    const doc: any = yaml.load(fs.readFileSync(configFile, 'utf-8'));
+    const doc: any = parseYaml(fs.readFileSync(configFile, 'utf-8'));
     expect(doc.commandsPostDeploy[0].excludeTargetBranches).to.deep.equal(['main', 'dev-sandboxes']);
     expect(doc.commandsPostDeploy[0]).to.not.have.property('includeTargetBranches');
   });
@@ -160,7 +160,7 @@ describe('hardis:project:action:create - unit logic', () => {
     const configFile = await writeActions('branch', 'pre-deploy', actions, 'integration');
 
     expect(configFile).to.include('integration');
-    const doc: any = yaml.load(fs.readFileSync(configFile, 'utf-8'));
+    const doc: any = parseYaml(fs.readFileSync(configFile, 'utf-8'));
     expect(doc.commandsPreDeploy).to.have.lengthOf(1);
   });
 
@@ -177,7 +177,7 @@ describe('hardis:project:action:create - unit logic', () => {
     const configFile = await writeActions('pr', 'post-deploy', actions, undefined, '123');
 
     expect(configFile).to.include('123');
-    const doc: any = yaml.load(fs.readFileSync(configFile, 'utf-8'));
+    const doc: any = parseYaml(fs.readFileSync(configFile, 'utf-8'));
     expect(doc.commandsPostDeploy).to.have.lengthOf(1);
   });
 });

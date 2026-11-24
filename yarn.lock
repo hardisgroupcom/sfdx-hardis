@@ -2200,13 +2200,6 @@
   resolved "https://registry.yarnpkg.com/@types/columnify/-/columnify-1.5.4.tgz#519fb13a2aa545300927b6fc3aa78327e8f1808e"
   integrity sha512-YPEVzmy3kJupUee1ueLuvGspy6U2JHcxt6rYvRsSCEgVC54+KdBFjQ6NG/0koZk69e1bfXwSusgChwdFhvEXMw==
 
-"@types/cosmiconfig@6.0.3":
-  version "6.0.3"
-  resolved "https://registry.yarnpkg.com/@types/cosmiconfig/-/cosmiconfig-6.0.3.tgz#03e26eb39c438ff7949ad950f887baf49aa383b8"
-  integrity sha512-SiTm0f1L6hGrhqAE1bb5GSC9Ay9v9lCSA2mYUH91p6kBMdkbDfuXIyCBmhD6PmSJTiF7ZHS95BTPc0HPqlnWgw==
-  dependencies:
-    cosmiconfig "*"
-
 "@types/diff@8.0.0":
   version "8.0.0"
   resolved "https://registry.yarnpkg.com/@types/diff/-/diff-8.0.0.tgz#8fc38b6488d2b228bf0b26c3d86a6822dc0961c5"
@@ -2248,11 +2241,6 @@
   version "2.0.6"
   resolved "https://registry.yarnpkg.com/@types/istanbul-lib-coverage/-/istanbul-lib-coverage-2.0.6.tgz#7739c232a1fee9b4d3ce8985f314c0c6d33549d7"
   integrity sha512-2QF/t/auWm0lsy8XtKVPG19v3sSOQlJe/YHZgfjb/KBBHOGSV+J2q/S671rcq9uTBrLAXmZpqJiaQbMT+zNU1w==
-
-"@types/js-yaml@4.0.9":
-  version "4.0.9"
-  resolved "https://registry.yarnpkg.com/@types/js-yaml/-/js-yaml-4.0.9.tgz#cd82382c4f902fed9691a2ed79ec68c5898af4c2"
-  integrity sha512-k4MGaQl5TGo/iipqb2UDG2UwjXziSWkh0uysQelTlJpX1qGlpUZYm8PnO4DxG1qBomtJUdYJ6qR6xdIah10JLg==
 
 "@types/json-schema@^7.0.12", "@types/json-schema@^7.0.15":
   version "7.0.15"
@@ -3713,16 +3701,6 @@ cosmiconfig-typescript-loader@^5.0.0:
   dependencies:
     jiti "^1.21.6"
 
-cosmiconfig@*, cosmiconfig@9.0.2, cosmiconfig@^9.0.0:
-  version "9.0.2"
-  resolved "https://registry.yarnpkg.com/cosmiconfig/-/cosmiconfig-9.0.2.tgz#9e5615163becf6a82211fb33d2f68947c25d0c5e"
-  integrity sha512-gtTZxTDau1wL7Y7zifc2dd8jHSK/k6BTx/2Xp/BpdlAdnlYWFVt7qhJqgwi7637yRwRQ3qL4ZidbB4I8tA5VOg==
-  dependencies:
-    env-paths "^2.2.1"
-    import-fresh "^3.3.0"
-    js-yaml "^4.1.0"
-    parse-json "^5.2.0"
-
 cosmiconfig@^8.0.0, cosmiconfig@^8.3.6:
   version "8.3.6"
   resolved "https://registry.yarnpkg.com/cosmiconfig/-/cosmiconfig-8.3.6.tgz#060a2b871d66dba6c8538ea1118ba1ac16f5fae3"
@@ -3732,6 +3710,16 @@ cosmiconfig@^8.0.0, cosmiconfig@^8.3.6:
     js-yaml "^4.1.0"
     parse-json "^5.2.0"
     path-type "^4.0.0"
+
+cosmiconfig@^9.0.0:
+  version "9.0.2"
+  resolved "https://registry.yarnpkg.com/cosmiconfig/-/cosmiconfig-9.0.2.tgz#9e5615163becf6a82211fb33d2f68947c25d0c5e"
+  integrity sha512-gtTZxTDau1wL7Y7zifc2dd8jHSK/k6BTx/2Xp/BpdlAdnlYWFVt7qhJqgwi7637yRwRQ3qL4ZidbB4I8tA5VOg==
+  dependencies:
+    env-paths "^2.2.1"
+    import-fresh "^3.3.0"
+    js-yaml "^4.1.0"
+    parse-json "^5.2.0"
 
 crc-32@^1.2.0:
   version "1.2.2"

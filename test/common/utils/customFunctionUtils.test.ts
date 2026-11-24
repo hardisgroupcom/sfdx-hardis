@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import fs from '../../../src/common/utils/fsUtils.js';
 import * as path from 'path';
-import * as yaml from 'js-yaml';
+import { parseYaml, dumpYaml } from '../../../src/common/utils/yamlUtils.js';
 import {
   buildInputEnvVarName,
   findActionsUsingCustomFunction,
@@ -189,10 +189,10 @@ describe('customFunctionUtils', () => {
     it('preserves the other keys of the config file', async () => {
       const configFile = path.join('config', '.sfdx-hardis.yml');
       await fs.ensureDir('config');
-      await fs.writeFile(configFile, yaml.dump({ developmentBranch: 'integration' }));
+      await fs.writeFile(configFile, dumpYaml({ developmentBranch: 'integration' }));
       const script = await writeScript(path.join('scripts', 'f.js'));
       await writeCustomFunctionsToProjectFile([{ id: 'a', runtime: 'node', script }]);
-      const doc: any = yaml.load(fs.readFileSync(configFile, 'utf-8'));
+      const doc: any = parseYaml(fs.readFileSync(configFile, 'utf-8'));
       expect(doc.developmentBranch).to.equal('integration');
       expect(doc.customFunctions).to.have.length(1);
     });
@@ -201,7 +201,7 @@ describe('customFunctionUtils', () => {
       const script = await writeScript(path.join('scripts', 'f.js'));
       await writeCustomFunctionsToProjectFile([{ id: 'a', runtime: 'node', script }]);
       await writeCustomFunctionsToProjectFile([]);
-      const doc: any = yaml.load(fs.readFileSync(path.join('config', '.sfdx-hardis.yml'), 'utf-8'));
+      const doc: any = parseYaml(fs.readFileSync(path.join('config', '.sfdx-hardis.yml'), 'utf-8'));
       expect(doc.customFunctions).to.equal(undefined);
     });
 
@@ -214,13 +214,13 @@ describe('customFunctionUtils', () => {
     it('finds usages in project, branch and pull request configs', async () => {
       await fs.ensureDir(path.join('config', 'branches'));
       await fs.ensureDir(path.join('scripts', 'actions'));
-      await fs.writeFile(path.join('config', '.sfdx-hardis.yml'), yaml.dump({
+      await fs.writeFile(path.join('config', '.sfdx-hardis.yml'), dumpYaml({
         commandsPreDeploy: [{ id: 'p1', label: 'Project one', type: 'notifySlack' }],
       }));
-      await fs.writeFile(path.join('config', 'branches', '.sfdx-hardis.uat.yml'), yaml.dump({
+      await fs.writeFile(path.join('config', 'branches', '.sfdx-hardis.uat.yml'), dumpYaml({
         commandsPostDeploy: [{ id: 'b1', label: 'Branch one', type: 'notifySlack' }],
       }));
-      await fs.writeFile(path.join('scripts', 'actions', '.sfdx-hardis.482.yml'), yaml.dump({
+      await fs.writeFile(path.join('scripts', 'actions', '.sfdx-hardis.482.yml'), dumpYaml({
         commandsPostDeploy: [{ id: 'r1', label: 'Pr one', type: 'somethingElse' }],
       }));
       const usages = await findActionsUsingCustomFunction('notifySlack');

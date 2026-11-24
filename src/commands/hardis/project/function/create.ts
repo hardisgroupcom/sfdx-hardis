@@ -63,7 +63,7 @@ The \`--outputs\` syntax is \`name[:type]\`, entries separated by \`;\`.
 <details markdown="1">
 <summary>Technical explanations</summary>
 
-- Reads and writes \`config/.sfdx-hardis.yml\` with \`js-yaml\`, preserving every other key.
+- Reads and writes \`config/.sfdx-hardis.yml\`, preserving every other key.
 - Rejects an id colliding with a built-in action type, a duplicate id, and a missing script file.
 - The interpreter is resolved when the action runs, not here: \`node\` is the interpreter running sfdx-hardis, \`python\` tries \`python3\` then \`python\`, \`bash\` is taken from PATH.
 - Sends a refresh message so the VS Code extension reloads the DevOps Pipeline panel.

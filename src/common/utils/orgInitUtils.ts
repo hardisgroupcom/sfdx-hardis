@@ -5,7 +5,7 @@ import { createRequire } from 'module';
 import * as path from 'path';
 import { ActionResult, ActionsProvider, buildActionOutput, PrePostCommand } from '../actionsProvider/actionsProvider.js';
 import { ORG_INIT_ACTION_TYPES } from '../actionsProvider/actionTypes.js';
-import * as yaml from 'js-yaml';
+import { parseYaml } from './yamlUtils.js';
 import { createTempDir, elapseEnd, elapseStart, execSfdxJson, getCurrentGitBranch, git, uxLog } from './index.js';
 import { uxLogTableWithReport } from './filesUtils.js';
 import fs from './fsUtils.js';
@@ -562,7 +562,7 @@ function readBranchConfigValue(branch: string, key: string): any {
     const file = path.join('config', 'branches', `.sfdx-hardis.${formattedBranch}.${extension}`);
     if (fs.existsSync(file)) {
       try {
-        return (yaml.load(fs.readFileSync(file, 'utf8')) as any)?.[key];
+        return (parseYaml(fs.readFileSync(file, 'utf8')) as any)?.[key];
       } catch (e) {
         uxLog('other', this, c.grey(`Unable to read ${file}: ${(e as Error).message}`));
       }

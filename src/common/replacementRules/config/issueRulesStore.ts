@@ -3,7 +3,7 @@
 // change a rule for the whole project there without a commit, for example to fix a failing
 // Pull Request between major branches. The rules are a YAML block of the body.
 
-import yaml from 'js-yaml';
+import { parseYaml, dumpYaml } from '../../utils/yamlUtils.js';
 import { SfError } from '@salesforce/core';
 import { GitProvider } from '../../gitProvider/index.js';
 import { DashboardFormat, GitProviderRoot } from '../../gitProvider/gitProviderRoot.js';
@@ -78,7 +78,7 @@ export function parseIssueRules(body: string, format: DashboardFormat): Replacem
   }
   let doc: any;
   try {
-    doc = yaml.load(yamlText);
+    doc = parseYaml(yamlText);
   } catch (e: any) {
     throw new SfError(t('replacementRulesIssueInvalidYaml', { message: e.message }));
   }
@@ -89,10 +89,7 @@ export function parseIssueRules(body: string, format: DashboardFormat): Replacem
 }
 
 export function buildIssueBody(rules: ReplacementRule[], format: DashboardFormat): string {
-  const yamlText = yaml.dump(
-    { [REPLACEMENT_RULES_CONFIG_KEY]: rules.map((rule) => cleanRuleForStorage(rule)) },
-    { lineWidth: -1, noRefs: true }
-  );
+  const yamlText = dumpYaml({ [REPLACEMENT_RULES_CONFIG_KEY]: rules.map((rule) => cleanRuleForStorage(rule)) });
   const paragraphs = [
     'Rules applied to the metadata before each deployment, on top of the rules of the repository (config/.sfdx-hardis.yml and config/branches/). A rule with the same id as a rule of the repository changes it.',
     'Edit the YAML block below, or use the Replacement Rules panel of VS Code, or sf hardis:project:replacement:update --layer issue. A change applies to the next deployment job: run the check of an open Pull Request again before merging it.',

@@ -42,7 +42,7 @@ Required in agent mode: \`--id\`. Every other flag is optional, and every prompt
 <details markdown="1">
 <summary>Technical explanations</summary>
 
-- Reads and writes \`config/.sfdx-hardis.yml\` with \`js-yaml\`, preserving every other key.
+- Reads and writes \`config/.sfdx-hardis.yml\`, preserving every other key.
 - Re-validates the whole definition after the merge, so an update cannot leave an invalid function behind.
 - Renaming a function through \`--new-id\` is deliberately not supported: the id is the action type, and existing actions reference it.
 </details>

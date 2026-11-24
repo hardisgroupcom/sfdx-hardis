@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import fs from '../../../src/common/utils/fsUtils.js';
-import * as yaml from 'js-yaml';
+import { parseYaml, dumpYaml } from '../../../src/common/utils/yamlUtils.js';
 import * as path from 'path';
 import {
   getActionConfigFilePath,
@@ -57,7 +57,7 @@ describe('actionUtils', () => {
     it('returns empty array when key is missing', async () => {
       const configFile = path.join(ctx.getDir(), 'config', '.sfdx-hardis.yml');
       await fs.ensureDir(path.dirname(configFile));
-      await fs.writeFile(configFile, yaml.dump({ someOtherKey: 'value' }));
+      await fs.writeFile(configFile, dumpYaml({ someOtherKey: 'value' }));
 
       const actions = await readActions('project', 'pre-deploy');
       expect(actions).to.deep.equal([]);
@@ -67,7 +67,7 @@ describe('actionUtils', () => {
       const configFile = path.join(ctx.getDir(), 'config', '.sfdx-hardis.yml');
       await fs.ensureDir(path.dirname(configFile));
       const testActions = [{ id: 'test-1', label: 'Test', type: 'command', command: 'echo hello', context: 'all' }];
-      await fs.writeFile(configFile, yaml.dump({ commandsPreDeploy: testActions }));
+      await fs.writeFile(configFile, dumpYaml({ commandsPreDeploy: testActions }));
 
       const actions = await readActions('project', 'pre-deploy');
       expect(actions).to.have.lengthOf(1);
@@ -78,7 +78,7 @@ describe('actionUtils', () => {
       const configFile = path.join(ctx.getDir(), 'config', '.sfdx-hardis.yml');
       await fs.ensureDir(path.dirname(configFile));
       const testActions = [{ id: 'post-1', label: 'Post Test', type: 'manual', context: 'all', parameters: { instructions: 'Do something' } }];
-      await fs.writeFile(configFile, yaml.dump({ commandsPostDeploy: testActions }));
+      await fs.writeFile(configFile, dumpYaml({ commandsPostDeploy: testActions }));
 
       const actions = await readActions('project', 'post-deploy');
       expect(actions).to.have.lengthOf(1);
@@ -90,7 +90,7 @@ describe('actionUtils', () => {
     it('reads the branch config file the config loader reads for a Pull Request target like release/uat', async () => {
       const configFile = path.join(ctx.getDir(), 'config', 'branches', '.sfdx-hardis.release__uat.yml');
       await fs.ensureDir(path.dirname(configFile));
-      await fs.writeFile(configFile, yaml.dump({ commandsPostDeploy: [{ id: 'uat-1', label: 'Uat', type: 'command', command: 'echo uat', context: 'process-deployment-only' }] }));
+      await fs.writeFile(configFile, dumpYaml({ commandsPostDeploy: [{ id: 'uat-1', label: 'Uat', type: 'command', command: 'echo uat', context: 'process-deployment-only' }] }));
 
       const actions = await readActions('branch', 'post-deploy', 'release/uat');
       expect(actions.map((action) => action.id)).to.deep.equal(['uat-1']);
@@ -103,7 +103,7 @@ describe('actionUtils', () => {
       const configFile = await writeActions('project', 'pre-deploy', actions);
 
       expect(fs.existsSync(configFile)).to.equal(true);
-      const doc: any = yaml.load(fs.readFileSync(configFile, 'utf-8'));
+      const doc: any = parseYaml(fs.readFileSync(configFile, 'utf-8'));
       expect(doc.commandsPreDeploy).to.have.lengthOf(1);
       expect(doc.commandsPreDeploy[0].id).to.equal('new-1');
     });
@@ -118,7 +118,7 @@ describe('actionUtils', () => {
       actions.push({ id: 'act-2', label: 'Second', type: 'command' as const, command: 'echo 2', context: 'all' as const });
       const configFile = await writeActions('project', 'post-deploy', actions);
 
-      const doc: any = yaml.load(fs.readFileSync(configFile, 'utf-8'));
+      const doc: any = parseYaml(fs.readFileSync(configFile, 'utf-8'));
       expect(doc.commandsPostDeploy).to.have.lengthOf(2);
       expect(doc.commandsPostDeploy[0]).to.not.have.property('when');
       expect(doc.commandsPostDeploy[1]).to.not.have.property('when');
@@ -129,12 +129,12 @@ describe('actionUtils', () => {
     it('preserves other config keys in the file', async () => {
       const configFile = path.join(ctx.getDir(), 'config', '.sfdx-hardis.yml');
       await fs.ensureDir(path.dirname(configFile));
-      await fs.writeFile(configFile, yaml.dump({ targetUsername: 'admin@test.com', commandsPostDeploy: [] }));
+      await fs.writeFile(configFile, dumpYaml({ targetUsername: 'admin@test.com', commandsPostDeploy: [] }));
 
       const actions = [{ id: 'act-1', label: 'Action', type: 'command' as const, command: 'echo x', context: 'all' as const }];
       await writeActions('project', 'pre-deploy', actions);
 
-      const doc: any = yaml.load(fs.readFileSync(configFile, 'utf-8'));
+      const doc: any = parseYaml(fs.readFileSync(configFile, 'utf-8'));
       expect(doc.targetUsername).to.equal('admin@test.com');
       expect(doc.commandsPreDeploy).to.have.lengthOf(1);
       expect(doc.commandsPostDeploy).to.deep.equal([]);
@@ -145,7 +145,7 @@ describe('actionUtils', () => {
       const configFile = await writeActions('branch', 'post-deploy', actions, 'integration');
 
       expect(configFile).to.include('integration');
-      const doc: any = yaml.load(fs.readFileSync(configFile, 'utf-8'));
+      const doc: any = parseYaml(fs.readFileSync(configFile, 'utf-8'));
       expect(doc.commandsPostDeploy).to.have.lengthOf(1);
     });
 
@@ -154,7 +154,7 @@ describe('actionUtils', () => {
       const configFile = await writeActions('pr', 'pre-deploy', actions, undefined, '99');
 
       expect(configFile).to.include('99');
-      const doc: any = yaml.load(fs.readFileSync(configFile, 'utf-8'));
+      const doc: any = parseYaml(fs.readFileSync(configFile, 'utf-8'));
       expect(doc.commandsPreDeploy).to.have.lengthOf(1);
     });
   });

@@ -1,7 +1,7 @@
 import { SfError } from '@salesforce/core';
 import c from 'chalk';
 import fs from './fsUtils.js';
-import * as yaml from 'js-yaml';
+import { parseYaml } from './yamlUtils.js';
 import * as path from 'path';
 import { getCurrentGitBranch, isCI, uxLog } from './index.js';
 import { ActionWhen, PrePostCommand } from '../actionsProvider/actionsProvider.js';
@@ -64,7 +64,7 @@ export async function readActions(scope: ActionScope, when: ActionWhen, branch?:
   if (!fs.existsSync(configFile)) {
     return [];
   }
-  const doc: any = yaml.load(fs.readFileSync(configFile, 'utf-8')) || {};
+  const doc: any = parseYaml(fs.readFileSync(configFile, 'utf-8')) || {};
   const commands: PrePostCommand[] = Array.isArray(doc[configKey]) ? doc[configKey] : [];
   for (const cmd of commands) {
     cmd.when = when;
@@ -80,7 +80,7 @@ export async function writeActions(scope: ActionScope, when: ActionWhen, actions
   const configKey = WHEN_TO_CONFIG_KEY[when];
   let doc: any = {};
   if (fs.existsSync(configFile)) {
-    doc = yaml.load(fs.readFileSync(configFile, 'utf-8')) || {};
+    doc = parseYaml(fs.readFileSync(configFile, 'utf-8')) || {};
   }
   // The key the actions are stored under already says when they run: readActions sets
   // "when" on each of them for its callers, and it must not be written back into the file
@@ -750,7 +750,7 @@ export async function readTestClasses(scope: ActionScope, branch?: string, prId?
   if (!fs.existsSync(configFile)) {
     return [];
   }
-  const doc: any = yaml.load(fs.readFileSync(configFile, 'utf-8')) || {};
+  const doc: any = parseYaml(fs.readFileSync(configFile, 'utf-8')) || {};
   return Array.isArray(doc['deploymentApexTestClasses']) ? doc['deploymentApexTestClasses'] : [];
 }
 
@@ -761,7 +761,7 @@ export async function writeTestClasses(scope: ActionScope, classes: string[], br
   const configFile = await getActionConfigFilePath(scope, branch, prId);
   let doc: any = {};
   if (fs.existsSync(configFile)) {
-    doc = yaml.load(fs.readFileSync(configFile, 'utf-8')) || {};
+    doc = parseYaml(fs.readFileSync(configFile, 'utf-8')) || {};
   }
   doc['deploymentApexTestClasses'] = classes;
   await fs.ensureDir(path.dirname(configFile));

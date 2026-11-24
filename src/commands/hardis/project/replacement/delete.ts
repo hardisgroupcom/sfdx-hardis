@@ -39,7 +39,7 @@ Required in agent mode: \`--layer\` (and \`--branch\` with \`--layer branch\`) a
 <details markdown="1">
 <summary>Technical explanations</summary>
 
-- Project and branch rules are rewritten with \`js-yaml\`, keeping every other key; the \`replacementRules\` key is removed when it becomes empty.
+- Project and branch rules are rewritten, keeping every other key; the \`replacementRules\` key is removed when it becomes empty.
 - Issue rules are the YAML block of the issue body; the issue itself is kept.
 </details>
 `;

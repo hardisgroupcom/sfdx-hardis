@@ -1,4 +1,4 @@
-import * as yaml from 'js-yaml';
+import { dumpYaml } from '../yamlUtils.js';
 import { dateHelper } from '../dateHelper.js';
 import * as fs from 'fs';
 import path from 'path';
@@ -379,7 +379,7 @@ export function stringifyValue(valueIn: any, field: string, allProperties: strin
                   '<!-- -->' :
                   // Default YAML for array & object
                   (Array.isArray(valueIn) || valueType === "object") ?
-                    yaml.dump(valueIn).replace(/"/gm, "").replace(/^(\s+)/gm, match => '&nbsp;'.repeat(match.length)).split("\n").join("<br/>") :
+                    dumpYaml(valueIn).replace(/"/gm, "").replace(/^(\s+)/gm, match => '&nbsp;'.repeat(match.length)).split("\n").join("<br/>") :
                     // Default
                     String(valueIn).split("\n").join("<br/>");
   // Final updates if necessary

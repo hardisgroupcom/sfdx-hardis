@@ -36,7 +36,7 @@ import { imagePathOf, readManifest, renderImages, writeManifest } from "./lib/ma
 import { ALIASES, buildMaskRules, deleteScratchOrg, ensureScratchOrg, homeEnv, pickDevHub, prepareHome, scratchDaysLeft, seedOrg } from "./lib/orgs.mjs";
 import { buildReportFromOverlay, findReportCsv, findReportXlsx, makeLocaleNeutral, prepareRealReport, readOverlay, xlsxFromRealCsv } from "./lib/reports.mjs";
 import { spawnSync } from "child_process";
-import yaml from "js-yaml";
+import YAML from "yaml";
 import { log, runStreaming, sfJson, sfRunJsPath } from "./lib/shell.mjs";
 import { commandPathParts, loadSpecs, selectSpecs, slugOf, validateSpec } from "./lib/specs.mjs";
 import { buildWorkspace } from "./lib/workspace.mjs";
@@ -317,7 +317,7 @@ function writeDiscoveredAnswers(specs, outDir) {
     }
     // The spec as it is now: it may have been edited while the run was going on, and then what
     // this run discovered answers the old version
-    const current = yaml.load(fs.readFileSync(spec.file, "utf8")) || {};
+    const current = YAML.parse(fs.readFileSync(spec.file, "utf8")) || {};
     if (current.discover !== true || current.run !== spec.run) {
       log(`  ${spec.command}: its spec changed during the run, discovered answers not written`);
       continue;
@@ -329,7 +329,7 @@ function writeDiscoveredAnswers(specs, outDir) {
       }
     }
     current.answers = answers;
-    fs.writeFileSync(spec.file, yaml.dump(current, { lineWidth: 140, noRefs: true }));
+    fs.writeFileSync(spec.file, YAML.stringify(current, { lineWidth: 140, aliasDuplicateObjects: false }));
     log(`  ${spec.command}: ${discovered.length} answer(s) discovered, written to its spec`);
   }
 }

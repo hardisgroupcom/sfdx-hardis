@@ -5,13 +5,13 @@
 import { strict as assert } from 'assert';
 import fs from '../src/common/utils/fsUtils.js';
 import * as path from 'path';
-import yaml from 'js-yaml';
+import { parseYaml } from '../src/common/utils/yamlUtils.js';
 
 const ALERTS_FILE = path.join(process.cwd(), 'docs', 'grafana', 'alerts-v2', 'sfdx-hardis-alerts.yaml');
 const DS_PLACEHOLDERS = ['${DS_PROMETHEUS}', '${DS_LOKI}'];
 
 describe('Grafana alerts v2 (portability lint)', () => {
-  const parsed: any = yaml.load(fs.readFileSync(ALERTS_FILE, 'utf8'));
+  const parsed: any = parseYaml(fs.readFileSync(ALERTS_FILE, 'utf8'));
 
   it('has the provisioning file structure', () => {
     assert.equal(parsed.apiVersion, 1);

@@ -10,7 +10,7 @@ import crypto from 'crypto';
 // Salesforce Specific and Other Specific Libraries
 import { Connection, SfError } from '@salesforce/core';
 import Papa from 'papaparse';
-import ExcelJS from 'exceljs';
+import type ExcelJS from 'exceljs';
 
 // Project Specific Utilities
 import { getCurrentGitBranch, isAgentMode, isCI, isGitRepo, uxLog, uxLogTable } from './index.js';
@@ -1661,7 +1661,8 @@ export async function createXlsxFromCsv(outputPath: string, options: ExcelExport
 }
 
 async function buildXlsFromCsv(csvFile: string, options: ExcelExportOptions): Promise<ExcelJS.Workbook> {
-  const workbook = new ExcelJS.Workbook();
+  const ExcelJSLib = await loadExcelJs();
+  const workbook = new ExcelJSLib.Workbook();
   const worksheet = await workbook.csv.readFile(csvFile);
   applyWorksheetFormatting(worksheet, options);
   return workbook;
@@ -1714,7 +1715,8 @@ export async function createXlsxFromCsvFiles(csvFilesPath: string[], outputPath:
 }
 
 async function buildXlsFromCsvFiles(csvFiles: string[], options: ExcelExportOptions): Promise<ExcelJS.Workbook> {
-  const workbook = new ExcelJS.Workbook();
+  const ExcelJSLib = await loadExcelJs();
+  const workbook = new ExcelJSLib.Workbook();
   let worksheet: ExcelJS.Worksheet;
   const usedWorksheetNames = new Set<string>();
   const worksheetNameByCsvFile: Record<string, string> = {};
@@ -1848,6 +1850,11 @@ function estimateLineCount(text: string, width: number): number {
   return (text || '')
     .split(/\r?\n/)
     .reduce((acc, segment) => acc + Math.max(1, Math.ceil(segment.length / charsPerLine)), 0);
+}
+
+/** exceljs, loaded only when an Excel file is written: loading it costs a third of a second to every command */
+export async function loadExcelJs(): Promise<typeof ExcelJS> {
+  return (await import('exceljs')).default;
 }
 
 export function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: ExcelExportOptions) {

@@ -1,10 +1,10 @@
 import c from 'chalk';
 import fs from './fsUtils.js';
 import { glob } from 'glob';
-import puppeteer, { Browser } from 'puppeteer-core';
+import type { Browser } from 'puppeteer-core';
 import sortArray from './sortArray.js';
 import * as chromeLauncher from 'chrome-launcher';
-import * as yaml from 'js-yaml';
+import { parseYaml } from './yamlUtils.js';
 import { uxLog } from './index.js';
 import { SfError } from '@salesforce/core';
 import { GLOB_IGNORE_PATTERNS } from './projectUtils.js';
@@ -49,6 +49,7 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
   // Start puppeteer
   let browser: Browser;
   try {
+    const { default: puppeteer } = await import('puppeteer-core');
     browser = await puppeteer.launch({
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
       headless: !(options.debug === true),
@@ -189,7 +190,7 @@ export async function listMajorOrgs(): Promise<any[]> {
   const branchConfigPattern = '**/config/branches/.sfdx-hardis.*.yml';
   const configFiles = await glob(branchConfigPattern, { ignore: GLOB_IGNORE_PATTERNS });
   for (const configFile of configFiles) {
-    const props = (yaml.load(fs.readFileSync(configFile, 'utf-8')) || {}) as any;
+    const props = (parseYaml(fs.readFileSync(configFile, 'utf-8')) || {}) as any;
     listViewRegex.lastIndex = 0;
     const branchNameRegex = /\.sfdx-hardis\.(.*)\.yml/gi;
     const m = branchNameRegex.exec(configFile);

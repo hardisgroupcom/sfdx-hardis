@@ -13,9 +13,8 @@ getConfig(layer) returns:
 import { Connection, SfError } from '@salesforce/core';
 import { httpGet } from '../common/utils/httpUtils.js';
 import c from 'chalk';
-import { cosmiconfig } from 'cosmiconfig';
 import fs from '../common/utils/fsUtils.js';
-import * as yaml from 'js-yaml';
+import { parseYaml } from '../common/utils/yamlUtils.js';
 import { parseDocument as parseYamlDocument } from 'yaml';
 import * as os from 'os';
 import * as path from 'path';
@@ -192,10 +191,8 @@ function conflictedConfigFiles(searchPlaces: string[]): string[] {
 async function loadFromConfigFile(searchPlaces: string[]): Promise<any> {
   const cacheKey = searchPlaces.join('|');
   try {
-    const configExplorer = await cosmiconfig(moduleName, {
-      searchPlaces,
-    }).search();
-    let config = configExplorer != null ? configExplorer.config : {};
+    const configFound = await searchConfigFile(searchPlaces);
+    let config = configFound != null ? configFound.config : {};
     if (config.extends) {
       const remoteConfig = await loadFromRemoteConfigFile(config.extends);
       // A copy: the remote config is cached for the process, and getConfig merges the other layers into this object
@@ -220,6 +217,26 @@ async function loadFromConfigFile(searchPlaces: string[]): Promise<any> {
   }
 }
 
+/**
+ * The first configuration file of the search places, in the current folder: package.json counts only
+ * when it has a "sfdx-hardis" property, and an empty YAML file (or one of comments only) is skipped.
+ * This is what cosmiconfig did with these search places.
+ */
+async function searchConfigFile(searchPlaces: string[]): Promise<{ filepath: string; config: any } | null> {
+  for (const searchPlace of searchPlaces) {
+    const filepath = path.resolve(process.cwd(), searchPlace);
+    if (!fs.existsSync(filepath) || !fs.statSync(filepath).isFile()) {
+      continue;
+    }
+    const content = await fs.readFile(filepath, 'utf-8');
+    const config = path.basename(filepath) === 'package.json' ? JSON.parse(content)?.[moduleName] : parseYaml(content);
+    if (config !== undefined && config !== null) {
+      return { filepath, config };
+    }
+  }
+  return null;
+}
+
 async function loadFromRemoteConfigFile(url) {
   if (REMOTE_CONFIGS[url]) {
     return REMOTE_CONFIGS[url];
@@ -230,7 +247,7 @@ async function loadFromRemoteConfigFile(url) {
       '[sfdx-hardis] Unable to read remote configuration file at ' + url + '\n' + JSON.stringify(remoteConfigResp)
     );
   }
-  const remoteConfig = yaml.load(remoteConfigResp.data);
+  const remoteConfig = parseYaml(remoteConfigResp.data);
   REMOTE_CONFIGS[url] = remoteConfig;
   return remoteConfig;
 }
@@ -260,11 +277,9 @@ export async function removeFromConfigFile(configFile: string, keys: string[]) {
 
 // Update configuration file
 export async function setInConfigFile(searchPlaces: string[], propValues: any, configFile: string = '') {
-  let explorer;
   if (configFile === '') {
-    explorer = cosmiconfig(moduleName, { searchPlaces });
-    const configExplorer = await explorer.search();
-    configFile = configExplorer != null ? configExplorer.filepath : searchPlaces.slice(-1)[0];
+    const configFound = await searchConfigFile(searchPlaces);
+    configFile = configFound != null ? configFound.filepath : searchPlaces.slice(-1)[0];
   }
   // The file is edited in place rather than rebuilt from a JS object: a project
   // configuration is written by hand and its comments explain why each value is
@@ -277,9 +292,6 @@ export async function setInConfigFile(searchPlaces: string[], propValues: any, c
   await fs.ensureDir(path.dirname(configFile));
   // lineWidth 0: never fold a long value, so a URL or a sentence stays on one line
   await fs.writeFile(configFile, doc.toString({ lineWidth: 0 }));
-  if (explorer) {
-    explorer.clearCaches();
-  }
   // A created or updated branch config file changes the major orgs list: drop its cache.
   // Dynamic import: orgConfigUtils depends on modules that depend on this config module.
   if (configFile.replace(/\\/g, '/').includes('config/branches/')) {

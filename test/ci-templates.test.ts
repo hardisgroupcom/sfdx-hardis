@@ -1,10 +1,10 @@
 import { strict as assert } from 'assert';
 import fs from 'fs';
 import path from 'path';
-import yaml from 'js-yaml';
+import { parseYaml } from '../src/common/utils/yamlUtils.js';
 
 const workflowsDir = path.join(process.cwd(), 'defaults', 'ci', '.github', 'workflows');
-const readWorkflow = (file: string): any => yaml.load(fs.readFileSync(path.join(workflowsDir, file), 'utf8'));
+const readWorkflow = (file: string): any => parseYaml(fs.readFileSync(path.join(workflowsDir, file), 'utf8'));
 
 describe('GitHub CI templates', () => {
   it('starts the scratch org pool refresh only after a new snapshot of the default branch, and nightly', () => {

@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import * as yaml from 'js-yaml';
+import { parseYaml } from '../../../src/common/utils/yamlUtils.js';
 import { mergeIntoYamlText } from '../../../src/common/docBuilder/docUtils.js';
 
 const handWritten = [
@@ -21,32 +21,32 @@ const handWritten = [
 
 describe('mergeIntoYamlText()', () => {
   it('keeps the comments of a map it only adds to', () => {
-    const value: any = yaml.load(handWritten);
+    const value: any = parseYaml(handWritten);
     value.theme.features.push('navigation.prune');
     const merged = mergeIntoYamlText(handWritten, value);
     expect(merged).to.include('# Only for the banner that says the course is not finished');
     expect(merged).to.include('# Where the pages come from');
-    expect(yaml.load(merged)).to.deep.equal(value);
+    expect(parseYaml(merged)).to.deep.equal(value);
   });
 
   it('keeps the comments of a list that only gained items, and appends them', () => {
-    const value: any = yaml.load(handWritten);
+    const value: any = parseYaml(handWritten);
     value.extra_javascript.push('javascripts/sfdx-hardis-doc.js');
     const merged = mergeIntoYamlText(handWritten, value);
     expect(merged).to.include('# The lightbox, see its header');
     expect(merged.indexOf('javascripts/lightbox.js')).to.be.lessThan(merged.indexOf('javascripts/sfdx-hardis-doc.js'));
-    expect(yaml.load(merged)).to.deep.equal(value);
+    expect(parseYaml(merged)).to.deep.equal(value);
   });
 
   it('replaces a list that lost items, and removes a key that is gone', () => {
-    const value: any = yaml.load(handWritten);
+    const value: any = parseYaml(handWritten);
     value.extra_javascript = ['javascripts/other.js'];
     delete value.docs_dir;
     const merged = mergeIntoYamlText(handWritten, value);
-    expect(yaml.load(merged)).to.deep.equal(value);
+    expect(parseYaml(merged)).to.deep.equal(value);
   });
 
   it('returns the text unchanged when nothing changed', () => {
-    expect(mergeIntoYamlText(handWritten, yaml.load(handWritten))).to.equal(handWritten);
+    expect(mergeIntoYamlText(handWritten, parseYaml(handWritten))).to.equal(handWritten);
   });
 });
