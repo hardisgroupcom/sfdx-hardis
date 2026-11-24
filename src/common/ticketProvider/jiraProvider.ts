@@ -322,6 +322,10 @@ export class JiraProvider extends TicketProviderRoot {
     return false;
   }
 
+  public static getConnectionHelp(): string {
+    return t('connectionCheckHelpJira');
+  }
+
   public getLabel(): string {
     return "sfdx-hardis JIRA connector";
   }

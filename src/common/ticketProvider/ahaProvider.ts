@@ -89,6 +89,10 @@ export class AhaProvider extends TicketProviderRoot {
     return Boolean(AhaProvider.getHost(config)) && Boolean(getEnvVar('AHA_API_KEY'));
   }
 
+  public static getConnectionHelp(): string {
+    return t('connectionCheckHelpAha');
+  }
+
   public getLabel(): string {
     return 'sfdx-hardis Aha! connector';
   }

@@ -91,3 +91,17 @@ Required secret/variable:
   - Go to **Project -> Settings -> Access Tokens**.
   - Create a Project Access Token with role **Developer** (or higher), scopes **api** and **write_repository**.
   - Store it as a **masked** CI/CD variable named `CI_SFDX_HARDIS_GITLAB_TOKEN`.
+## Coding agents on a workstation
+
+A coding agent that runs sfdx-hardis commands with `--agent` on a developer machine does not need a GitLab token in a `.env` file.
+
+When no GitLab token variable is set, or when GitLab refuses the one that is set, sfdx-hardis uses the token of the [GitLab CLI](https://gitlab.com/gitlab-org/cli) the developer is already logged in with, for the running command only. Nothing is written anywhere, and the token never appears in a log.
+
+```sh
+glab auth login --hostname gitlab.mycompany.com
+sf hardis:project:connection:check --type git --agent --json
+```
+
+The variables of the environment come first, then the `.env` file, then `glab`. Self-managed GitLab instances work the same way: sfdx-hardis asks `glab` for the token of the host of the git remote.
+
+See [hardis:project:connection:check](hardis/project/connection/check.md) and the variables `SFDX_HARDIS_PROVIDER_CLI_AUTH` and `SFDX_HARDIS_PROVIDER_TOKEN_CHECK` in [All environment variables](all-env-variables.md).

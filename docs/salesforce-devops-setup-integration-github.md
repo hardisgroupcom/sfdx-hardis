@@ -110,3 +110,17 @@ Required secret/variable:
   - Use `secrets.GITHUB_TOKEN` if your workflow permissions include `contents: write` and `pull-requests: write`.
   - Otherwise create a fine-grained PAT with repository scopes `Contents: Read and write` and `Pull requests: Read and write`.
 
+## Coding agents on a workstation
+
+A coding agent that runs sfdx-hardis commands with `--agent` on a developer machine does not need a GitHub token in a `.env` file.
+
+When no GitHub token variable is set, or when GitHub refuses the one that is set, sfdx-hardis uses the token of the [GitHub CLI](https://cli.github.com/) the developer is already logged in with, for the running command only. Nothing is written anywhere, and the token never appears in a log.
+
+```sh
+gh auth login
+sf hardis:project:connection:check --type git --agent --json
+```
+
+The variables of the environment come first, then the `.env` file, then `gh`. GitHub Enterprise hosts work the same way: sfdx-hardis asks `gh` for the token of the host of the git remote.
+
+See [hardis:project:connection:check](hardis/project/connection/check.md) and the variables `SFDX_HARDIS_PROVIDER_CLI_AUTH` and `SFDX_HARDIS_PROVIDER_TOKEN_CHECK` in [All environment variables](all-env-variables.md).

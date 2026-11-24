@@ -37,6 +37,10 @@ export class GenericTicketingProvider extends TicketProviderRoot {
       );
   }
 
+  public static getConnectionHelp(): string {
+    return t('connectionCheckHelpGeneric');
+  }
+
   public static async getTicketsFromString(text: string, options: TicketsFromStringOptions = {}): Promise<Ticket[]> {
     const tickets: Ticket[] = [];
     const config = options.config || (await getConfig("project"));

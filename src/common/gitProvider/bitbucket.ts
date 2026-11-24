@@ -1,4 +1,4 @@
-import { CiRunFilters, CiRunStatus, CommonCiRun, CreateVersionTagRequest, CreateVersionTagResult, DashboardComment, DashboardRef, GitProviderRepositorySettings, GitProviderRoot, PullRequestCommentRef, PullRequestCreateUrlResult, getOldestCommitDateWithMargin } from './gitProviderRoot.js';
+import { CiRunFilters, CiRunStatus, CommonCiRun, CreateVersionTagRequest, CreateVersionTagResult, DashboardComment, DashboardRef, GitProviderConnectionCheck, GitProviderRepositorySettings, GitProviderRoot, PullRequestCommentRef, PullRequestCreateUrlResult, getOldestCommitDateWithMargin } from './gitProviderRoot.js';
 import c from 'chalk';
 import fs from '../utils/fsUtils.js';
 import * as path from "path";
@@ -40,6 +40,8 @@ function dashboardBranchFor(title: string): string {
 const DASHBOARD_MAX_DELETED_COMMENTS = 500;
 
 export class BitbucketProvider extends GitProviderRoot {
+  public static readonly providerLabel = "Bitbucket";
+  public static readonly tokenVariableNames = ["CI_SFDX_HARDIS_BITBUCKET_TOKEN"];
   // Number of deleted comments seen at the last listing of a dashboard, by dashboard id
   private dashboardDeletedComments = new Map<number, number>();
   private bitbucket: InstanceType<typeof Bitbucket>;
@@ -67,7 +69,7 @@ export class BitbucketProvider extends GitProviderRoot {
     }
     this.workspace = process.env.BITBUCKET_WORKSPACE || null;
     this.repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
-    this.token = process.env.CI_SFDX_HARDIS_BITBUCKET_TOKEN || '';
+    this.token = process.env[BitbucketProvider.tokenVariableNames[0]] || '';
     // A Bitbucket repository/workspace Access Token authenticates as a Bearer
     // token (token only). An Atlassian account API token must instead be used as
     // Basic auth, with the account email as the username. Pick the scheme based
@@ -203,6 +205,18 @@ export class BitbucketProvider extends GitProviderRoot {
 
   public getLabel(): string {
     return 'sfdx-hardis Bitbucket connector';
+  }
+
+  public async checkConnection(): Promise<GitProviderConnectionCheck> {
+    if (!this.workspace || !this.repoSlug) {
+      return { connected: false, reason: "notVisible", message: "No Bitbucket repository found in the git remote" };
+    }
+    try {
+      await this.bitbucket.repositories.get({ workspace: this.workspace, repo_slug: this.repoSlug });
+      return { connected: true };
+    } catch (e: any) {
+      return BitbucketProvider.connectionCheckFromStatus(e?.status ?? e?.error?.status, (e as Error).message);
+    }
   }
 
   public getSafeDirectoryCommand(): string {

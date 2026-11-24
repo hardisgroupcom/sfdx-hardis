@@ -8,6 +8,7 @@ import { CONSTANTS, getEnvVar, getPrCommentBannerMarkdown } from "../../config/i
 import { t } from '../utils/i18n.js';
 import { enforceCommentLengthLimit } from "./utils/utilsPrCommentSizeGuard.js";
 import { containsDeploymentKeyword, DEPLOYMENT_KEYWORD_LABELS, DeploymentKeyword, stripMarkdownCommentsAndFences } from "../utils/deploymentKeywordUtils.js";
+import type { ProviderCliTokenResult, ProviderCliTokenSource } from "../utils/providerCliAuthUtils.js";
 
 // Oldest commit date of a window, minus one day of margin, used to bound merged PR listings:
 // a PR is always updated when it is merged, so its update date cannot be older than the commits
@@ -83,9 +84,42 @@ export function encodePrUrlPathBranch(branch: string): string {
   return branch.split("/").map((part) => encodeURIComponent(part)).join("/");
 }
 
+/**
+ * Answer of one call that reads the current repository with the token of a provider.
+ * 'refused' and 'notVisible' mean the token is the problem, 'unreachable' that the provider
+ * could not answer, which says nothing about the token.
+ */
+export declare type GitProviderConnectionCheck = {
+  connected: boolean;
+  reason?: 'refused' | 'notVisible' | 'unreachable' | 'notSupported';
+  httpStatus?: number;
+  message?: string;
+};
+
 export abstract class GitProviderRoot {
+  /** Name of the provider, as the user knows it */
+  public static readonly providerLabel: string = "";
+  /** Variables the token is read from, the first one set wins */
+  public static readonly tokenVariableNames: string[] = [];
+
   public serverUrl: string | null;
   public token: string;
+
+  /** The command line tool the token can be read from on a workstation, null when there is none */
+  public static getCliTokenSource(): ProviderCliTokenSource | null {
+    return null;
+  }
+
+  /** Reads the token of the CLI for the host of a repository, without ever displaying it */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public static async readCliToken(remoteUrl: string): Promise<ProviderCliTokenResult> {
+    return { token: null, source: null, host: "" };
+  }
+
+  /** Reads the current repository with the token, to know whether the provider accepts it */
+  public async checkConnection(): Promise<GitProviderConnectionCheck> {
+    return { connected: false, reason: "notSupported" };
+  }
 
 
   public getLabel(): string {
@@ -224,6 +258,18 @@ export abstract class GitProviderRoot {
   // GitHub refuses comments over 65,536 characters, Azure DevOps over 150,000, GitLab over 1,000,000.
   public getMaxPullRequestCommentLength(): number {
     return 50000;
+  }
+
+  /** Classifies the HTTP status of a failed check call. 404 is a repository the token cannot see */
+  protected static connectionCheckFromStatus(httpStatus: number | undefined, message: string): GitProviderConnectionCheck {
+    // 203: the sign-in page Azure DevOps answers to a token it does not accept
+    if (httpStatus === 401 || httpStatus === 403 || httpStatus === 203) {
+      return { connected: false, reason: "refused", httpStatus, message };
+    }
+    if (httpStatus === 404) {
+      return { connected: false, reason: "notVisible", httpStatus, message };
+    }
+    return { connected: false, reason: "unreachable", httpStatus, message };
   }
 
   /**
