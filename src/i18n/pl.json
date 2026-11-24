@@ -448,6 +448,7 @@
   "backpromoteDeploySuccess": "Wdrożono {{count}} element(y) metadanych do sandbox",
   "backpromoteDeploying": "Wdrażanie {{count}} element(ów) metadanych do sandbox...",
   "backpromoteDestructiveChangesSkipped": "Zmiany destrukcyjne pominiete przez uzytkownika",
+  "backpromoteDetachedHead": "Checkout wskazuje na commit {{commit}}, a nie na branch, więc backpromote nie miałby brancha, do którego można wrócić. Najpierw należy wykonać checkout brancha (brancha User Story lub {{parentBranch}}), a następnie ponownie uruchomić backpromote.",
   "backpromoteDiffDecisionKeepOrg": "Zachować wersję z {{sandboxName}} (element nie zostanie wdrożony i zostanie ponownie zaproponowany następnym razem)",
   "backpromoteDiffDecisionKeepOrgAll": "Zachować wersję z {{sandboxName}} dla tego pliku i wszystkich pozostałych",
   "backpromoteDiffDecisionMerge": "Zmergować obie wersje ręcznie (plik zostanie zapisany ze znacznikami konfliktu, zostanie zapisany prompt dla agenta kodującego)",

@@ -448,6 +448,7 @@
   "backpromoteDeploySuccess": "{{count}} 件のメタデータ項目を sandbox にデプロイしました",
   "backpromoteDeploying": "{{count}} 件のメタデータ項目を sandbox にデプロイしています...",
   "backpromoteDestructiveChangesSkipped": "破壊的変更はユーザーによりスキップされました",
+  "backpromoteDetachedHead": "チェックアウトが branch ではなく commit {{commit}} にあるため、backpromote の後に戻る branch がありません。先に branch (User Story の branch、または {{parentBranch}}) をチェックアウトしてから、backpromote をもう一度実行してください。",
   "backpromoteDiffDecisionKeepOrg": "{{sandboxName}} 側のバージョンを保持する (この項目はデプロイされず、次回再び選択候補になります)",
   "backpromoteDiffDecisionKeepOrgAll": "このファイルと残りすべてのファイルで {{sandboxName}} 側のバージョンを保持する",
   "backpromoteDiffDecisionMerge": "両方のバージョンを手動でマージする (ファイルは競合マーカー付きで書き込まれ、コーディングエージェント用プロンプトが保存されます)",

@@ -206,7 +206,7 @@ What the command does, in order:
 2. **Start Pull Request:** the merged Pull Requests of the parent branch are listed, newest first, and the "Backpromotes" comment of each one is read until one holds a row for this sandbox: the default start is the Pull Request merged right after it. Everything merged after the start, up to the head of the parent branch, is the **window**.
 3. **Delta and actions:** sfdx-git-delta computes what the window deploys and deletes, and \`scripts/actions/.sfdx-hardis.<PR>.yml\` gives the deployment actions of its Pull Requests. An action with a success row for this sandbox in the "Backpromotes" comment never runs twice (\`runOnlyOnceByOrg\`). When two Pull Requests of the window carry the same action (same type, phase, user and parameters), it runs once and the other one is written as done in its own Pull Request rows. An action moved to a fix Pull Request (\`movedFrom\`) runs from the fix only.
 4. **Comparison with the sandbox:** the ticked items are retrieved from the sandbox into a cache and compared with the parent branch version. For every file that differs, one decision: **Overwrite** (\`git\`, the parent branch version is deployed), **Keep org version** (\`org\`, the item is not deployed and listed as kept) or **Merge** (\`merge\`, the file is written with conflict markers in the backpromote branch and solved with the VS Code merge editor, by hand or with the coding agent prompt saved in \`hardis-report/\`). An item listed in \`manifest/package-no-overwrite.xml\` of the parent branch is deployed when it is absent from the sandbox; when the sandbox already has it, it is not deployed unless you tick it (\`--include-no-overwrite Type:Name\`).
-5. **Deployment from the backpromote branch:** the checkout is switched to \`backpromote/<parent branch>/<sandbox name>\` (a child of the parent branch that only holds the manual merges; the working tree is committed or stashed first when it is not clean), the merged files are committed, then the pre-deployment actions run, the metadata is deployed (\`NoTestRun\`), the deletions are applied, the post-deployment actions run.
+5. **Deployment from the backpromote branch:** the checkout is switched to \`backpromote/<parent branch>/<sandbox name>\` (a child of the parent branch that only holds the manual merges; the working tree is committed or stashed first when it is not clean; a detached HEAD is refused, since there would be no branch to come back to), the merged files are committed, then the pre-deployment actions run, the metadata is deployed (\`NoTestRun\`), the deletions are applied, the post-deployment actions run.
 6. **History:** every Pull Request of the window gets a row for the sandbox in its "Backpromotes" comment (complete, or partial with the items left out), and the backpromote branch is pushed when it holds manual merges. The checkout **stays on the backpromote branch**: the last line of the output says how to get back to your own branch.
 7. **Development orgs list:** the sandbox is recorded in the [development orgs](https://sfdx-hardis.cloudity.com/salesforce-devops-dev-orgs/) list of the project with the date of this backpromote, also when it was already up to date: the Pull Requests merged into the parent branch after it are what the sandbox misses next.
 
@@ -1038,6 +1038,11 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
   private async switchCheckout(ctx: BackpromoteContext): Promise<void> {
     reportCommandProgress({ step: 'checkout', message: t('backpromoteProgressCheckout', { branch: ctx.backpromoteBranch }) });
     const current = currentBranchName();
+    // On a detached HEAD git names the branch "HEAD": the way back would be a checkout of HEAD,
+    // which stays on the backpromote branch and pops the stash there
+    if (current === 'HEAD') {
+      throw new SfError(t('backpromoteDetachedHead', { commit: headCommit().slice(0, 7), parentBranch: ctx.parentBranch }));
+    }
     if (current !== ctx.backpromoteBranch) {
       const dirty = await listUncommittedFiles();
       let stashed = false;

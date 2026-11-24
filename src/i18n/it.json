@@ -448,6 +448,7 @@
   "backpromoteDeploySuccess": "{{count}} elemento/i di metadati distribuito/i nella sandbox",
   "backpromoteDeploying": "Distribuzione di {{count}} elemento/i di metadati nella sandbox...",
   "backpromoteDestructiveChangesSkipped": "Modifiche distruttive saltate dall'utente",
+  "backpromoteDetachedHead": "Il tuo checkout è sul commit {{commit}}, non su un branch, quindi il backpromote non avrebbe nessun branch su cui riportarti. Fai prima il checkout di un branch (quello della tua User Story, o {{parentBranch}}), poi rilancia il backpromote.",
   "backpromoteDiffDecisionKeepOrg": "Mantenere la versione di {{sandboxName}} (l'elemento non viene distribuito e verrà riproposto la prossima volta)",
   "backpromoteDiffDecisionKeepOrgAll": "Mantenere la versione di {{sandboxName}} per questo file e per tutti quelli rimanenti",
   "backpromoteDiffDecisionMerge": "Unire entrambe le versioni a mano (il file viene scritto con marcatori di conflitto, viene salvato un prompt per agente di codice)",
