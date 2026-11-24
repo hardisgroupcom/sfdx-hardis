@@ -14,6 +14,8 @@ import { AhaProvider } from "./ahaProvider.js";
 import { TicketDetails, TicketDetailsOptions } from "./utils/ticketDetails.js";
 import { PostCommentOptions, PostCommentResult, assertValidMarker } from "./utils/ticketComment.js";
 import { TICKET_ERROR } from "./utils/ticketOperations.js";
+import { getProviderCliFailure, getProviderTokenInfo, ProviderConnectionStatus } from "../utils/providerCliAuthUtils.js";
+import { redactSecrets } from "../utils/secretMaskingUtils.js";
 
 export type TicketProviderKey = "jira" | "azure" | "servicenow" | "aha" | "generic";
 
@@ -45,6 +47,8 @@ export type TicketProviderClass = {
   /** True for a connector able to post a comment on a ticket (every connector with an API) */
   supportsComments: boolean;
   isAvailable(config: any): boolean;
+  /** What to set for the connector to be available, for the connection check */
+  getConnectionHelp(): string;
   matchesTicketId(ticketId: string, config?: any): boolean;
   getTicketsFromString(text: string, options: TicketsFromStringOptions): Promise<Ticket[]>;
   /** Only implemented by connectors able to complete their own configuration from the git remote */
@@ -91,6 +95,31 @@ export function activeTicketProviders(config: any = {}): TicketProviderClass[] {
 export abstract class TicketProvider {
   // The connectors left out by ticketingProvider are named once per run, not once per Pull Request
   private static skippedProvidersReported = false;
+
+  /**
+   * Whether each ticketing system of the project accepts the credentials sfdx-hardis has for it:
+   * the one `ticketingProvider` declares, otherwise every configured one. A connector with an API
+   * is asked who it authenticates as; the generic connector has none, so configured is connected.
+   */
+  public static async checkConnections(): Promise<ProviderConnectionStatus[]> {
+    const config = await getConfig("project");
+    const pool = activeTicketProviders(config);
+    for (const provider of pool) {
+      if (provider.autoDetectFromGitRemote) {
+        await provider.autoDetectFromGitRemote();
+      }
+    }
+    const declared = Boolean(config?.ticketingProvider);
+    const providersToCheck = declared ? pool : pool.filter((provider) => provider.isAvailable(config));
+    if (providersToCheck.length === 0) {
+      return [{ type: "ticketing", provider: null, label: null, connected: false, tokenSource: null, detail: t('connectionCheckNoTicketing') }];
+    }
+    const statuses: ProviderConnectionStatus[] = [];
+    for (const providerClass of providersToCheck) {
+      statuses.push(await this.checkProviderConnection(providerClass, config));
+    }
+    return statuses;
+  }
 
   static getInstances(config: any): TicketProviderRoot[] {
     const ticketProviders: TicketProviderRoot[] = [];
@@ -337,6 +366,33 @@ export abstract class TicketProvider {
         skipped: skipped.map((provider) => provider.providerLabel).join(", "),
       })));
     }
+  }
+
+  private static async checkProviderConnection(providerClass: TicketProviderClass, config: any): Promise<ProviderConnectionStatus> {
+    const key = providerClass.providerKey;
+    const status: ProviderConnectionStatus = { type: "ticketing", provider: key, label: providerClass.providerLabel, connected: false, tokenSource: null, detail: null };
+    // A token read from a CLI is in a variable too: only the CLI failure says more than the help
+    const cliFailure = getProviderCliFailure(key);
+    if (!providerClass.isAvailable(config)) {
+      status.detail = [providerClass.getConnectionHelp(), cliFailure].filter(Boolean).join(" ");
+      return status;
+    }
+    status.tokenSource = getProviderTokenInfo(key)?.source || "env";
+    if (!providerClass.supportsTicketDetails) {
+      status.connected = true;
+      return status;
+    }
+    try {
+      await new providerClass(config).whoAmI();
+      status.connected = true;
+    } catch (e) {
+      status.detail = redactSecrets([
+        t('connectionCheckTicketingRefused', { provider: providerClass.providerLabel, message: (e as Error).message }),
+        providerClass.getConnectionHelp(),
+        cliFailure,
+      ].filter(Boolean).join(" "));
+    }
+    return status;
   }
 }
 

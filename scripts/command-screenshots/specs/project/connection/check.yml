@@ -1,0 +1,5 @@
+command: hardis:project:connection:check
+run: sf hardis:project:connection:check
+mode: replay
+org: none
+caption: "The git provider reached with the token of gh, and the Jira account of the project"

@@ -1,0 +1,51 @@
+{
+  "command": "hardis:project:connection:check",
+  "exitCode": 0,
+  "events": [
+    {
+      "delay": 0,
+      "message": {
+        "event": "initClient"
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[GitProvider] Using the GitHub token of gh for github.com"
+      }
+    },
+    {
+      "delay": 600,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "log",
+        "message": "[JiraProvider] Using JIRA_EMAIL and JIRA_TOKEN for authentication"
+      }
+    },
+    {
+      "delay": 500,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "table",
+        "message": "[{\"type\":\"git\",\"provider\":\"GitHub\",\"connected\":\"yes\",\"tokenSource\":\"gh\",\"detail\":\"\"},{\"type\":\"ticketing\",\"provider\":\"JIRA\",\"connected\":\"yes\",\"tokenSource\":\"env\",\"detail\":\"\"}]"
+      }
+    },
+    {
+      "delay": 200,
+      "message": {
+        "event": "commandLogLine",
+        "logType": "action",
+        "message": "2 of 2 providers connected"
+      }
+    },
+    {
+      "delay": 150,
+      "message": {
+        "event": "closeClient",
+        "status": "success"
+      }
+    }
+  ]
+}

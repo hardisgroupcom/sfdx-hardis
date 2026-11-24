@@ -123,6 +123,10 @@ export class ServiceNowProvider extends TicketProviderRoot {
     return Boolean(getEnvVar('SERVICENOW_URL') && getEnvVar('SERVICENOW_USERNAME') && getEnvVar('SERVICENOW_PASSWORD'));
   }
 
+  public static getConnectionHelp(): string {
+    return t('connectionCheckSetVariables', { variables: 'SERVICENOW_URL, SERVICENOW_USERNAME and SERVICENOW_PASSWORD' });
+  }
+
   public getLabel(): string {
     return 'sfdx-hardis ServiceNow connector';
   }

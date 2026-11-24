@@ -28,7 +28,7 @@ const hook: Hook<'init'> = async (options) => {
   }
   // Debug env variables
   if (process.env.SFDX_HARDIS_DEBUG_ENV === 'true') {
-    console.log('ENV VARS:\n' + JSON.stringify(process.env, null, 2));
+    console.log('ENV VARS:\n' + JSON.stringify(maskSecretEnvVars(process.env), null, 2));
     process.env.SFDX_ENV = 'development'; // So when there is an error, the stack is displayed
   }
   if (!isCI) {
@@ -43,6 +43,17 @@ const hook: Hook<'init'> = async (options) => {
     globalThis.hardisLogFileStream.write(commandId + ' ' + maskSecretArgs(globalThis.processArgv).join(' ') + '\n');
   }
 };
+
+// Values of the variables whose name says they hold a secret (tokens, passwords, keys, auth URLs)
+// are not printed by SFDX_HARDIS_DEBUG_ENV: the dump goes to the console and to CI logs
+export function maskSecretEnvVars(env: NodeJS.ProcessEnv): Record<string, string | undefined> {
+  const secretNameRegex = /(TOKEN|SECRET|PASSWORD|PASSWD|API_?KEY|PRIVATE_KEY|ENCRYPTION_KEY|AUTH_URL|CREDENTIALS?)$|^PAT$/i;
+  const masked: Record<string, string | undefined> = {};
+  for (const [name, value] of Object.entries(env)) {
+    masked[name] = value && secretNameRegex.test(name) ? '***' : value;
+  }
+  return masked;
+}
 
 // Values of secret-carrying flags (--grafana-token, --password, --client-secret=xxx, ...)
 // must not land in the persisted command log

@@ -3,7 +3,8 @@ import c from "chalk";
 import { Agent as HttpsAgent } from "https";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestCommitInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
-import { buildPrCreateUrl, CiRunFilters, CiRunStatus, CommonCiRun, CreateReleaseRequest, CreateReleaseResult, CreateVersionTagRequest, CreateVersionTagResult, DashboardComment, DashboardRef, GitProviderRepositorySettings, GitProviderRoot, JobArtifact, JobArtifactsListing, PullRequestCommentRef, PullRequestCreateUrlResult, getOldestCommitDateWithMargin } from "./gitProviderRoot.js";
+import { cliHostFromServerUrl, cliTokenFound, ProviderCliTokenResult, ProviderCliTokenSource, runProviderCli } from "../utils/providerCliAuthUtils.js";
+import { buildPrCreateUrl, CiRunFilters, CiRunStatus, CommonCiRun, CreateReleaseRequest, CreateReleaseResult, CreateVersionTagRequest, CreateVersionTagResult, DashboardComment, DashboardRef, GitProviderConnectionCheck, GitProviderRepositorySettings, GitProviderRoot, JobArtifact, JobArtifactsListing, PullRequestCommentRef, PullRequestCreateUrlResult, getOldestCommitDateWithMargin } from "./gitProviderRoot.js";
 import fs from "../utils/fsUtils.js";
 import { getBannerMarkdownAndLink } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
@@ -23,6 +24,8 @@ function getOldestCommitDate(commits: any[]): string | null {
 }
 
 export class GitlabProvider extends GitProviderRoot {
+  public static readonly providerLabel = "GitLab";
+  public static readonly tokenVariableNames = ["CI_SFDX_HARDIS_GITLAB_TOKEN", "ACCESS_TOKEN"];
   private gitlabApi: InstanceType<typeof Gitlab>;
   private mergeRequestWebUrls: { [key: string]: string } = {};
   public serverUrl: string;
@@ -49,7 +52,7 @@ export class GitlabProvider extends GitProviderRoot {
     // Gitlab URL is always provided by default CI variables
     this.serverUrl = process.env.CI_SERVER_URL || "";
     // It's better to have a project token defined in a CI_SFDX_HARDIS_GITLAB_TOKEN variable, to have the rights to act on Pull Requests
-    this.token = process.env.CI_SFDX_HARDIS_GITLAB_TOKEN || process.env.ACCESS_TOKEN || "";
+    this.token = GitlabProvider.getEnvironmentToken();
     const gitlabConfig: ConstructorParameters<typeof Gitlab>[0] = {
       host: this.serverUrl,
       token: this.token,
@@ -84,7 +87,7 @@ export class GitlabProvider extends GitProviderRoot {
         process.env.CI_PROJECT_PATH = parsed.projectPath;
       }
       // Try to resolve project ID via API if missing
-      const token = process.env.CI_SFDX_HARDIS_GITLAB_TOKEN || process.env.ACCESS_TOKEN || "";
+      const token = GitlabProvider.getEnvironmentToken();
       if (!process.env.CI_PROJECT_ID) {
         if (token) {
           try {
@@ -145,6 +148,55 @@ export class GitlabProvider extends GitProviderRoot {
     } catch (e) {
       uxLog("warning", GitlabProvider, c.yellow("[GitLab] " + t("autoDetectProviderFailed", { provider: "GitLab", message: (e as Error).message })));
     }
+  }
+
+  public static getCliTokenSource(): ProviderCliTokenSource {
+    return {
+      cli: "glab",
+      installUrl: "https://gitlab.com/gitlab-org/cli#installation",
+      loginCommand: (host: string) => `glab auth login --hostname ${host || "gitlab.com"}`,
+    };
+  }
+
+  // glab has no command that prints the token alone: glab auth status --show-token writes it on a
+  // "Token found: <token>" line, among others, and exits with 1 when GitLab refused it. The output
+  // is only read here, never displayed. The variables glab reads first are removed: glab would
+  // otherwise answer with the refused token itself.
+  public static async readCliToken(remoteUrl: string): Promise<ProviderCliTokenResult> {
+    const source = GitlabProvider.getCliTokenSource();
+    const host = cliHostFromServerUrl(GitlabProvider.parseGitlabRepoUrl(remoteUrl)?.serverUrl, remoteUrl);
+    if (!host) {
+      return { token: null, source, host, reason: "failed" };
+    }
+    const result = await runProviderCli("glab", ["auth", "status", "--hostname", host, "--show-token"], {
+      removeEnvVars: ["GITLAB_TOKEN", "GITLAB_ACCESS_TOKEN", "OAUTH_TOKEN", "GITLAB_HOST", "GL_HOST"],
+      extraEnv: { NO_PROMPT: "1" },
+    });
+    if (result == null) {
+      return { token: null, source, host, reason: "notInstalled" };
+    }
+    const token = GitlabProvider.parseGlabStatusToken(`${result.stdout}\n${result.stderr}`);
+    if (result.status === 0 && token) {
+      return cliTokenFound(token, source, host);
+    }
+    // No token, or a token GitLab refused: logging in again is the fix of both
+    const notLoggedIn = token != null || /no token found|not logged in|glab auth login/i.test(result.stderr);
+    return { token: null, source, host, reason: notLoggedIn ? "notLoggedIn" : "failed", exitCode: result.status };
+  }
+
+  /** The token of the "Token found: <token>" line of glab auth status --show-token, null without it */
+  public static parseGlabStatusToken(output: string): string | null {
+    const match = /Token found:\s*(\S+)/i.exec(output || "");
+    // Without --show-token, or with an older glab, the token is masked with stars
+    if (!match || /^\*+$/.test(match[1])) {
+      return null;
+    }
+    return match[1];
+  }
+
+  private static getEnvironmentToken(): string {
+    const name = GitlabProvider.tokenVariableNames.find((variable) => process.env[variable]);
+    return name ? process.env[name] || "" : "";
   }
 
   private static buildApi(serverUrl: string, token: string): InstanceType<typeof Gitlab> {
@@ -237,6 +289,18 @@ export class GitlabProvider extends GitProviderRoot {
 
   public getLabel(): string {
     return "sfdx-hardis Gitlab connector";
+  }
+
+  public async checkConnection(): Promise<GitProviderConnectionCheck> {
+    if (!this.projectId) {
+      return { connected: false, reason: "notVisible", message: "No GitLab project found in the git remote" };
+    }
+    try {
+      await this.gitlabApi.Projects.show(this.projectId);
+      return { connected: true };
+    } catch (e: any) {
+      return GitlabProvider.connectionCheckFromStatus(e?.cause?.response?.status ?? e?.response?.status, (e as Error).message);
+    }
   }
 
   public getSafeDirectoryCommand(): string {

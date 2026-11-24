@@ -37,6 +37,10 @@ export class GenericTicketingProvider extends TicketProviderRoot {
       );
   }
 
+  public static getConnectionHelp(): string {
+    return t('connectionCheckSetVariables', { variables: 'GENERIC_TICKETING_PROVIDER_REGEX and GENERIC_TICKETING_PROVIDER_URL_BUILDER (or genericTicketingProviderRegex and genericTicketingProviderUrlBuilder)' });
+  }
+
   public static async getTicketsFromString(text: string, options: TicketsFromStringOptions = {}): Promise<Ticket[]> {
     const tickets: Ticket[] = [];
     const config = options.config || (await getConfig("project"));
