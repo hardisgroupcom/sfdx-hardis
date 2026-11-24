@@ -80,18 +80,18 @@ sfdx-hardis calls the API of the provider you choose directly, over HTTPS (proxi
 - Google Gemini
 - Ollama
 
-| Variable               | Description                                                                                                         | Default                          |
-|------------------------|---------------------------------------------------------------------------------------------------------------------|----------------------------------|
-| USE_AI_LLM             | Set to true to call the LLM API (enabled by default when `AI_LLM_PROVIDER` and `AI_LLM_MODEL` are set)              |                                  |
-| AI_LLM_PROVIDER        | The LLM API to call: `ollama`, `openai`, `anthropic` or `google-genai`                                              |                                  |
-| AI_LLM_MODEL           | The model to use with the selected provider (e.g. `gpt-4o`, `claude-sonnet-4-5`, `qwen2.5-coder:14b`)               |                                  |
-| AI_LLM_API_KEY         | API key of the selected provider (required for OpenAI, Anthropic and Gemini, unless gateway headers are used)       |                                  |
-| AI_LLM_TEMPERATURE     | Controls randomness (0-1)                                                                                           |                                  |
-| AI_LLM_MAX_TOKENS      | Maximum number of tokens to generate (Anthropic: `8192` for Claude 3.5 models, `4096` for Claude 3 models)          | Anthropic: `16384`               |
-| AI_LLM_MAX_RETRIES     | Number of retries after a rate limit or a temporary error                                                           | `6`                              |
-| AI_LLM_TIMEOUT         | Timeout of one call, in milliseconds                                                                                | `600000`                         |
-| AI_LLM_BASE_URL        | Base URL of the API (Ollama, corporate gateways)                                                                    | Ollama: `http://localhost:11434` |
-| AI_LLM_DEFAULT_HEADERS | JSON object of default HTTP headers sent with every request (for gateway/proxy authentication)                      |                                  |
+| Variable               | Description                                                                                                   | Default                          |
+|------------------------|---------------------------------------------------------------------------------------------------------------|----------------------------------|
+| USE_AI_LLM             | Set to true to call the LLM API (enabled by default when `AI_LLM_PROVIDER` and `AI_LLM_MODEL` are set)        |                                  |
+| AI_LLM_PROVIDER        | The LLM API to call: `ollama`, `openai`, `anthropic` or `google-genai`                                        |                                  |
+| AI_LLM_MODEL           | The model to use with the selected provider (e.g. `gpt-4o`, `claude-sonnet-4-5`, `qwen2.5-coder:14b`)         |                                  |
+| AI_LLM_API_KEY         | API key of the selected provider (required for OpenAI, Anthropic and Gemini, unless gateway headers are used) |                                  |
+| AI_LLM_TEMPERATURE     | Controls randomness (0-1)                                                                                     |                                  |
+| AI_LLM_MAX_TOKENS      | Maximum number of tokens to generate (Anthropic: `8192` for Claude 3.5 models, `4096` for Claude 3 models)    | Anthropic: `16384`               |
+| AI_LLM_MAX_RETRIES     | Number of retries after a rate limit or a temporary error                                                     | `6`                              |
+| AI_LLM_TIMEOUT         | Timeout of one call, in milliseconds                                                                          | `600000`                         |
+| AI_LLM_BASE_URL        | Base URL of the API (Ollama, corporate gateways)                                                              | Ollama: `http://localhost:11434` |
+| AI_LLM_DEFAULT_HEADERS | JSON object of default HTTP headers sent with every request (for gateway/proxy authentication)                |                                  |
 
 #### Example configurations
 
