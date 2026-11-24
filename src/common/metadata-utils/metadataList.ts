@@ -874,6 +874,13 @@ export function listMetadataTypes() {
         xmlName: 'CommunityThemeDefinition',
       },
       {
+        directoryName: 'computeApps',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'computeApp',
+        xmlName: 'ComputeApp',
+      },
+      {
         directoryName: 'computeExtensions',
         inFolder: false,
         metaFile: false,
