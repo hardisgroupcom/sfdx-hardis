@@ -99,6 +99,13 @@ RUN npm install --no-cache yarn -g && \
     echo 'y' | sf plugins install sfdx-git-delta && \
     echo 'y' | sf plugins install sfdmu && \
     echo 'y' | sf plugins install sfdx-browserforce-plugin && \
+    # Keep TypeScript 6 in the plugins folder. Without a pin, npm resolves the optional typescript peer
+    # dependency (cosmiconfig-typescript-loader, i18next) to TypeScript 7, whose native Go compiler
+    # binary ships golang.org/x/text 0.38.0 (CVE-2026-56851, CVE-2026-56852, not fixed in 7.0.2).
+    # Remove the pin once a TypeScript 7 release ships golang.org/x/text 0.41.0 or later.
+    SF_PLUGINS_DIR="${SF_DATA_DIR:-$HOME/.local/share/sf}" && \
+    npm --prefix "$SF_PLUGINS_DIR" install typescript@6 --omit=dev --no-audit --no-fund && \
+    test "$(node -p "require('$SF_PLUGINS_DIR/node_modules/typescript/package.json').version.split('.')[0]")" = "6" && \
     sf version --verbose --json && \
     # Clean up npm cache and temporary files
     rm -rf /root/.npm/_cacache && \
