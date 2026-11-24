@@ -218,6 +218,40 @@ credentials. Its failure messages are the only support channel a learner has, so
 the lab, what was looked for and where. The rules live in `scripts/verify/rules.mjs`; editing
 them is [[training-update]]'s job.
 
+**The files of a level are not proof on their own.** Every file a level leaves behind is in the
+training repository (`scripts/start-states/`, `scripts/simulate/`), and on 2026-11-24 a fork
+filled with those copies, with no Pull Request and no org, passed every rule (claims #428 and #429,
+revoked). So `scripts/verify/evidence.mjs` also reads the fork through the GitHub API, with the
+token of the workflow: for each lab timed in `scripts/stats/markers.mjs`, a merged Pull Request
+between the branches the lab names, on which `check-deploy.yml` or `process-deploy.yml` ran
+successfully, from a file whose blob is one the course shipped. Lab 3.4 leaves US-020 open on
+purpose, so there the Pull Request only has to exist with its deployment check run.
+
+- Story branches match with any prefix or none (`US-016-crew-notes` counts), because the prefix is
+  the learner's choice in New User Story.
+- Levels brought by **Reset this level** need no evidence: the audit already accepts their files.
+  A reset keeps no branch in the fork, so a level below the one claimed with no Pull Request at all
+  counts as reset. A level with some of its Pull Requests was worked there and needs them all.
+- One lab per level may have no Pull Request of its own when every other lab of the level has a
+  checked one: real learners deliver two stories in one Pull Request. A Pull Request merged
+  without its deployment check is never forgiven.
+- `MIN_LEVEL_MINUTES` (5, 40, 80) is the floor from the first Pull Request of a level to its last
+  merge, at about half the fastest real learner of 2026-11-24 (8, 83, 165). It only catches a
+  scripted run that skipped its deployment checks: the end to end tests took 19, 201 and 206
+  minutes, slower than three learners, so time alone never tells how the work was done.
+- `EVIDENCE_EXEMPT_HANDLES` in `evidence.mjs` holds the only account exempt from this evidence:
+  `nvuillam`, the account of the end to end tests. Never add another one.
+- `node scripts/badges/reaudit.mjs` audits every awarded badge again and writes a report that
+  names people to `hardis-report/badge-reaudit/` (git-ignored). It changes nothing.
+- **Revocation** is a commit removing `badges/<trailblazer>.json`, `badges/img/<trailblazer>-level-*.svg`,
+  `badges/post/<trailblazer>.png` and `badges/social/<trailblazer>.png`, with the statistics
+  recalculated (`course-stats.mjs`, `lab-times.mjs`), pushed by a person. That push starts the site
+  build and the reset branches by itself: never dispatch them too. On 2026-11-24 a dispatch sent
+  right after the push resolved `main` one commit early, finished last, and republished the badge.
+  Check that the latest `gh-pages` commit says "Built from <the revocation commit>". The comment
+  on the claim tells the learner the labs have to be done by hand, without the technical details
+  of what gave them away.
+
 ## Course statistics
 
 A Trailmix reports nothing, so the course counts for itself. `scripts/stats/course-stats.mjs` in the
