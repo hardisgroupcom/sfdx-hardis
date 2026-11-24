@@ -39,7 +39,7 @@ On a workstation, in agent mode (\`--agent\`) or with \`SFDX_HARDIS_PROVIDER_CLI
 | GitLab | glab | \`glab auth login\` |
 | Azure DevOps and Azure Boards | az | \`az login\` |
 
-The variables of the environment come first, then the \`.env\` file, then the CLI: the token of the CLI is used when no variable holds one, or when the provider refuses the one that is set. It is kept for the running process only, never written anywhere. Never in CI. Bitbucket, JIRA, ServiceNow and Aha! have no CLI to read a token from.
+The variables of the environment come first, then the \`.env\` file, then the CLI: the token of the CLI is used when no variable holds one, or when the provider refuses the one that is set. It is kept for the running process only, never written anywhere. Never in CI, and never for the commands the VS Code extension launches: they use the credentials of the extension. Bitbucket, JIRA, ServiceNow and Aha! have no CLI to read a token from.
 
 | Variable | Effect |
 |----------|--------|
