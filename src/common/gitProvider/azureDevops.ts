@@ -197,7 +197,7 @@ export class AzureDevopsProvider extends GitProviderRoot {
   private static async readOrganizationTenant(collectionUri: string): Promise<string | null> {
     try {
       const response = await fetch(collectionUri, { redirect: "manual", signal: AbortSignal.timeout(10000) });
-      return response.headers.get("x-vss-resourcetenant");
+      return response.headers.get("X-VSS-ResourceTenant");
     } catch {
       return null;
     }
