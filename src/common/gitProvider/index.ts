@@ -139,23 +139,6 @@ export abstract class GitProvider {
   }
 
   /**
-   * The same for an address that is not the current repository (the organization of a ticketing
-   * system hosted by a git provider). Only fills a missing token: there is no repository to check
-   * the one already set.
-   */
-  static async applyCliTokenFallbackFor(providerClass: typeof GitProviderRoot, remoteUrl: string): Promise<void> {
-    if (!isProviderCliAuthEnabled() || GitProvider.getEnvironmentToken(providerClass) || !providerClass.getCliTokenSource()) {
-      return;
-    }
-    const result = await providerClass.readCliToken(remoteUrl);
-    if (result.token) {
-      GitProvider.useCliToken(providerClass, result, null);
-    } else {
-      GitProvider.recordCliFailure(providerClass, describeCliTokenFailure(result));
-    }
-  }
-
-  /**
    * Whether the git provider of the current repository accepts the token sfdx-hardis has for it,
    * with what to do when it does not. Reads the repository with the token: the answer is the one
    * of the provider, not a guess from the variables.
@@ -331,165 +314,6 @@ export abstract class GitProvider {
     }
     else {
       uxLog("action", this, c.cyan('[GitProvider] ' + t('gitProviderLocalAuthNotImplemented', { provider: promptRes.value })));
-    }
-  }
-
-  private static async runCliTokenFallback(): Promise<void> {
-    try {
-      const remoteUrl = await GitProvider.getOriginRemoteUrl();
-      if (!remoteUrl) {
-        return;
-      }
-      const candidates = GitProvider.cliTokenCandidates(remoteUrl);
-      for (const providerClass of candidates) {
-        // A host that does not name its product is tried on each CLI: only the answer of a provider
-        // known for sure is worth reporting
-        if (await GitProvider.resolveToken(providerClass, remoteUrl, candidates.length === 1)) {
-          return;
-        }
-      }
-    } catch (e) {
-      debug("[GitProvider] CLI token fallback failed: " + redactSecrets((e as Error).message));
-    }
-  }
-
-  /**
-   * The provider of the remote when the address names it. A self-managed host does not: the
-   * provider whose token variable is set, otherwise every provider that has a CLI.
-   */
-  private static cliTokenCandidates(remoteUrl: string): Array<typeof GitProviderRoot> {
-    const providerType = GitProvider.getProviderTypeFromRemoteUrl(remoteUrl);
-    if (providerType) {
-      return [GIT_PROVIDER_CLASSES[providerType]];
-    }
-    const providerClasses = Object.values(GIT_PROVIDER_CLASSES);
-    const withToken = providerClasses.filter((providerClass) => GitProvider.getEnvironmentToken(providerClass));
-    return withToken.length > 0 ? withToken : providerClasses.filter((providerClass) => providerClass.getCliTokenSource() != null);
-  }
-
-  /**
-   * Keeps the token of the environment when the provider accepts it (or cannot answer), otherwise
-   * replaces it with the token of the CLI. Returns true when a token is in place.
-   */
-  private static async resolveToken(providerClass: typeof GitProviderRoot, remoteUrl: string, recordFailures: boolean): Promise<boolean> {
-    // Nothing to fall back on: the token of the environment is used as it is, unchecked
-    if (!providerClass.getCliTokenSource()) {
-      return GitProvider.getEnvironmentToken(providerClass) !== "";
-    }
-    let refused: { variable: string; check: GitProviderConnectionCheck } | null = null;
-    const environmentToken = GitProvider.getEnvironmentTokenInfo(providerClass);
-    if (environmentToken) {
-      const token = process.env[environmentToken.variable] || "";
-      registerSecretValue(token);
-      recordProviderTokenInfo(GitProvider.getProviderKey(providerClass), environmentToken);
-      if (!isProviderTokenCheckEnabled()) {
-        return true;
-      }
-      const check = await GitProvider.checkToken(providerClass, remoteUrl, token);
-      if (check.connected || check.reason === "unreachable" || check.reason === "notSupported") {
-        return true;
-      }
-      refused = { variable: environmentToken.variable, check };
-    }
-    const result = await providerClass.readCliToken(remoteUrl);
-    if (!result.token) {
-      if (recordFailures) {
-        GitProvider.recordCliFailure(providerClass, describeCliTokenFailure(result));
-      }
-      return environmentToken != null;
-    }
-    if (isProviderTokenCheckEnabled()) {
-      const check = await GitProvider.checkToken(providerClass, remoteUrl, result.token);
-      if (check.reason === "refused" || check.reason === "notVisible") {
-        const detail = joinDetailSentences([
-          t('providerCliTokenRefused', { provider: providerClass.providerLabel, cli: result.source?.cli || "-", status: check.httpStatus ?? "-" }),
-          await result.source?.refusedHint?.(remoteUrl),
-        ]);
-        uxLog("warning", this, c.yellow(`[GitProvider] ${detail}`));
-        GitProvider.recordCliFailure(providerClass, detail);
-        return environmentToken != null;
-      }
-    }
-    GitProvider.useCliToken(providerClass, result, refused);
-    return true;
-  }
-
-  // A provider built for the repository with the token, never the cached instance
-  private static async checkToken(providerClass: typeof GitProviderRoot, remoteUrl: string, token: string): Promise<GitProviderConnectionCheck> {
-    let check: GitProviderConnectionCheck;
-    try {
-      const provider: GitProviderRoot = new (providerClass as any)({ remoteUrl, token });
-      check = await provider.checkConnection();
-    } catch (e) {
-      return { connected: false, reason: "notSupported", message: redactSecrets((e as Error).message) };
-    }
-    // A network error may not last: only a definite answer is worth reusing
-    if (check.connected || check.reason === "refused" || check.reason === "notVisible") {
-      tokenChecks.set(GitProvider.tokenCheckKey(providerClass, token), check);
-    }
-    return check;
-  }
-
-  // The answer of the provider to the token now in use, when the fallback already asked for it
-  private static getRecordedTokenCheck(providerClass: typeof GitProviderRoot): GitProviderConnectionCheck | null {
-    const token = GitProvider.getEnvironmentToken(providerClass);
-    return token ? tokenChecks.get(GitProvider.tokenCheckKey(providerClass, token)) || null : null;
-  }
-
-  private static tokenCheckKey(providerClass: typeof GitProviderRoot, token: string): string {
-    return `${GitProvider.getProviderKey(providerClass)}:${createHash("sha256").update(token).digest("hex")}`;
-  }
-
-  // The first variable of the provider wins over the others: the refused one is replaced for this
-  // process only, nothing is written anywhere
-  private static useCliToken(
-    providerClass: typeof GitProviderRoot,
-    result: ProviderCliTokenResult,
-    refused: { variable: string; check: GitProviderConnectionCheck } | null,
-  ): void {
-    const variable = providerClass.tokenVariableNames[0];
-    const cli = result.source?.cli || "-";
-    process.env[variable] = result.token || "";
-    recordProviderTokenInfo(GitProvider.getProviderKey(providerClass), { source: cli, variable });
-    const message = refused
-      ? t('providerCliTokenReplacesRefused', { provider: providerClass.providerLabel, variable: refused.variable, status: refused.check.httpStatus ?? "-", cli })
-      : t('providerCliTokenUsed', { provider: providerClass.providerLabel, cli, host: result.host });
-    uxLog("log", this, c.grey(`[GitProvider] ${message}`));
-  }
-
-  private static recordCliFailure(providerClass: typeof GitProviderRoot, detail: string | null): void {
-    if (detail) {
-      recordProviderCliFailure(GitProvider.getProviderKey(providerClass), detail);
-    }
-  }
-
-  private static getProviderKey(providerClass: typeof GitProviderRoot): GitProviderType {
-    return (Object.keys(GIT_PROVIDER_CLASSES) as GitProviderType[]).find((type) => GIT_PROVIDER_CLASSES[type] === providerClass) as GitProviderType;
-  }
-
-  private static getProviderType(instance: GitProviderRoot | null): GitProviderType | null {
-    if (!instance) {
-      return null;
-    }
-    return (Object.keys(GIT_PROVIDER_CLASSES) as GitProviderType[]).find((type) => instance instanceof GIT_PROVIDER_CLASSES[type]) || null;
-  }
-
-  /** The token the environment (or the .env file) holds for a provider, "" when none */
-  private static getEnvironmentToken(providerClass: typeof GitProviderRoot): string {
-    const info = GitProvider.getEnvironmentTokenInfo(providerClass);
-    return info ? process.env[info.variable] || "" : "";
-  }
-
-  private static getEnvironmentTokenInfo(providerClass: typeof GitProviderRoot): { source: string; variable: string } | null {
-    const variable = providerClass.tokenVariableNames.find((name) => process.env[name]);
-    return variable ? { source: "env", variable } : null;
-  }
-
-  private static async getOriginRemoteUrl(): Promise<string> {
-    try {
-      return String((await git({ output: false, displayCommand: false }).getConfig("remote.origin.url"))?.value || "").trim();
-    } catch {
-      return "";
     }
   }
 
@@ -1292,6 +1116,177 @@ export abstract class GitProvider {
       failedTestsCount: prData.failedTestsCount,
       coverageText: markdownFirstLineAsText(prData.codeCoverageMarkdownBody),
     });
+  }
+
+  private static async runCliTokenFallback(): Promise<void> {
+    try {
+      const remoteUrl = await GitProvider.getOriginRemoteUrl();
+      if (!remoteUrl) {
+        return;
+      }
+      const candidates = GitProvider.cliTokenCandidates(remoteUrl);
+      for (const providerClass of candidates) {
+        // A host that does not name its product is tried on each CLI: only the answer of a provider
+        // known for sure is worth reporting. A token the provider refused leaves the next one a chance.
+        if ((await GitProvider.resolveToken(providerClass, remoteUrl, candidates.length === 1)) === "accepted") {
+          return;
+        }
+      }
+    } catch (e) {
+      debug("[GitProvider] CLI token fallback failed: " + redactSecrets((e as Error).message));
+    }
+  }
+
+  /**
+   * The provider of the remote when the address or the environment names it. Otherwise, for a
+   * self-managed host: the providers whose token variable is set, then the other providers that
+   * have a CLI. Azure DevOps addresses have a shape of their own whatever the host, so Azure DevOps
+   * is never one of them.
+   */
+  private static cliTokenCandidates(remoteUrl: string): Array<typeof GitProviderRoot> {
+    if (GitProvider.getProviderTypeFromRemoteUrl(remoteUrl)) {
+      return GitProvider.guessProviderClassesFromRemoteUrl(remoteUrl);
+    }
+    const guessed = GitProvider.guessProviderClassesFromRemoteUrl(remoteUrl).filter((providerClass) => providerClass !== AzureDevopsProvider);
+    if (guessed.length > 0) {
+      return guessed;
+    }
+    const providerClasses = Object.values(GIT_PROVIDER_CLASSES).filter((providerClass) => providerClass !== AzureDevopsProvider);
+    const withToken = providerClasses.filter((providerClass) => GitProvider.getEnvironmentToken(providerClass));
+    const withCli = providerClasses.filter((providerClass) => providerClass.getCliTokenSource() != null && !withToken.includes(providerClass));
+    return [...withToken, ...withCli];
+  }
+
+  /**
+   * Keeps the token of the environment when the provider accepts it (or cannot answer), otherwise
+   * replaces it with the token of the CLI. "accepted": a token is in place, "refused": only a token
+   * the provider refused, "none": no token at all.
+   */
+  private static async resolveToken(providerClass: typeof GitProviderRoot, remoteUrl: string, recordFailures: boolean): Promise<"accepted" | "refused" | "none"> {
+    // Nothing to fall back on: the token of the environment is used as it is, unchecked
+    if (!providerClass.getCliTokenSource()) {
+      return GitProvider.getEnvironmentToken(providerClass) !== "" ? "accepted" : "none";
+    }
+    let refused: { variable: string; check: GitProviderConnectionCheck } | null = null;
+    const environmentToken = GitProvider.getEnvironmentTokenInfo(providerClass);
+    if (environmentToken) {
+      const token = process.env[environmentToken.variable] || "";
+      registerSecretValue(token);
+      recordProviderTokenInfo(GitProvider.getProviderKey(providerClass), environmentToken);
+      if (!isProviderTokenCheckEnabled()) {
+        return "accepted";
+      }
+      const check = await GitProvider.checkToken(providerClass, remoteUrl, token);
+      if (check.connected || check.reason === "unreachable" || check.reason === "notSupported") {
+        return "accepted";
+      }
+      refused = { variable: environmentToken.variable, check };
+    }
+    const kept = environmentToken != null ? "refused" : "none";
+    const result = await providerClass.readCliToken(remoteUrl);
+    if (!result.token) {
+      if (recordFailures) {
+        GitProvider.recordCliFailure(providerClass, describeCliTokenFailure(result));
+      }
+      return kept;
+    }
+    if (isProviderTokenCheckEnabled()) {
+      const check = await GitProvider.checkToken(providerClass, remoteUrl, result.token);
+      // The provider class cannot read this remote: the token is for another product
+      if (check.reason === "notSupported") {
+        return kept;
+      }
+      if (check.reason === "refused" || check.reason === "notVisible") {
+        const detail = joinDetailSentences([
+          t('providerCliTokenRefused', { provider: providerClass.providerLabel, cli: result.source?.cli || "-", status: check.httpStatus ?? "-" }),
+          await result.source?.refusedHint?.(remoteUrl),
+        ]);
+        uxLog("warning", this, c.yellow(`[GitProvider] ${detail}`));
+        GitProvider.recordCliFailure(providerClass, detail);
+        return kept;
+      }
+    }
+    GitProvider.useCliToken(providerClass, result, refused);
+    return "accepted";
+  }
+
+  // A provider built for the repository with the token, never the cached instance
+  private static async checkToken(providerClass: typeof GitProviderRoot, remoteUrl: string, token: string): Promise<GitProviderConnectionCheck> {
+    let check: GitProviderConnectionCheck;
+    try {
+      const provider: GitProviderRoot = new (providerClass as any)({ remoteUrl, token });
+      check = await provider.checkConnection();
+    } catch (e) {
+      return { connected: false, reason: "notSupported", message: redactSecrets((e as Error).message) };
+    }
+    // A network error may not last: only a definite answer is worth reusing
+    if (check.connected || check.reason === "refused" || check.reason === "notVisible") {
+      tokenChecks.set(GitProvider.tokenCheckKey(providerClass, token), check);
+    }
+    return check;
+  }
+
+  // The answer of the provider to the token now in use, when the fallback already asked for it
+  private static getRecordedTokenCheck(providerClass: typeof GitProviderRoot): GitProviderConnectionCheck | null {
+    const token = GitProvider.getEnvironmentToken(providerClass);
+    return token ? tokenChecks.get(GitProvider.tokenCheckKey(providerClass, token)) || null : null;
+  }
+
+  private static tokenCheckKey(providerClass: typeof GitProviderRoot, token: string): string {
+    return `${GitProvider.getProviderKey(providerClass)}:${createHash("sha256").update(token).digest("hex")}`;
+  }
+
+  // The first variable of the provider wins over the others: the refused one is replaced for this
+  // process only, nothing is written anywhere
+  private static useCliToken(
+    providerClass: typeof GitProviderRoot,
+    result: ProviderCliTokenResult,
+    refused: { variable: string; check: GitProviderConnectionCheck } | null,
+  ): void {
+    const variable = providerClass.tokenVariableNames[0];
+    const cli = result.source?.cli || "-";
+    process.env[variable] = result.token || "";
+    recordProviderTokenInfo(GitProvider.getProviderKey(providerClass), { source: cli, variable });
+    const message = refused
+      ? t('providerCliTokenReplacesRefused', { provider: providerClass.providerLabel, variable: refused.variable, status: refused.check.httpStatus ?? "-", cli })
+      : t('providerCliTokenUsed', { provider: providerClass.providerLabel, cli, host: result.host });
+    uxLog("log", this, c.grey(`[GitProvider] ${message}`));
+  }
+
+  private static recordCliFailure(providerClass: typeof GitProviderRoot, detail: string | null): void {
+    if (detail) {
+      recordProviderCliFailure(GitProvider.getProviderKey(providerClass), detail);
+    }
+  }
+
+  private static getProviderKey(providerClass: typeof GitProviderRoot): GitProviderType {
+    return (Object.keys(GIT_PROVIDER_CLASSES) as GitProviderType[]).find((type) => GIT_PROVIDER_CLASSES[type] === providerClass) as GitProviderType;
+  }
+
+  private static getProviderType(instance: GitProviderRoot | null): GitProviderType | null {
+    if (!instance) {
+      return null;
+    }
+    return (Object.keys(GIT_PROVIDER_CLASSES) as GitProviderType[]).find((type) => instance instanceof GIT_PROVIDER_CLASSES[type]) || null;
+  }
+
+  /** The token the environment (or the .env file) holds for a provider, "" when none */
+  private static getEnvironmentToken(providerClass: typeof GitProviderRoot): string {
+    const info = GitProvider.getEnvironmentTokenInfo(providerClass);
+    return info ? process.env[info.variable] || "" : "";
+  }
+
+  private static getEnvironmentTokenInfo(providerClass: typeof GitProviderRoot): { source: string; variable: string } | null {
+    const variable = providerClass.tokenVariableNames.find((name) => process.env[name]);
+    return variable ? { source: "env", variable } : null;
+  }
+
+  private static async getOriginRemoteUrl(): Promise<string> {
+    try {
+      return String((await git({ output: false, displayCommand: false }).getConfig("remote.origin.url"))?.value || "").trim();
+    } catch {
+      return "";
+    }
   }
 }
 

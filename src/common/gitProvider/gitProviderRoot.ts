@@ -260,10 +260,6 @@ export abstract class GitProviderRoot {
     return 50000;
   }
 
-  /**
-   * Last check before a comment is sent: a body still over the size cap is cut before its footer
-   * and hidden markers, so the provider accepts it and sfdx-hardis can still read it back.
-   */
   /** Classifies the HTTP status of a failed check call. 404 is a repository the token cannot see */
   protected static connectionCheckFromStatus(httpStatus: number | undefined, message: string): GitProviderConnectionCheck {
     // 203: the sign-in page Azure DevOps answers to a token it does not accept
@@ -276,6 +272,10 @@ export abstract class GitProviderRoot {
     return { connected: false, reason: "unreachable", httpStatus, message };
   }
 
+  /**
+   * Last check before a comment is sent: a body still over the size cap is cut before its footer
+   * and hidden markers, so the provider accepts it and sfdx-hardis can still read it back.
+   */
   protected enforceHardCommentLimit(body: string): string {
     const limit = this.getMaxPullRequestCommentLength();
     const result = enforceCommentLengthLimit(body, limit);

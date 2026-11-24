@@ -150,6 +150,8 @@ describe('providerCliAuthUtils', () => {
   it('masks the values of the secret variables of the debug environment dump', () => {
     const masked = maskSecretEnvVars({ GITHUB_TOKEN: 'abc', PAT: 'def', SFDX_AUTH_URL: 'force://x', JIRA_API_KEY: 'k', PATH: '/usr/bin', EMPTY_TOKEN: '' });
     expect(masked).to.deep.equal({ GITHUB_TOKEN: '***', PAT: '***', SFDX_AUTH_URL: '***', JIRA_API_KEY: '***', PATH: '/usr/bin', EMPTY_TOKEN: '' });
+    const others = maskSecretEnvVars({ JIRA_PAT: 'a', AZURE_DEVOPS_EXT_PAT: 'b', SFDX_CLIENT_KEY_INTEGRATION: 'c', JIRA_PROJECT_KEY: 'HEL', PATTERN: 'x' });
+    expect(others).to.deep.equal({ JIRA_PAT: '***', AZURE_DEVOPS_EXT_PAT: '***', SFDX_CLIENT_KEY_INTEGRATION: '***', JIRA_PROJECT_KEY: 'HEL', PATTERN: 'x' });
   });
 
   describe('runSilentCommand', () => {

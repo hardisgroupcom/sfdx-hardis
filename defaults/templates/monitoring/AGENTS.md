@@ -196,7 +196,7 @@ Credentials, in this order:
 1. A command line tool the user is already logged in with: `gh auth status`, `glab auth status`, `az account show` (with the `azure-devops` extension). Use it as is.
 2. Otherwise, a `.env` file at the root of this repository (git ignores it). Load it into the environment of your commands only, for example `set -a; . ./.env; set +a`, and use the variables by name in the commands, never their value. The variable names are the ones sfdx-hardis uses:
    - GitHub: `CI_SFDX_HARDIS_GITHUB_TOKEN` or `GITHUB_TOKEN`
-   - GitLab: `CI_SFDX_HARDIS_GITLAB_TOKEN` or `ACCESS_TOKEN`
+   - GitLab: `CI_SFDX_HARDIS_GITLAB_TOKEN`
    - Azure DevOps: `CI_SFDX_HARDIS_AZURE_TOKEN` or `SYSTEM_ACCESSTOKEN`
    - Bitbucket: `CI_SFDX_HARDIS_BITBUCKET_TOKEN`, with `CI_SFDX_HARDIS_BITBUCKET_EMAIL` when the token is an Atlassian account API token
    - `SFDX_HARDIS_DEPLOYMENT_REPO_TOKEN`: a token for the deployment repository, set when the token of this repository cannot read it. It is the one `sf hardis:doc:dora-report` uses from the monitoring pipeline

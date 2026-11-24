@@ -192,17 +192,6 @@ export class AzureDevopsProvider extends GitProviderRoot {
     return t('providerCliAzureTenantHint');
   }
 
-  // Azure DevOps names the tenant of an organization to an anonymous request, in the redirection to
-  // its sign-in page: no token is sent. Null when the organization does not answer.
-  private static async readOrganizationTenant(collectionUri: string): Promise<string | null> {
-    try {
-      const response = await fetch(collectionUri, { redirect: "manual", signal: AbortSignal.timeout(10000) });
-      return response.headers.get("X-VSS-ResourceTenant");
-    } catch {
-      return null;
-    }
-  }
-
   // A Microsoft Entra ID token for the Azure DevOps resource, valid about one hour. It works for
   // any organization of the tenant az is logged in to: there is no host to pass.
   // https://learn.microsoft.com/azure/devops/cli/entra-tokens
@@ -2129,6 +2118,17 @@ ${getBannerMarkdownAndLink()}
       return null;
     }
     return `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT)}/_git/${encodeURIComponent(repositoryName)}`;
+  }
+
+  // Azure DevOps names the tenant of an organization to an anonymous request, in the redirection to
+  // its sign-in page: no token is sent. Null when the organization does not answer.
+  private static async readOrganizationTenant(collectionUri: string): Promise<string | null> {
+    try {
+      const response = await fetch(collectionUri, { redirect: "manual", signal: AbortSignal.timeout(10000) });
+      return response.headers.get("X-VSS-ResourceTenant");
+    } catch {
+      return null;
+    }
   }
 }
 

@@ -56,6 +56,8 @@ export interface ProviderConnectionStatus {
 const cliPaths = new Map<string, string | null>();
 const tokenInfos = new Map<string, ProviderTokenInfo>();
 const cliFailures = new Map<string, string>();
+// Tokens kept by a provider instead of a token variable (Azure Boards), null once the CLI gave none
+const keptCliTokens = new Map<string, string | null>();
 const CLI_TIMEOUT_MS = 20000;
 const VALID_HOST = /^[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?(?::\d{1,5})?$/;
 
@@ -141,6 +143,15 @@ export function getProviderCliFailure(providerKey: string): string | null {
   return cliFailures.get(providerKey) || null;
 }
 
+/** A token of a CLI kept for one provider only, null when the CLI gave none, undefined when not asked yet */
+export function recordKeptCliToken(providerKey: string, token: string | null): void {
+  keptCliTokens.set(providerKey, token);
+}
+
+export function getKeptCliToken(providerKey: string): string | null | undefined {
+  return keptCliTokens.get(providerKey);
+}
+
 /** What the user has to do when a CLI gave no token, or null when there is nothing to say */
 export function describeCliTokenFailure(result: ProviderCliTokenResult): string | null {
   const source = result.source;
@@ -172,6 +183,7 @@ export function resetProviderCliAuthState(): void {
   cliPaths.clear();
   tokenInfos.clear();
   cliFailures.clear();
+  keptCliTokens.clear();
 }
 
 function findProviderCli(cli: string): string | null {

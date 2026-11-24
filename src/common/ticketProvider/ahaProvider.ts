@@ -90,7 +90,7 @@ export class AhaProvider extends TicketProviderRoot {
   }
 
   public static getConnectionHelp(): string {
-    return t('connectionCheckSetVariables', { variables: 'AHA_HOST (or ahaHost) and AHA_API_KEY' });
+    return t('connectionCheckHelpAha');
   }
 
   public getLabel(): string {

@@ -38,7 +38,7 @@ export class GenericTicketingProvider extends TicketProviderRoot {
   }
 
   public static getConnectionHelp(): string {
-    return t('connectionCheckSetVariables', { variables: 'GENERIC_TICKETING_PROVIDER_REGEX and GENERIC_TICKETING_PROVIDER_URL_BUILDER (or genericTicketingProviderRegex and genericTicketingProviderUrlBuilder)' });
+    return t('connectionCheckHelpGeneric');
   }
 
   public static async getTicketsFromString(text: string, options: TicketsFromStringOptions = {}): Promise<Ticket[]> {

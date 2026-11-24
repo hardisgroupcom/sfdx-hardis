@@ -17,7 +17,7 @@ import { JsonPatchDocument } from "azure-devops-node-api/interfaces/common/VSSIn
 import { CommonPullRequestInfo } from "../gitProvider/index.js";
 import { WebSocketClient } from "../websocketClient.js";
 import { t } from '../utils/i18n.js';
-import { isProviderCliAuthEnabled } from '../utils/providerCliAuthUtils.js';
+import { describeCliTokenFailure, getKeptCliToken, isProviderCliAuthEnabled, recordKeptCliToken, recordProviderCliFailure, recordProviderTokenInfo } from '../utils/providerCliAuthUtils.js';
 import { WorkItemExpand } from "azure-devops-node-api/interfaces/WorkItemTrackingInterfaces.js";
 import {
   TicketDetails,
@@ -69,7 +69,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     this.serverUrl = getEnvVar("SYSTEM_COLLECTIONURI");
     // The same token as Azure DevOps: a Personal Access Token, the token of a pipeline, or a
     // Microsoft Entra ID token of the Azure CLI
-    this.token = AzureBoardsProvider.getEnvironmentToken();
+    this.token = AzureBoardsProvider.getToken();
     this.teamProject = getEnvVar("SYSTEM_TEAMPROJECT");
     if (this.serverUrl && this.token && this.teamProject) {
       this.isActive = true;
@@ -135,7 +135,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     if (
       // Basic auth
       getEnvVar("SYSTEM_COLLECTIONURI") &&
-      AzureBoardsProvider.getEnvironmentToken() &&
+      AzureBoardsProvider.getToken() &&
       getEnvVar("SYSTEM_TEAMPROJECT")
     ) {
       return true;
@@ -144,7 +144,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
   }
 
   public static getConnectionHelp(): string {
-    return t('connectionCheckSetVariables', { variables: `${AzureDevopsProvider.tokenVariableNames.join(" or ")}, with SYSTEM_COLLECTIONURI and SYSTEM_TEAMPROJECT when the git remote is not on Azure DevOps` });
+    return t('connectionCheckHelpAzureBoards', { variables: AzureDevopsProvider.tokenVariableNames.join(', ') });
   }
 
 
@@ -865,19 +865,35 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     return html.slice(0, close) + line + html.slice(close);
   }
 
-  /** The token of the Azure DevOps variables, null when none is set */
+  /** The token of the Azure DevOps variables, else the one read from the Azure CLI, null when none */
+  private static getToken(): string | null {
+    return AzureBoardsProvider.getEnvironmentToken() || getKeptCliToken(AzureBoardsProvider.providerKey) || null;
+  }
+
   private static getEnvironmentToken(): string | null {
     return AzureDevopsProvider.tokenVariableNames.map((name) => getEnvVar(name)).find((value) => !!value) || null;
   }
 
   // Coding agents on a workstation: the token of the Azure CLI when no variable holds one, for the
-  // organization of the boards, which is not always the one of the git remote
+  // organization of the boards, which is not always the one of the git remote. Read once per process,
+  // and kept for the boards only: in a token variable it would make Azure DevOps the git provider of a
+  // GitHub or GitLab repository that uses Azure Boards.
   private static async applyCliToken(): Promise<void> {
     const collectionUri = getEnvVar("SYSTEM_COLLECTIONURI");
-    if (collectionUri && isProviderCliAuthEnabled()) {
-      // Loaded here: the git provider index imports the ticketing index, which imports this class
-      const { GitProvider } = await import("../gitProvider/index.js");
-      await GitProvider.applyCliTokenFallbackFor(AzureDevopsProvider, collectionUri);
+    if (!collectionUri || !isProviderCliAuthEnabled() || getKeptCliToken(AzureBoardsProvider.providerKey) !== undefined || AzureBoardsProvider.getEnvironmentToken()) {
+      return;
+    }
+    const result = await AzureDevopsProvider.readCliToken(collectionUri);
+    recordKeptCliToken(AzureBoardsProvider.providerKey, result.token);
+    const cli = result.source?.cli || "az";
+    if (result.token) {
+      recordProviderTokenInfo(AzureBoardsProvider.providerKey, { source: cli, variable: cli });
+      uxLog("log", AzureBoardsProvider, c.grey('[AzureBoardsProvider] ' + t('providerCliTokenUsed', { provider: AzureBoardsProvider.providerLabel, cli, host: result.host })));
+      return;
+    }
+    const failure = describeCliTokenFailure(result);
+    if (failure) {
+      recordProviderCliFailure(AzureBoardsProvider.providerKey, failure);
     }
   }
 }

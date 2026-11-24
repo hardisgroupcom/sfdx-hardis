@@ -323,7 +323,7 @@ export class JiraProvider extends TicketProviderRoot {
   }
 
   public static getConnectionHelp(): string {
-    return t('connectionCheckSetVariables', { variables: 'JIRA_HOST (or jiraHost) with JIRA_EMAIL and JIRA_TOKEN, or JIRA_PAT, or JIRA_CLIENT_ID and JIRA_CLIENT_SECRET' });
+    return t('connectionCheckHelpJira');
   }
 
   public getLabel(): string {

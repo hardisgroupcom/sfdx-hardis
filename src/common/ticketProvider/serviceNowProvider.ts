@@ -124,7 +124,7 @@ export class ServiceNowProvider extends TicketProviderRoot {
   }
 
   public static getConnectionHelp(): string {
-    return t('connectionCheckSetVariables', { variables: 'SERVICENOW_URL, SERVICENOW_USERNAME and SERVICENOW_PASSWORD' });
+    return t('connectionCheckHelpServiceNow');
   }
 
   public getLabel(): string {

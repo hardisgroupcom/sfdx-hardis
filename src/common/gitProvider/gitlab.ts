@@ -25,7 +25,11 @@ function getOldestCommitDate(commits: any[]): string | null {
 
 export class GitlabProvider extends GitProviderRoot {
   public static readonly providerLabel = "GitLab";
-  public static readonly tokenVariableNames = ["CI_SFDX_HARDIS_GITLAB_TOKEN", "ACCESS_TOKEN"];
+  // ACCESS_TOKEN is a variable of the first CI templates: read in CI only, like PAT for GitHub. On a
+  // workstation it never selected GitLab, and many other tools set a variable with that name.
+  public static get tokenVariableNames(): string[] {
+    return process.env.CI != null ? ["CI_SFDX_HARDIS_GITLAB_TOKEN", "ACCESS_TOKEN"] : ["CI_SFDX_HARDIS_GITLAB_TOKEN"];
+  }
   private gitlabApi: InstanceType<typeof Gitlab>;
   private mergeRequestWebUrls: { [key: string]: string } = {};
   public serverUrl: string;

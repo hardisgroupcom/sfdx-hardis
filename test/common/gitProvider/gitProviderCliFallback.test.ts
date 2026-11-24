@@ -2,6 +2,9 @@
 import { expect } from 'chai';
 import { GitProvider } from '../../../src/common/gitProvider/index.js';
 import { GithubProvider } from '../../../src/common/gitProvider/github.js';
+import { GitlabProvider } from '../../../src/common/gitProvider/gitlab.js';
+import { AzureDevopsProvider } from '../../../src/common/gitProvider/azureDevops.js';
+import { AzureBoardsProvider } from '../../../src/common/ticketProvider/azureBoardsProvider.js';
 import { GitProviderConnectionCheck } from '../../../src/common/gitProvider/gitProviderRoot.js';
 import { cliTokenFound, getProviderCliFailure, getProviderTokenInfo, resetProviderCliAuthState } from '../../../src/common/utils/providerCliAuthUtils.js';
 import { clearRegisteredSecrets, redactSecrets } from '../../../src/common/utils/secretMaskingUtils.js';
@@ -204,5 +207,94 @@ describe('GitProvider CLI token fallback', () => {
     expect(status.connected).to.be.false;
     expect(status.detail).to.contain('CI_SFDX_HARDIS_GITHUB_TOKEN');
     expect(status.detail).to.contain('gh auth login --hostname github.com');
+  });
+});
+
+describe('GitProvider CLI token fallback: other providers', () => {
+  const KEYS = [
+    ...ENV_KEYS, 'ACCESS_TOKEN', 'SYSTEM_COLLECTIONURI', 'SYSTEM_TEAMPROJECT', 'SYSTEM_TEAMFOUNDATIONCOLLECTIONURI',
+    'CI_SERVER_URL', 'GITLAB_CI', 'GITHUB_ACTIONS', 'CI_PROJECT_ID',
+  ];
+  const GLAB_TOKEN = 'glab_fake_token';
+  const AZ_TOKEN = 'az.fake.token';
+  let savedEnv: Record<string, string | undefined>;
+  const original = {
+    githubRead: GithubProvider.readCliToken,
+    githubCheck: GithubProvider.prototype.checkConnection,
+    gitlabRead: GitlabProvider.readCliToken,
+    gitlabCheck: GitlabProvider.prototype.checkConnection,
+    azureRead: AzureDevopsProvider.readCliToken,
+    getOriginRemoteUrl: (GitProvider as any).getOriginRemoteUrl,
+  };
+  let azCalls: number;
+
+  beforeEach(() => {
+    savedEnv = {};
+    for (const key of KEYS) {
+      savedEnv[key] = process.env[key];
+      delete process.env[key];
+    }
+    process.env.SFDX_HARDIS_PROVIDER_CLI_AUTH = 'true';
+    azCalls = 0;
+    GithubProvider.readCliToken = async () => ({ token: null, source: GithubProvider.getCliTokenSource(), host: 'code.acme.com', reason: 'notLoggedIn' });
+    GithubProvider.prototype.checkConnection = async () => ({ connected: false, reason: 'notVisible', httpStatus: 404 });
+    GitlabProvider.readCliToken = async () => cliTokenFound(GLAB_TOKEN, GitlabProvider.getCliTokenSource(), 'code.acme.com');
+    GitlabProvider.prototype.checkConnection = async () => ({ connected: true });
+    AzureDevopsProvider.readCliToken = async () => {
+      azCalls++;
+      return cliTokenFound(AZ_TOKEN, AzureDevopsProvider.getCliTokenSource(), 'dev.azure.com');
+    };
+    GitProvider.resetInstance();
+    resetProviderCliAuthState();
+    clearRegisteredSecrets();
+  });
+
+  afterEach(() => {
+    for (const key of KEYS) {
+      if (savedEnv[key] === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = savedEnv[key];
+      }
+    }
+    GithubProvider.readCliToken = original.githubRead;
+    GithubProvider.prototype.checkConnection = original.githubCheck;
+    GitlabProvider.readCliToken = original.gitlabRead;
+    GitlabProvider.prototype.checkConnection = original.gitlabCheck;
+    AzureDevopsProvider.readCliToken = original.azureRead;
+    (GitProvider as any).getOriginRemoteUrl = original.getOriginRemoteUrl;
+    GitProvider.resetInstance();
+    resetProviderCliAuthState();
+    clearRegisteredSecrets();
+  });
+
+  it('asks glab on a self-managed host even when a GitHub token of another tool is set, and never az', async () => {
+    (GitProvider as any).getOriginRemoteUrl = async () => 'https://code.acme.com/group/project.git';
+    process.env.GITHUB_TOKEN = 'ghp_other_tool';
+    await GitProvider.applyCliTokenFallback();
+    expect(process.env.CI_SFDX_HARDIS_GITLAB_TOKEN).to.equal(GLAB_TOKEN);
+    expect(process.env.CI_SFDX_HARDIS_AZURE_TOKEN).to.be.undefined;
+    expect(azCalls).to.equal(0);
+  });
+
+  it('reads ACCESS_TOKEN as a GitLab token in CI only', () => {
+    expect(GitlabProvider.tokenVariableNames).to.deep.equal(['CI_SFDX_HARDIS_GITLAB_TOKEN']);
+    process.env.CI = 'true';
+    expect(GitlabProvider.tokenVariableNames).to.deep.equal(['CI_SFDX_HARDIS_GITLAB_TOKEN', 'ACCESS_TOKEN']);
+  });
+
+  it('keeps the az token of Azure Boards out of the token variables, so the git provider stays GitHub', async () => {
+    (GitProvider as any).getOriginRemoteUrl = async () => 'https://github.com/acme/widgets.git';
+    process.env.GITHUB_TOKEN = 'ghp_env_token';
+    process.env.GITHUB_REPOSITORY = 'acme/widgets';
+    process.env.SYSTEM_COLLECTIONURI = 'https://dev.azure.com/acme/';
+    process.env.SYSTEM_TEAMPROJECT = 'Widgets';
+    GithubProvider.prototype.checkConnection = async () => ({ connected: true });
+    await AzureBoardsProvider.autoDetectFromGitRemote();
+    await AzureBoardsProvider.autoDetectFromGitRemote();
+    expect(azCalls).to.equal(1);
+    expect(AzureBoardsProvider.isAvailable({})).to.be.true;
+    expect(process.env.CI_SFDX_HARDIS_AZURE_TOKEN).to.be.undefined;
+    expect(await GitProvider.getInstance(false)).to.be.instanceOf(GithubProvider);
   });
 });

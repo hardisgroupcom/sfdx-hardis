@@ -47,7 +47,9 @@ const hook: Hook<'init'> = async (options) => {
 // Values of the variables whose name says they hold a secret (tokens, passwords, keys, auth URLs)
 // are not printed by SFDX_HARDIS_DEBUG_ENV: the dump goes to the console and to CI logs
 export function maskSecretEnvVars(env: NodeJS.ProcessEnv): Record<string, string | undefined> {
-  const secretNameRegex = /(TOKEN|SECRET|PASSWORD|PASSWD|API_?KEY|PRIVATE_KEY|ENCRYPTION_KEY|AUTH_URL|CREDENTIALS?)$|^PAT$/i;
+  // Ends with a secret word (JIRA_PAT, AZURE_DEVOPS_EXT_PAT...), or holds a decryption key of the
+  // branch certificates (SFDX_CLIENT_KEY_<BRANCH>)
+  const secretNameRegex = /(TOKEN|SECRET|PASSWORD|PASSWD|API_?KEY|PRIVATE_KEY|ENCRYPTION_KEY|AUTH_URL|CREDENTIALS?|(^|_)PAT)$|CLIENT_KEY/i;
   const masked: Record<string, string | undefined> = {};
   for (const [name, value] of Object.entries(env)) {
     masked[name] = value && secretNameRegex.test(name) ? '***' : value;
