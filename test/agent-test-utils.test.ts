@@ -69,4 +69,88 @@ describe('parseAgentTestRunResult', () => {
     assert.equal(summary.failedCases, 1);
     assert.equal(summary.outcome, 'Failed');
   });
+
+  it('does not fail a test case on output latency, which has no result', () => {
+    const latencyCase = buildCaseWithMetric({
+      name: 'output_latency_milliseconds',
+      metricLabel: 'output_latency_milliseconds',
+      score: 3200,
+      status: 'COMPLETED',
+      errorCode: 0,
+      metricExplainability: '',
+      actualValue: '',
+      expectedValue: '',
+    });
+    const summary = parseAgentTestRunResult(buildResult([latencyCase]), 'My_Agent_Eval');
+    assert.equal(summary.outcome, 'Passed');
+    assert.equal(summary.failedCases, 0);
+    assert.equal(summary.failedAssertions, 0);
+    const latency = summary.assertions.find((a) => a.Expectation === 'output_latency_milliseconds');
+    assert.equal(latency?.Result, 'INFO');
+    assert.equal(latency?.SalesforceResult, '');
+    assert.equal(latency?.Score, 3200);
+  });
+
+  it('passes instruction adherence rated HIGH and keeps the Salesforce result and explanation', () => {
+    const highCase = buildCaseWithMetric(instructionAdherence('HIGH'));
+    const summary = parseAgentTestRunResult(buildResult([highCase]), 'My_Agent_Eval');
+    assert.equal(summary.outcome, 'Passed');
+    assert.equal(summary.passedCases, 1);
+    const adherence = summary.assertions.find((a) => a.Expectation === 'instruction_adherence');
+    assert.equal(adherence?.Result, 'PASS');
+    assert.equal(adherence?.SalesforceResult, 'HIGH');
+    assert.equal(adherence?.Status, 'COMPLETED');
+    assert.equal(adherence?.Explanation, 'This response adheres to the assigned instructions.');
+  });
+
+  it('fails a test case on instruction adherence rated LOW', () => {
+    const lowCase = buildCaseWithMetric(instructionAdherence('LOW'));
+    const summary = parseAgentTestRunResult(buildResult([lowCase]), 'My_Agent_Eval');
+    assert.equal(summary.outcome, 'Failed');
+    assert.equal(summary.failedCases, 1);
+    assert.equal(summary.failedAssertions, 1);
+    assert.equal(summary.failures[0].Expectation, 'instruction_adherence');
+    assert.equal(summary.failures[0].SalesforceResult, 'LOW');
+  });
+
+  it('reports instruction adherence rated UNCERTAIN as a warning without failing the test case', () => {
+    const uncertainCase = buildCaseWithMetric(instructionAdherence('UNCERTAIN'));
+    const summary = parseAgentTestRunResult(buildResult([uncertainCase]), 'My_Agent_Eval');
+    assert.equal(summary.outcome, 'Passed');
+    assert.equal(summary.failedAssertions, 0);
+    const adherence = summary.assertions.find((a) => a.Expectation === 'instruction_adherence');
+    assert.equal(adherence?.Result, 'WARNING');
+  });
+
+  it('fails a test case when the evaluation of an assertion ended in error', () => {
+    const errorCase = buildCaseWithMetric({
+      name: 'completeness',
+      metricLabel: 'completeness',
+      status: 'ERROR',
+      errorCode: 500,
+      errorMessage: 'Evaluation timed out',
+    });
+    const summary = parseAgentTestRunResult(buildResult([errorCase]), 'My_Agent_Eval');
+    assert.equal(summary.outcome, 'Failed');
+    assert.equal(summary.failures[0].Expectation, 'completeness');
+    assert.equal(summary.failures[0].ErrorMessage, 'Evaluation timed out');
+  });
 });
+
+// Passing test case with one extra metric assertion, as returned by `sf agent test run --json`
+function buildCaseWithMetric(metric: any) {
+  return { ...passingCase, testResults: [...passingCase.testResults, metric] };
+}
+
+function instructionAdherence(result: string) {
+  return {
+    name: 'instruction_adherence',
+    metricLabel: 'instruction_adherence',
+    result,
+    status: 'COMPLETED',
+    errorCode: 0,
+    metricExplainability: 'This response adheres to the assigned instructions.',
+    actualValue: '',
+    expectedValue: '',
+  };
+}

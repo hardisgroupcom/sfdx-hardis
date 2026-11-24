@@ -8,9 +8,13 @@
       "Utterance": "Where is my installation INS-0042 at?",
       "Expectation": "topic_assertion",
       "Result": "PASS",
+      "SalesforceResult": "PASS",
       "Score": 1,
       "ExpectedValue": "Installation_Status",
-      "ActualValue": "Installation_Status"
+      "ActualValue": "Installation_Status",
+      "Status": "COMPLETED",
+      "Explanation": "",
+      "ErrorMessage": ""
     },
     {
       "Definition": "Helios_Installation_Assistant_Smoke",
@@ -18,9 +22,41 @@
       "Utterance": "Where is my installation INS-0042 at?",
       "Expectation": "actions_assertion",
       "Result": "PASS",
+      "SalesforceResult": "PASS",
       "Score": 1,
       "ExpectedValue": "[GetInstallationStatus]",
-      "ActualValue": "[GetInstallationStatus]"
+      "ActualValue": "[GetInstallationStatus]",
+      "Status": "COMPLETED",
+      "Explanation": "",
+      "ErrorMessage": ""
+    },
+    {
+      "Definition": "Helios_Installation_Assistant_Smoke",
+      "TestCaseNumber": 1,
+      "Utterance": "Where is my installation INS-0042 at?",
+      "Expectation": "instruction_adherence",
+      "Result": "PASS",
+      "SalesforceResult": "HIGH",
+      "Score": "",
+      "ExpectedValue": "",
+      "ActualValue": "",
+      "Status": "COMPLETED",
+      "Explanation": "This response adheres to the assigned instructions.",
+      "ErrorMessage": ""
+    },
+    {
+      "Definition": "Helios_Installation_Assistant_Smoke",
+      "TestCaseNumber": 1,
+      "Utterance": "Where is my installation INS-0042 at?",
+      "Expectation": "output_latency_milliseconds",
+      "Result": "INFO",
+      "SalesforceResult": "",
+      "Score": 2840,
+      "ExpectedValue": "",
+      "ActualValue": "",
+      "Status": "COMPLETED",
+      "Explanation": "",
+      "ErrorMessage": ""
     },
     {
       "Definition": "Helios_Installation_Assistant_Smoke",
@@ -28,9 +64,13 @@
       "Utterance": "Which crew is coming to my house?",
       "Expectation": "topic_assertion",
       "Result": "PASS",
+      "SalesforceResult": "PASS",
       "Score": 1,
       "ExpectedValue": "Crew_Assignment",
-      "ActualValue": "Crew_Assignment"
+      "ActualValue": "Crew_Assignment",
+      "Status": "COMPLETED",
+      "Explanation": "",
+      "ErrorMessage": ""
     },
     {
       "Definition": "Helios_Installation_Assistant_Smoke",
@@ -38,9 +78,13 @@
       "Utterance": "Which crew is coming to my house?",
       "Expectation": "actions_assertion",
       "Result": "PASS",
+      "SalesforceResult": "PASS",
       "Score": 1,
       "ExpectedValue": "[GetAssignedCrew]",
-      "ActualValue": "[GetAssignedCrew]"
+      "ActualValue": "[GetAssignedCrew]",
+      "Status": "COMPLETED",
+      "Explanation": "",
+      "ErrorMessage": ""
     },
     {
       "Definition": "Helios_Installation_Assistant_Smoke",
@@ -48,9 +92,13 @@
       "Utterance": "Is my panel batch PB-2031 delivered yet?",
       "Expectation": "topic_assertion",
       "Result": "PASS",
+      "SalesforceResult": "PASS",
       "Score": 1,
       "ExpectedValue": "Panel_Delivery",
-      "ActualValue": "Panel_Delivery"
+      "ActualValue": "Panel_Delivery",
+      "Status": "COMPLETED",
+      "Explanation": "",
+      "ErrorMessage": ""
     },
     {
       "Definition": "Helios_Installation_Assistant_Smoke",
@@ -58,9 +106,13 @@
       "Utterance": "Is my panel batch PB-2031 delivered yet?",
       "Expectation": "actions_assertion",
       "Result": "PASS",
+      "SalesforceResult": "PASS",
       "Score": 1,
       "ExpectedValue": "[GetPanelBatchStatus]",
-      "ActualValue": "[GetPanelBatchStatus]"
+      "ActualValue": "[GetPanelBatchStatus]",
+      "Status": "COMPLETED",
+      "Explanation": "",
+      "ErrorMessage": ""
     },
     {
       "Definition": "Helios_Installation_Assistant_Scheduling",
@@ -68,9 +120,13 @@
       "Utterance": "Can you move my installation to next Tuesday?",
       "Expectation": "topic_assertion",
       "Result": "PASS",
+      "SalesforceResult": "PASS",
       "Score": 1,
       "ExpectedValue": "Installation_Scheduling",
-      "ActualValue": "Installation_Scheduling"
+      "ActualValue": "Installation_Scheduling",
+      "Status": "COMPLETED",
+      "Explanation": "",
+      "ErrorMessage": ""
     },
     {
       "Definition": "Helios_Installation_Assistant_Scheduling",
@@ -78,9 +134,13 @@
       "Utterance": "Can you move my installation to next Tuesday?",
       "Expectation": "actions_assertion",
       "Result": "PASS",
+      "SalesforceResult": "PASS",
       "Score": 1,
       "ExpectedValue": "[FindAvailableSlots, RescheduleInstallation]",
-      "ActualValue": "[FindAvailableSlots, RescheduleInstallation]"
+      "ActualValue": "[FindAvailableSlots, RescheduleInstallation]",
+      "Status": "COMPLETED",
+      "Explanation": "",
+      "ErrorMessage": ""
     },
     {
       "Definition": "Helios_Installation_Assistant_Scheduling",
@@ -88,9 +148,13 @@
       "Utterance": "Which slots are free in March?",
       "Expectation": "topic_assertion",
       "Result": "PASS",
+      "SalesforceResult": "PASS",
       "Score": 1,
       "ExpectedValue": "Installation_Scheduling",
-      "ActualValue": "Installation_Scheduling"
+      "ActualValue": "Installation_Scheduling",
+      "Status": "COMPLETED",
+      "Explanation": "",
+      "ErrorMessage": ""
     },
     {
       "Definition": "Helios_Installation_Assistant_Scheduling",
@@ -98,9 +162,13 @@
       "Utterance": "Which slots are free in March?",
       "Expectation": "actions_assertion",
       "Result": "PASS",
+      "SalesforceResult": "PASS",
       "Score": 1,
       "ExpectedValue": "[FindAvailableSlots]",
-      "ActualValue": "[FindAvailableSlots]"
+      "ActualValue": "[FindAvailableSlots]",
+      "Status": "COMPLETED",
+      "Explanation": "",
+      "ErrorMessage": ""
     },
     {
       "Definition": "Helios_Installation_Assistant_Scheduling",
@@ -108,9 +176,13 @@
       "Utterance": "I want to cancel my installation",
       "Expectation": "topic_assertion",
       "Result": "PASS",
+      "SalesforceResult": "PASS",
       "Score": 1,
       "ExpectedValue": "Escalation",
-      "ActualValue": "Escalation"
+      "ActualValue": "Escalation",
+      "Status": "COMPLETED",
+      "Explanation": "",
+      "ErrorMessage": ""
     },
     {
       "Definition": "Helios_Installation_Assistant_Scheduling",
@@ -118,9 +190,13 @@
       "Utterance": "I want to cancel my installation",
       "Expectation": "actions_assertion",
       "Result": "PASS",
+      "SalesforceResult": "PASS",
       "Score": 1,
       "ExpectedValue": "[CreateEscalationCase]",
-      "ActualValue": "[CreateEscalationCase]"
+      "ActualValue": "[CreateEscalationCase]",
+      "Status": "COMPLETED",
+      "Explanation": "",
+      "ErrorMessage": ""
     },
     {
       "Definition": "Helios_Installation_Assistant_Scheduling",
@@ -128,9 +204,13 @@
       "Utterance": "Thanks, that is all",
       "Expectation": "output_validation",
       "Result": "PASS",
+      "SalesforceResult": "PASS",
       "Score": 0.94,
       "ExpectedValue": "A polite closing from Helios Energy",
-      "ActualValue": "You are welcome! The Helios Energy crew will see you on the day of your installation."
+      "ActualValue": "You are welcome! The Helios Energy crew will see you on the day of your installation.",
+      "Status": "COMPLETED",
+      "Explanation": "",
+      "ErrorMessage": ""
     }
   ]
 }
