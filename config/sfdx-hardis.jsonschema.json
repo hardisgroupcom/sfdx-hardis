@@ -267,17 +267,24 @@
         10
       ]
     },
+    "useAiLlm": {
+      "$id": "#/properties/useAiLlm",
+      "description": "Set to true to call an LLM API (OpenAI, Anthropic, Google Gemini or Ollama) for AI features. Enabled by default when aiLlmProvider and aiLlmModel are set. Equivalent to USE_AI_LLM env var.",
+      "title": "Enable LLM API",
+      "type": "boolean"
+    },
     "useLangchainLlm": {
       "$id": "#/properties/useLangchainLlm",
-      "description": "Set to true to enable LangChain integration (mirrors the USE_LANGCHAIN_LLM environment variable).",
+      "description": "Deprecated: use useAiLlm instead. Set to true to enable LangChain integration (mirrors the USE_LANGCHAIN_LLM environment variable).",
       "title": "Enable LangChain",
       "type": "boolean",
-      "default": false
+      "default": false,
+      "deprecated": true
     },
-    "langchainLlmProvider": {
-      "$id": "#/properties/langchainLlmProvider",
-      "description": "LLM provider identifier used with LangChain (ex: openai, anthropic, google-genai, ollama). Equivalent to LANGCHAIN_LLM_PROVIDER env var.",
-      "title": "LangChain provider",
+    "aiLlmProvider": {
+      "$id": "#/properties/aiLlmProvider",
+      "description": "LLM API to call: openai, anthropic, google-genai or ollama. Equivalent to AI_LLM_PROVIDER env var. The API key goes in the secured env var AI_LLM_API_KEY.",
+      "title": "LLM API provider",
       "type": "string",
       "enum": [
         "openai",
@@ -292,41 +299,102 @@
         "Ollama"
       ]
     },
+    "langchainLlmProvider": {
+      "$id": "#/properties/langchainLlmProvider",
+      "description": "Deprecated: use aiLlmProvider instead. LLM provider identifier used with LangChain (ex: openai, anthropic, google-genai, ollama). Equivalent to LANGCHAIN_LLM_PROVIDER env var.",
+      "title": "LangChain provider",
+      "type": "string",
+      "enum": [
+        "openai",
+        "anthropic",
+        "google-genai",
+        "ollama"
+      ],
+      "enumNames": [
+        "OpenAI",
+        "Anthropic Claude",
+        "Google Gemini (GenAI)",
+        "Ollama"
+      ],
+      "deprecated": true
+    },
+    "aiLlmModel": {
+      "$id": "#/properties/aiLlmModel",
+      "description": "Model identifier to use with the configured LLM API provider. Latest models: OpenAI (gpt-5.2, gpt-5.2-mini, gpt-5, gpt-4.1, gpt-4o, gpt-4o-mini...), Anthropic (claude-opus-4-6, claude-3-5-sonnet, claude-3-5-haiku, claude-3-haiku...), Google Gemini (gemini-3-pro, gemini-3-pro-deep-think, gemini-3-flash, gemini-2.5-flash-lite...). Equivalent to AI_LLM_MODEL env var.",
+      "title": "LLM API model",
+      "type": "string"
+    },
     "langchainLlmModel": {
       "$id": "#/properties/langchainLlmModel",
-      "description": "Model identifier to use with the configured LangChain provider. Latest models: OpenAI (gpt-5.2, gpt-5.2-mini, gpt-5, gpt-4.1, gpt-4o, gpt-4o-mini...), Anthropic (claude-opus-4-6, claude-3-5-sonnet, claude-3-5-haiku, claude-3-haiku...), Google Gemini (gemini-3-pro, gemini-3-pro-deep-think, gemini-3-flash, gemini-2.5-flash-lite...). Equivalent to LANGCHAIN_LLM_MODEL env var.",
+      "description": "Deprecated: use aiLlmModel instead. Model identifier to use with the configured LangChain provider. Latest models: OpenAI (gpt-5.2, gpt-5.2-mini, gpt-5, gpt-4.1, gpt-4o, gpt-4o-mini...), Anthropic (claude-opus-4-6, claude-3-5-sonnet, claude-3-5-haiku, claude-3-haiku...), Google Gemini (gemini-3-pro, gemini-3-pro-deep-think, gemini-3-flash, gemini-2.5-flash-lite...). Equivalent to LANGCHAIN_LLM_MODEL env var.",
       "title": "LangChain model",
-      "type": "string"
+      "type": "string",
+      "deprecated": true
+    },
+    "aiLlmTemperature": {
+      "$id": "#/properties/aiLlmTemperature",
+      "description": "Sampling temperature sent to the LLM API. Equivalent to AI_LLM_TEMPERATURE env var.",
+      "title": "LLM API temperature",
+      "type": "number"
     },
     "langchainLlmTemperature": {
       "$id": "#/properties/langchainLlmTemperature",
-      "description": "Sampling temperature override for LangChain requests (maps to LANGCHAIN_LLM_TEMPERATURE env var).",
+      "description": "Deprecated: use aiLlmTemperature instead. Sampling temperature override for LangChain requests (maps to LANGCHAIN_LLM_TEMPERATURE env var).",
       "title": "LangChain temperature",
+      "type": "number",
+      "deprecated": true
+    },
+    "aiLlmMaxTokens": {
+      "$id": "#/properties/aiLlmMaxTokens",
+      "description": "Maximum number of tokens generated per LLM API answer. Equivalent to AI_LLM_MAX_TOKENS env var.",
+      "title": "LLM API max tokens",
       "type": "number"
     },
     "langchainLlmMaxTokens": {
       "$id": "#/properties/langchainLlmMaxTokens",
-      "description": "Maximum number of tokens generated per LangChain response (maps to LANGCHAIN_LLM_MAX_TOKENS env var).",
+      "description": "Deprecated: use aiLlmMaxTokens instead. Maximum number of tokens generated per LangChain response (maps to LANGCHAIN_LLM_MAX_TOKENS env var).",
       "title": "LangChain max tokens",
+      "type": "number",
+      "deprecated": true
+    },
+    "aiLlmMaxRetries": {
+      "$id": "#/properties/aiLlmMaxRetries",
+      "description": "Number of retries after a rate limit or a temporary error of the LLM API (default 6). Equivalent to AI_LLM_MAX_RETRIES env var.",
+      "title": "LLM API max retries",
       "type": "number"
     },
     "langchainLlmMaxRetries": {
       "$id": "#/properties/langchainLlmMaxRetries",
-      "description": "Maximum number of retries for failed LangChain requests (maps to LANGCHAIN_LLM_MAX_RETRIES env var).",
+      "description": "Deprecated: use aiLlmMaxRetries instead. Maximum number of retries for failed LangChain requests (maps to LANGCHAIN_LLM_MAX_RETRIES env var).",
       "title": "LangChain max retries",
+      "type": "number",
+      "deprecated": true
+    },
+    "aiLlmTimeout": {
+      "$id": "#/properties/aiLlmTimeout",
+      "description": "Timeout of one LLM API call, in milliseconds (default 600000). Equivalent to AI_LLM_TIMEOUT env var.",
+      "title": "LLM API timeout",
       "type": "number"
     },
     "langchainLlmTimeout": {
       "$id": "#/properties/langchainLlmTimeout",
-      "description": "Timeout in milliseconds applied to LangChain calls (maps to LANGCHAIN_LLM_TIMEOUT env var).",
+      "description": "Deprecated: use aiLlmTimeout instead. Timeout in milliseconds applied to LangChain calls (maps to LANGCHAIN_LLM_TIMEOUT env var).",
       "title": "LangChain timeout",
-      "type": "number"
+      "type": "number",
+      "deprecated": true
+    },
+    "aiLlmBaseUrl": {
+      "$id": "#/properties/aiLlmBaseUrl",
+      "description": "Custom base URL of the LLM API: a gateway, a proxy or a remote Ollama endpoint. Equivalent to AI_LLM_BASE_URL env var.",
+      "title": "LLM API base URL",
+      "type": "string"
     },
     "langchainLlmBaseUrl": {
       "$id": "#/properties/langchainLlmBaseUrl",
-      "description": "Custom base URL for LangChain HTTP-based providers (for example a local Ollama endpoint). Equivalent to LANGCHAIN_LLM_BASE_URL env var.",
+      "description": "Deprecated: use aiLlmBaseUrl instead. Custom base URL for LangChain HTTP-based providers (for example a local Ollama endpoint). Equivalent to LANGCHAIN_LLM_BASE_URL env var.",
       "title": "LangChain base URL",
-      "type": "string"
+      "type": "string",
+      "deprecated": true
     },
     "useCodexDirect": {
       "$id": "#/properties/useCodexDirect",
@@ -712,11 +780,11 @@
     },
     "apexTestsMinCoverageOrgWide": {
       "$id": "#/properties/apexTestsMinCoverageOrgWide",
-      "default": 75.0,
+      "default": 75,
       "description": "Minimum percentage of apex code coverage accepted.\n75.0% by default, but if you are on a clean project, it's better to define 80.0, 95.0 or 90.0 😎",
       "examples": [
-        80.0,
-        95.0
+        80,
+        95
       ],
       "title": "Minimum Apex Tests coverage % accepted for a deployment",
       "type": "number"
@@ -4279,7 +4347,9 @@
       "$id": "#/properties/scratchOrgShape",
       "description": "Org id of the org whose org shape creates the scratch orgs (sourceOrg of the scratch org definition). Set it in the config of a major branch (developmentBranch or one of availableTargetBranches): a scratch org uses the shape of the branch its User Story started from, else the one of the project config, and none means no org shape for that branch. The definition then needs no edition. The SCRATCH_ORG_SHAPE environment variable wins over it.",
       "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-org-initialization/",
-      "examples": ["00D0000000ShapeOrg"],
+      "examples": [
+        "00D0000000ShapeOrg"
+      ],
       "title": "Scratch org shape",
       "type": "string"
     },

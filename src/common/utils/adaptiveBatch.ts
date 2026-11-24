@@ -86,7 +86,8 @@ export function isThrottlingError(error: unknown): boolean {
   }
   const status = httpStatusOf(error);
   const message = String((error as any)?.message || (error as any)?.cause?.message || (error as any)?.cause?.description || '');
-  if (status === 429 || status === 502 || status === 503 || status === 504) {
+  // 529: overloaded (Anthropic)
+  if (status === 429 || status === 502 || status === 503 || status === 504 || status === 529) {
     return true;
   }
   if (status === 403) {

@@ -29,7 +29,7 @@ Deployment hints are available in:
 To enrich hints with AI-generated guidance, configure one of the supported providers in [sfdx-hardis AI setup](salesforce-ai-setup.md):
 
 - Agentforce
-- LangChain providers (OpenAI, Anthropic, Google Gemini, Ollama)
+- LLM APIs (OpenAI, Anthropic, Google Gemini, Ollama)
 - OpenAI direct
 - Codex direct
 

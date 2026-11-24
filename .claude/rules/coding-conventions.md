@@ -55,7 +55,7 @@
 ## Dependencies
 
 - Salesforce: `@salesforce/*` namespace.
-- AI features: `@langchain/*` packages.
+- AI features: in-house HTTP clients in `src/common/aiProvider/llmApi/` (one per LLM API, over `httpUtils.ts`), no LLM SDK.
 - Use `columnify` for table formatting where `uxLogTable` isn't appropriate.
 - Package manager: **Yarn only** (not npm).
 

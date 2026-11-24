@@ -71,28 +71,27 @@ genericAgentforcePromptUrl: /services/data/v{{API_VERSION}}/einstein/prompt-temp
 
 API keys or technical org auth URLs still have to be provided via secure environment variables; the config file only holds non-sensitive defaults.
 
-### With LangChain
+### With an LLM API (OpenAI, Anthropic, Google Gemini, Ollama)
 
-[LangChain.js](https://js.langchain.com/docs/integrations/chat/) provides a unified interface to work with multiple LLM providers. This makes it easier to add support for more providers in the future.
+sfdx-hardis calls the API of the provider you choose directly, over HTTPS (proxies defined with `HTTPS_PROXY` / `NO_PROXY` are used):
 
-Currently supported LangChain.js providers:
-
-- Ollama
-- OpenAI
+- OpenAI, and any gateway speaking the OpenAI API (`/chat/completions`)
 - Anthropic
-- Google GenAI
+- Google Gemini
+- Ollama
 
-| Variable                      | Description                                                                                                            | Default                          |
-|-------------------------------|------------------------------------------------------------------------------------------------------------------------|----------------------------------|
-| USE_LANGCHAIN_LLM             | Set to true to use LangChain integration                                                                               | `false`                          |
-| LANGCHAIN_LLM_PROVIDER        | The LLM provider to use (currently supports `ollama`, `openai`, `anthropic` and `google-genai`)                        |                                  |
-| LANGCHAIN_LLM_MODEL           | The model to use with the selected provider (e.g. `gpt-4o`, `qwen2.5-coder:14b`)                                       |                                  |
-| LANGCHAIN_LLM_MODEL_API_KEY   | API key for the selected provider (required for OpenAI, Anthropic, and Gemini unless using gateway headers for OpenAI) |                                  |
-| LANGCHAIN_LLM_TEMPERATURE     | Controls randomness (0-1)                                                                                              |                                  |
-| LANGCHAIN_LLM_MAX_TOKENS      | Maximum number of tokens to generate                                                                                   |                                  |
-| LANGCHAIN_LLM_MAX_RETRIES     | Number of retries for failed requests                                                                                  |                                  |
-| LANGCHAIN_LLM_BASE_URL        | Base URL for the API (for Ollama or corporate OpenAI gateways)                                                         | Ollama: `http://localhost:11434` |
-| LANGCHAIN_LLM_DEFAULT_HEADERS | JSON object of default HTTP headers sent with every request (for gateway/proxy authentication)                         |                                  |
+| Variable               | Description                                                                                                         | Default                          |
+|------------------------|---------------------------------------------------------------------------------------------------------------------|----------------------------------|
+| USE_AI_LLM             | Set to true to call the LLM API (enabled by default when `AI_LLM_PROVIDER` and `AI_LLM_MODEL` are set)              |                                  |
+| AI_LLM_PROVIDER        | The LLM API to call: `ollama`, `openai`, `anthropic` or `google-genai`                                              |                                  |
+| AI_LLM_MODEL           | The model to use with the selected provider (e.g. `gpt-4o`, `claude-sonnet-4-5`, `qwen2.5-coder:14b`)               |                                  |
+| AI_LLM_API_KEY         | API key of the selected provider (required for OpenAI, Anthropic and Gemini, unless gateway headers are used)       |                                  |
+| AI_LLM_TEMPERATURE     | Controls randomness (0-1)                                                                                           |                                  |
+| AI_LLM_MAX_TOKENS      | Maximum number of tokens to generate                                                                                | Anthropic: `16384`               |
+| AI_LLM_MAX_RETRIES     | Number of retries after a rate limit or a temporary error                                                           | `6`                              |
+| AI_LLM_TIMEOUT         | Timeout of one call, in milliseconds                                                                                | `600000`                         |
+| AI_LLM_BASE_URL        | Base URL of the API (Ollama, corporate gateways)                                                                    | Ollama: `http://localhost:11434` |
+| AI_LLM_DEFAULT_HEADERS | JSON object of default HTTP headers sent with every request (for gateway/proxy authentication)                      |                                  |
 
 #### Example configurations
 
@@ -103,74 +102,85 @@ For Ollama:
 - After installation, pull your preferred model (e.g. `ollama pull qwen2.5-coder:14b`) and start the Ollama service with `ollama serve`
 
 ```sh
-USE_LANGCHAIN_LLM=true
-LANGCHAIN_LLM_PROVIDER=ollama
-LANGCHAIN_LLM_MODEL=qwen2.5-coder:14b
-LANGCHAIN_LLM_TEMPERATURE=1
-LANGCHAIN_LLM_BASE_URL=http://localhost:11434
+AI_LLM_PROVIDER=ollama
+AI_LLM_MODEL=qwen2.5-coder:14b
+AI_LLM_TEMPERATURE=1
+AI_LLM_BASE_URL=http://localhost:11434
 ```
 
 For OpenAI:
 
 ```sh
-USE_LANGCHAIN_LLM=true
-LANGCHAIN_LLM_PROVIDER=openai
-LANGCHAIN_LLM_MODEL=gpt-4o-mini
-LANGCHAIN_LLM_MODEL_API_KEY=your-api-key
-LANGCHAIN_LLM_TEMPERATURE=0.7
-LANGCHAIN_LLM_MAX_TOKENS=2000
+AI_LLM_PROVIDER=openai
+AI_LLM_MODEL=gpt-4o-mini
+AI_LLM_API_KEY=your-api-key
+AI_LLM_TEMPERATURE=0.7
+AI_LLM_MAX_TOKENS=2000
 ```
 
 For OpenAI via a corporate gateway (no API key needed):
 
 ```sh
-USE_LANGCHAIN_LLM=true
-LANGCHAIN_LLM_PROVIDER=openai
-LANGCHAIN_LLM_MODEL=gpt-4o
-LANGCHAIN_LLM_BASE_URL=https://your-company-gateway.example.com/v1
-LANGCHAIN_LLM_DEFAULT_HEADERS='{"X-Company-Auth": "your-token-here"}'
+AI_LLM_PROVIDER=openai
+AI_LLM_MODEL=gpt-4o
+AI_LLM_BASE_URL=https://your-company-gateway.example.com/v1
+AI_LLM_DEFAULT_HEADERS='{"X-Company-Auth": "your-token-here"}'
 ```
 
-When `LANGCHAIN_LLM_DEFAULT_HEADERS` is set together with `LANGCHAIN_LLM_BASE_URL`, the OpenAI provider skips the API key requirement and authenticates via the supplied headers instead.
+When `AI_LLM_DEFAULT_HEADERS` is set together with `AI_LLM_BASE_URL`, the OpenAI provider skips the API key requirement and authenticates via the supplied headers instead.
 
 For Anthropic:
 
 ```sh
-USE_LANGCHAIN_LLM=true
-LANGCHAIN_LLM_PROVIDER=anthropic
-LANGCHAIN_LLM_MODEL=claude-3.5-sonnet
-LANGCHAIN_LLM_MODEL_API_KEY=your-api-key
-LANGCHAIN_LLM_TEMPERATURE=0.7
-LANGCHAIN_LLM_MAX_TOKENS=2000
+AI_LLM_PROVIDER=anthropic
+AI_LLM_MODEL=claude-sonnet-4-5
+AI_LLM_API_KEY=your-api-key
+AI_LLM_TEMPERATURE=0.7
+AI_LLM_MAX_TOKENS=2000
 ```
 
-For Google Gen AI:
+For Google Gemini:
 
 ```sh
-USE_LANGCHAIN_LLM=true
-LANGCHAIN_LLM_PROVIDER=google-genai
-LANGCHAIN_LLM_MODEL=gemini-1.5-pro
-LANGCHAIN_LLM_MODEL_API_KEY=your-api-key
+AI_LLM_PROVIDER=google-genai
+AI_LLM_MODEL=gemini-2.5-flash
+AI_LLM_API_KEY=your-api-key
 ```
 
 #### Configure via .sfdx-hardis.yml
 
-You can store non-secret defaults for LangChain inside your project configuration so every contributor shares the same provider/model while API keys remain in CI/CD secrets:
+You can store non-secret defaults inside your project configuration so every contributor shares the same provider and model, while API keys remain in CI/CD secrets:
 
 ```yaml
 # .sfdx-hardis.yml
-useLangchainLlm: true
-langchainLlmProvider: google-genai
-langchainLlmModel: gemini-3-flash
-langchainLlmTemperature: 0.1
-langchainLlmMaxTokens: 1000
+aiLlmProvider: google-genai
+aiLlmModel: gemini-2.5-flash
+aiLlmTemperature: 0.1
+aiLlmMaxTokens: 1000
 ```
 
-Only values that are safe to commit (model, provider, tuning) are loaded from the config file. Secrets such as `LANGCHAIN_LLM_MODEL_API_KEY` must always be provided through secure environment variables or your CI secret manager.
+Only values that are safe to commit (model, provider, tuning) are loaded from the config file. Secrets such as `AI_LLM_API_KEY` must always be provided through secure environment variables or your CI secret manager.
 
-### With OpenAI Directly
+#### Renamed settings
 
-You need to define the environment variable OPENAI_API_KEY (or use gateway authentication) and make it available to your CI/CD workflow.
+These settings used to be named after LangChain, the library sfdx-hardis used to call LLM APIs. The former names still work, and sfdx-hardis logs a warning naming the new one. When both are set, the new name wins.
+
+| Former name                                             | New name                                  |
+|---------------------------------------------------------|-------------------------------------------|
+| `USE_LANGCHAIN_LLM` / `useLangchainLlm`                 | `USE_AI_LLM` / `useAiLlm`                 |
+| `LANGCHAIN_LLM_PROVIDER` / `langchainLlmProvider`       | `AI_LLM_PROVIDER` / `aiLlmProvider`       |
+| `LANGCHAIN_LLM_MODEL` / `langchainLlmModel`             | `AI_LLM_MODEL` / `aiLlmModel`             |
+| `LANGCHAIN_LLM_MODEL_API_KEY`                           | `AI_LLM_API_KEY`                          |
+| `LANGCHAIN_LLM_TEMPERATURE` / `langchainLlmTemperature` | `AI_LLM_TEMPERATURE` / `aiLlmTemperature` |
+| `LANGCHAIN_LLM_MAX_TOKENS` / `langchainLlmMaxTokens`    | `AI_LLM_MAX_TOKENS` / `aiLlmMaxTokens`    |
+| `LANGCHAIN_LLM_MAX_RETRIES` / `langchainLlmMaxRetries`  | `AI_LLM_MAX_RETRIES` / `aiLlmMaxRetries`  |
+| `LANGCHAIN_LLM_TIMEOUT` / `langchainLlmTimeout`         | `AI_LLM_TIMEOUT` / `aiLlmTimeout`         |
+| `LANGCHAIN_LLM_BASE_URL` / `langchainLlmBaseUrl`        | `AI_LLM_BASE_URL` / `aiLlmBaseUrl`        |
+| `LANGCHAIN_LLM_DEFAULT_HEADERS`                         | `AI_LLM_DEFAULT_HEADERS`                  |
+
+### With an OpenAI API key only
+
+Defining only `OPENAI_API_KEY` (or a gateway with `OPENAI_BASE_URL` and `OPENAI_DEFAULT_HEADERS`) is a shortcut for the OpenAI provider above: sfdx-hardis calls the OpenAI Responses API with the model `OPENAI_MODEL`. Make the variable available to your CI/CD workflow.
 
 To get an OpenAI API key, register on the [OpenAI Platform](https://platform.openai.com/).
 
@@ -183,7 +193,7 @@ To get an OpenAI API key, register on the [OpenAI Platform](https://platform.ope
 | OPENAI_BASE_URL         | Base URL for OpenAI API (for corporate gateways/proxies)                                  |               |
 | OPENAI_DEFAULT_HEADERS  | JSON object of default HTTP headers for gateway/proxy authentication                      |               |
 
-#### OpenAI via corporate gateway (no API key needed)
+#### OpenAI shortcut via corporate gateway (no API key needed)
 
 ```sh
 USE_OPENAI_DIRECT=true
@@ -192,9 +202,9 @@ OPENAI_BASE_URL=https://your-company-gateway.example.com/v1
 OPENAI_DEFAULT_HEADERS='{"X-Company-Auth": "your-token-here"}'
 ```
 
-When `OPENAI_DEFAULT_HEADERS` is set together with `OPENAI_BASE_URL`, the OpenAI provider skips the API key requirement and authenticates via the supplied headers instead.
+When `OPENAI_DEFAULT_HEADERS` is set together with `OPENAI_BASE_URL`, the OpenAI shortcut skips the API key requirement and authenticates via the supplied headers instead.
 
-#### Configure OpenAI via .sfdx-hardis.yml
+#### Configure the OpenAI shortcut via .sfdx-hardis.yml
 
 ```yaml
 useOpenaiDirect: true
@@ -252,9 +262,9 @@ Store only model preferences in the config file; keep `CODEX_API_KEY` in a secur
 
 ## Coding Agent Auto-Fix (Beta)
 
-If you have configured one of the AI providers above (LangChain, OpenAI, Codex), sfdx-hardis can also use the matching **coding agent CLI** to automatically fix deployment errors.
+If you have configured one of the AI providers above (LLM API, OpenAI, Codex), sfdx-hardis can also use the matching **coding agent CLI** to automatically fix deployment errors.
 
-The API key configured for your AI provider (e.g. `LANGCHAIN_LLM_MODEL_API_KEY`) is automatically reused by the coding agent CLI, so no extra key configuration is needed.
+The API key configured for your AI provider (e.g. `AI_LLM_API_KEY`) is automatically reused by the coding agent CLI, so no extra key configuration is needed.
 
 **Local mode:** When running outside CI/CD (on your local machine), sfdx-hardis automatically detects installed coding agent CLIs and uses them **without any API key environment variables**. Agents authenticate via their own login mechanisms (`claude login`, `gh auth login`, etc.).
 

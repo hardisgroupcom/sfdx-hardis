@@ -4,8 +4,8 @@ import fs from '../utils/fsUtils.js';
 import { execCommand, isCI, uxLog } from "../utils/index.js";
 import { getConfig, getEnvVar, getReportDirectory } from "../../config/index.js";
 import { t } from "../utils/i18n.js";
-import { LangChainProviderFactory } from "./langChainProviders/langChainProviderFactory.js";
-import { CodingAgentInfo, CodingAgentOptions } from "./langChainProviders/langChainBaseProvider.js";
+import { CodingAgentInfo, CodingAgentOptions, getCodingAgentInfo } from "./llmApi/codingAgentInfo.js";
+import { readLlmApiKeySetting, readLlmProviderSetting } from "./llmApi/llmApiConfig.js";
 
 export type CodingAgentType = "claude" | "codex-cli" | "gemini-cli" | "copilot-cli";
 
@@ -20,11 +20,11 @@ export interface CodingAgentConfig {
   agent: CodingAgentType;
   command: string;
   available: boolean;
-  /** Provider-specific coding agent info (from LangChain sub-provider), if available */
+  /** Provider-specific coding agent info (from the LLM provider), if available */
   codingAgentInfo?: CodingAgentInfo | null;
 }
 
-/** Fallback coding agent info for copilot-cli (no LangChain provider) */
+/** Fallback coding agent info for copilot-cli (no LLM provider) */
 const COPILOT_CLI_AGENT_INFO: CodingAgentInfo = {
   agentType: "copilot-cli",
   command: "copilot",
@@ -46,14 +46,14 @@ const COPILOT_CLI_AGENT_INFO: CodingAgentInfo = {
  * Manages coding agents (Claude, Codex CLI, Gemini CLI, GitHub Copilot CLI)
  * that can run arbitrary prompts via CLI.
  *
- * Agent-specific logic (CLI commands, API key setup) is defined in each
- * LangChain sub-provider class via CodingAgentInfo. This class orchestrates
+ * Agent-specific logic (CLI commands, API key setup) is defined for each
+ * LLM provider in llmApi/codingAgentInfo.ts. This class orchestrates
  * agent detection, execution, and cleanup.
  *
  * Configuration is read from:
  * 1. Environment variables (SFDX_HARDIS_CODING_AGENT, SFDX_HARDIS_CODING_AGENT_AUTO_FIX)
  * 2. .sfdx-hardis.yml branch config (codingAgent, codingAgentAutoFix)
- * 3. Active AI provider detection (LangChain provider type → matching agent)
+ * 3. Active AI provider detection (AI_LLM_PROVIDER → matching agent)
  */
 export class CodingAgentProvider {
 
@@ -68,7 +68,7 @@ export class CodingAgentProvider {
    */
   static async getConfiguredAgent(): Promise<CodingAgentConfig | null> {
     const branchConfig = await getConfig("branch");
-    const langchainApiKey = getEnvVar("LANGCHAIN_LLM_MODEL_API_KEY");
+    const llmApiKey = readLlmApiKeySetting();
 
     const preferredAgent = (getEnvVar("SFDX_HARDIS_CODING_AGENT") || branchConfig?.codingAgent || null) as CodingAgentType | null;
     if (!preferredAgent) {
@@ -77,9 +77,9 @@ export class CodingAgentProvider {
 
     const config = await this.buildAgentConfig(preferredAgent, branchConfig);
     if (config?.available) {
-      if (langchainApiKey) {
-        config.codingAgentInfo?.setupApiKey(langchainApiKey);
-        uxLog("log", this, c.grey(t("codingAgentReusingApiKey", { agent: config.agent, source: "LANGCHAIN_LLM_MODEL_API_KEY" })));
+      if (llmApiKey) {
+        config.codingAgentInfo?.setupApiKey(llmApiKey.value);
+        uxLog("log", this, c.grey(t("codingAgentReusingApiKey", { agent: config.agent, source: llmApiKey.name })));
       } else if (!isCI) {
         uxLog("log", this, c.grey(t("codingAgentDetectedLocally", { agent: config.agent })));
       }
@@ -202,30 +202,30 @@ export class CodingAgentProvider {
   }
 
   /**
-   * Build agent configuration. Tries to resolve CodingAgentInfo from LangChain provider
+   * Build agent configuration. Tries to resolve CodingAgentInfo from the LLM provider
    * matching this agent type, or uses the copilot-cli fallback.
    */
   private static async buildAgentConfig(agent: CodingAgentType, branchConfig: any): Promise<CodingAgentConfig | null> {
-    // Try to find CodingAgentInfo from LangChain providers
-    const langchainProvider = getEnvVar("LANGCHAIN_LLM_PROVIDER") || branchConfig?.langchainLlmProvider || null;
+    // Try to find CodingAgentInfo from the configured LLM provider
+    const llmProvider = readLlmProviderSetting(branchConfig);
     let codingAgentInfo: CodingAgentInfo | null = null;
 
-    if (langchainProvider) {
-      const info = LangChainProviderFactory.getCodingAgentInfo(langchainProvider);
+    if (llmProvider) {
+      const info = getCodingAgentInfo(llmProvider);
       if (info?.agentType === agent) {
         codingAgentInfo = info;
       }
     }
 
-    // If no matching LangChain provider, check if it's copilot-cli
+    // If no matching LLM provider, check if it's copilot-cli
     if (!codingAgentInfo && agent === "copilot-cli") {
       codingAgentInfo = COPILOT_CLI_AGENT_INFO;
     }
 
-    // For agents without a matching LangChain provider, try all providers
+    // For agents without a matching LLM provider, try all providers
     if (!codingAgentInfo) {
       for (const providerType of ["anthropic", "google-genai", "openai", "ollama"]) {
-        const info = LangChainProviderFactory.getCodingAgentInfo(providerType);
+        const info = getCodingAgentInfo(providerType);
         if (info?.agentType === agent) {
           codingAgentInfo = info;
           break;

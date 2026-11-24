@@ -214,9 +214,9 @@ _Optional, but it makes deployment errors much faster to solve. See [Setup AI in
   - [ ] Prompt template **SfdxHardisGenericPrompt** exists in the org (`sf hardis:org:configure:generic-prompt` deploys it).
   - [ ] The CI user is assigned to permission set **Prompt Template User**.
   - [ ] `useAgentforce: true` in `.sfdx-hardis.yml`.
-- **LangChain (OpenAI, Anthropic, Gemini, Ollama)** _(see [With LangChain](salesforce-ai-setup.md#with-langchain))_
-  - [ ] `useLangchainLlm: true`, `langchainLlmProvider` and `langchainLlmModel` defined in `.sfdx-hardis.yml`, so all contributors share the same provider and model.
-  - [ ] `LANGCHAIN_LLM_MODEL_API_KEY` defined as a **masked secret** (not needed for Ollama): API keys never go in `.sfdx-hardis.yml`.
+- **LLM API (OpenAI, Anthropic, Gemini, Ollama)** _(see [With an LLM API](salesforce-ai-setup.md#with-an-llm-api-openai-anthropic-google-gemini-ollama))_
+  - [ ] `aiLlmProvider` and `aiLlmModel` defined in `.sfdx-hardis.yml`, so all contributors share the same provider and model.
+  - [ ] `AI_LLM_API_KEY` defined as a **masked secret** (not needed for Ollama): API keys never go in `.sfdx-hardis.yml`.
 - **OpenAI directly**
   - [ ] `useOpenaiDirect: true` and `openaiModel` defined in `.sfdx-hardis.yml`.
   - [ ] `OPENAI_API_KEY` defined as a masked secret, or gateway authentication configured.
@@ -233,7 +233,7 @@ The default workflow files already contain the `git remote set-url` snippet and 
 - [ ] The workflow uses a **`-with-agents`** sfdx-hardis Docker image variant (ex: `ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu-with-agents:latest`), or, if your pipeline installs the CLI with npm instead of using the Docker image, the install line of the coding agent CLI you want is added to the workflow file.
 - [ ] Auto-fix is enabled: `codingAgentAutoFix: true` in `.sfdx-hardis.yml`.
 - [ ] The agent is chosen: `codingAgent` in `.sfdx-hardis.yml` (`claude`, `codex-cli`, `gemini-cli`, `copilot-cli`).
-- [ ] The API key of the chosen agent is set as a masked secret (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY` / `CODEX_API_KEY`, `GEMINI_API_KEY`, `COPILOT_GITHUB_TOKEN`), unless it reuses `LANGCHAIN_LLM_MODEL_API_KEY`.
+- [ ] The API key of the chosen agent is set as a masked secret (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY` / `CODEX_API_KEY`, `GEMINI_API_KEY`, `COPILOT_GITHUB_TOKEN`), unless it reuses `AI_LLM_API_KEY`.
 - [ ] The token that lets the pipeline push branches and open Pull Requests is available:
   - [ ] **GitHub**: `CI_SFDX_HARDIS_GITHUB_PUSH_TOKEN`, either `secrets.GITHUB_TOKEN` with `contents: write` and `pull-requests: write`, or a fine-grained PAT with `Contents` and `Pull requests` read and write.
   - [ ] **GitLab**: `CI_SFDX_HARDIS_GITLAB_TOKEN` with scopes **api** and **write_repository**.
