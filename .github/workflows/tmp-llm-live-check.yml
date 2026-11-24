@@ -1,0 +1,26 @@
+# TEMPORARY (removed before merge): live call of the Gemini API through the in-house LLM client
+name: TMP LLM live check
+on:
+  pull_request:
+    paths:
+      - "src/common/aiProvider/**"
+      - "scripts/tmp-llm-live-check.mjs"
+      - ".github/workflows/tmp-llm-live-check.yml"
+permissions:
+  contents: read
+jobs:
+  llm-live-check:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+      - run: yarn install --frozen-lockfile --ignore-scripts
+      - run: yarn tsc -p . --pretty
+      - run: node scripts/tmp-llm-live-check.mjs
+        env:
+          LIVE_GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }} # zizmor: ignore[secrets-outside-env]
