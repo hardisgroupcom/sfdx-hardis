@@ -3,16 +3,28 @@ import { execCommand, uxLog } from './index.js';
 import { getEnvVar } from '../../config/index.js';
 import { t } from './i18n.js';
 
+// Verdict of one assertion. Only FAILURE fails its test case:
+// - PASS: result PASS, or HIGH for categorical metrics like instruction_adherence
+// - FAILURE: result FAILURE or LOW, or an assertion whose evaluation ended in error
+// - WARNING: result UNCERTAIN, or a value this command does not know
+// - INFO: no result at all, for measurements like output_latency_milliseconds
+export type AgentTestAssertionVerdict = 'PASS' | 'FAILURE' | 'WARNING' | 'INFO';
+
 // One assertion (expectation) result inside an agent test case, e.g. topic_assertion / actions_assertion / output_validation.
 export interface AgentTestAssertionResult {
   Definition: string;
   TestCaseNumber: string | number;
   Utterance: string;
   Expectation: string;
-  Result: 'PASS' | 'FAILURE';
+  Result: AgentTestAssertionVerdict;
+  // Result as returned by Salesforce (PASS, FAILURE, HIGH, LOW, UNCERTAIN...), empty for measurements
+  SalesforceResult: string;
   Score: number | string;
   ExpectedValue: string;
   ActualValue: string;
+  Status: string;
+  Explanation: string;
+  ErrorMessage: string;
 }
 
 // An AiEvaluationDefinition available in the org (output of `sf agent test list`).
@@ -43,6 +55,10 @@ export class AgentPluginMissingError extends Error { }
 
 // Run statuses that indicate the agent test completed and its results can be trusted.
 const COMPLETED_RUN_STATUSES = ['COMPLETED', 'COMPLETE'];
+
+// Assertion results returned by Salesforce, by verdict. Categorical metrics (instruction_adherence) return HIGH / LOW / UNCERTAIN.
+const PASSING_ASSERTION_RESULTS = ['PASS', 'HIGH'];
+const FAILING_ASSERTION_RESULTS = ['FAILURE', 'FAILED', 'LOW'];
 
 function isPluginMissing(rawError: string): boolean {
   const lower = (rawError || '').toLowerCase();
@@ -126,8 +142,8 @@ export function parseAgentTestRunResult(result: any, apiName: string): AgentTest
     const testResults = Array.isArray(testCase?.testResults) ? testCase.testResults : [];
     let caseHasFailure = testResults.length === 0;
     for (const testResult of testResults) {
-      const passed = String(testResult?.result || '').toUpperCase() === 'PASS';
-      if (!passed) {
+      const verdict = getAssertionVerdict(testResult);
+      if (verdict === 'FAILURE') {
         caseHasFailure = true;
       }
       assertions.push({
@@ -135,10 +151,14 @@ export function parseAgentTestRunResult(result: any, apiName: string): AgentTest
         TestCaseNumber: testCase?.testNumber ?? '',
         Utterance: utterance,
         Expectation: testResult?.name || testResult?.metricLabel || '',
-        Result: passed ? 'PASS' : 'FAILURE',
+        Result: verdict,
+        SalesforceResult: testResult?.result ?? '',
         Score: testResult?.score ?? '',
         ExpectedValue: testResult?.expectedValue ?? '',
         ActualValue: testResult?.actualValue ?? '',
+        Status: testResult?.status ?? '',
+        Explanation: testResult?.metricExplainability ?? '',
+        ErrorMessage: testResult?.errorMessage ?? '',
       });
     }
     if (caseHasFailure) {
@@ -147,7 +167,7 @@ export function parseAgentTestRunResult(result: any, apiName: string): AgentTest
       passedCases++;
     }
   }
-  const failures = assertions.filter((a) => a.Result !== 'PASS');
+  const failures = assertions.filter((a) => a.Result === 'FAILURE');
   const runCompleted = COMPLETED_RUN_STATUSES.includes(runStatus.toUpperCase());
   let outcome: AgentTestRunSummary['outcome'];
   if (!runCompleted) {
@@ -186,4 +206,23 @@ function buildErrorSummary(definition: string, rawError: string): AgentTestRunSu
     parseError: true,
     rawError,
   };
+}
+
+// Classify one assertion of `sf agent test run --json`.
+// Measurements like output_latency_milliseconds return no result: they are reported as INFO and never fail the test case.
+function getAssertionVerdict(testResult: any): AgentTestAssertionVerdict {
+  if (String(testResult?.status || '').toUpperCase() === 'ERROR') {
+    return 'FAILURE';
+  }
+  const result = String(testResult?.result ?? '').trim().toUpperCase();
+  if (result === '') {
+    return 'INFO';
+  }
+  if (PASSING_ASSERTION_RESULTS.includes(result)) {
+    return 'PASS';
+  }
+  if (FAILING_ASSERTION_RESULTS.includes(result)) {
+    return 'FAILURE';
+  }
+  return 'WARNING';
 }

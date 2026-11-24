@@ -2,7 +2,9 @@
 
 ## [beta] (main)
 
-- [Org monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-home/): the lists of notification types skipped from the logs and metrics sent to Grafana now accept spaces after the commas.
+- [Org monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-home/):
+  - [hardis:org:test:agents](https://sfdx-hardis.cloudity.com/hardis/org/test/agents/): the output latency and an instruction adherence rated high or uncertain no longer fail agent test cases, and the report shows the result returned by Salesforce.
+  - The lists of notification types skipped from the logs and metrics sent to Grafana now accept spaces after the commas.
 - Upgrade **i18next** to 26.7.2, which fixes a denial of service through recursive object merging (CVE-2026-63402).
 - Docker images: keep TypeScript 6, as the TypeScript 7 compiler binary ships a vulnerable golang.org/x/text (CVE-2026-56851, CVE-2026-56852).
 

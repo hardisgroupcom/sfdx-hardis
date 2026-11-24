@@ -38,8 +38,8 @@ export default class OrgTestAgents extends SfCommand<any> {
 
 - **Discovers all agent tests:** Lists every AiEvaluationDefinition available in the org using \`sf agent test list\`.
 - **Runs each test:** Executes \`sf agent test run\` for each definition and waits for completion (override the wait with env var \`SFDX_TEST_WAIT_MINUTES\`, default 60 minutes).
-- **Aggregates results:** Reports pass/fail at the test-case and assertion level. The command fails (exit code 1) if any assertion does not pass.
-- **CSV report:** Generates a report listing every assertion with its expected and actual values.
+- **Aggregates results:** Reports pass/fail at the test-case and assertion level. The command fails (exit code 1) if any assertion fails. Measurements such as the output latency, and instruction adherence rated \`HIGH\` or \`UNCERTAIN\`, never fail a test case.
+- **CSV report:** Generates a report listing every assertion with its verdict, the result returned by Salesforce, its expected and actual values and the explanation of the evaluation.
 - **Notifications:** Sends alerts to Grafana, Slack and MS Teams when agent tests fail.
 
 Use \`--tests\` to run only specific agent tests (comma-separated API names) instead of all of them. In interactive mode (not \`--agent\`, not in CI), a prompt lets you unselect the agent tests you want to skip, with all of them selected by default.
@@ -52,7 +52,12 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 <summary>Technical explanations</summary>
 
 - Calls \`sf agent test list --json\` to enumerate AiEvaluationDefinition components, then \`sf agent test run --api-name <name> --wait <minutes> --json\` for each one (synchronous, no polling).
-- Parses the \`testCases[].testResults[]\` array of each run: an assertion passes when its \`result\` is \`PASS\`; a test case passes when all its assertions pass.
+- Parses the \`testCases[].testResults[]\` array of each run and gives each assertion a verdict from its \`result\`:
+  - \`PASS\` or \`HIGH\` (categorical metrics such as \`instruction_adherence\`): **PASS**
+  - \`FAILURE\` or \`LOW\`, or an assertion whose \`status\` is \`ERROR\`: **FAILURE**
+  - \`UNCERTAIN\` or an unknown value: **WARNING**
+  - No \`result\` at all, for measurements such as \`output_latency_milliseconds\`: **INFO**
+- A test case fails when one of its assertions is a **FAILURE**, or when it has no assertion. **WARNING** and **INFO** assertions are listed in the report but never fail a test case, like in the \`sf agent test run\` output.
 - A run whose overall status is not \`COMPLETED\` is treated as an error and flips the notification severity.
 </details>
 
@@ -191,8 +196,8 @@ In agent mode the command runs fully automatically. There are no interactive pro
 
     uxLog('action', this, c.cyan(t('agentTestsCompletedWithOutcome', { passed: passedCases, total: totalCases })));
 
-    // Display failing assertions
-    const failingAssertions = allAssertions.filter((a) => a.Result !== 'PASS');
+    // Display failing assertions (WARNING and INFO assertions are only listed in the report)
+    const failingAssertions: AgentTestAssertionResult[] = summaries.flatMap((s) => s.failures);
     if (failingAssertions.length > 0) {
       uxLog('warning', this, c.yellow(t('failingAgentTests')));
       uxLogTable(this, failingAssertions);
