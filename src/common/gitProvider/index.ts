@@ -1,4 +1,5 @@
 import c from "chalk";
+import { createHash } from "crypto";
 import { getCurrentGitBranch, git, isCI, redactUrlCredentials, uxLog } from "../utils/index.js";
 import { AzureDevopsProvider } from "./azureDevops.js";
 import { GithubProvider } from "./github.js";
@@ -53,6 +54,9 @@ const debug = debuglog("sfdxhardis");
 let gitRepositoryCheck: Promise<void> | null = null;
 // The token of a provider CLI is looked for once per process (applyCliTokenFallback)
 let cliTokenFallback: Promise<void> | null = null;
+// The answers of the provider to the token checks of the fallback, by provider and digest of the
+// token: checkConnection reuses the one made with the token in use instead of asking again
+const tokenChecks = new Map<string, GitProviderConnectionCheck>();
 
 export type GitProviderType = "github" | "gitlab" | "azure" | "bitbucket";
 
@@ -114,6 +118,7 @@ export abstract class GitProvider {
   static resetInstance(): void {
     GitProvider.cachedInstance = null;
     cliTokenFallback = null;
+    tokenChecks.clear();
   }
 
   /**
@@ -181,7 +186,7 @@ export abstract class GitProvider {
       ]);
       return status;
     }
-    const check = await instance.checkConnection();
+    const check = GitProvider.getRecordedTokenCheck(providerClass) || await instance.checkConnection();
     status.connected = check.connected;
     if (!check.connected) {
       const source = tokenInfo.source === "env" ? tokenInfo.variable : tokenInfo.source;
@@ -410,12 +415,28 @@ export abstract class GitProvider {
 
   // A provider built for the repository with the token, never the cached instance
   private static async checkToken(providerClass: typeof GitProviderRoot, remoteUrl: string, token: string): Promise<GitProviderConnectionCheck> {
+    let check: GitProviderConnectionCheck;
     try {
       const provider: GitProviderRoot = new (providerClass as any)({ remoteUrl, token });
-      return await provider.checkConnection();
+      check = await provider.checkConnection();
     } catch (e) {
       return { connected: false, reason: "notSupported", message: redactSecrets((e as Error).message) };
     }
+    // A network error may not last: only a definite answer is worth reusing
+    if (check.connected || check.reason === "refused" || check.reason === "notVisible") {
+      tokenChecks.set(GitProvider.tokenCheckKey(providerClass, token), check);
+    }
+    return check;
+  }
+
+  // The answer of the provider to the token now in use, when the fallback already asked for it
+  private static getRecordedTokenCheck(providerClass: typeof GitProviderRoot): GitProviderConnectionCheck | null {
+    const token = GitProvider.getEnvironmentToken(providerClass);
+    return token ? tokenChecks.get(GitProvider.tokenCheckKey(providerClass, token)) || null : null;
+  }
+
+  private static tokenCheckKey(providerClass: typeof GitProviderRoot, token: string): string {
+    return `${GitProvider.getProviderKey(providerClass)}:${createHash("sha256").update(token).digest("hex")}`;
   }
 
   // The first variable of the provider wins over the others: the refused one is replaced for this

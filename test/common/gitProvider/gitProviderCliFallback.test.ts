@@ -139,6 +139,40 @@ describe('GitProvider CLI token fallback', () => {
     expect(status).to.include({ type: 'git', provider: 'github', label: 'GitHub', connected: true, tokenSource: 'gh', detail: null });
   });
 
+  it('asks the provider once per process: the connection check reuses the answer of the fallback', async () => {
+    process.env.GITHUB_REPOSITORY = 'acme/widgets';
+    process.env.GITHUB_TOKEN = 'ghp_env_token';
+    const status = await GitProvider.checkConnection();
+    await GitProvider.getInstance(false);
+    expect(status).to.include({ connected: true, tokenSource: 'env' });
+    expect(checkedTokens).to.deep.equal(['ghp_env_token']);
+  });
+
+  it('reuses the refusal of the token in use, and the answer for the token of the CLI', async () => {
+    process.env.GITHUB_REPOSITORY = 'acme/widgets';
+    process.env.GITHUB_TOKEN = 'ghp_REFUSED';
+    answers.ghp_REFUSED = { connected: false, reason: 'refused', httpStatus: 401 };
+    const status = await GitProvider.checkConnection();
+    expect(status).to.include({ connected: true, tokenSource: 'gh' });
+    expect(checkedTokens).to.deep.equal(['ghp_REFUSED', CLI_TOKEN]);
+  });
+
+  it('asks again when the fallback made no check, or could not reach the provider', async () => {
+    process.env.GITHUB_REPOSITORY = 'acme/widgets';
+    process.env.GITHUB_TOKEN = 'ghp_env_token';
+    process.env.SFDX_HARDIS_PROVIDER_TOKEN_CHECK = 'false';
+    await GitProvider.checkConnection();
+    expect(checkedTokens).to.deep.equal(['ghp_env_token']);
+
+    delete process.env.SFDX_HARDIS_PROVIDER_TOKEN_CHECK;
+    GitProvider.resetInstance();
+    resetProviderCliAuthState();
+    checkedTokens = [];
+    answers.ghp_env_token = { connected: false, reason: 'unreachable', message: 'ECONNRESET' };
+    await GitProvider.checkConnection();
+    expect(checkedTokens).to.deep.equal(['ghp_env_token', 'ghp_env_token']);
+  });
+
   it('says what to do when there is no token at all', async () => {
     GithubProvider.readCliToken = async () => ({ token: null, source: GithubProvider.getCliTokenSource(), host: 'github.com', reason: 'notLoggedIn' });
     const status = await GitProvider.checkConnection();
