@@ -167,8 +167,40 @@ export class AzureDevopsProvider extends GitProviderRoot {
       installUrl: "https://learn.microsoft.com/cli/azure/install-azure-cli",
       loginCommand: () => "az login",
       // The token is for the tenant az is logged in to, which may not be the one of the organization
-      refusedHint: () => t('providerCliAzureTenantHint'),
+      refusedHint: (remoteUrl) => AzureDevopsProvider.getCliTokenRefusedHint(remoteUrl),
     };
+  }
+
+  /** Why the organization of remoteUrl may refuse the token of az, from the tenant it belongs to */
+  public static async getCliTokenRefusedHint(remoteUrl: string): Promise<string> {
+    const collectionUri = AzureDevopsProvider.parseAzureRepoUrl(remoteUrl)?.collectionUri;
+    const tenant = collectionUri ? await AzureDevopsProvider.readOrganizationTenant(collectionUri) : null;
+    return AzureDevopsProvider.describeOrganizationTenant(tenant);
+  }
+
+  /**
+   * An organization backed by Microsoft accounts (tenant all zeros) accepts no Microsoft Entra ID
+   * token at all: only a Personal Access Token works there
+   */
+  public static describeOrganizationTenant(tenant: string | null): string {
+    if (tenant && /^0{8}-0{4}-0{4}-0{4}-0{12}$/.test(tenant)) {
+      return t('providerCliAzureOrgWithoutEntra', { variable: AzureDevopsProvider.tokenVariableNames[0] });
+    }
+    if (tenant && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tenant)) {
+      return t('providerCliAzureTenantLogin', { tenant });
+    }
+    return t('providerCliAzureTenantHint');
+  }
+
+  // Azure DevOps names the tenant of an organization to an anonymous request, in the redirection to
+  // its sign-in page: no token is sent. Null when the organization does not answer.
+  private static async readOrganizationTenant(collectionUri: string): Promise<string | null> {
+    try {
+      const response = await fetch(collectionUri, { redirect: "manual", signal: AbortSignal.timeout(10000) });
+      return response.headers.get("x-vss-resourcetenant");
+    } catch {
+      return null;
+    }
   }
 
   // A Microsoft Entra ID token for the Azure DevOps resource, valid about one hour. It works for

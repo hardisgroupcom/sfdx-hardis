@@ -190,6 +190,8 @@ az login
 sf hardis:project:connection:check --type git --agent --json
 ```
 
-The variables of the environment come first, then the `.env` file, then `az`. The token lasts about one hour and belongs to the Microsoft Entra tenant `az` is logged in to: when the organization is in another tenant, run `az login --tenant <tenant-id>`.
+The variables of the environment come first, then the `.env` file, then `az`. The token lasts about one hour and belongs to the Microsoft Entra tenant `az` is logged in to: when the organization is in another tenant, run `az login --tenant <tenant-id>`. When Azure DevOps refuses the token, sfdx-hardis names the tenant of the organization.
+
+An organization that uses Microsoft accounts and is not connected to Microsoft Entra ID accepts no `az` token: keep a Personal Access Token in `CI_SFDX_HARDIS_AZURE_TOKEN` for it.
 
 See [hardis:project:connection:check](hardis/project/connection/check.md) and the variables `SFDX_HARDIS_PROVIDER_CLI_AUTH` and `SFDX_HARDIS_PROVIDER_TOKEN_CHECK` in [All environment variables](all-env-variables.md).

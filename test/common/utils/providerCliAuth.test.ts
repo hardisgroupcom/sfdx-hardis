@@ -124,6 +124,21 @@ describe('providerCliAuthUtils', () => {
     });
   });
 
+  describe('AzureDevopsProvider.describeOrganizationTenant', () => {
+    it('asks for a Personal Access Token when the organization uses Microsoft accounts', () => {
+      const hint = AzureDevopsProvider.describeOrganizationTenant('00000000-0000-0000-0000-000000000000');
+      expect(hint).to.contain('not connected to Microsoft Entra ID');
+      expect(hint).to.contain('CI_SFDX_HARDIS_AZURE_TOKEN');
+    });
+
+    it('names the tenant of the organization, or stays generic when it is unknown', () => {
+      const tenant = '72f988bf-86f1-41af-91ab-2d7cd011db47';
+      expect(AzureDevopsProvider.describeOrganizationTenant(tenant)).to.contain(`az login --tenant ${tenant}`);
+      expect(AzureDevopsProvider.describeOrganizationTenant(null)).to.contain('az login --tenant <tenant-id>');
+      expect(AzureDevopsProvider.describeOrganizationTenant('not-a-tenant')).to.contain('az login --tenant <tenant-id>');
+    });
+  });
+
   describe('AzureDevopsProvider.getAuthorizationHeaderForToken', () => {
     it('sends a Personal Access Token as Basic and any other token as Bearer', () => {
       expect(AzureDevopsProvider.getAuthorizationHeaderForToken('a'.repeat(52))).to.match(/^Basic /);

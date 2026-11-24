@@ -51,7 +51,7 @@ The variables of the environment come first, then the \`.env\` file, then the CL
 
 - **GitHub:** \`gh auth token --hostname <host>\`, the host of the git remote. The check reads \`GET /repos/{owner}/{repo}\`.
 - **GitLab:** \`glab auth status --hostname <host> --show-token\`: glab has no command that prints the token alone, the \`Token found\` line is read in memory. The check reads the project.
-- **Azure DevOps and Azure Boards:** \`az account get-access-token --resource 499b84ac-1321-427f-aa17-267ca6975798\`, a Microsoft Entra ID token valid about one hour, sent as a Bearer token. The check reads the repository.
+- **Azure DevOps and Azure Boards:** \`az account get-access-token --resource 499b84ac-1321-427f-aa17-267ca6975798\`, a Microsoft Entra ID token valid about one hour, sent as a Bearer token. The check reads the repository. When Azure DevOps refuses it, the tenant of the organization is read from the \`x-vss-resourcetenant\` header of an anonymous request: an organization of Microsoft accounts (tenant all zeros) accepts no Microsoft Entra ID token, only a Personal Access Token.
 - **Bitbucket:** the check reads the repository.
 - **JIRA, Azure Boards, ServiceNow, Aha!:** the same call as [hardis:ticket:whoami](https://sfdx-hardis.cloudity.com/hardis/ticket/whoami/).
 - The CLIs run without a shell (except \`az.cmd\` on Windows, with checked arguments), without prompting, and never from the current folder. The variables a CLI reads its own token from (\`GH_TOKEN\`, \`GITLAB_TOKEN\`...) are removed for that call, so it answers with the token it stores and not the refused one.

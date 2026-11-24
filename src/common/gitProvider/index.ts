@@ -395,10 +395,10 @@ export abstract class GitProvider {
     if (isProviderTokenCheckEnabled()) {
       const check = await GitProvider.checkToken(providerClass, remoteUrl, result.token);
       if (check.reason === "refused" || check.reason === "notVisible") {
-        const detail = [
+        const detail = joinDetailSentences([
           t('providerCliTokenRefused', { provider: providerClass.providerLabel, cli: result.source?.cli || "-", status: check.httpStatus ?? "-" }),
-          result.source?.refusedHint?.(),
-        ].filter(Boolean).join(" ");
+          await result.source?.refusedHint?.(remoteUrl),
+        ]);
         uxLog("warning", this, c.yellow(`[GitProvider] ${detail}`));
         GitProvider.recordCliFailure(providerClass, detail);
         return environmentToken != null;

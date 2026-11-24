@@ -19,8 +19,8 @@ export interface ProviderCliTokenSource {
   cli: string;
   installUrl: string;
   loginCommand: (host: string) => string;
-  /** Said when the provider refuses the token of the CLI */
-  refusedHint?: () => string;
+  /** Said when the provider refuses the token of the CLI for the repository of remoteUrl */
+  refusedHint?: (remoteUrl: string) => Promise<string | null>;
 }
 
 export interface ProviderCliTokenResult {
