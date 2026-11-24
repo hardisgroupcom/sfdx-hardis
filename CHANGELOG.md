@@ -2,9 +2,12 @@
 
 ## [beta] (main)
 
+- [Org monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-home/): the lists of notification types skipped from the logs and metrics sent to Grafana now accept spaces after the commas.
+- Upgrade **i18next** to 26.7.2, which fixes a denial of service through recursive object merging (CVE-2026-63402).
+- Docker images: keep TypeScript 6, as the TypeScript 7 compiler binary ships a vulnerable golang.org/x/text (CVE-2026-56851, CVE-2026-56852).
 - Doc: new [Community plugins](https://sfdx-hardis.cloudity.com/sfdx-hardis-plugins/#community-plugins) list on the plugins page, with [apex-code-coverage-transformer](https://github.com/mcarvin8/apex-code-coverage-transformer) and [apex-test-list](https://github.com/wisefoxme/apex-test-list).
 
-## [8.27.0] 2026-11-29
+## [8.27.0] 2026-11-23
 
 - **Release versioning** ([doc](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-release-versioning/)): each successful deployment gets a semver tag, from release candidates in UAT to the plain version in production.
   - Release candidates such as v1.5.0-rc.3 come from UAT, and the plain version such as v1.5.0 comes from production, with a GitHub or GitLab Release holding its release notes.

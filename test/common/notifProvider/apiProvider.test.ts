@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 // Load the provider registry first: importing apiProvider alone hits a circular import
 import '../../../src/common/notifProvider/index.js';
-import { fitLokiLogData, isNotifTypeInSkipLogs } from '../../../src/common/notifProvider/apiProvider.js';
+import { fitLokiLogData, isNotifTypeInSkipLogs, isNotifTypeInSkipMetrics } from '../../../src/common/notifProvider/apiProvider.js';
 
 const bytes = (value: string) => new TextEncoder().encode(value).length;
 
@@ -21,6 +21,12 @@ describe('isNotifTypeInSkipLogs', () => {
     });
   }
 
+  it('reads a list with spaces after the commas', () => {
+    expect(isNotifTypeInSkipLogs('METADATA_STATUS, UNUSED_USERS', 'UNUSED_USERS')).to.equal(true);
+    expect(isNotifTypeInSkipLogs('METADATA_STATUS, UNUSED_USERS', 'ACTIVE_USERS')).to.equal(true);
+    expect(isNotifTypeInSkipLogs(' METADATA_STATUS ,UNUSED_USERS', 'METADATA_STATUS')).to.equal(true);
+  });
+
   it('does not skip another type when UNUSED_USERS is listed', () => {
     expect(isNotifTypeInSkipLogs('UNUSED_USERS', 'METADATA_STATUS')).to.equal(false);
   });
@@ -34,6 +40,17 @@ describe('isNotifTypeInSkipLogs', () => {
 
 // One Apex error row with a long stack trace, like the rows that made Loki refuse whole entries
 const errorRow = (index: number) => ({ Operation: `Class${index}`, StackTrace: 'x'.repeat(1000) });
+
+describe('isNotifTypeInSkipMetrics', () => {
+  it('skips the listed types, spaces after the commas included', () => {
+    expect(isNotifTypeInSkipMetrics('APEX_TESTS, DEPLOYMENT', 'DEPLOYMENT')).to.equal(true);
+    expect(isNotifTypeInSkipMetrics('APEX_TESTS,DEPLOYMENT', 'APEX_TESTS')).to.equal(true);
+  });
+
+  it('does not extend UNUSED_USERS to the other user checks: their metrics are still sent', () => {
+    expect(isNotifTypeInSkipMetrics('UNUSED_USERS', 'ACTIVE_USERS')).to.equal(false);
+  });
+});
 
 describe('fitLokiLogData', () => {
   it('leaves an entry under the limit untouched', () => {

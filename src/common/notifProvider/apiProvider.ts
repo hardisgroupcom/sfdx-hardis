@@ -75,8 +75,12 @@ const USER_ROWS_NOTIF_TYPES: NotifMessage["type"][] = [
 ];
 
 export function isNotifTypeInSkipLogs(skipLogs: string, type: NotifMessage["type"]): boolean {
-  const skippedTypes = skipLogs.split(",");
+  const skippedTypes = readSkipList(skipLogs);
   return skippedTypes.includes(type) || (skippedTypes.includes("UNUSED_USERS") && USER_ROWS_NOTIF_TYPES.includes(type));
+}
+
+export function isNotifTypeInSkipMetrics(skipMetrics: string, type: NotifMessage["type"]): boolean {
+  return readSkipList(skipMetrics).includes(type);
 }
 
 export class ApiProvider extends NotifProviderRoot {
@@ -129,7 +133,7 @@ export class ApiProvider extends NotifProviderRoot {
 
   private managePostLogs(apiPromises: Promise<void>[], notifMessage: NotifMessage) {
     const notifApiSkipLogs = getEnvVar("NOTIF_API_SKIP_LOGS");
-    if (notifApiSkipLogs === "all") {
+    if (notifApiSkipLogs?.trim() === "all") {
       uxLog("log", this, `[ApiProvider] Skipped posting logs to API and JSON file as NOTIF_API_SKIP_LOGS is set to 'all'`);
       return;
     }
@@ -150,11 +154,11 @@ export class ApiProvider extends NotifProviderRoot {
     this.metricsApiUrl = getEnvVar("NOTIF_API_METRICS_URL");
     if (this.metricsApiUrl !== null) {
       const notifApiSkipMetrics = getEnvVar("NOTIF_API_SKIP_METRICS");
-      if (notifApiSkipMetrics === "all") {
+      if (notifApiSkipMetrics?.trim() === "all") {
         uxLog("log", this, `[ApiProvider] Skipped posting metrics to API as NOTIF_API_SKIP_METRICS is set to 'all'`);
         return;
       }
-      else if (notifApiSkipMetrics && notifApiSkipMetrics?.split(",").includes(notifMessage.type)) {
+      else if (notifApiSkipMetrics && isNotifTypeInSkipMetrics(notifApiSkipMetrics, notifMessage.type)) {
         uxLog("log", this, `[ApiProvider]Skipped posting metrics to API for notification type '${notifMessage.type}' as NOTIF_API_SKIP_METRICS includes it`);
         return;
       }
@@ -526,4 +530,12 @@ export interface ApiNotifMessage {
   orgIdentifier: string;
   gitIdentifier: string;
   data: any;
+}
+
+// The notification types of a NOTIF_API_SKIP_* variable: "A, B" is read like "A,B"
+function readSkipList(value: string): string[] {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter((item) => item !== "");
 }
