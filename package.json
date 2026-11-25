@@ -7,7 +7,7 @@
   "dependencies": {
     "@cparra/apexdocs": "3.24.2",
     "@gitbeaker/rest": "43.8.0",
-    "@inquirer/checkbox": "5.2.8",
+    "@inquirer/checkbox": "5.3.0",
     "@inquirer/input": "5.1.9",
     "@inquirer/number": "4.3.0",
     "@inquirer/select": "5.2.8",
