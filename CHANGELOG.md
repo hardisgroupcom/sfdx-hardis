@@ -4,10 +4,12 @@
 
 - New [hardis:auth:logout](https://sfdx-hardis.cloudity.com/hardis/auth/logout/): revoke in the org the session a CI/CD job opened with `hardis:auth:login`, so frequent pipelines no longer pile up sessions against a concurrent sessions limit. Other sessions of the same user are left alone. The CI/CD templates of every git provider hold a commented step to run it at the end of each deployment job.
 - New [hardis:project:connection:check](https://sfdx-hardis.cloudity.com/hardis/project/connection/check/): tell a coding agent whether the git provider and the ticketing system are connected, and how to fix it when they are not. In agent mode, a missing or refused GitHub, GitLab or Azure DevOps token is now read from `gh`, `glab` or `az`. Outside CI, the generic `PAT` and `ACCESS_TOKEN` variables are no longer read as GitHub or GitLab tokens.
+- [hardis:work:backpromote](https://sfdx-hardis.cloudity.com/hardis/work/backpromote/): refuse to run from a detached HEAD, which left the checkout on the backpromote branch with a **Back to HEAD** button that did nothing.
 - [Org monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-home/):
   - [hardis:org:test:agents](https://sfdx-hardis.cloudity.com/hardis/org/test/agents/): the output latency and an instruction adherence rated high or uncertain no longer fail agent test cases, and the report shows the result returned by Salesforce.
   - The lists of notification types skipped from the logs and metrics sent to Grafana now accept spaces after the commas.
-- [hardis:work:backpromote](https://sfdx-hardis.cloudity.com/hardis/work/backpromote/): refuse to run from a detached HEAD, which left the checkout on the backpromote branch with a **Back to HEAD** button that did nothing.
+- [hardis:git:pull-requests:extract](https://sfdx-hardis.cloudity.com/hardis/git/pull-requests/extract/): in agent mode, never asks for the git provider, and says why it cannot be used.
+- Azure DevOps: the links to Pull Requests and branches posted from a workstation name the repository again.
 - Fewer dependencies and faster startup: the Excel, browser and Apex documentation libraries load only when a command needs them.
 - [AI](https://sfdx-hardis.cloudity.com/salesforce-ai-setup/): OpenAI, Anthropic, Gemini and Ollama are called directly instead of through LangChain, for a smaller install, and the [LangChain settings are renamed](https://sfdx-hardis.cloudity.com/salesforce-ai-setup/#renamed-settings) (the former names still work).
 - Upgrade **i18next** to 26.7.2, which fixes a denial of service through recursive object merging (CVE-2026-63402).

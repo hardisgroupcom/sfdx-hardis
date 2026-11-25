@@ -183,6 +183,15 @@ export abstract class GitProvider {
     return status;
   }
 
+  /**
+   * The error of a command that cannot run without the git provider: why it is not available
+   * (no token variable, the token of the provider CLI refused...), as checkConnection() tells it
+   */
+  static async getNotAvailableMessage(): Promise<string> {
+    const status = await GitProvider.checkConnection();
+    return joinDetailSentences([t('gitProviderNotAvailable'), status.detail]);
+  }
+
   static async getInstance(prompt = false): Promise<GitProviderRoot | null> {
     const cached = GitProvider.cachedInstance;
     // A cached "no provider" answer is kept only when the caller does not want the prompt

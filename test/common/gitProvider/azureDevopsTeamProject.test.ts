@@ -38,6 +38,38 @@ describe('AzureDevopsProvider calls made with a repository name', () => {
     return provider;
   };
 
+  // BUILD_REPOSITORY_NAME is set by Azure Pipelines only: the links of the Pull Request comments
+  // posted from a workstation pointed to .../_git//pullrequest/12
+  it('names the repository in the links it builds on a workstation', () => {
+    const provider = buildProvider({});
+    expect(provider.buildPullRequestWebUrl(12)).to.equal('https://dev.azure.com/acme/acme-project/_git/acme-repository/pullrequest/12');
+    expect(provider.getCompareUrl('main', 'dev')).to.equal(
+      'https://dev.azure.com/acme/acme-project/_git/acme-repository/branchCompare?baseVersion=GTmain&targetVersion=GTdev',
+    );
+  });
+
+  it('prefers the repository name of the pipeline to its GUID in the links', () => {
+    process.env.BUILD_REPOSITORY_ID = '85c4d50f-ccb7-4793-a339-b5b0f52a4cdd';
+    const saved = process.env.BUILD_REPOSITORY_NAME;
+    try {
+      process.env.BUILD_REPOSITORY_NAME = 'acme-repository';
+      expect(buildProvider({}).buildPullRequestWebUrl(12)).to.equal(
+        'https://dev.azure.com/acme/acme-project/_git/acme-repository/pullrequest/12',
+      );
+      // Unknown name: the GUID, which the Azure DevOps UI accepts too
+      delete process.env.BUILD_REPOSITORY_NAME;
+      expect(buildProvider({}).buildPullRequestWebUrl(12)).to.equal(
+        'https://dev.azure.com/acme/acme-project/_git/85c4d50f-ccb7-4793-a339-b5b0f52a4cdd/pullrequest/12',
+      );
+    } finally {
+      if (saved === undefined) {
+        delete process.env.BUILD_REPOSITORY_NAME;
+      } else {
+        process.env.BUILD_REPOSITORY_NAME = saved;
+      }
+    }
+  });
+
   it('reads the comment of a Pull Request with the team project', async () => {
     const calls: any[][] = [];
     const provider = buildProvider({
