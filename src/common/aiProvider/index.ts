@@ -1,19 +1,20 @@
 import c from 'chalk';
 import { AiProviderRoot } from "./aiProviderRoot.js";
-import { OpenAiProvider } from "./openaiProvider.js";
 import { SfError } from "@salesforce/core";
 import { buildPromptFromTemplate, PromptTemplate } from "./promptTemplates.js";
 import { isCI, uxLog } from "../utils/index.js";
 import { prompts } from "../utils/prompts.js";
 import { AgentforceProvider } from "./agentforceProvider.js";
-import { LangChainProvider } from "./langchainProvider.js";
+import { LlmApiProvider } from "./llmApi/llmApiProvider.js";
 import { formatMarkdownForMkDocs } from "../utils/markdownUtils.js";
 import { CodexProvider } from "./codexProvider.js";
 import { t } from '../utils/i18n.js';
 
 let IS_AI_AVAILABLE: boolean | null = null;
-type ProviderKey = "langchain" | "codex" | "openai" | "agentforce";
-const DEFAULT_PROVIDER_ORDER: ProviderKey[] = ["langchain", "codex", "openai", "agentforce"];
+// "llm": an LLM API configured with AI_LLM_*, "openai": the OPENAI_API_KEY shortcut of the same provider.
+// Codex stays between them, as it was before both used the same provider.
+type ProviderKey = "llm" | "codex" | "openai" | "agentforce";
+const DEFAULT_PROVIDER_ORDER: ProviderKey[] = ["llm", "codex", "openai", "agentforce"];
 
 export abstract class AiProvider {
   static async isAiAvailable(): Promise<boolean> {
@@ -65,17 +66,17 @@ export abstract class AiProvider {
 
     for (const provider of order) {
       try {
-        if (provider === "langchain") {
-          if (await LangChainProvider.isConfigured()) {
-            return await LangChainProvider.create();
+        if (provider === "llm") {
+          if (await LlmApiProvider.isConfigured("explicit")) {
+            return await LlmApiProvider.create("explicit");
           }
         } else if (provider === "codex") {
           if (await CodexProvider.isConfigured()) {
             return await CodexProvider.create();
           }
         } else if (provider === "openai") {
-          if (await OpenAiProvider.isConfigured()) {
-            return await OpenAiProvider.create();
+          if (await LlmApiProvider.isConfigured("openaiShortcut")) {
+            return await LlmApiProvider.create("openaiShortcut");
           }
         } else if (provider === "agentforce") {
           if (await AgentforceProvider.isConfigured()) {

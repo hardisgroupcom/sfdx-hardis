@@ -133,6 +133,6 @@ On Azure DevOps, the description of a completed Pull Request can no longer be ed
   - Deployment Agent
   - Project Documentation
 
-- [OpenAI, Anthropic, Gemini, Ollama](salesforce-ai-setup.md#with-langchain)
+- [OpenAI, Anthropic, Gemini, Ollama](salesforce-ai-setup.md#with-an-llm-api-openai-anthropic-google-gemini-ollama)
   - Deployment Agent
   - Project Documentation
