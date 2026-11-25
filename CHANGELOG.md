@@ -8,6 +8,7 @@
   - The lists of notification types skipped from the logs and metrics sent to Grafana now accept spaces after the commas.
 - [hardis:work:backpromote](https://sfdx-hardis.cloudity.com/hardis/work/backpromote/): refuse to run from a detached HEAD, which left the checkout on the backpromote branch with a **Back to HEAD** button that did nothing.
 - Fewer dependencies and faster startup: the Excel, browser and Apex documentation libraries load only when a command needs them.
+- [AI](https://sfdx-hardis.cloudity.com/salesforce-ai-setup/): OpenAI, Anthropic, Gemini and Ollama are called directly instead of through LangChain, for a smaller install, and the [LangChain settings are renamed](https://sfdx-hardis.cloudity.com/salesforce-ai-setup/#renamed-settings) (the former names still work).
 - Upgrade **i18next** to 26.7.2, which fixes a denial of service through recursive object merging (CVE-2026-63402).
 - Docker images: keep TypeScript 6, as the TypeScript 7 compiler binary ships a vulnerable golang.org/x/text (CVE-2026-56851, CVE-2026-56852).
 - Doc: new [Community plugins](https://sfdx-hardis.cloudity.com/sfdx-hardis-plugins/#community-plugins) list on the plugins page, with [apex-code-coverage-transformer](https://github.com/mcarvin8/apex-code-coverage-transformer) and [apex-test-list](https://github.com/wisefoxme/apex-test-list).

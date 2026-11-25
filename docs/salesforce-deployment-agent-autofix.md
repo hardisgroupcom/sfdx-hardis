@@ -112,7 +112,7 @@ In **CI/CD**, the coding agent CLI needs to authenticate with its AI provider. Y
 | Gemini  | `GEMINI_API_KEY`                                                                          |
 | Copilot | `COPILOT_GITHUB_TOKEN`, `GH_TOKEN` or `GITHUB_TOKEN` (usually already available in CI/CD) |
 
-**Tip:** If you already have a LangChain AI provider configured (see [AI setup](salesforce-ai-setup.md)), sfdx-hardis automatically **reuses** `LANGCHAIN_LLM_MODEL_API_KEY`, so you do not need to set a separate key.
+**Tip:** If you already have an LLM API provider configured (see [AI setup](salesforce-ai-setup.md)), sfdx-hardis automatically **reuses** `AI_LLM_API_KEY`, so you do not need to set a separate key.
 
 > **Local mode: no API key needed.** When running **outside CI/CD** (i.e. on your local machine), sfdx-hardis uses the configured `codingAgent` (for example `claude`) with your existing local CLI authentication session.
 >
