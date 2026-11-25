@@ -10,7 +10,7 @@
     "@inquirer/checkbox": "5.2.8",
     "@inquirer/input": "5.1.9",
     "@inquirer/number": "4.3.0",
-    "@inquirer/select": "5.2.8",
+    "@inquirer/select": "5.3.0",
     "@oclif/core": "4.14.0",
     "@salesforce/core": "8.32.6",
     "@salesforce/sf-plugins-core": "11.3.12",
