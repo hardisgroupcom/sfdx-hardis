@@ -26,12 +26,12 @@ Key functionalities include:
 
 The command's technical implementation involves interacting with a Git provider's API:
 
-- **Git Provider Abstraction:** It uses the `GitProvider.getInstance(true)` to abstract away the specifics of different Git platforms (e.g., GitHub, GitLab, Azure DevOps). This ensures the command can work across various environments.
+- **Git Provider Abstraction:** It uses `GitProvider.getInstance()` to abstract away the specifics of different Git platforms (e.g., GitHub, GitLab, Azure DevOps). This ensures the command can work across various environments. When no provider is found, the user is asked to select one, except in agent mode.
 - **API Calls:** The `gitProvider.listPullRequests()` method is called with a `prConstraint` object that encapsulates the filtering criteria (target branch, minimum date, status).
 - **Interactive Prompts:** The `prompts` library is used to interactively gather input from the user for the target branch and pull request status if they are not provided as command-line flags.
 - **Date Handling:** The `moment` library is used to parse and handle date inputs for the `--min-date` flag.
 - **CSV Generation:** The `generateCsvFile` utility is responsible for converting the retrieved pull request data into a CSV format, and `generateReportPath` determines the output file location.
-- **Error Handling:** It includes error handling for cases where a Git provider cannot be identified.
+- **Error Handling:** When the git provider cannot be used, the error says why (no token variable, a token refused by the provider...), as `hardis:project:connection:check` does.
 </details>
 
 ### Agent Mode
@@ -41,7 +41,8 @@ Use `--agent` to disable all interactive prompts. In agent mode:
 - `--target-branch`: Optional. If omitted, all branches are included.
 - `--status`: Optional. If omitted, all statuses are included.
 - `--min-date`: Optional date filter.
-- All interactive branch and status selection prompts are skipped.
+- All interactive git provider, branch and status selection prompts are skipped.
+- When the git provider cannot be used, the command fails with the reason and what to do.
 
 
 ## Screenshots

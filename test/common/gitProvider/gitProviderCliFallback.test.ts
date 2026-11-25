@@ -208,6 +208,24 @@ describe('GitProvider CLI token fallback', () => {
     expect(status.detail).to.contain('CI_SFDX_HARDIS_GITHUB_TOKEN');
     expect(status.detail).to.contain('gh auth login --hostname github.com');
   });
+
+  // The token of the CLI was found: saying "no token found" before its refusal contradicted it
+  it('says the token of the CLI was refused, without claiming that no token was found', async () => {
+    answers[CLI_TOKEN] = { connected: false, reason: 'refused', httpStatus: 401 };
+    const status = await GitProvider.checkConnection();
+    expect(status.connected).to.be.false;
+    expect(status.detail).to.not.contain('token found');
+    expect(status.detail).to.contain('No GitHub token variable is set: set ');
+    expect(status.detail).to.contain('refused the token of gh (HTTP 401)');
+  });
+
+  it('gives the reason in the error of a command that needs the git provider', async () => {
+    answers[CLI_TOKEN] = { connected: false, reason: 'refused', httpStatus: 401 };
+    const message = await GitProvider.getNotAvailableMessage();
+    expect(message).to.match(/^Unable to use the git provider of this repository\. No GitHub token variable is set/);
+    expect(message).to.contain('refused the token of gh (HTTP 401)');
+    expect(message).to.not.contain(CLI_TOKEN);
+  });
 });
 
 describe('GitProvider CLI token fallback: other providers', () => {

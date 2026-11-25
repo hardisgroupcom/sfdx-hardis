@@ -478,14 +478,7 @@ ${this.getPipelineVariablesConfig()}
   // Work items belong to the project, not to the repository: two repositories of one project
   // must not share a dashboard
   public getDashboardTitle(title: string): string {
-    // In a pipeline the name is in BUILD_REPOSITORY_NAME (BUILD_REPOSITORYNAME in the templates).
-    // On a workstation only BUILD_REPOSITORY_ID is set, read from the git remote: it is then the name.
-    const repositoryId = process.env.BUILD_REPOSITORY_ID || "";
-    const repositoryName =
-      this.otherRepository?.repositoryName ||
-      process.env.BUILD_REPOSITORY_NAME ||
-      process.env.BUILD_REPOSITORYNAME ||
-      (AZURE_GUID_REGEX.test(repositoryId) ? "" : repositoryId);
+    const repositoryName = this.otherRepository?.repositoryName || AzureDevopsProvider.getEnvironmentRepositoryName();
     return repositoryName ? `${title} (${decodeURIComponent(repositoryName)})` : title;
   }
 
@@ -1288,15 +1281,30 @@ ${getBannerMarkdownAndLink()}
         : CommentThreadStatus.Unknown;
   }
 
-  // Web URL of a Pull Request. The repository name variable is exposed as BUILD_REPOSITORY_NAME by
-  // Azure Pipelines: the BUILD_REPOSITORYNAME spelling is kept as a fallback for older agents.
+  /**
+   * The name of the repository the command runs in, "" when unknown. In a pipeline it is in
+   * BUILD_REPOSITORY_NAME (BUILD_REPOSITORYNAME in the templates and on older agents). On a
+   * workstation only BUILD_REPOSITORY_ID is set, read from the git remote: it is then the name,
+   * where a pipeline has a GUID.
+   */
+  private static getEnvironmentRepositoryName(): string {
+    const repositoryId = process.env.BUILD_REPOSITORY_ID || "";
+    return (
+      process.env.BUILD_REPOSITORY_NAME ||
+      process.env.BUILD_REPOSITORYNAME ||
+      (AZURE_GUID_REGEX.test(repositoryId) ? "" : repositoryId)
+    );
+  }
+
+  // Web URL of a Pull Request
   private buildPullRequestWebUrl(pullRequestId: number | undefined): string {
     if (this.otherRepository) {
       return `${this.serverUrl}${encodeURIComponent(this.otherRepository.teamProject)}/_git/${encodeURIComponent(
         this.otherRepository.repositoryName,
       )}/pullrequest/${pullRequestId}`;
     }
-    const repositoryName = process.env.BUILD_REPOSITORY_NAME || process.env.BUILD_REPOSITORYNAME || "";
+    // The repository GUID is accepted by the Azure DevOps UI when its name is unknown
+    const repositoryName = AzureDevopsProvider.getEnvironmentRepositoryName() || process.env.BUILD_REPOSITORY_ID || "";
     return `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(
       process.env.SYSTEM_TEAMPROJECT || "",
     )}/_git/${encodeURIComponent(repositoryName)}/pullrequest/${pullRequestId}`;
@@ -2113,7 +2121,7 @@ ${getBannerMarkdownAndLink()}
     if (this.otherRepository) {
       return `${this.serverUrl}${encodeURIComponent(this.otherRepository.teamProject)}/_git/${encodeURIComponent(this.otherRepository.repositoryName)}`;
     }
-    const repositoryName = process.env.BUILD_REPOSITORY_NAME || process.env.BUILD_REPOSITORYNAME || "";
+    const repositoryName = AzureDevopsProvider.getEnvironmentRepositoryName() || process.env.BUILD_REPOSITORY_ID || "";
     if (!process.env.SYSTEM_COLLECTIONURI || !process.env.SYSTEM_TEAMPROJECT || !repositoryName) {
       return null;
     }
