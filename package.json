@@ -9,7 +9,7 @@
     "@gitbeaker/rest": "43.8.0",
     "@inquirer/checkbox": "5.2.8",
     "@inquirer/input": "5.1.9",
-    "@inquirer/number": "4.2.6",
+    "@inquirer/number": "4.3.0",
     "@inquirer/select": "5.2.8",
     "@oclif/core": "4.14.0",
     "@salesforce/core": "8.32.6",
