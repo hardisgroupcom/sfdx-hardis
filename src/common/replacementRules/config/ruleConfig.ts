@@ -7,7 +7,7 @@
 
 import * as path from 'path';
 import fs from '../../utils/fsUtils.js';
-import { parseYaml } from '../../utils/yamlUtils.js';
+import yaml from 'js-yaml';
 import { glob } from 'glob';
 import { getConfig } from '../../../config/index.js';
 import { dumpRepositoryYaml } from '../../utils/yamlUtils.js';
@@ -325,7 +325,7 @@ function readYamlFile(file: string): any {
   if (!fs.existsSync(file)) {
     return {};
   }
-  return (parseYaml(fs.readFileSync(file, 'utf-8')) as any) || {};
+  return (yaml.load(fs.readFileSync(file, 'utf-8')) as any) || {};
 }
 
 function stripUndefined<T extends object>(value: T): Partial<T> {

@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { parseYaml } from '../../../src/common/utils/yamlUtils.js';
+import * as yaml from 'js-yaml';
 import { dumpRepositoryYaml } from '../../../src/common/utils/yamlUtils.js';
 
 // Every expected text below is what Prettier leaves unchanged (the same cases as in vscode-sfdx-hardis)
@@ -7,7 +7,7 @@ describe('dumpRepositoryYaml()', () => {
   function expectDump(doc: unknown, expected: string) {
     const dumped = dumpRepositoryYaml(doc);
     expect(dumped).to.equal(expected);
-    expect(parseYaml(dumped)).to.deep.equal(parseYaml(expected));
+    expect(yaml.load(dumped)).to.deep.equal(yaml.load(expected));
   }
 
   it('quotes with double quotes', () => {

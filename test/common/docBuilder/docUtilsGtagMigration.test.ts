@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import * as os from 'os';
 import * as path from 'path';
 import fs from '../../../src/common/utils/fsUtils.js';
-import { parseYaml } from '../../../src/common/utils/yamlUtils.js';
+import * as yaml from 'js-yaml';
 import { migrateGtagJsToMkDocsAnalytics, mergeIntoYamlText } from '../../../src/common/docBuilder/docUtils.js';
 
 /** A project documentation as it was generated before analytics moved to extra.analytics. */
@@ -54,7 +54,7 @@ describe('migrateGtagJsToMkDocsAnalytics()', () => {
 
   it('moves a configured measurement id into extra.analytics and drops the script', async () => {
     await writeGtagJs('G-ABC1234567');
-    const mkdocsYml: any = parseYaml(legacyMkDocsYml);
+    const mkdocsYml: any = yaml.load(legacyMkDocsYml);
 
     const result = await migrateGtagJsToMkDocsAnalytics(projectDir, mkdocsYml);
 
@@ -69,12 +69,12 @@ describe('migrateGtagJsToMkDocsAnalytics()', () => {
 
   it('writes the id where the theme reads it, and keeps the comments of the file', async () => {
     await writeGtagJs('G-ABC1234567');
-    const mkdocsYml: any = parseYaml(legacyMkDocsYml);
+    const mkdocsYml: any = yaml.load(legacyMkDocsYml);
 
     await migrateGtagJsToMkDocsAnalytics(projectDir, mkdocsYml);
     const written = mergeIntoYamlText(legacyMkDocsYml, mkdocsYml);
 
-    const reloaded: any = parseYaml(written);
+    const reloaded: any = yaml.load(written);
     expect(reloaded.extra.analytics.property).to.equal('G-ABC1234567');
     expect(reloaded.extra_javascript).to.not.include('javascripts/gtag.js');
     expect(written).to.include('# The pages sfdx-hardis writes');
@@ -82,7 +82,7 @@ describe('migrateGtagJsToMkDocsAnalytics()', () => {
 
   it('drops the script of a project that never configured an id, and adds no analytics', async () => {
     await writeGtagJs('G-XXXXXXXXXX');
-    const mkdocsYml: any = parseYaml(legacyMkDocsYml);
+    const mkdocsYml: any = yaml.load(legacyMkDocsYml);
 
     const result = await migrateGtagJsToMkDocsAnalytics(projectDir, mkdocsYml);
 
@@ -94,7 +94,7 @@ describe('migrateGtagJsToMkDocsAnalytics()', () => {
 
   it('touches nothing when the two places declare different ids', async () => {
     await writeGtagJs('G-ABC1234567');
-    const mkdocsYml: any = parseYaml(legacyMkDocsYml);
+    const mkdocsYml: any = yaml.load(legacyMkDocsYml);
     mkdocsYml.extra.analytics = { provider: 'google', property: 'G-9Z8Y7X6W5V' };
 
     const result = await migrateGtagJsToMkDocsAnalytics(projectDir, mkdocsYml);
@@ -109,7 +109,7 @@ describe('migrateGtagJsToMkDocsAnalytics()', () => {
 
   it('finishes a migration that was interrupted, when both already say the same id', async () => {
     await writeGtagJs('G-ABC1234567');
-    const mkdocsYml: any = parseYaml(legacyMkDocsYml);
+    const mkdocsYml: any = yaml.load(legacyMkDocsYml);
     mkdocsYml.extra.analytics = { provider: 'google', property: 'G-ABC1234567' };
 
     const result = await migrateGtagJsToMkDocsAnalytics(projectDir, mkdocsYml);
@@ -121,7 +121,7 @@ describe('migrateGtagJsToMkDocsAnalytics()', () => {
   });
 
   it('removes an entry left behind when the script is already gone', async () => {
-    const mkdocsYml: any = parseYaml(legacyMkDocsYml);
+    const mkdocsYml: any = yaml.load(legacyMkDocsYml);
 
     const result = await migrateGtagJsToMkDocsAnalytics(projectDir, mkdocsYml);
 
@@ -131,7 +131,7 @@ describe('migrateGtagJsToMkDocsAnalytics()', () => {
   });
 
   it('does nothing at all on a documentation that never had the script', async () => {
-    const mkdocsYml: any = parseYaml(legacyMkDocsYml);
+    const mkdocsYml: any = yaml.load(legacyMkDocsYml);
     mkdocsYml.extra_javascript = ['javascripts/tables.js'];
     const before = JSON.parse(JSON.stringify(mkdocsYml));
 
@@ -143,7 +143,7 @@ describe('migrateGtagJsToMkDocsAnalytics()', () => {
 
   it('is safe to run twice', async () => {
     await writeGtagJs('G-ABC1234567');
-    const mkdocsYml: any = parseYaml(legacyMkDocsYml);
+    const mkdocsYml: any = yaml.load(legacyMkDocsYml);
 
     await migrateGtagJsToMkDocsAnalytics(projectDir, mkdocsYml);
     const afterFirst = JSON.parse(JSON.stringify(mkdocsYml));

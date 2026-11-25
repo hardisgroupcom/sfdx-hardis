@@ -53,7 +53,7 @@ Required in agent mode: \`--layer\` (and \`--branch\` with \`--layer branch\`), 
 <summary>Technical explanations</summary>
 
 - A full rule (one with a \`type\`) is validated before being written; an override must target a rule that exists in another place or in the built-in list.
-- Project and branch rules are written, keeping every other key; issue rules are the YAML block of the issue body.
+- Project and branch rules are written with \`js-yaml\`, keeping every other key; issue rules are the YAML block of the issue body.
 </details>
 `;
 

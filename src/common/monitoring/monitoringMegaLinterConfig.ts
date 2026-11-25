@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { parseYaml } from '../utils/yamlUtils.js';
+import * as yaml from 'js-yaml';
 import fs from '../utils/fsUtils.js';
 import { PACKAGE_ROOT_DIR } from '../../settings.js';
 
@@ -44,7 +44,7 @@ export async function ensureMonitoringMegaLinterConfig(repoDir = process.cwd()):
 // a DISABLE_ERRORS key, true or false, is never overridden. Appended as text, so that the comments
 // and the formatting of the file are kept. Throws when the content is not a YAML mapping.
 export function addDisableErrors(content: string): string | null {
-  const parsed = parseYaml(content) ?? {};
+  const parsed = yaml.load(content) ?? {};
   if (typeof parsed !== 'object' || Array.isArray(parsed)) {
     throw new Error('the root of the file is not a list of properties');
   }
@@ -56,7 +56,7 @@ export function addDisableErrors(content: string): string | null {
   const updatedContent = content + separator + DISABLE_ERRORS_LINES.join(eol) + eol;
   // Text appended after a document end marker, or to a root written in flow style, is not read as a
   // property of the file: better leave it alone than write a file MegaLinter cannot load
-  if ((parseYaml(updatedContent) as any)?.DISABLE_ERRORS !== true) {
+  if ((yaml.load(updatedContent) as any)?.DISABLE_ERRORS !== true) {
     throw new Error('DISABLE_ERRORS cannot be appended to this file');
   }
   return updatedContent;

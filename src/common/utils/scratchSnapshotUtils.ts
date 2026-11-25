@@ -16,7 +16,7 @@ import fs from './fsUtils.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
 import { getConfig, getEnvVar, projectConfigFiles } from '../../config/index.js';
 import { resolveDataWorkspacePath } from './dataUtils.js';
-import { parseYaml } from './yamlUtils.js';
+import * as yaml from 'js-yaml';
 import { isAncestor } from './backpromoteGitUtils.js';
 import { GitProvider } from '../gitProvider/index.js';
 import { t } from './i18n.js';
@@ -390,7 +390,7 @@ function readConfigAtCommit(ref: string, branch: string, cwd: string): any {
     for (const file of files) {
       const res = spawnSync('git', ['show', `${ref}:${file}`], { cwd, encoding: 'utf8' });
       if (res.status === 0) {
-        return (parseYaml(res.stdout) || {}) as any;
+        return (yaml.load(res.stdout) || {}) as any;
       }
     }
     return {};

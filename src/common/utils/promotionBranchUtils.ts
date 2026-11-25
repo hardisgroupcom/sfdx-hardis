@@ -1,5 +1,5 @@
 import c from 'chalk';
-import { parseYaml } from './yamlUtils.js';
+import * as yaml from 'js-yaml';
 import { CommonPullRequestInfo } from '../gitProvider/index.js';
 import { uxLog } from './index.js';
 import { t } from './i18n.js';
@@ -280,7 +280,7 @@ export function parsePromotionPullRequestIds(description: string | null | undefi
   for (const block of yamlBlocks) {
     let parsed: any;
     try {
-      parsed = parseYaml(block);
+      parsed = yaml.load(block);
     } catch {
       continue;
     }

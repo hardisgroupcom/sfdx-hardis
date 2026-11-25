@@ -59,7 +59,7 @@ Required in agent mode: \`--layer\` (and \`--branch\` with \`--layer branch\`), 
 <details markdown="1">
 <summary>Technical explanations</summary>
 
-- Project and branch rules are written under the \`replacementRules\` key, keeping every other key.
+- Project and branch rules are written under the \`replacementRules\` key with \`js-yaml\`, keeping every other key.
 - Issue rules are the YAML block of the issue body (\`getDashboardBody\` / \`updateDashboardBody\` of the git provider); the issue is created when missing.
 - The rule is validated before being written (\`validateReplacementRule\`): an id already used in the same place is refused, use \`hardis:project:replacement:update\`.
 </details>

@@ -1,7 +1,7 @@
 import { RESERVED_ACTION_TYPES } from '../actionsProvider/actionTypes.js';
 import c from 'chalk';
 import * as path from 'path';
-import { parseYaml } from './yamlUtils.js';
+import * as yaml from 'js-yaml';
 import fs from './fsUtils.js';
 import { getConfig } from '../../config/index.js';
 import { uxLog } from './index.js';
@@ -124,7 +124,7 @@ export async function readCustomFunctionsFromProjectFile(): Promise<CustomFuncti
   if (!fs.existsSync(configFile)) {
     return [];
   }
-  const doc: any = parseYaml(fs.readFileSync(configFile, 'utf-8')) || {};
+  const doc: any = yaml.load(fs.readFileSync(configFile, 'utf-8')) || {};
   const rawFunctions = doc[CUSTOM_FUNCTIONS_CONFIG_KEY];
   return Array.isArray(rawFunctions) ? rawFunctions : [];
 }
@@ -134,7 +134,7 @@ export async function writeCustomFunctionsToProjectFile(functions: CustomFunctio
   const configFile = getProjectConfigFilePath();
   let doc: any = {};
   if (fs.existsSync(configFile)) {
-    doc = parseYaml(fs.readFileSync(configFile, 'utf-8')) || {};
+    doc = yaml.load(fs.readFileSync(configFile, 'utf-8')) || {};
   }
   if (functions.length === 0) {
     delete doc[CUSTOM_FUNCTIONS_CONFIG_KEY];
@@ -399,7 +399,7 @@ export async function findActionsUsingCustomFunction(
   for (const configFile of configFiles) {
     let doc: any;
     try {
-      doc = parseYaml(fs.readFileSync(configFile, 'utf-8')) || {};
+      doc = yaml.load(fs.readFileSync(configFile, 'utf-8')) || {};
     } catch (_e) {
       // A config file that cannot be parsed is not this command's problem to report
       continue;

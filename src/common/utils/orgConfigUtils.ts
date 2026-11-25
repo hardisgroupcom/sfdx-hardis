@@ -4,7 +4,7 @@ import { glob } from 'glob';
 import type { Browser } from 'puppeteer-core';
 import sortArray from './sortArray.js';
 import * as chromeLauncher from 'chrome-launcher';
-import { parseYaml } from './yamlUtils.js';
+import * as yaml from 'js-yaml';
 import { uxLog } from './index.js';
 import { SfError } from '@salesforce/core';
 import { GLOB_IGNORE_PATTERNS } from './projectUtils.js';
@@ -190,7 +190,7 @@ export async function listMajorOrgs(): Promise<any[]> {
   const branchConfigPattern = '**/config/branches/.sfdx-hardis.*.yml';
   const configFiles = await glob(branchConfigPattern, { ignore: GLOB_IGNORE_PATTERNS });
   for (const configFile of configFiles) {
-    const props = (parseYaml(fs.readFileSync(configFile, 'utf-8')) || {}) as any;
+    const props = (yaml.load(fs.readFileSync(configFile, 'utf-8')) || {}) as any;
     listViewRegex.lastIndex = 0;
     const branchNameRegex = /\.sfdx-hardis\.(.*)\.yml/gi;
     const m = branchNameRegex.exec(configFile);

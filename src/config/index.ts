@@ -14,7 +14,7 @@ import { Connection, SfError } from '@salesforce/core';
 import { httpGet } from '../common/utils/httpUtils.js';
 import c from 'chalk';
 import fs from '../common/utils/fsUtils.js';
-import { parseYaml } from '../common/utils/yamlUtils.js';
+import * as yaml from 'js-yaml';
 import { parseDocument as parseYamlDocument } from 'yaml';
 import * as os from 'os';
 import * as path from 'path';
@@ -231,7 +231,7 @@ async function searchConfigFile(searchPlaces: string[]): Promise<{ filepath: str
     const content = await fs.readFile(filepath, 'utf-8');
     let config: any;
     try {
-      config = path.basename(filepath) === 'package.json' ? JSON.parse(content)?.[moduleName] : parseYaml(content);
+      config = path.basename(filepath) === 'package.json' ? JSON.parse(content)?.[moduleName] : yaml.load(content);
     } catch (e) {
       // The error names the file to fix, as cosmiconfig did
       (e as Error).message = `${filepath}:\n${(e as Error).message}`;
@@ -254,7 +254,7 @@ async function loadFromRemoteConfigFile(url) {
       '[sfdx-hardis] Unable to read remote configuration file at ' + url + '\n' + JSON.stringify(remoteConfigResp)
     );
   }
-  const remoteConfig = parseYaml(remoteConfigResp.data);
+  const remoteConfig = yaml.load(remoteConfigResp.data);
   REMOTE_CONFIGS[url] = remoteConfig;
   return remoteConfig;
 }

@@ -44,7 +44,7 @@ Required in agent mode: \`--id\`. Add \`--force\` to delete a function that depl
 <details markdown="1">
 <summary>Technical explanations</summary>
 
-- Reads and writes \`config/.sfdx-hardis.yml\`, preserving every other key.
+- Reads and writes \`config/.sfdx-hardis.yml\` with \`js-yaml\`, preserving every other key.
 - Usage scan covers \`config/.sfdx-hardis.yml\`, \`config/branches/*.yml\` and \`scripts/actions/*.yml\`.
 </details>
 `;

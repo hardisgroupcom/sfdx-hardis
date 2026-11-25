@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import fs from '../../../../../src/common/utils/fsUtils.js';
-import { parseYaml, dumpYaml } from '../../../../../src/common/utils/yamlUtils.js';
+import * as yaml from 'js-yaml';
 import * as path from 'path';
 import { renameDraftToPr } from '../../../../../src/common/utils/actionUtils.js';
 import { setupTmpDir } from '../../../../common/utils/actionTestHelper.js';
@@ -13,7 +13,7 @@ describe('hardis:project:action:link-pull-request - unit logic', () => {
       const draftFile = path.join(ctx.getDir(), 'scripts', 'actions', '.sfdx-hardis.draft.yml');
       await fs.ensureDir(path.dirname(draftFile));
       const actions = { commandsPreDeploy: [{ id: 'test', label: 'Test', type: 'command', command: 'echo hello' }] };
-      await fs.writeFile(draftFile, dumpYaml(actions));
+      await fs.writeFile(draftFile, yaml.dump(actions));
 
       const targetFile = await renameDraftToPr('42');
 
@@ -21,7 +21,7 @@ describe('hardis:project:action:link-pull-request - unit logic', () => {
       expect(fs.existsSync(targetFile)).to.equal(true);
       expect(fs.existsSync(draftFile)).to.equal(false);
 
-      const doc: any = parseYaml(fs.readFileSync(targetFile, 'utf-8'));
+      const doc: any = yaml.load(fs.readFileSync(targetFile, 'utf-8'));
       expect(doc.commandsPreDeploy).to.have.lengthOf(1);
       expect(doc.commandsPreDeploy[0].id).to.equal('test');
     });
@@ -38,8 +38,8 @@ describe('hardis:project:action:link-pull-request - unit logic', () => {
     it('throws when target file already exists', async () => {
       const scriptsDir = path.join(ctx.getDir(), 'scripts', 'actions');
       await fs.ensureDir(scriptsDir);
-      await fs.writeFile(path.join(scriptsDir, '.sfdx-hardis.draft.yml'), dumpYaml({ test: true }));
-      await fs.writeFile(path.join(scriptsDir, '.sfdx-hardis.55.yml'), dumpYaml({ existing: true }));
+      await fs.writeFile(path.join(scriptsDir, '.sfdx-hardis.draft.yml'), yaml.dump({ test: true }));
+      await fs.writeFile(path.join(scriptsDir, '.sfdx-hardis.55.yml'), yaml.dump({ existing: true }));
 
       try {
         await renameDraftToPr('55');

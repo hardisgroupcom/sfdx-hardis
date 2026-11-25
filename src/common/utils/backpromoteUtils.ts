@@ -640,8 +640,8 @@ async function loadPrConfig(prId: number, ref: string | null, filesAtRef: Set<st
     content = await fs.readFile(prConfigFile, 'utf-8');
   }
   try {
-    const { parseYaml } = await import('./yamlUtils.js');
-    return parseYaml(content);
+    const yaml = await import('js-yaml');
+    return yaml.load(content);
   } catch {
     return null;
   }

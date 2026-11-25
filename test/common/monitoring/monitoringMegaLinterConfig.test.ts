@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { parseYaml } from '../../../src/common/utils/yamlUtils.js';
+import * as yaml from 'js-yaml';
 import {
   MEGALINTER_CONFIG_FILE,
   addDisableErrors,
@@ -16,7 +16,7 @@ describe('monitoringMegaLinterConfig', () => {
       const content = '# Our settings\nEXTENDS:\n  - https://example.com/config.yml\nDISABLE_ERRORS_LINTERS:\n  - CSS_STYLELINT\n';
       const updated = addDisableErrors(content) as string;
       expect(updated.startsWith(content)).to.be.true;
-      const parsed = parseYaml(updated) as any;
+      const parsed = yaml.load(updated) as any;
       expect(parsed.DISABLE_ERRORS).to.be.true;
       expect(parsed.DISABLE_ERRORS_LINTERS).to.deep.equal(['CSS_STYLELINT']);
     });
@@ -27,10 +27,10 @@ describe('monitoringMegaLinterConfig', () => {
     });
 
     it('handles a file without a final line break, CRLF line ends and an empty file', () => {
-      expect(parseYaml(addDisableErrors('APPLY_FIXES: none') as string)).to.deep.equal({ APPLY_FIXES: 'none', DISABLE_ERRORS: true });
+      expect(yaml.load(addDisableErrors('APPLY_FIXES: none') as string)).to.deep.equal({ APPLY_FIXES: 'none', DISABLE_ERRORS: true });
       const crlf = addDisableErrors('APPLY_FIXES: none\r\n') as string;
       expect(crlf.replace(/\r\n/g, '')).to.not.include('\n');
-      expect(parseYaml(addDisableErrors('') as string)).to.deep.equal({ DISABLE_ERRORS: true });
+      expect(yaml.load(addDisableErrors('') as string)).to.deep.equal({ DISABLE_ERRORS: true });
     });
 
     it('throws when the appended key would not be read as a property of the file', () => {
@@ -58,7 +58,7 @@ describe('monitoringMegaLinterConfig', () => {
     it('creates the file from the monitoring template when the repository has none', async () => {
       const result = await ensureMonitoringMegaLinterConfig(repoDir);
       expect(result.status).to.equal('created');
-      const parsed = parseYaml(fs.readFileSync(path.join(repoDir, MEGALINTER_CONFIG_FILE), 'utf8')) as any;
+      const parsed = yaml.load(fs.readFileSync(path.join(repoDir, MEGALINTER_CONFIG_FILE), 'utf8')) as any;
       expect(parsed.DISABLE_ERRORS).to.be.true;
       expect(parsed.EXTENDS).to.be.an('array');
     });

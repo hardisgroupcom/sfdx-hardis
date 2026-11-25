@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { execSync } from 'child_process';
 import * as path from 'path';
-import { parseYaml } from '../../../../../src/common/utils/yamlUtils.js';
+import * as yaml from 'js-yaml';
 import fs from '../../../../../src/common/utils/fsUtils.js';
 import CleanAgentsDeploymentActions from '../../../../../src/commands/hardis/project/clean/agents-deployment-actions.js';
 import { upsertAgentPublishAction, upsertAgentRunningUserAction } from '../../../../../src/common/utils/agentUtils.js';
@@ -121,7 +121,7 @@ describe('hardis:project:clean:agents-deployment-actions', () => {
     await writeBundle('Support_Agent_2');
     await CleanAgentsDeploymentActions.run(['--delta-from', 'HEAD', '--agent']);
 
-    const draft: any = parseYaml(await fs.readFile(path.join(tmpDir, 'scripts', 'actions', '.sfdx-hardis.draft.yml'), 'utf8'));
+    const draft: any = yaml.load(await fs.readFile(path.join(tmpDir, 'scripts', 'actions', '.sfdx-hardis.draft.yml'), 'utf8'));
     expect(draft.commandsPostDeploy.map((action: any) => [action.type, action.parameters.agentName, action.runOnlyOnceByOrg])).to.deep.equal([
       ['agent-publish', 'Story_Agent', true],
       ['agent-publish', 'Support_Agent_2', true],
@@ -138,7 +138,7 @@ describe('hardis:project:clean:agents-deployment-actions', () => {
     const scriptFile = path.join(tmpDir, 'force-app', 'main', 'default', 'aiAuthoringBundles', 'Story_Agent', 'Story_Agent.agent');
     await fs.writeFile(scriptFile, (await fs.readFile(scriptFile, 'utf8')) + 'system:\n    instructions: "Changed"\n');
     await CleanAgentsDeploymentActions.run(['--agent']);
-    const draft: any = parseYaml(await fs.readFile(path.join(tmpDir, 'scripts', 'actions', '.sfdx-hardis.draft.yml'), 'utf8'));
+    const draft: any = yaml.load(await fs.readFile(path.join(tmpDir, 'scripts', 'actions', '.sfdx-hardis.draft.yml'), 'utf8'));
     expect(draft.commandsPostDeploy.map((action: any) => action.parameters.agentName)).to.deep.equal(['Story_Agent']);
     expect(draft.commandsPreDeploy || []).to.deep.equal([]);
   });
@@ -152,7 +152,7 @@ describe('hardis:project:clean:agents-deployment-actions', () => {
     await fs.writeFile(scriptFile, (await fs.readFile(scriptFile, 'utf8')) + 'system:\n    instructions: "Changed"\n');
     await CleanAgentsDeploymentActions.run(['--agent']);
     const draftFile = path.join(tmpDir, 'scripts', 'actions', '.sfdx-hardis.draft.yml');
-    const draft: any = parseYaml(await fs.readFile(draftFile, 'utf8'));
+    const draft: any = yaml.load(await fs.readFile(draftFile, 'utf8'));
     expect(draft.commandsPostDeploy.map((action: any) => action.parameters.agentName)).to.deep.equal(['Story_Agent']);
     const writtenAt = fs.statSync(draftFile).mtimeMs;
     await new Promise((resolve) => setTimeout(resolve, 20));

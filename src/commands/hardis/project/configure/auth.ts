@@ -8,7 +8,7 @@ import {
 import { fs, Messages, Org, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { parseYaml } from '../../../../common/utils/yamlUtils.js';
+import * as yaml from 'js-yaml';
 import { buildOrgSlugFromInstanceUrl, execSfdxJson, generateSSLCertificate, git, isCI, promptInstanceUrl, uxLog } from '../../../../common/utils/index.js';
 import { getOrgAliasUsername, promptOrg } from '../../../../common/utils/orgUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
@@ -236,7 +236,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
       let initialMergeTargets: string[] = [];
       const branchConfigFile = `./config/branches/.sfdx-hardis.${branchName}.yml`;
       if (fs.existsSync(branchConfigFile)) {
-        const branchConfig: any = parseYaml(fs.readFileSync(branchConfigFile, 'utf8'));
+        const branchConfig: any = yaml.load(fs.readFileSync(branchConfigFile, 'utf8'));
         if (branchConfig && branchConfig.mergeTargets) {
           initialMergeTargets = branchConfig.mergeTargets;
         }

@@ -6,7 +6,7 @@ import c from 'chalk';
 import fs from '../../../../common/utils/fsUtils.js';
 import * as path from 'path';
 import { setDeepValue } from '../../../../common/utils/objectUtils.js';
-import { dumpYaml } from '../../../../common/utils/yamlUtils.js';
+import * as yaml from 'js-yaml';
 import { uxLog } from '../../../../common/utils/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
 import { Config } from '@oclif/core';
@@ -86,7 +86,7 @@ The command's technical implementation involves:
 - **Index and Commands Page Generation:** It reads the project's \`README.md\` and extracts relevant sections to create the \`index.md\` file. It also generates a separate \`commands.md\` file listing all commands.
 - **Command List Changes:** A generated page is recognized by its header comment and its title. A command without such a page is new, and such a page without a command is replaced by the removed command page.
 - **File System Operations:** It uses Node.js \`fs\` to create directories, copy the default site files (\`defaults/mkdocs\`), and write the generated Markdown and YAML files.
-- **YAML Serialization:** It serializes the navigation object into YAML format for \`mkdocs.yml\`.
+- **YAML Serialization:** It uses \`js-yaml\` to serialize the navigation object into YAML format for \`mkdocs.yml\`.
 </details>
 
 ### Agent Mode
@@ -254,7 +254,7 @@ In agent mode:
     let navRebuilt = false;
     if (rebuildIndex) {
       const commandsNav = this.buildCommandsNav(allCommandIds);
-      uxLog("other", this, dumpYaml(commandsNav));
+      uxLog("other", this, yaml.dump(commandsNav));
       mkdocsYml.nav = mkdocsYml.nav.map((navItem: any) => {
         if (navItem['Commands']) {
           navItem['Commands'] = commandsNav;

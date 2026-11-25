@@ -4,7 +4,7 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { createHash } from 'crypto';
 
-import { parseYaml, dumpYaml } from '../utils/yamlUtils.js';
+import * as yaml from 'js-yaml';
 import { parseDocument as parseYamlDocument, isMap as isYamlMap, isSeq as isYamlSeq } from 'yaml';
 import { glob } from 'glob';
 import { SfError } from "@salesforce/core";
@@ -284,7 +284,7 @@ export async function removeDeadDocumentationLinks(docsRoot: string): Promise<nu
   return fixedLinksNb;
 }
 
-// The YAML parser cannot resolve unquoted "!!python/name:" tags, so they are quoted before load
+// js-yaml cannot parse unquoted "!!python/name:" tags, so they are quoted before load
 // and unquoted again on dump, which keeps the file readable by Zensical.
 export function readMkDocsFile(mkdocsYmlFile: string): any {
   let mkdocsYmlStr = fs.readFileSync(mkdocsYmlFile, 'utf-8');
@@ -297,7 +297,7 @@ export function readMkDocsFile(mkdocsYmlFile: string): any {
   for (const tag of [EMOJI_TWEMOJI_TAG, EMOJI_TO_SVG_TAG, FENCE_CODE_FORMAT_TAG]) {
     mkdocsYmlStr = mkdocsYmlStr.replaceAll(tag, `'${tag}'`);
   }
-  const mkdocsYml: any = parseYaml(mkdocsYmlStr);
+  const mkdocsYml: any = yaml.load(mkdocsYmlStr);
   mkdocsYml.nav = normalizeMkDocsNav(mkdocsYml.nav);
   return mkdocsYml;
 }
@@ -438,7 +438,7 @@ export async function writeMkDocsFile(mkdocsYmlFile: string, mkdocsYml: any) {
   if (fs.existsSync(mkdocsYmlFile)) {
     mkdocsYmlStr = mergeIntoYamlText(fs.readFileSync(mkdocsYmlFile, 'utf-8'), mkdocsYml);
   } else {
-    mkdocsYmlStr = dumpYaml(mkdocsYml);
+    mkdocsYmlStr = yaml.dump(mkdocsYml, { lineWidth: -1 });
   }
   for (const tag of [EMOJI_TWEMOJI_TAG, EMOJI_TO_SVG_TAG, FENCE_CODE_FORMAT_TAG]) {
     mkdocsYmlStr = mkdocsYmlStr.replaceAll(`'${tag}'`, tag);

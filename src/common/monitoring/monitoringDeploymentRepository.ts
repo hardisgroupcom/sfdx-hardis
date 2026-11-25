@@ -1,5 +1,5 @@
 import c from 'chalk';
-import { parseYaml } from '../utils/yamlUtils.js';
+import * as yaml from 'js-yaml';
 import { SfError } from '@salesforce/core';
 import fs from '../utils/fsUtils.js';
 import { git, uxLog } from '../utils/index.js';
@@ -25,7 +25,7 @@ export async function readDeploymentRepository(configFile: string = MONITORING_C
     return null;
   }
   try {
-    const branchConfig: any = parseYaml(await fs.readFile(configFile, 'utf8'));
+    const branchConfig: any = yaml.load(await fs.readFile(configFile, 'utf8'));
     const value = branchConfig?.deploymentRepository;
     return typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
   } catch {
@@ -49,7 +49,7 @@ export async function findDeploymentRepositoryInMonitoringBranches(currentBranch
   for (const ref of refs) {
     try {
       const content = await git().show([`${ref}:${MONITORING_CONFIG_FILE}`]);
-      const config: any = parseYaml(content);
+      const config: any = yaml.load(content);
       if (typeof config?.deploymentRepository === 'string' && config.deploymentRepository.trim() !== '') {
         return config.deploymentRepository.trim();
       }

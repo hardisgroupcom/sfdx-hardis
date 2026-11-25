@@ -3,7 +3,7 @@ import { uxLog } from "./index.js";
 import c from "chalk";
 import path from "path";
 import fs from './fsUtils.js';
-import { parseYaml } from './yamlUtils.js';
+import yaml from "js-yaml";
 import { isRetrofit, listMajorOrgs } from "./orgConfigUtils.js";
 import { isBackpromoteBranchName } from "./backpromoteRules.js";
 import { SfError } from "@salesforce/core";
@@ -251,7 +251,7 @@ export async function getPullRequestScopedSfdxHardisConfig(pr: CommonPullRequest
   if (fs.existsSync(prConfigFileName)) {
     try {
       const prConfig = await fs.readFile(prConfigFileName, 'utf8');
-      configFromFile = parseYaml(prConfig) as any;
+      configFromFile = yaml.load(prConfig) as any;
     }
     catch (err) {
       throw new SfError(`[PullRequestUtils] Error reading/parsing PR config file ${prConfigFileName} for PR ${pr.idStr}: ${err}`);
@@ -313,7 +313,7 @@ export function getYamlFromPrDescription(pr: CommonPullRequestInfo): object | nu
   while ((match = regex.exec(pr.description || "")) !== null) {
     let parsedYaml: any;
     try {
-      parsedYaml = parseYaml(match[1]) as any;
+      parsedYaml = yaml.load(match[1]) as any;
     }
     catch (err) {
       throw new SfError(`[PullRequestUtils] Error parsing YAML from PR description for PR ${pr.idStr} ${pr.webUrl}: ${err}`);
