@@ -939,15 +939,15 @@
   resolved "https://registry.yarnpkg.com/@inquirer/ansi/-/ansi-2.1.1.tgz#18a6009686f2bbeb498d1d6a7d1e4e680f65c64a"
   integrity sha512-WwCc5T9554vU/M3W6mztOJvZK/5RgMwQsGlSZSZpKA/H2IfsTWIPdn1WiS8+HHjhe3H0IsmQCXUlDbvGM6vvuA==
 
-"@inquirer/checkbox@5.2.8":
-  version "5.2.8"
-  resolved "https://registry.yarnpkg.com/@inquirer/checkbox/-/checkbox-5.2.8.tgz#fda6af5e7d747250974be6de417f0da9bac6c125"
-  integrity sha512-NY/S1EalQhlonqhwwsarrcnkH7s9ByQuvjWYdk1jB2Gb9EPQJjKkhCTWjM3yQ0UpHaLm1XbIL89b+32G8rhO5w==
+"@inquirer/checkbox@5.3.0":
+  version "5.3.0"
+  resolved "https://registry.yarnpkg.com/@inquirer/checkbox/-/checkbox-5.3.0.tgz#fab107c89138d93b220381f9bb49d4850ac20e38"
+  integrity sha512-3QQSO87A+JoRtOtjtsgX2enwTL+3+VBVrkUpdqrIxMOgn5+W5sE57PcCPAiNUIESHxV4Q6mNEGxq2xLmRa0/yw==
   dependencies:
-    "@inquirer/ansi" "^2.0.10"
-    "@inquirer/core" "^12.0.6"
-    "@inquirer/figures" "^2.0.10"
-    "@inquirer/type" "4.2.1"
+    "@inquirer/ansi" "^2.1.0"
+    "@inquirer/core" "^12.1.0"
+    "@inquirer/figures" "^2.1.0"
+    "@inquirer/type" "4.3.0"
 
 "@inquirer/checkbox@^4.3.2":
   version "4.3.2"
