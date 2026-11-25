@@ -1,5 +1,5 @@
 import c from 'chalk';
-import puppeteer, { Browser, Frame } from 'puppeteer-core';
+import type { Browser, Frame } from 'puppeteer-core';
 import { uxLog } from './index.js';
 import { getChromeExecutablePath } from './orgConfigUtils.js';
 import { t } from './i18n.js';
@@ -122,6 +122,7 @@ export async function unlinkUserSecurityKeys(
   const chromeExecutablePath = getChromeExecutablePath();
   let browser: Browser;
   try {
+    const { default: puppeteer } = await import('puppeteer-core');
     browser = await puppeteer.launch({
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
       headless: !(options.debug === true),

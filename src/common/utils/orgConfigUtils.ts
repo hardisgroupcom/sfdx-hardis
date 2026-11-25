@@ -1,7 +1,7 @@
 import c from 'chalk';
 import fs from './fsUtils.js';
 import { glob } from 'glob';
-import puppeteer, { Browser } from 'puppeteer-core';
+import type { Browser } from 'puppeteer-core';
 import sortArray from './sortArray.js';
 import * as chromeLauncher from 'chrome-launcher';
 import * as yaml from 'js-yaml';
@@ -49,6 +49,7 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
   // Start puppeteer
   let browser: Browser;
   try {
+    const { default: puppeteer } = await import('puppeteer-core');
     browser = await puppeteer.launch({
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
       headless: !(options.debug === true),

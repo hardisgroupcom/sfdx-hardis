@@ -3,7 +3,6 @@ import { SfCommand, Flags, optionalOrgFlagWithDeprecations } from '@salesforce/s
 import fs from '../../../common/utils/fsUtils.js';
 import c from "chalk";
 import * as path from "path";
-import { process as ApexDocGen } from '@cparra/apexdocs';
 import { XMLBuilder } from "fast-xml-parser";
 import sortArray from '../../../common/utils/sortArray.js';
 import { Messages } from '@salesforce/core';
@@ -14,7 +13,7 @@ import { getLargeXmlParser, parseXmlFile } from '../../../common/utils/xmlUtils.
 import { bool2emoji, createTempDir, execCommand, execSfdxJson, filterPackageXml, getCurrentGitBranch, sortCrossPlatform, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getBannerMarkdownAndLink, getConfig } from '../../../config/index.js';
 import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
-import { linkifyWorksheetUrls } from '../../../common/utils/filesUtils.js';
+import { linkifyWorksheetUrls, loadExcelJs } from '../../../common/utils/filesUtils.js';
 import { glob } from 'glob';
 import { GLOB_IGNORE_PATTERNS, METADATA_DOC_GLOB_IGNORE_PATTERNS, PACKAGE_DIRECTORY_DOC_GLOB_IGNORE_PATTERNS, globMetadataInPackageDirectories, listApexFiles, listAuraBundleFiles, listFlowFiles, listPageFiles, listVisualforceComponentFiles, listVisualforcePageFiles, returnApexType } from '../../../common/utils/projectUtils.js';
 import { buildComponentReferenceIndex, ComponentReferenceIndex, getComponentReferences } from '../../../common/utils/metadataReferenceUtils.js';
@@ -47,7 +46,6 @@ import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
 import { makeFileNameGitCompliant } from '../../../common/utils/gitUtils.js';
 import { PromisePool } from '@supercharge/promise-pool';
 import { UtilsAi } from '../../../common/aiProvider/utils/utils.js';
-import ExcelJS from 'exceljs';
 import { t } from '../../../common/utils/i18n.js';
 import { writeReportFile } from '../../../common/utils/reportFileWriteUtils.js';
 import { getMonitoringFetchDepthLinksMarkdown } from '../../../common/monitoring/monitoringTemplateLinks.js';
@@ -575,6 +573,8 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
     const tempDir = await createTempDir();
     uxLog("log", this, c.grey(t('usingTempDirectory', { tempDir })));
     const packageDirs = this.project?.getPackageDirectories() || [];
+    // Loaded here only: apexdocs costs a second to every command importing this file
+    const { process: ApexDocGen } = await import('@cparra/apexdocs');
     for (const packageDir of packageDirs) {
       try {
         await ApexDocGen({
@@ -2526,6 +2526,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
   private async generateExcelFile() {
     uxLog("action", this, c.cyan(t('generatingExcelFileWithAllMetadata')));
 
+    const ExcelJS = await loadExcelJs();
     const workbook = new ExcelJS.Workbook();
     const targetExcelFilePath = path.join(this.outputMarkdownRoot, "project-documentation.xlsx");
 

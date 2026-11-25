@@ -6,7 +6,7 @@ import c from 'chalk';
 import { open } from '../../../../common/utils/openUtils.js';
 import { httpGet } from '../../../../common/utils/httpUtils.js';
 import path from 'path';
-import puppeteer, { Browser, Page } from 'puppeteer-core';
+import type { Browser, Page } from 'puppeteer-core';
 import { createTempDir, execCommand, execSfdxJson, isCI, removeTempDir, uxLog } from '../../../../common/utils/index.js';
 import { createBlankSfdxProject } from '../../../../common/utils/projectUtils.js';
 import { generateCsvFile, generateReportPath, uxLogTableWithReport } from '../../../../common/utils/filesUtils.js';
@@ -925,6 +925,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const chromeExecutablePath = getChromeExecutablePath();
     uxLog("log", this, c.cyan(t('chromeexecutablepath', { chromeExecutablePath })));
 
+    const { default: puppeteer } = await import('puppeteer-core');
     const browser = await puppeteer.launch({
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
       headless: false, // Always show the browser window

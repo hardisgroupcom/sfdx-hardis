@@ -3,7 +3,6 @@ import fs from './fsUtils.js';
 import * as path from "path";
 import { pathToFileURL } from "url";
 import { marked } from "marked";
-import puppeteer from "puppeteer-core";
 import { getChromeExecutablePath } from "./orgConfigUtils.js";
 import { uxLog } from "./index.js";
 import { t } from './i18n.js';
@@ -181,6 +180,8 @@ export async function generatePdfFileFromMarkdown(markdownFile: string, options:
     await fs.writeFile(tmpHtmlFile, html, 'utf8');
 
     // Print the HTML document to PDF using the local Chrome/Chromium
+    // Loaded here only: puppeteer-core costs a fifth of a second to every command importing this file
+    const { default: puppeteer } = await import("puppeteer-core");
     const browser = await puppeteer.launch({
       executablePath: chromeExecutablePath,
       timeout: timeoutMs,
