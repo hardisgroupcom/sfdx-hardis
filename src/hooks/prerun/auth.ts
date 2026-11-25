@@ -15,7 +15,9 @@ const hook: Hook<'prerun'> = async (options) => {
       'hardis:source:deploy',
       'hardis:source:push',
       'hardis:mdapi:deploy',
-      'hardis:project:deploy:simulate'
+      'hardis:project:deploy:simulate',
+      // Logging in again would open the new session that this command is meant to close
+      'hardis:auth:logout'
     ].includes(commandId)
   ) {
     return;

@@ -140,6 +140,18 @@ check_deploy_to_target_branch_org:
     #   fi
     - sf hardis:auth:login
     - sf hardis:project:deploy:smart --check
+    # To revoke, when the job ends, the Salesforce session opened by hardis:auth:login, replace the line above
+    # with the commented lines below. Useful when the org limits the concurrent sessions of the integration user
+    # (ex: a login flow blocking more than 10 sessions): each job would otherwise keep a session until Salesforce times it out.
+    # Only the session of this job is revoked, other sessions of the same user are not touched.
+    # It runs even when the deployment failed, and the job keeps the deployment result.
+    # It is not in after_script: with the Docker executor, after_script runs in a new container without the job
+    # authentication, where logging in again would open another session. A cancelled job keeps its session until it times out.
+    # Doc: https://sfdx-hardis.cloudity.com/hardis/auth/logout/
+    # - |
+    #   sf hardis:project:deploy:smart --check || DEPLOY_FAILED=true
+    #   sf hardis:auth:logout || true
+    #   [ -z "$DEPLOY_FAILED" ]
   artifacts:
     when: always
     paths:
@@ -355,6 +367,18 @@ check_deploy_to_current_branch_org:
     #   fi
     - sf hardis:auth:login
     - sf hardis:project:deploy:smart --check --major-branch-check
+    # To revoke, when the job ends, the Salesforce session opened by hardis:auth:login, replace the line above
+    # with the commented lines below. Useful when the org limits the concurrent sessions of the integration user
+    # (ex: a login flow blocking more than 10 sessions): each job would otherwise keep a session until Salesforce times it out.
+    # Only the session of this job is revoked, other sessions of the same user are not touched.
+    # It runs even when the deployment failed, and the job keeps the deployment result.
+    # It is not in after_script: with the Docker executor, after_script runs in a new container without the job
+    # authentication, where logging in again would open another session. A cancelled job keeps its session until it times out.
+    # Doc: https://sfdx-hardis.cloudity.com/hardis/auth/logout/
+    # - |
+    #   sf hardis:project:deploy:smart --check --major-branch-check || DEPLOY_FAILED=true
+    #   sf hardis:auth:logout || true
+    #   [ -z "$DEPLOY_FAILED" ]
   artifacts:
     when: always
     paths:
@@ -404,6 +428,18 @@ deploy_to_org:
     # Maintainer role when v* tags are protected. https://sfdx-hardis.cloudity.com/salesforce-ci-cd-release-versioning/
     - sf hardis:auth:login
     - sf hardis:project:deploy:smart
+    # To revoke, when the job ends, the Salesforce session opened by hardis:auth:login, replace the line above
+    # with the commented lines below. Useful when the org limits the concurrent sessions of the integration user
+    # (ex: a login flow blocking more than 10 sessions): each job would otherwise keep a session until Salesforce times it out.
+    # Only the session of this job is revoked, other sessions of the same user are not touched.
+    # It runs even when the deployment failed, and the job keeps the deployment result.
+    # It is not in after_script: with the Docker executor, after_script runs in a new container without the job
+    # authentication, where logging in again would open another session. A cancelled job keeps its session until it times out.
+    # Doc: https://sfdx-hardis.cloudity.com/hardis/auth/logout/
+    # - |
+    #   sf hardis:project:deploy:smart || DEPLOY_FAILED=true
+    #   sf hardis:auth:logout || true
+    #   [ -z "$DEPLOY_FAILED" ]
   artifacts:
     when: always
     paths:

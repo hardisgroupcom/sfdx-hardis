@@ -1,0 +1,5 @@
+command: hardis:auth:logout
+run: sf hardis:auth:logout --target-org helios-uat
+mode: replay
+org: none
+caption: Revoke the session opened by the login step on the Helios UAT sandbox, then remove its local auth

@@ -123,6 +123,16 @@ jobs:
           sf hardis:auth:login
           sf hardis:project:deploy:smart
 
+      # Uncomment the step below to revoke, when the job ends, the Salesforce session opened by hardis:auth:login.
+      # Useful when the org limits the concurrent sessions of the integration user (ex: a login flow blocking
+      # more than 10 sessions): each run would otherwise keep a session until Salesforce times it out.
+      # Only the session of this job is revoked, other sessions of the same user are not touched.
+      # It runs even when the deployment failed, and only prints a warning if the session cannot be revoked.
+      # Doc: https://sfdx-hardis.cloudity.com/hardis/auth/logout/
+      # - name: Revoke Salesforce session
+      #   if: always()
+      #   run: sf hardis:auth:logout || true
+
       # Upload sfdx-hardis reports, including the complete deployment result JSON
       - name: Archive sfdx-hardis reports
         if: always() # Also when the job was stopped by the timeout
