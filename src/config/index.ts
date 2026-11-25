@@ -229,7 +229,14 @@ async function searchConfigFile(searchPlaces: string[]): Promise<{ filepath: str
       continue;
     }
     const content = await fs.readFile(filepath, 'utf-8');
-    const config = path.basename(filepath) === 'package.json' ? JSON.parse(content)?.[moduleName] : parseYaml(content);
+    let config: any;
+    try {
+      config = path.basename(filepath) === 'package.json' ? JSON.parse(content)?.[moduleName] : parseYaml(content);
+    } catch (e) {
+      // The error names the file to fix, as cosmiconfig did
+      (e as Error).message = `${filepath}:\n${(e as Error).message}`;
+      throw e;
+    }
     if (config !== undefined && config !== null) {
       return { filepath, config };
     }

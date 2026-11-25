@@ -66,6 +66,17 @@ describe('Configuration file search', () => {
     expect((await getConfig('project')).projectName).to.equal('valid');
   });
 
+  it('names the file that is not valid YAML', async () => {
+    await write('config/.sfdx-hardis.yml', 'projectName: [unclosed\n');
+    let message = '';
+    try {
+      await setConfig('project', { devHubAlias: 'DevHub_demo' });
+    } catch (e) {
+      message = (e as Error).message;
+    }
+    expect(message).to.include(path.join('config', '.sfdx-hardis.yml'));
+  });
+
   it('writes into the file found, keeping its comments', async () => {
     await write('config/.sfdx-hardis.yml', '# why\nprojectName: demo\n');
     await setConfig('project', { devHubAlias: 'DevHub_demo' });

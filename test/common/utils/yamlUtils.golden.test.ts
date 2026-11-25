@@ -52,4 +52,33 @@ describe('YAML helpers compared with js-yaml', () => {
   it('quotes the strings a YAML 1.1 reader would take for a boolean, like mkdocs does', () => {
     expect(dumpYaml({ a: 'yes', b: 'on', c: 'off', d: 'no', e: '12:30' })).to.equal("a: 'yes'\nb: 'on'\nc: 'off'\nd: 'no'\ne: '12:30'\n");
   });
+
+  // The expected texts below are what js-yaml 4.3.2 wrote
+  it('quotes a string starting with an indicator, a base 60 number or a binary integer', () => {
+    expect(dumpYaml({ a: '--json', b: ':x', c: '=x', d: '2:100', e: '0b101', f: '0b_' })).to.equal(
+      "a: '--json'\nb: ':x'\nc: '=x'\nd: '2:100'\ne: '0b101'\nf: 0b_\n"
+    );
+    expect(dumpRepositoryYaml({ a: '--json', d: '1:99' })).to.equal('a: "--json"\nd: "1:99"\n');
+  });
+
+  it('escapes a no-break space, a line separator and a next line like js-yaml', () => {
+    expect(dumpYaml({ a: 'a\u00a0b', b: 'a\u2028b', c: 'a\u0085b', d: '\ufeffx' })).to.equal(
+      'a: "a\\_b"\nb: "a\\Lb"\nc: "a\\Nb"\nd: "\\uFEFFx"\n'
+    );
+    expect(dumpRepositoryYaml({ b: 'a\u2028b' })).to.equal('b: "a\\Lb"\n');
+  });
+
+  it('keeps a long double-quoted string on one line', () => {
+    const value = 'first line of a long text\twith a tab\nsecond line of the same long text';
+    expect(dumpYaml({ a: value })).to.equal(`a: "first line of a long text\\twith a tab\\nsecond line of the same long text"\n`);
+  });
+
+  // Except " \n": js-yaml wrote a block with an indentation indicator, the yaml library a block that
+  // loses the space, so it is double-quoted
+  it('keeps the spaces of a line made of spaces only in a block of text', () => {
+    const value = 'line1\n   \nline2';
+    const dumped = dumpYaml({ a: value, b: [value], c: '\n', d: ' \n' });
+    expect(dumped).to.equal('a: |-\n  line1\n     \n  line2\nb:\n  - |-\n    line1\n       \n    line2\nc: |+\n\nd: " \\n"\n');
+    expect(parseYaml(dumped)).to.deep.equal({ a: value, b: [value], c: '\n', d: ' \n' });
+  });
 });
