@@ -77,6 +77,14 @@ pipelines:
                 #   fi
                 - sf hardis:auth:login
                 - sf hardis:project:deploy:smart --check
+              # Uncomment the after-script below to revoke, when the step ends, the Salesforce session opened by hardis:auth:login.
+              # Useful when the org limits the concurrent sessions of the integration user (ex: a login flow blocking
+              # more than 10 sessions): each run would otherwise keep a session until Salesforce times it out.
+              # Only the session of this step is revoked, other sessions of the same user are not touched.
+              # It runs even when the deployment failed, and only prints a warning if the session cannot be revoked.
+              # Doc: https://sfdx-hardis.cloudity.com/hardis/auth/logout/
+              # after-script:
+              #   - sf hardis:auth:logout || true
               artifacts:
                 - hardis-report/**
           # Scratch org tests: create a scratch org (or take one from the scratch org pool), push
@@ -160,6 +168,14 @@ pipelines:
             - export FORCE_COLOR=1
             - sf hardis:auth:login
             - sf hardis:project:deploy:smart --check --major-branch-check
+          # Uncomment the after-script below to revoke, when the step ends, the Salesforce session opened by hardis:auth:login.
+          # Useful when the org limits the concurrent sessions of the integration user (ex: a login flow blocking
+          # more than 10 sessions): each run would otherwise keep a session until Salesforce times it out.
+          # Only the session of this step is revoked, other sessions of the same user are not touched.
+          # It runs even when the deployment failed, and only prints a warning if the session cannot be revoked.
+          # Doc: https://sfdx-hardis.cloudity.com/hardis/auth/logout/
+          # after-script:
+          #   - sf hardis:auth:logout || true
           artifacts:
             - hardis-report/**
 
@@ -206,6 +222,14 @@ pipelines:
             # https://sfdx-hardis.cloudity.com/salesforce-ci-cd-release-versioning/
             - sf hardis:auth:login
             - sf hardis:project:deploy:smart
+          # Uncomment the after-script below to revoke, when the step ends, the Salesforce session opened by hardis:auth:login.
+          # Useful when the org limits the concurrent sessions of the integration user (ex: a login flow blocking
+          # more than 10 sessions): each run would otherwise keep a session until Salesforce times it out.
+          # Only the session of this step is revoked, other sessions of the same user are not touched.
+          # It runs even when the deployment failed, and only prints a warning if the session cannot be revoked.
+          # Doc: https://sfdx-hardis.cloudity.com/hardis/auth/logout/
+          # after-script:
+          #   - sf hardis:auth:logout || true
           artifacts:
             - hardis-report/**
       # Refresh the scratch org snapshot of the branch when its branch config sets useScratchOrgSnapshot: true,

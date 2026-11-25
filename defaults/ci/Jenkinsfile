@@ -198,6 +198,15 @@ pipeline {
                         always {
                             archiveArtifacts allowEmptyArchive: true, artifacts: 'hardis-report/**', defaultExcludes: false, followSymlinks: false
                         }
+                        // Uncomment the cleanup block below to revoke, when the build ends, the Salesforce session opened by hardis:auth:login.
+                        // Useful when the org limits the concurrent sessions of the integration user (ex: a login flow blocking
+                        // more than 10 sessions): each build would otherwise keep a session until Salesforce times it out.
+                        // Only the session of this build is revoked, other sessions of the same user are not touched.
+                        // cleanup runs last, after any other post condition, even when the deployment failed.
+                        // Doc: https://sfdx-hardis.cloudity.com/hardis/auth/logout/
+                        // cleanup {
+                        //     sh 'sf hardis:auth:logout || true'
+                        // }
                     }
                 }
 
@@ -335,6 +344,15 @@ pipeline {
                 always {
                     archiveArtifacts allowEmptyArchive: true, artifacts: 'hardis-report/**', defaultExcludes: false, followSymlinks: false
                 }
+                // Uncomment the cleanup block below to revoke, when the build ends, the Salesforce session opened by hardis:auth:login.
+                // Useful when the org limits the concurrent sessions of the integration user (ex: a login flow blocking
+                // more than 10 sessions): each build would otherwise keep a session until Salesforce times it out.
+                // Only the session of this build is revoked, other sessions of the same user are not touched.
+                // cleanup runs last, after any other post condition, even when the deployment failed.
+                // Doc: https://sfdx-hardis.cloudity.com/hardis/auth/logout/
+                // cleanup {
+                //     sh 'sf hardis:auth:logout || true'
+                // }
             }
         }
 
@@ -416,6 +434,15 @@ pipeline {
                 always {
                     archiveArtifacts allowEmptyArchive: true, artifacts: 'hardis-report/**', defaultExcludes: false, followSymlinks: false
                 }
+                // Uncomment the cleanup block below to revoke, when the build ends, the Salesforce session opened by hardis:auth:login.
+                // Useful when the org limits the concurrent sessions of the integration user (ex: a login flow blocking
+                // more than 10 sessions): each build would otherwise keep a session until Salesforce times it out.
+                // Only the session of this build is revoked, other sessions of the same user are not touched.
+                // cleanup runs last, after any other post condition, even when the deployment failed.
+                // Doc: https://sfdx-hardis.cloudity.com/hardis/auth/logout/
+                // cleanup {
+                //     sh 'sf hardis:auth:logout || true'
+                // }
             }
         }
 

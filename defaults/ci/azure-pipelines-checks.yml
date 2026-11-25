@@ -120,6 +120,15 @@ jobs:
       - script: sf hardis:project:deploy:cancel || true
         condition: canceled()
         displayName: "Cancel deployment simulation in org"
+      # Uncomment the step below to revoke, when the job ends, the Salesforce session opened by hardis:auth:login.
+      # Useful when the org limits the concurrent sessions of the integration user (ex: a login flow blocking
+      # more than 10 sessions): each run would otherwise keep a session until Salesforce times it out.
+      # Only the session of this job is revoked, other sessions of the same user are not touched.
+      # It runs even when the deployment failed, and only prints a warning if the session cannot be revoked.
+      # Doc: https://sfdx-hardis.cloudity.com/hardis/auth/logout/
+      # - script: sf hardis:auth:logout || true
+      #   condition: always()
+      #   displayName: "Revoke Salesforce session"
       # Publish sfdx-hardis reports, including the complete deployment result JSON
       # continueOnError: the folder is not created when there is nothing to deploy
       # (empty delta package.xml), and the publish task hard-fails on a missing path
