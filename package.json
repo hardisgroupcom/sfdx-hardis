@@ -31,7 +31,7 @@
     "jira.js": "5.4.0",
     "js-yaml": "4.3.2",
     "marked": "14.1.4",
-    "papaparse": "5.7.0",
+    "papaparse": "5.7.1",
     "picomatch": "4.0.7",
     "pptxgenjs": "^4.0.1",
     "puppeteer-core": "25.17.0",
