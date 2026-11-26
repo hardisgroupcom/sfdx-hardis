@@ -35,7 +35,7 @@
     "picomatch": "4.0.7",
     "pptxgenjs": "^4.0.1",
     "puppeteer-core": "25.17.0",
-    "sanitize-html": "^2.18.1",
+    "sanitize-html": "^2.18.2",
     "semver": "7.8.6",
     "simple-git": "4.0.2",
     "undici": "8.12.4",
