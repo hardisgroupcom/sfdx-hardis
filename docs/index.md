@@ -24,6 +24,9 @@ description: "French-army-knife Toolbox for Salesforce. Orchestrates base comman
 
 Sfdx-hardis is a **CLI and visual productivity tools suite for Salesforce**, by [**Cloudity**](https://cloudity.com/) & friends, natively compliant with most Git platforms, messaging tools, ticketing systems and AI providers (including Agentforce), with a [**free hands-on training and shareable badges**](https://sfdx-hardis.cloudity.com/salesforce-devops-training/).
 
+<!-- trusted-by:start -->
+<!-- trusted-by:end -->
+
 ![Native Integrations](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/integrations.png)
 
 It is free and open-source, and lets you:

@@ -17,6 +17,8 @@ Salesforce DevOps toolbox by Cloudity -- CI/CD pipelines, metadata backup/monito
 | `yarn build:doc`                     | Auto-generate command documentation (all commands)        |
 | `yarn build:doc --commands <id>`     | Regenerate the doc of some commands (ids or `*` patterns) |
 | `yarn build:llms-txt`                | Regenerate `docs/llms.txt` (the pre-commit hook does too) |
+| `yarn build:trusted-by:examples`     | Show the made-up "Trusted by" testimonials locally        |
+| `yarn build:trusted-by`              | Remove them again before committing                       |
 | `yarn screenshots:commands <ids>`    | Regenerate the screenshots of some command pages          |
 | `./bin/dev.js hardis:<cat>:<action>` | Test a command locally (no build needed)                  |
 

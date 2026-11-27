@@ -72,8 +72,10 @@ extra_javascript:
   - https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js
   - javascripts/tables.js
   - javascripts/pill-refs.js
+  - javascripts/trusted-by.js
 extra_css:
   - stylesheets/extra.css
+  - stylesheets/trusted-by.css
 extra:
   # Google Analytics. The theme calls gtag("config") once when the page loads and
   # again on every instant navigation, so both the landing page view and the ones

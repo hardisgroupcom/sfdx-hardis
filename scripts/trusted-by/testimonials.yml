@@ -1,0 +1,115 @@
+# Testimonials of the "Trusted by" block of the documentation site.
+#
+# node build.cjs (run by the pre-commit hook and by yarn build) reads this file and writes:
+#   - the logo grid between the <!-- trusted-by:start --> and <!-- trusted-by:end --> markers of
+#     README.md, docs/index.md and docs/salesforce-devops-home.md
+#   - docs/assets/trusted-by.json, the cards that docs/javascripts/trusted-by.js turns into a carousel
+#   - docs/trusted-by.md, the page listing every testimonial, and its menu entry in mkdocs.yml
+# Until 3 real testimonials are approved, the markers stay empty, and the page and its menu entry are
+# removed (MIN_TESTIMONIALS in build-trusted-by.cjs).
+#
+# This repository is public: an entry is readable on GitHub as soon as it is pushed, approved or not.
+# Push an entry only once the customer agreed to be listed.
+#
+# Fields:
+#   customer   (required) Company name, used in the logo alt text and under the logo in the README.
+#   website    (required) https:// URL the logo links to.
+#   logo       (required) File in docs/assets/images/trusted-by/, .svg or .png.
+#   person     (required) Name of the person who gave the testimony.
+#   role       (required) Role of the person.
+#   photo      (optional) File in docs/assets/images/trusted-by/ (.svg, .png, .jpg, .jpeg or .webp).
+#              Any shape: the site shows it as a small circle.
+#   quote      (required) What they like about sfdx-hardis, 40 words at most (the build warns above).
+#              Keep it between double quotes: a colon in the text breaks the file otherwise.
+#   featured   (optional) true to always show it first. The other entries are shuffled on each load.
+#   approved   (required to be shown) true once the customer validated the logo, the photo and the quote.
+#   example    (optional) true for a made-up placeholder, shown only in a local preview.
+#
+# Made-up examples (example: true) never reach the README nor the published site:
+#   - yarn build:trusted-by:examples   shows them, to preview the site locally (python -m zensical serve)
+#   - yarn build:trusted-by            removes them again. The pre-commit hook refuses a commit that
+#                                      still holds them, and the docs deployment removes them anyway.
+# Replace them with real customers: the block appears on the site with the third real approved entry.
+
+testimonials:
+  - customer: Hardis Group
+    website: https://www.hardis-group.com/
+    logo: hardis-group.svg
+    person: Nadia Cherhabili
+    role: CRM Manager
+    photo: nadia-cherhabili.jpg
+    quote: "I come from the business side, not from code. With sfdx-hardis, I run our Salesforce releases myself. What reaches my users is exactly what I chose to ship."
+    approved: true
+
+  - customer: Kestrel Mobility
+    website: https://example.com/
+    logo: example-kestrel-mobility.svg
+    person: Claire Martin
+    role: Lead Salesforce Administrator
+    photo: example-claire-martin.jpg
+    quote: "Our admins build their own Pull Requests from VS Code with a few clicks, no command line. They ship their changes on their own, and our developers can finally focus on code."
+    featured: true
+    approved: true
+    example: true
+
+  - customer: Northwind Logistics
+    website: https://example.com/
+    logo: example-northwind-logistics.svg
+    person: Tomás Herrera
+    role: CIO
+    photo: example-tomas-herrera.jpg
+    quote: "We dropped a DevOps tool that cost us more than 60,000 EUR a year. sfdx-hardis is free, and our deployments have never been this reliable."
+    featured: true
+    approved: true
+    example: true
+
+  - customer: Brivane Insurance
+    website: https://example.com/
+    logo: example-brivane-insurance.svg
+    person: Anke Vogel
+    role: Salesforce Program Manager
+    photo: example-anke-vogel.jpg
+    quote: "Cloudity set up our whole pipeline in two weeks and trained our team. When we have a question, their experts answer the same day."
+    featured: true
+    approved: true
+    example: true
+
+  - customer: Orvelle Retail
+    website: https://example.com/
+    logo: example-orvelle-retail.svg
+    person: Sofia Rossi
+    role: CRM Program Director
+    photo: example-sofia-rossi.jpg
+    quote: "Sixty contributors and zero license fees. We compared it with the paid DevOps tools: same pipeline, smart deployments and release notes, with a budget we now spend on the project itself."
+    approved: true
+    example: true
+
+  - customer: Lumea Health
+    website: https://example.com/
+    logo: example-lumea-health.svg
+    person: Julien Morel
+    role: CTO
+    photo: example-julien-morel.jpg
+    quote: "We started alone with the open-source version, then asked Cloudity to run our releases. Same tools, plus a team that knows them inside out."
+    approved: true
+    example: true
+
+  - customer: Halvard Energy
+    website: https://example.com/
+    logo: example-halvard-energy.svg
+    person: Ingrid Solberg
+    role: Salesforce Administrator
+    photo: example-ingrid-solberg.jpg
+    quote: "I am an admin, not a developer. The VS Code extension shows me what to click at each step, and my Flows reach production without help."
+    approved: true
+    example: true
+
+  - customer: Ceyra Bank
+    website: https://example.com/
+    logo: example-ceyra-bank.svg
+    person: Aditya Rao
+    role: Release Manager
+    photo: example-aditya-rao.jpg
+    quote: "Cloudity helped us leave our paid DevOps platform without stopping a single release. Their support is precise, fast and always friendly."
+    approved: true
+    example: true

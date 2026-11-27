@@ -3,3 +3,4 @@
 
 yarn lint # && yarn pretty-quick --staged # Removed because it destroys markdowns table data
 node build.cjs
+node build.cjs --check-trusted-by
