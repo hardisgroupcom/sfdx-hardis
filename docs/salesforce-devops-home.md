@@ -13,6 +13,9 @@ Run a **production-grade Salesforce CI/CD pipeline** on the Git platform, runner
 
 > Used in production by major companies worldwide. Open-source and free, with optional [Cloudity](https://cloudity.com/) Professional Services for setup, support and release management.
 
+<!-- trusted-by:start -->
+<!-- trusted-by:end -->
+
 ---
 
 ## Why sfdx-hardis?

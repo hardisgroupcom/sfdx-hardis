@@ -190,6 +190,8 @@
     "build": "wireit",
     "build:doc": "sf hardis:doc:plugin:generate",
     "build:llms-txt": "node build.cjs --llms-txt",
+    "build:trusted-by": "node build.cjs --trusted-by",
+    "build:trusted-by:examples": "node build.cjs --trusted-by --examples",
     "screenshots:commands": "node scripts/command-screenshots/run.mjs",
     "clean": "sf-clean",
     "clean-all": "sf-clean all",

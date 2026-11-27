@@ -3,6 +3,7 @@
 const fs = require("fs");
 const https = require("https");
 const yaml = require("js-yaml");
+const { buildTrustedBy, checkStagedTrustedByExamples } = require("./scripts/trusted-by/build-trusted-by.cjs");
 
 const SDR_METADATA_REGISTRY_URL =
   "https://raw.githubusercontent.com/forcedotcom/source-deploy-retrieve/refs/heads/main/src/registry/metadataRegistry.json";
@@ -23,7 +24,7 @@ const LLMS_TXT_INTRO = [
   "",
   "Each link is the Markdown source of a page: `docs/<page>.md` is published at `https://sfdx-hardis.cloudity.com/<page>/`, the URL to give a person.",
 ];
-const LLMS_TXT_OPTIONAL_SECTIONS = ["Community & Resources", "About", "Cloudity, Consulting Partner"];
+const LLMS_TXT_OPTIONAL_SECTIONS = ["Trusted by", "Community & Resources", "About", "Cloudity, Consulting Partner"];
 const LLMS_TXT_SECTION_TITLES = { "Commands Reference": "Commands" };
 
 // Title and meta description of each page generated from README.md, for search engines
@@ -55,6 +56,8 @@ class SfdxHardisBuilder {
   async run() {
     console.log("Start additional building of sfdx-hardis repository...");
     await this.updateMetadataListFromRegistry();
+    // Before the pages generated from README.md and docs/llms.txt, which read what it writes
+    buildTrustedBy((filePath, content) => this.writeFileIfChanged(filePath, content));
     await this.generatePagesFromReadme();
     await this.buildDeployTipsDoc();
     await this.buildPromptTemplatesDocs();
@@ -639,6 +642,22 @@ class SfdxHardisBuilder {
   // node build.cjs --llms-txt: only docs/llms.txt (yarn build:llms-txt)
   if (process.argv.includes("--llms-txt")) {
     new SfdxHardisBuilder().generateLlmsTxt();
+    return;
+  }
+  // node build.cjs --trusted-by [--examples]: only the Trusted by block (yarn build:trusted-by).
+  // --examples adds the made-up testimonials, for a local preview: docs/llms.txt is then left as is.
+  if (process.argv.includes("--trusted-by")) {
+    const builder = new SfdxHardisBuilder();
+    const examples = process.argv.includes("--examples");
+    buildTrustedBy((filePath, content) => builder.writeFileIfChanged(filePath, content), { examples });
+    if (!examples) {
+      builder.generateLlmsTxt();
+    }
+    return;
+  }
+  // node build.cjs --check-trusted-by: run by the pre-commit hook
+  if (process.argv.includes("--check-trusted-by")) {
+    checkStagedTrustedByExamples();
     return;
   }
   await new SfdxHardisBuilder().run();

@@ -1,0 +1,289 @@
+/* stylelint-disable SelectorFormat */
+
+/*
+ * "Trusted by" testimonials: the carousel built by javascripts/trusted-by.js and the grid of the
+ * Trusted by page, both made of the cards written by build.cjs (scripts/trusted-by/).
+ * The tokens are set on the blocks themselves, so they follow the light and the dark scheme.
+ * Logos sit on a light tile in both schemes: most customer logos are dark on transparent.
+ * The theme styles every ul, li, figure, figure img and blockquote of a page: the selectors
+ * below name the element too (ul.tb-track, blockquote.tb-card__quote...) to win over them.
+ */
+.tb,
+.tb-grid {
+  --tb-gap: 16px;
+  --tb-card-bg: var(--md-default-bg-color);
+  --tb-line: var(--md-default-fg-color--lightest);
+  --tb-muted: var(--md-default-fg-color--light);
+  --tb-logo-bg: #FFFFFF;
+  --tb-logo-line: rgb(0 17 53 / 8%);
+  --tb-quote-mark: rgb(0 83 255 / 22%);
+  --tb-active: var(--md-primary-fg-color);
+}
+
+[data-md-color-scheme="slate"] .tb,
+[data-md-color-scheme="slate"] .tb-grid {
+  --tb-card-bg: #0A162E;
+  --tb-logo-bg: #F5F7FC;
+  --tb-logo-line: transparent;
+  --tb-quote-mark: rgb(77 139 255 / 35%);
+}
+
+/* Carousel */
+.md-typeset .tb {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 1.5em 0;
+}
+
+.md-typeset .tb-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.md-typeset .tb-title {
+  margin: 0;
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--tb-muted);
+}
+
+.md-typeset .tb-all {
+  font-size: .8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.md-typeset ul.tb-track {
+  --tb-per-view: 3;
+  list-style: none;
+  margin: 0;
+  padding: 2px;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: calc((100% - (var(--tb-per-view) - 1) * var(--tb-gap)) / var(--tb-per-view));
+  gap: var(--tb-gap);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scroll-padding-inline: 2px;
+  scrollbar-width: none;
+}
+
+.md-typeset .tb-track::-webkit-scrollbar {
+  display: none;
+}
+
+@container (max-width: 599px) {
+  .md-typeset ul.tb-track {
+    --tb-per-view: 2;
+  }
+}
+
+@container (max-width: 420px) {
+  .md-typeset ul.tb-track {
+    --tb-per-view: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .md-typeset ul.tb-track {
+    scroll-behavior: auto;
+  }
+}
+
+.md-typeset .tb--still ul.tb-track {
+  grid-auto-flow: row;
+  grid-auto-columns: auto;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  overflow: visible;
+}
+
+.md-typeset ul.tb-track > li,
+.md-typeset ul.tb-grid > li {
+  display: flex;
+  min-width: 0;
+  margin: 0;
+  scroll-snap-align: start;
+}
+
+.md-typeset .tb-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.md-typeset .tb-arrow,
+.md-typeset .tb-pause {
+  border: 1px solid var(--tb-line);
+  background: var(--tb-card-bg);
+  color: var(--md-default-fg-color);
+  cursor: pointer;
+}
+
+.md-typeset .tb-arrow {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.md-typeset .tb-arrow:disabled {
+  opacity: .35;
+  cursor: default;
+}
+
+.md-typeset .tb-pause {
+  margin-left: 6px;
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: .7rem;
+  color: var(--tb-muted);
+}
+
+.md-typeset .tb-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.md-typeset .tb-dot {
+  width: 9px;
+  height: 9px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--tb-line);
+  cursor: pointer;
+}
+
+.md-typeset .tb-dot[aria-current="true"] {
+  width: 22px;
+  border-radius: 5px;
+  background: var(--tb-active);
+}
+
+.md-typeset .tb button:focus-visible,
+.md-typeset .tb a:focus-visible,
+.md-typeset .tb-grid a:focus-visible {
+  outline: 2px solid var(--md-accent-fg-color);
+  outline-offset: 2px;
+}
+
+/* Trusted by page */
+.md-typeset ul.tb-grid {
+  list-style: none;
+  margin: 1.5em 0;
+  padding: 0;
+  display: grid;
+  gap: var(--tb-gap);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+}
+
+/* Card */
+.md-typeset .tb-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--tb-line);
+  border-radius: 12px;
+  background: var(--tb-card-bg);
+  text-align: left;
+}
+
+.md-typeset .tb-card__logo {
+  display: flex;
+  align-items: center;
+  height: 60px;
+  padding: 8px 14px;
+  border: 1px solid var(--tb-logo-line);
+  border-radius: 8px;
+  background: var(--tb-logo-bg);
+}
+
+.md-typeset .tb-card__logo img {
+  display: block;
+  margin: 0;
+  width: auto;
+  max-width: 100%;
+  max-height: 40px;
+  object-fit: contain;
+}
+
+.md-typeset blockquote.tb-card__quote {
+  position: relative;
+  flex: 1;
+  margin: 0;
+  padding: 18px 0 0;
+  border: 0;
+  text-align: left;
+  color: var(--md-default-fg-color);
+  font-size: .8rem;
+  line-height: 1.6;
+}
+
+.md-typeset blockquote.tb-card__quote::before {
+  content: "\201C";
+  position: absolute;
+  top: -14px;
+  left: -4px;
+  font-family: Georgia, serif;
+  font-size: 3rem;
+  line-height: 1;
+  color: var(--tb-quote-mark);
+}
+
+.md-typeset blockquote.tb-card__quote p {
+  margin: 0;
+}
+
+/* Same height with or without a photo, and with a role on two lines, so the rows line up */
+.md-typeset .tb-card__person {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 74px;
+  max-width: none;
+  margin: 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--tb-line);
+  font-style: normal;
+  text-align: left;
+}
+
+/* Any photo shape becomes a small circle */
+.md-typeset img.tb-card__photo {
+  flex: none;
+  display: block;
+  margin: 0;
+  width: 44px;
+  height: 44px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.md-typeset .tb-card__who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: .72rem;
+  line-height: 1.35;
+}
+
+.md-typeset .tb-card__who span {
+  color: var(--tb-muted);
+}
