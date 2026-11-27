@@ -30,6 +30,8 @@ const NAV_LINE = "  - Trusted by: trusted-by.md";
 const EXAMPLES_MARKER = "trusted-by:examples";
 const EXAMPLES_NOTE = `${EXAMPLES_MARKER}: local preview, never commit`;
 const GENERATED_FILES = [...MARKED_FILES, CARDS_FILE, PAGE_FILE, MKDOCS_FILE];
+// Below this number of real approved testimonials, nothing is shown: one or two cards look empty
+const MIN_TESTIMONIALS = 3;
 const MAX_QUOTE_WORDS = 40;
 const LOGOS_PER_ROW = 4;
 const REQUIRED_FIELDS = ["customer", "website", "logo", "person", "role", "quote"];
@@ -71,7 +73,7 @@ function checkStagedTrustedByExamples() {
 
 // Approved entries only, checked, featured first then in the order of the file.
 // Entries that are not approved are skipped without being checked: a draft can be incomplete.
-// The made-up ones (example: true) are kept only for a local preview.
+// The made-up ones (example: true) are kept only for a local preview, which also ignores MIN_TESTIMONIALS.
 function loadApprovedTestimonials(includeExamples) {
   const data = yaml.load(fs.readFileSync(DATA_FILE, "utf-8")) || {};
   const approved = (data.testimonials || []).filter((t) => t && t.approved === true);
@@ -85,6 +87,12 @@ function loadApprovedTestimonials(includeExamples) {
     console.log(`${examples.length} made-up example testimonial(s) left out. Preview them locally with yarn build:trusted-by:examples.`);
   }
   const shown = includeExamples ? approved : approved.filter((t) => t.example !== true);
+  if (!includeExamples && shown.length < MIN_TESTIMONIALS) {
+    if (shown.length > 0) {
+      console.log(`${shown.length} real testimonial(s) approved: the Trusted by block stays hidden until there are ${MIN_TESTIMONIALS}.`);
+    }
+    return [];
+  }
   return [...shown.filter((t) => t.featured === true), ...shown.filter((t) => t.featured !== true)];
 }
 

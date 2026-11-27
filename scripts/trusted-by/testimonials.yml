@@ -5,7 +5,8 @@
 #     README.md, docs/index.md and docs/salesforce-devops-home.md
 #   - docs/assets/trusted-by.json, the cards that docs/javascripts/trusted-by.js turns into a carousel
 #   - docs/trusted-by.md, the page listing every testimonial, and its menu entry in mkdocs.yml
-# With no approved testimonial, the markers stay empty, and the page and its menu entry are removed.
+# Until 3 real testimonials are approved, the markers stay empty, and the page and its menu entry are
+# removed (MIN_TESTIMONIALS in build-trusted-by.cjs).
 #
 # This repository is public: an entry is readable on GitHub as soon as it is pushed, approved or not.
 # Push an entry only once the customer agreed to be listed.
@@ -28,9 +29,17 @@
 #   - yarn build:trusted-by:examples   shows them, to preview the site locally (python -m zensical serve)
 #   - yarn build:trusted-by            removes them again. The pre-commit hook refuses a commit that
 #                                      still holds them, and the docs deployment removes them anyway.
-# Replace them with real customers: the block appears on the site with the first real approved entry.
+# Replace them with real customers: the block appears on the site with the third real approved entry.
 
 testimonials:
+  - customer: Hardis Group
+    website: https://www.hardis-group.com/
+    logo: hardis-group.svg
+    person: Nadia Cherabili
+    role: CRM Manager
+    quote: "I come from the business side, not from code. With sfdx-hardis, I run our Salesforce releases myself. What reaches my users is exactly what I chose to ship."
+    approved: true
+
   - customer: Kestrel Mobility
     website: https://example.com/
     logo: example-kestrel-mobility.svg
