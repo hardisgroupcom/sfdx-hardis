@@ -35,8 +35,9 @@ testimonials:
   - customer: Hardis Group
     website: https://www.hardis-group.com/
     logo: hardis-group.svg
-    person: Nadia Cherabili
+    person: Nadia Cherhabili
     role: CRM Manager
+    photo: nadia-cherhabili.jpg
     quote: "I come from the business side, not from code. With sfdx-hardis, I run our Salesforce releases myself. What reaches my users is exactly what I chose to ship."
     approved: true
 
