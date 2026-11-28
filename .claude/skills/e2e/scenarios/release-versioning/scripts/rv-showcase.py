@@ -44,7 +44,13 @@ def read_run(folder: Path) -> dict:
     with (folder / "results-last.tsv").open(encoding="utf-8") as handle:
         for row in csv.reader(handle, delimiter="\t", quoting=csv.QUOTE_NONE):
             if len(row) >= 2:
-                checks.append({"id": row[0], "status": row[1], "detail": row[2] if len(row) > 2 else ""})
+                checks.append(
+                    {
+                        "id": row[0],
+                        "status": row[1],
+                        "detail": row[2] if len(row) > 2 else "",
+                    }
+                )
     captions = {}
     captions_file = folder / "shots" / "captions.tsv"
     if captions_file.exists():
@@ -74,7 +80,9 @@ def read_run(folder: Path) -> dict:
         )
     meta["steps"] = steps
     meta["checks"] = checks
-    meta["count"] = {s: sum(1 for c in checks if c["status"] == s) for s in ("OK", "FAIL", "SKIP")}
+    meta["count"] = {
+        s: sum(1 for c in checks if c["status"] == s) for s in ("OK", "FAIL", "SKIP")
+    }
     return meta
 
 
@@ -95,12 +103,22 @@ def main() -> int:
             for shot in step["shots"]:
                 copy_capture(folder / "shots" / shot, target / shot)
         runs.append(run)
-    findings = json.loads(Path(args.findings).read_text(encoding="utf-8")) if args.findings else []
-    data = json.dumps({"runs": runs, "findings": findings}, ensure_ascii=False).replace("</", "<\\/")
+    findings = (
+        json.loads(Path(args.findings).read_text(encoding="utf-8"))
+        if args.findings
+        else []
+    )
+    data = json.dumps({"runs": runs, "findings": findings}, ensure_ascii=False).replace(
+        "</", "<\\/"
+    )
     template = (Path(__file__).parent / "rv-showcase.html").read_text(encoding="utf-8")
-    (out / "index.html").write_text(template.replace("/*DATA*/null", data), encoding="utf-8")
+    (out / "index.html").write_text(
+        template.replace("/*DATA*/null", data), encoding="utf-8"
+    )
     total = {s: sum(r["count"][s] for r in runs) for s in ("OK", "FAIL", "SKIP")}
-    print(f"{out / 'index.html'}: {len(runs)} runs, {total['OK']} OK, {total['FAIL']} FAIL, {total['SKIP']} SKIP")
+    print(
+        f"{out / 'index.html'}: {len(runs)} runs, {total['OK']} OK, {total['FAIL']} FAIL, {total['SKIP']} SKIP"
+    )
     print("files:", sum(1 for _ in (out / "shots").rglob("*.png")) + 1)
     return 0
 

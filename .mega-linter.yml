@@ -96,3 +96,10 @@ ADDITIONAL_EXCLUDED_DIRECTORIES:
 
 # Uncomment if you want MegaLinter to detect errors but not block CI to pass
 # DISABLE_ERRORS: true
+
+# Linters run by native mode (without Docker). CI keeps running every active linter
+NATIVE_LINTERS:
+  - ACTION_ACTIONLINT
+  - BASH_SHELLCHECK
+  - BASH_SHFMT
+  - DOCKERFILE_HADOLINT

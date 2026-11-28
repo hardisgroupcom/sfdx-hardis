@@ -2,4 +2,5 @@
 . "$(dirname "$0")/_/husky.sh"
 
 yarn lint # && yarn pretty-quick --staged # Removed because it destroys markdowns table data
+sh scripts/megalinter-native-staged.sh || exit 1
 node build.cjs

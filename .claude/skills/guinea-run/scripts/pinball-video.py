@@ -4,6 +4,7 @@ speeds of the ball, to compare with a real table (most of the play at 1 to
   python pinball-video.py <dir> [start_s] [end_s] [every_nth_frame]
 Table units: the ball is 0.54 across (27 mm), so 1 unit = 50 mm.
 """
+
 import json
 import math
 import os
@@ -29,7 +30,13 @@ for f in sel:
     imgs.append(im)
 if imgs:
     dur = int(1000 * (sel[1]["t"] - sel[0]["t"])) if len(sel) > 1 else 40
-    imgs[0].save(os.path.join(d, "clip.gif"), save_all=True, append_images=imgs[1:], duration=max(20, dur), loop=0)
+    imgs[0].save(
+        os.path.join(d, "clip.gif"),
+        save_all=True,
+        append_images=imgs[1:],
+        duration=max(20, dur),
+        loop=0,
+    )
     # contact sheet: 12 frames
     k = max(1, len(imgs) // 12)
     pick = imgs[::k][:12]
@@ -47,7 +54,11 @@ for s in track:
     if prev and s["b"] and prev["b"] and s["t"] > prev["t"]:
         dt = s["t"] - prev["t"]
         for a, b in zip(prev["b"], s["b"]):
-            if a["mode"] == "table" and b["mode"] == "table" and a["floor"] == b["floor"]:
+            if (
+                a["mode"] == "table"
+                and b["mode"] == "table"
+                and a["floor"] == b["floor"]
+            ):
                 v = math.hypot(b["x"] - a["x"], b["y"] - a["y"]) / dt
                 if v < 200:
                     speeds.append(v)
@@ -55,12 +66,26 @@ for s in track:
                         ups.append(v)
     prev = s
 speeds.sort()
+
+
 def pct(lst, p):
     return lst[min(len(lst) - 1, int(len(lst) * p))] if lst else 0
+
+
 print("frames", len(frames), "track", len(track))
 for name, lst in (("all", speeds), ("going up", sorted(ups))):
-    print("%s: median %.1f u/s (%.2f m/s), p90 %.1f (%.2f m/s), max %.1f (%.2f m/s)" % (
-        name, pct(lst, 0.5), pct(lst, 0.5) * UNIT_M, pct(lst, 0.9), pct(lst, 0.9) * UNIT_M, lst[-1] if lst else 0, (lst[-1] if lst else 0) * UNIT_M))
+    print(
+        "%s: median %.1f u/s (%.2f m/s), p90 %.1f (%.2f m/s), max %.1f (%.2f m/s)"
+        % (
+            name,
+            pct(lst, 0.5),
+            pct(lst, 0.5) * UNIT_M,
+            pct(lst, 0.9),
+            pct(lst, 0.9) * UNIT_M,
+            lst[-1] if lst else 0,
+            (lst[-1] if lst else 0) * UNIT_M,
+        )
+    )
 # Flips: count presses and time between a press and the ball going over y 15
 presses = 0
 last = {"left": False, "right": False}
