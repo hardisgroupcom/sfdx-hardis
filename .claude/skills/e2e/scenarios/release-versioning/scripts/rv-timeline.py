@@ -33,7 +33,10 @@ def load_font(size: int) -> ImageFont.ImageFont:
 def read_captions(shots: Path) -> list:
     captions_file = shots / "captions.tsv"
     if not captions_file.exists():
-        return [(png.name.split("-pipeline")[0], "") for png in sorted(shots.glob("*-pipeline.png"))]
+        return [
+            (png.name.split("-pipeline")[0], "")
+            for png in sorted(shots.glob("*-pipeline.png"))
+        ]
     with captions_file.open(encoding="utf-8") as handle:
         rows = [row for row in csv.reader(handle, delimiter="\t") if row]
     # A step replayed keeps its last caption, in the order of its first capture
@@ -78,11 +81,20 @@ def main() -> int:
         return 1
     # One palette for every frame keeps the colors of the chips steady from one step to the next
     palette = frames[0].quantize(colors=255, method=Image.Quantize.MEDIANCUT)
-    quantized = [image.quantize(palette=palette, dither=Image.Dither.NONE) for image in frames]
+    quantized = [
+        image.quantize(palette=palette, dither=Image.Dither.NONE) for image in frames
+    ]
     duration = int(args.seconds * 1000)
     durations = [duration] * len(quantized)
     durations[-1] = duration * 2
-    quantized[0].save(args.output, save_all=True, append_images=quantized[1:], duration=durations, loop=0, optimize=True)
+    quantized[0].save(
+        args.output,
+        save_all=True,
+        append_images=quantized[1:],
+        duration=durations,
+        loop=0,
+        optimize=True,
+    )
     print(f"{args.output}: {len(frames)} steps")
     return 0
 

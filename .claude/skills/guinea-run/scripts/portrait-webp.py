@@ -7,6 +7,7 @@ portrait render of scripts/blender/guinea-pig.py (GUINEA_PORTRAIT=1):
 Crops to the guinea pig, then writes a 360 px wide picture (shown at about
 130 px on the cards) and an 84 px one (the footer button). Needs Pillow.
 """
+
 import sys
 
 from PIL import Image
@@ -16,5 +17,7 @@ image = Image.open(source).convert("RGBA")
 image = image.crop(image.getbbox())
 for path, width in ((big, 360), (small, 84)):
     height = round(image.size[1] * width / image.size[0])
-    image.resize((width, height), Image.LANCZOS).save(path, "WEBP", quality=88, method=6)
+    image.resize((width, height), Image.LANCZOS).save(
+        path, "WEBP", quality=88, method=6
+    )
     print(path, width, "x", height)

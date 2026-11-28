@@ -5,13 +5,19 @@ Usage: PYTHONIOENCODING=utf-8 python ab-diff.py <dir-a> <dir-b>
 Prints, per log file, the lines present in one run and not the other once the noise is gone.
 Used to prove that a project with enablePromotionBranches off gets exactly the jobs it got before.
 """
+
 import io
 import os
 import re
 import sys
 
 NOISE = [
-    (re.compile(r"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?(?:[+-]\d{2}:\d{2})?"), "<TS>"),
+    (
+        re.compile(
+            r"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?(?:[+-]\d{2}:\d{2})?"
+        ),
+        "<TS>",
+    ),
     (re.compile(r"\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}-\d{3}Z"), "<TS>"),
     (re.compile(r"\d{4}-\d{2}-\d{2}"), "<DATE>"),
     (re.compile(r"\b0Af[0-9A-Za-z]{15}\b"), "<DEPLOY_ID>"),
@@ -56,8 +62,10 @@ def main(dir_a, dir_b):
         only_a = [line for line in a if line not in b]
         only_b = [line for line in b if line not in a]
         print("=" * 100)
-        print("%s: %d lines vs %d lines, only in A: %d, only in B: %d"
-              % (name, len(a), len(b), len(only_a), len(only_b)))
+        print(
+            "%s: %d lines vs %d lines, only in A: %d, only in B: %d"
+            % (name, len(a), len(b), len(only_a), len(only_b))
+        )
         for line in only_a:
             print("  A> " + line)
         for line in only_b:
